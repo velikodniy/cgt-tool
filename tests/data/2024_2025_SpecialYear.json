@@ -1,0 +1,45 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2024-08-29",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "8990",
+      "allowable_cost": "10010",
+      "gain_or_loss": "-1020",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2024-10-29",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "9990",
+      "allowable_cost": "5010",
+      "gain_or_loss": "4980",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2024-10-30",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "7990",
+      "allowable_cost": "5010",
+      "gain_or_loss": "2980",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2024-12-30",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "8990",
+      "allowable_cost": "10010",
+      "gain_or_loss": "-1020",
+      "rule": "SameDay"
+    }
+  ],
+  "total_gain": "7960",
+  "total_loss": "2040",
+  "net_gain": "5920",
+  "holdings": []
+}

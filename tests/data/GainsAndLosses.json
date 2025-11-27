@@ -1,0 +1,27 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2018-08-28",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "1990",
+      "allowable_cost": "1010",
+      "gain_or_loss": "980",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2018-10-28",
+      "ticker": "STOCK",
+      "quantity": "1000",
+      "proceeds": "3990",
+      "allowable_cost": "5010",
+      "gain_or_loss": "-1020",
+      "rule": "SameDay"
+    }
+  ],
+  "total_gain": "980",
+  "total_loss": "1020",
+  "net_gain": "-40",
+  "holdings": []
+}

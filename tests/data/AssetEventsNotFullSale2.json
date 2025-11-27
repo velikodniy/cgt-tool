@@ -1,0 +1,27 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2019-09-01",
+      "ticker": "FOOBAR",
+      "quantity": "5",
+      "proceeds": "525",
+      "allowable_cost": "497",
+      "gain_or_loss": "28",
+      "rule": "Section104"
+    },
+    {
+      "date": "2020-07-01",
+      "ticker": "FOOBAR",
+      "quantity": "20",
+      "proceeds": "2000",
+      "allowable_cost": "1747",
+      "gain_or_loss": "253",
+      "rule": "Section104"
+    }
+  ],
+  "total_gain": "281",
+  "total_loss": "0",
+  "net_gain": "281",
+  "holdings": []
+}

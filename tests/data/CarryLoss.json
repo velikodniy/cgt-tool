@@ -1,0 +1,36 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2018-01-01",
+      "ticker": "GB00B41YBW71",
+      "quantity": "1",
+      "proceeds": "0",
+      "allowable_cost": "1000",
+      "gain_or_loss": "-1000",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2019-01-01",
+      "ticker": "GB00B41YBW71",
+      "quantity": "1",
+      "proceeds": "2000",
+      "allowable_cost": "1000",
+      "gain_or_loss": "1000",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2020-01-01",
+      "ticker": "GB00B41YBW71",
+      "quantity": "1",
+      "proceeds": "20000",
+      "allowable_cost": "1000",
+      "gain_or_loss": "19000",
+      "rule": "SameDay"
+    }
+  ],
+  "total_gain": "20000",
+  "total_loss": "1000",
+  "net_gain": "19000",
+  "holdings": []
+}

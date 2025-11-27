@@ -1,0 +1,33 @@
+{
+  "tax_year": "2019/2020",
+  "matches": [
+    {
+      "date": "2019-11-05",
+      "ticker": "GB00B3TYHH97",
+      "quantity": "20",
+      "proceeds": "3878.15",
+      "allowable_cost": "3886.4",
+      "gain_or_loss": "-8.25",
+      "rule": "SameDay"
+    },
+    {
+      "date": "2019-11-05",
+      "ticker": "GB00B3TYHH97",
+      "quantity": "20",
+      "proceeds": "3878.15",
+      "allowable_cost": "3594.475",
+      "gain_or_loss": "283.675",
+      "rule": "Section104"
+    }
+  ],
+  "total_gain": "283.675",
+  "total_loss": "8.25",
+  "net_gain": "275.425",
+  "holdings": [
+    {
+      "ticker": "GB00B3TYHH97",
+      "quantity": "20",
+      "total_cost": "3499.355"
+    }
+  ]
+}

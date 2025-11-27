@@ -1,0 +1,27 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2018-05-01",
+      "ticker": "Lobster",
+      "quantity": "700",
+      "proceeds": "3260.0",
+      "allowable_cost": "2931.0",
+      "gain_or_loss": "329",
+      "rule": "Section104"
+    },
+    {
+      "date": "2019-02-01",
+      "ticker": "Lobster",
+      "quantity": "400",
+      "proceeds": "1975.0",
+      "allowable_cost": "1675.0",
+      "gain_or_loss": "300",
+      "rule": "Section104"
+    }
+  ],
+  "total_gain": "629",
+  "total_loss": "0",
+  "net_gain": "629",
+  "holdings": []
+}

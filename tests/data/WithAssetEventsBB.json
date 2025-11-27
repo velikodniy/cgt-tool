@@ -1,0 +1,18 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2019-11-05",
+      "ticker": "GB00B3TYHH97",
+      "quantity": "40",
+      "proceeds": "7756.30",
+      "allowable_cost": "7491.30",
+      "gain_or_loss": "265",
+      "rule": "Section104"
+    }
+  ],
+  "total_gain": "265",
+  "total_loss": "0",
+  "net_gain": "265",
+  "holdings": []
+}

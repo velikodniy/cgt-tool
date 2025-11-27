@@ -1,0 +1,18 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2019-02-01",
+      "ticker": "FOO",
+      "quantity": "20",
+      "proceeds": "240",
+      "allowable_cost": "200",
+      "gain_or_loss": "40",
+      "rule": "BedAndBreakfast"
+    }
+  ],
+  "total_gain": "40",
+  "total_loss": "0",
+  "net_gain": "40",
+  "holdings": []
+}

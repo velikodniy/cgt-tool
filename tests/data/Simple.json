@@ -1,0 +1,18 @@
+{
+  "tax_year": "2018/2019",
+  "matches": [
+    {
+      "date": "2018-08-28",
+      "ticker": "GB00B41YBW71",
+      "quantity": "10",
+      "proceeds": "34.2020",
+      "allowable_cost": "54.0650",
+      "gain_or_loss": "-19.8630",
+      "rule": "SameDay"
+    }
+  ],
+  "total_gain": "0",
+  "total_loss": "19.8630",
+  "net_gain": "-19.8630",
+  "holdings": []
+}

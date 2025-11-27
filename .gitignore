@@ -1,0 +1,13 @@
+# Rust
+target/
+debug/
+release/
+*.rs.bk
+*.rlib
+*.prof*
+.idea/
+*.log
+.env*
+
+# macOS
+.DS_Store

@@ -1,0 +1,120 @@
+{
+  "cases": [
+    {
+      "name": "Simple_SingleAsset_SameDay",
+      "description": "Single asset bought and sold on same day (loss).",
+      "input": "2018-08-28 SELL GB00B41YBW71 10 4.6702 12.5\n2018-08-28 BUY GB00B41YBW71 10 4.1565 12.5",
+      "expected_output": {
+        "tax_year": "2018/2019",
+        "matches": [
+          {
+            "date": "2018-08-28",
+            "ticker": "GB00B41YBW71",
+            "quantity": "10",
+            "proceeds": "34.202",
+            "allowable_cost": "54.065",
+            "gain_or_loss": "-19.863",
+            "rule": "SameDay"
+          }
+        ],
+        "total_gain": "0",
+        "total_loss": "19.863",
+        "net_gain": "-19.863",
+        "holdings": []
+      }
+    },
+    {
+      "name": "Simple_TwoAssets_SameDay",
+      "description": "Two different assets bought and sold on same day.",
+      "input": "2018-08-28 SELL FOO 10 4.6702 12.5\n2018-08-28 BUY FOO 10 4.1565 12.5\n2018-08-28 SELL BAR 10 4.6702 12.5\n2018-08-28 BUY BAR 10 4.1565 12.5",
+      "expected_output": {
+        "tax_year": "2018/2019",
+        "matches": [
+          {
+            "date": "2018-08-28",
+            "ticker": "BAR",
+            "quantity": "10",
+            "proceeds": "34.202",
+            "allowable_cost": "54.065",
+            "gain_or_loss": "-19.863",
+            "rule": "SameDay"
+          },
+          {
+            "date": "2018-08-28",
+            "ticker": "FOO",
+            "quantity": "10",
+            "proceeds": "34.202",
+            "allowable_cost": "54.065",
+            "gain_or_loss": "-19.863",
+            "rule": "SameDay"
+          }
+        ],
+        "total_gain": "0",
+        "total_loss": "39.726",
+        "net_gain": "-39.726",
+        "holdings": []
+      }
+    },
+    {
+      "name": "Section104_WithSplit",
+      "description": "Section 104 holding affected by a stock split.",
+      "input": "2019-04-01 SELL FOO 40 6 0\n2019-02-01 SPLIT FOO 2\n2019-01-01 BUY FOO 20 10 0",
+      "expected_output": {
+        "tax_year": "2018/2019",
+        "matches": [
+          {
+            "date": "2019-04-01",
+            "ticker": "FOO",
+            "quantity": "40",
+            "proceeds": "240",
+            "allowable_cost": "200",
+            "gain_or_loss": "40",
+            "rule": "Section104"
+          }
+        ],
+        "total_gain": "40",
+        "total_loss": "0",
+        "net_gain": "40",
+        "holdings": []
+      }
+    },
+    {
+      "name": "HMRC_Example_3",
+      "description": "Complex S104 pool example from HMRC HS284.",
+      "input": "2014-04-01 BUY Lobster 1000 4.00 150\n2017-09-01 BUY Lobster 500 4.10 80\n2018-05-01 SELL Lobster 700 4.80 100\n2019-02-01 SELL Lobster 400 5.20 105",
+      "expected_output": {
+        "tax_year": "2018/2019",
+        "matches": [
+          {
+            "date": "2018-05-01",
+            "ticker": "Lobster",
+            "quantity": "700",
+            "proceeds": "3260",
+            "allowable_cost": "2930.6666666666666666666666667",
+            "gain_or_loss": "329.3333333333333333333333333",
+            "rule": "Section104"
+          },
+          {
+            "date": "2019-02-01",
+            "ticker": "Lobster",
+            "quantity": "400",
+            "proceeds": "1975",
+            "allowable_cost": "1674.6666666666666666666666667",
+            "gain_or_loss": "300.3333333333333333333333333",
+            "rule": "Section104"
+          }
+        ],
+        "total_gain": "629.6666666666666666666666666",
+        "total_loss": "0",
+        "net_gain": "629.6666666666666666666666666",
+        "holdings": [
+            {
+                "ticker": "Lobster",
+                "quantity": "400",
+                "total_cost": "1674.6666666666666666666666666"
+            }
+        ]
+      }
+    }
+  ]
+}

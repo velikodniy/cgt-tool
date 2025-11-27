@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/cgt-core", "crates/cgt-cli"]
+resolver = "2"

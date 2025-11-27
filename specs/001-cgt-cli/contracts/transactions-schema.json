@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Transaction List",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "date": { "type": "string", "format": "date" },
+      "ticker": { "type": "string" },
+      "action": {
+        "type": "string",
+        "enum": ["BUY", "SELL", "DIVIDEND", "CAPRETURN", "SPLIT", "UNSPLIT"]
+      }
+    },
+    "required": ["date", "ticker", "action"],
+    "allOf": [
+      {
+        "if": { "properties": { "action": { "enum": ["BUY", "SELL"] } } },
+        "then": {
+          "properties": {
+            "amount": { "type": "string", "description": "Decimal string" },
+            "price": { "type": "string", "description": "Decimal string" },
+            "expenses": { "type": "string", "description": "Decimal string" }
+          },
+          "required": ["amount", "price", "expenses"]
+        }
+      },
+      {
+        "if": { "properties": { "action": { "const": "DIVIDEND" } } },
+        "then": {
+          "properties": {
+            "amount": { "type": "string", "description": "Net amount received" },
+            "tax_paid": { "type": "string", "description": "Tax already paid" }
+          },
+          "required": ["amount", "tax_paid"]
+        }
+      },
+      {
+        "if": { "properties": { "action": { "const": "CAPRETURN" } } },
+        "then": {
+          "properties": {
+            "amount": { "type": "string", "description": "Amount returned" },
+            "expenses": { "type": "string", "description": "Costs associated" }
+          },
+          "required": ["amount", "expenses"]
+        }
+      },
+      {
+        "if": { "properties": { "action": { "enum": ["SPLIT", "UNSPLIT"] } } },
+        "then": {
+          "properties": {
+            "ratio": { "type": "string", "description": "Split ratio (e.g. 2.0 for 2:1)" }
+          },
+          "required": ["ratio"]
+        }
+      }
+    ]
+  }
+}

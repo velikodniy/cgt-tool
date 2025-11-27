@@ -1,0 +1,37 @@
+transaction_list = { SOI ~ (transaction ~ NEWLINE?)* ~ EOI }
+transaction = { date ~ SEP ~ command }
+
+command = {
+    cmd_buy |
+    cmd_sell |
+    cmd_dividend |
+    cmd_capreturn |
+    cmd_split |
+    cmd_unsplit
+}
+
+cmd_buy = { "BUY" ~ SEP ~ buy_sell_args }
+cmd_sell = { "SELL" ~ SEP ~ buy_sell_args }
+cmd_dividend = { "DIVIDEND" ~ SEP ~ dividend_args }
+cmd_capreturn = { "CAPRETURN" ~ SEP ~ capreturn_args }
+cmd_split = { "SPLIT" ~ SEP ~ split_args }
+cmd_unsplit = { "UNSPLIT" ~ SEP ~ split_args }
+
+date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
+
+buy_sell_args = { ticker ~ SEP ~ amount ~ SEP ~ price ~ SEP ~ expenses }
+dividend_args = { ticker ~ SEP ~ amount ~ SEP ~ tax_paid }
+capreturn_args = { ticker ~ SEP ~ amount ~ SEP ~ expenses }
+split_args = { ticker ~ SEP ~ ratio }
+
+ticker = @{ ASCII_ALPHANUMERIC+ }
+amount = @{ decimal }
+price = @{ decimal }
+expenses = @{ decimal }
+tax_paid = @{ decimal }
+ratio = @{ decimal }
+
+decimal = { ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+
+SEP = _{ " " | "\t" }
+NEWLINE = _{ "\r\n" | "\n" | "\r" }
