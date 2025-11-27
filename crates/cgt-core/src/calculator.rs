@@ -20,37 +20,39 @@ pub fn calculate(
                 match (&mut current.operation, next.operation) {
                     (
                         Operation::Buy {
-                            amount: a1,
-                            price: p1,
-                            expenses: e1,
+                            amount: current_amount,
+                            price: current_price,
+                            expenses: current_expenses,
                         },
                         Operation::Buy {
-                            amount: a2,
-                            price: p2,
-                            expenses: e2,
+                            amount: next_amount,
+                            price: next_price,
+                            expenses: next_expenses,
                         },
                     ) => {
-                        let total_cost = (*a1 * *p1) + (a2 * p2);
-                        *a1 += a2;
-                        *p1 = total_cost / *a1;
-                        *e1 += e2;
+                        let total_cost =
+                            (*current_amount * *current_price) + (next_amount * next_price);
+                        *current_amount += next_amount;
+                        *current_price = total_cost / *current_amount;
+                        *current_expenses += next_expenses;
                     }
                     (
                         Operation::Sell {
-                            amount: a1,
-                            price: p1,
-                            expenses: e1,
+                            amount: current_amount,
+                            price: current_price,
+                            expenses: current_expenses,
                         },
                         Operation::Sell {
-                            amount: a2,
-                            price: p2,
-                            expenses: e2,
+                            amount: next_amount,
+                            price: next_price,
+                            expenses: next_expenses,
                         },
                     ) => {
-                        let total_proceeds = (*a1 * *p1) + (a2 * p2);
-                        *a1 += a2;
-                        *p1 = total_proceeds / *a1;
-                        *e1 += e2;
+                        let total_proceeds =
+                            (*current_amount * *current_price) + (next_amount * next_price);
+                        *current_amount += next_amount;
+                        *current_price = total_proceeds / *current_amount;
+                        *current_expenses += next_expenses;
                     }
                     (_, next_op) => {
                         merged.push(current);
@@ -80,56 +82,59 @@ pub fn calculate(
     let mut consumed = vec![Decimal::ZERO; transactions.len()];
 
     // Pass 1: Same Day
-    for i in 0..transactions.len() {
+    for sell_transaction_idx in 0..transactions.len() {
         if let Operation::Sell {
-            amount: sell_qty, ..
-        } = &transactions[i].operation
+            amount: sell_amount,
+            ..
+        } = &transactions[sell_transaction_idx].operation
         {
-            let mut remaining_sell = *sell_qty - consumed[i];
-            if remaining_sell <= Decimal::ZERO {
+            let mut remaining_sell_amount = *sell_amount - consumed[sell_transaction_idx];
+            if remaining_sell_amount <= Decimal::ZERO {
                 continue;
             }
 
-            for j in 0..transactions.len() {
-                if i == j {
+            for buy_transaction_idx in 0..transactions.len() {
+                if sell_transaction_idx == buy_transaction_idx {
                     continue;
                 }
-                if transactions[j].date != transactions[i].date {
+                if transactions[buy_transaction_idx].date != transactions[sell_transaction_idx].date
+                {
                     continue;
                 }
 
                 if let Operation::Buy {
-                    amount: buy_qty,
+                    amount: buy_amount,
                     price: buy_price,
                     expenses: buy_exp,
-                } = &transactions[j].operation
+                } = &transactions[buy_transaction_idx].operation
                 {
-                    let remaining_buy = *buy_qty - consumed[j];
-                    if remaining_buy <= Decimal::ZERO {
+                    let remaining_buy_amount = *buy_amount - consumed[buy_transaction_idx];
+                    if remaining_buy_amount <= Decimal::ZERO {
                         continue;
                     }
 
-                    let match_qty = remaining_sell.min(remaining_buy);
-                    let _unit_cost = *buy_price + (*buy_exp / *buy_qty);
-                    let cost_portion =
-                        (match_qty * *buy_price) + (*buy_exp * (match_qty / *buy_qty));
+                    let matched_quantity = remaining_sell_amount.min(remaining_buy_amount);
+                    let _unit_cost = *buy_price + (*buy_exp / *buy_amount);
+                    let cost_portion = (matched_quantity * *buy_price)
+                        + (*buy_exp * (matched_quantity / *buy_amount));
 
-                    consumed[i] += match_qty;
-                    consumed[j] += match_qty;
-                    remaining_sell -= match_qty;
+                    consumed[sell_transaction_idx] += matched_quantity;
+                    consumed[buy_transaction_idx] += matched_quantity;
+                    remaining_sell_amount -= matched_quantity;
 
-                    let proceeds = get_proceeds(&transactions[i], match_qty);
+                    let proceeds =
+                        get_proceeds(&transactions[sell_transaction_idx], matched_quantity);
                     matches.push(Match {
-                        date: transactions[i].date,
-                        ticker: transactions[i].ticker.clone(),
-                        quantity: match_qty,
+                        date: transactions[sell_transaction_idx].date,
+                        ticker: transactions[sell_transaction_idx].ticker.clone(),
+                        quantity: matched_quantity,
                         proceeds,
                         allowable_cost: cost_portion,
                         gain_or_loss: proceeds - cost_portion,
                         rule: MatchRule::SameDay,
                     });
 
-                    if remaining_sell <= Decimal::ZERO {
+                    if remaining_sell_amount <= Decimal::ZERO {
                         break;
                     }
                 }
@@ -138,70 +143,80 @@ pub fn calculate(
     }
 
     // Pass 2: Bed & Breakfast
-    for i in 0..transactions.len() {
+    for sell_transaction_idx in 0..transactions.len() {
         if let Operation::Sell {
-            amount: sell_qty, ..
-        } = &transactions[i].operation
+            amount: sell_amount,
+            ..
+        } = &transactions[sell_transaction_idx].operation
         {
-            let mut remaining_sell = *sell_qty - consumed[i];
-            if remaining_sell <= Decimal::ZERO {
+            let mut remaining_sell_amount = *sell_amount - consumed[sell_transaction_idx];
+            if remaining_sell_amount <= Decimal::ZERO {
                 continue;
             }
 
-            let mut ratio = Decimal::ONE;
+            let mut cumulative_ratio_effect = Decimal::ONE;
 
-            for j in (i + 1)..transactions.len() {
-                let days_diff = (transactions[j].date - transactions[i].date).num_days();
+            for buy_transaction_idx in (sell_transaction_idx + 1)..transactions.len() {
+                let days_diff = (transactions[buy_transaction_idx].date
+                    - transactions[sell_transaction_idx].date)
+                    .num_days();
                 if days_diff > 30 {
                     break;
                 }
 
-                match &transactions[j].operation {
-                    Operation::Split { ratio: r } => ratio *= r,
-                    Operation::Unsplit { ratio: r } => ratio /= r,
+                match &transactions[buy_transaction_idx].operation {
+                    Operation::Split { ratio: split_ratio } => {
+                        cumulative_ratio_effect *= split_ratio
+                    }
+                    Operation::Unsplit {
+                        ratio: unsplit_ratio,
+                    } => cumulative_ratio_effect /= unsplit_ratio,
                     Operation::Buy {
-                        amount: buy_qty,
+                        amount: buy_amount,
                         price: buy_price,
                         expenses: buy_exp,
                     } => {
-                        // Buy is strictly future (B&B). If same day, handled by Pass 1.
                         if days_diff <= 0 {
                             continue;
                         }
 
-                        // buy_qty is in "j" units. Convert to "i" units: buy_qty / ratio.
-                        let available_buy_j = *buy_qty - consumed[j];
-                        if available_buy_j <= Decimal::ZERO {
+                        let available_buy_amount_at_buy_time =
+                            *buy_amount - consumed[buy_transaction_idx];
+                        if available_buy_amount_at_buy_time <= Decimal::ZERO {
                             continue;
                         }
 
-                        // Available buy in "i" units
-                        let available_buy_i = available_buy_j / ratio;
+                        let available_buy_amount_at_sell_time =
+                            available_buy_amount_at_buy_time / cumulative_ratio_effect;
 
-                        let match_qty_i = remaining_sell.min(available_buy_i);
+                        let matched_quantity_at_sell_time =
+                            remaining_sell_amount.min(available_buy_amount_at_sell_time);
 
-                        // Convert match back to "j" units for consumption/cost
-                        let match_qty_j = match_qty_i * ratio;
+                        let matched_quantity_at_buy_time =
+                            matched_quantity_at_sell_time * cumulative_ratio_effect;
 
-                        let cost_portion =
-                            (match_qty_j * *buy_price) + (*buy_exp * (match_qty_j / *buy_qty));
+                        let cost_portion = (matched_quantity_at_buy_time * *buy_price)
+                            + (*buy_exp * (matched_quantity_at_buy_time / *buy_amount));
 
-                        consumed[i] += match_qty_i;
-                        consumed[j] += match_qty_j;
-                        remaining_sell -= match_qty_i;
+                        consumed[sell_transaction_idx] += matched_quantity_at_sell_time;
+                        consumed[buy_transaction_idx] += matched_quantity_at_buy_time;
+                        remaining_sell_amount -= matched_quantity_at_sell_time;
 
-                        let proceeds = get_proceeds(&transactions[i], match_qty_i);
+                        let proceeds = get_proceeds(
+                            &transactions[sell_transaction_idx],
+                            matched_quantity_at_sell_time,
+                        );
                         matches.push(Match {
-                            date: transactions[i].date,
-                            ticker: transactions[i].ticker.clone(),
-                            quantity: match_qty_i,
+                            date: transactions[sell_transaction_idx].date,
+                            ticker: transactions[sell_transaction_idx].ticker.clone(),
+                            quantity: matched_quantity_at_sell_time,
                             proceeds,
                             allowable_cost: cost_portion,
                             gain_or_loss: proceeds - cost_portion,
                             rule: MatchRule::BedAndBreakfast,
                         });
 
-                        if remaining_sell <= Decimal::ZERO {
+                        if remaining_sell_amount <= Decimal::ZERO {
                             break;
                         }
                     }
@@ -212,42 +227,46 @@ pub fn calculate(
     }
 
     // Pass 3: Section 104
-    for i in 0..transactions.len() {
-        let t = &transactions[i];
-        match &t.operation {
+    for transaction_idx in 0..transactions.len() {
+        let current_transaction = &transactions[transaction_idx];
+        match &current_transaction.operation {
             Operation::Buy {
                 amount,
                 price,
                 expenses,
             } => {
-                let remaining = *amount - consumed[i];
-                if remaining > Decimal::ZERO {
-                    pool.quantity += remaining;
-                    let cost_add = (remaining * *price) + (*expenses * (remaining / *amount));
+                let remaining_amount = *amount - consumed[transaction_idx];
+                if remaining_amount > Decimal::ZERO {
+                    pool.quantity += remaining_amount;
+                    let cost_add =
+                        (remaining_amount * *price) + (*expenses * (remaining_amount / *amount));
                     pool.total_cost += cost_add;
                 }
             }
             Operation::Sell { amount, .. } => {
-                let remaining = *amount - consumed[i];
-                if remaining > Decimal::ZERO {
+                let remaining_amount = *amount - consumed[transaction_idx];
+                if remaining_amount > Decimal::ZERO {
                     if pool.quantity <= Decimal::ZERO {
                         return Err(CgtError::InvalidTransaction(format!(
                             "Sell of {} {} on {} exceeds holding (Pool: {})",
-                            remaining, t.ticker, t.date, pool.quantity
+                            remaining_amount,
+                            current_transaction.ticker,
+                            current_transaction.date,
+                            pool.quantity
                         )));
                     }
 
-                    let match_qty = remaining;
-                    let cost_portion = pool.total_cost * (match_qty / pool.quantity);
+                    let matched_quantity = remaining_amount;
+                    let cost_portion = pool.total_cost * (matched_quantity / pool.quantity);
 
-                    pool.quantity -= match_qty;
+                    pool.quantity -= matched_quantity;
                     pool.total_cost -= cost_portion;
 
-                    let proceeds = get_proceeds(t, match_qty);
+                    let proceeds = get_proceeds(current_transaction, matched_quantity);
                     matches.push(Match {
-                        date: t.date,
-                        ticker: t.ticker.clone(),
-                        quantity: match_qty,
+                        date: current_transaction.date,
+                        ticker: current_transaction.ticker.clone(),
+                        quantity: matched_quantity,
                         proceeds,
                         allowable_cost: cost_portion,
                         gain_or_loss: proceeds - cost_portion,
@@ -269,7 +288,7 @@ pub fn calculate(
         }
 
         if pool.ticker == "GLOBAL" {
-            pool.ticker = t.ticker.clone();
+            pool.ticker = current_transaction.ticker.clone();
         }
     }
 
@@ -312,12 +331,12 @@ pub fn calculate(
     })
 }
 
-fn get_proceeds(t: &Transaction, qty: Decimal) -> Decimal {
+fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {
     if let Operation::Sell {
         amount,
         price,
         expenses,
-    } = &t.operation
+    } = &current_transaction.operation
     {
         let gross = qty * *price;
         let exp_portion = *expenses * (qty / *amount);

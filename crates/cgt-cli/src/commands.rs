@@ -19,7 +19,7 @@ pub enum Commands {
         file: PathBuf,
 
         /// Tax year start (e.g. 2018 for 2018/2019)
-        #[arg(long, default_value = "2018")]
+        #[arg(long)]
         year: i32,
     },
 }
