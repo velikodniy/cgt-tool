@@ -76,6 +76,7 @@ ______________________________________________________________________
 - [ ] T026 Re-convert original `cgtcalc` output data to `.json` format, using precise calculations.
 - [ ] T027 Run `cargo test` to verify every single test case and make sure that every output in tests is correct.
 - [ ] T028 Add acceptance test for new DSL (`DIVIDEND TAX`, `CAPRETURN EXPENSES`, `SPLIT RATIO`).
+- [ ] T029 Refactor `crates/cgt-core/tests/matching_tests.rs` to display every single test file as a separate test case.
 
 **Checkpoint**: Test suite passes, and outputs are verified against original `cgtcalc` data.
 
@@ -85,8 +86,8 @@ ______________________________________________________________________
 
 **Purpose**: Documentation, performance, and final checks.
 
-- [ ] T029 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
-- [ ] T030 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
+- [ ] T030 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
+- [ ] T031 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
 
 ______________________________________________________________________
 
