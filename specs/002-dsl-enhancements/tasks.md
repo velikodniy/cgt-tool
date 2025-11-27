@@ -48,14 +48,17 @@ ______________________________________________________________________
 
 - [ ] T012 Update `crates/cgt-core/src/parser.pest` for `DIVIDEND` with `TAX` keyword.
 - [ ] T013 Update `crates/cgt-core/src/parser.rs` to parse `DIVIDEND` with `TAX` keyword.
-- [ ] T014 Update `crates/cgt-core/src/parser.pest` for `CAPRETURN` with `EXPENSES` keyword.
-- [ ] T015 Update `crates/cgt-core/src/parser.rs` to parse `CAPRETURN` with `EXPENSES` keyword.
-- [ ] T016 Update `crates/cgt-core/src/parser.pest` for `SPLIT/UNSPLIT` with `RATIO` keyword.
-- [ ] T017 Update `crates/cgt-core/src/parser.rs` to parse `SPLIT/UNSPLIT` with `RATIO` keyword.
-- [ ] T018 Update `crates/cgt-core/src/parser.pest` for flexible whitespace and comments.
-- [ ] T019 Update all `tests/data/*.cgt` files to the new DSL syntax.
-- [ ] T020 Update `specs/002-dsl-enhancements/quickstart.md` with new DSL examples.
-- [ ] T021 Update `README.md` with new DSL examples.
+- [ ] T014 Update `crates/cgt-core/src/models.rs` `Operation::Dividend` to include `tax_keyword: String`.
+- [ ] T015 Update `crates/cgt-core/src/parser.pest` for `CAPRETURN` with `EXPENSES` keyword.
+- [ ] T016 Update `crates/cgt-core/src/parser.rs` to parse `CAPRETURN` with `EXPENSES` keyword.
+- [ ] T017 Update `crates/cgt-core/src/models.rs` `Operation::CapReturn` to include `expenses_keyword: String`.
+- [ ] T018 Update `crates/cgt-core/src/parser.pest` for `SPLIT/UNSPLIT` with `RATIO` keyword.
+- [ ] T019 Update `crates/cgt-core/src/parser.rs` to parse `SPLIT/UNSPLIT` with `RATIO` keyword.
+- [ ] T020 Update `crates/cgt-core/src/models.rs` `Operation::Split` and `Operation::Unsplit` to include `split_unsplit_keyword: String`.
+- [ ] T021 Update `crates/cgt-core/src/parser.pest` for flexible whitespace and comments.
+- [ ] T022 Update all `tests/data/*.cgt` files to the new DSL syntax.
+- [ ] T023 Update `specs/002-dsl-enhancements/quickstart.md` with new DSL examples.
+- [ ] T024 Update `README.md` with new DSL examples.
 
 **Checkpoint**: CLI can parse new DSL syntax and produce expected internal representation.
 
@@ -69,14 +72,14 @@ ______________________________________________________________________
 
 ### Implementation for User Story 2
 
-- [ ] T022 Ensure all internal transaction file references consistently use the `.cgt` extension.
-- [ ] T023 Sort transactions within all `tests/data/*.cgt` files chronologically.
-- [ ] T024 Download original `cgtcalc` test data (inputs/outputs) to a temporary location.
-- [ ] T025 Re-convert original `cgtcalc` input data to new `.cgt` format, ensuring chronological order.
-- [ ] T026 Re-convert original `cgtcalc` output data to `.json` format, using precise calculations.
-- [ ] T027 Run `cargo test` to verify every single test case and make sure that every output in tests is correct.
-- [ ] T028 Add acceptance test for new DSL (`DIVIDEND TAX`, `CAPRETURN EXPENSES`, `SPLIT RATIO`).
-- [ ] T029 Refactor `crates/cgt-core/tests/matching_tests.rs` to display every single test file as a separate test case.
+- [ ] T025 Ensure all internal transaction file references consistently use the `.cgt` extension.
+- [ ] T026 Sort transactions within all `tests/data/*.cgt` files chronologically.
+- [ ] T027 Download original `cgtcalc` test data (inputs/outputs) to a temporary location.
+- [ ] T028 Re-convert original `cgtcalc` input data to new `.cgt` format, ensuring chronological order.
+- [ ] T029 Re-convert original `cgtcalc` output data to `.json` format, using precise calculations.
+- [ ] T030 Run `cargo test` to verify every single test case and make sure that every output in tests is correct.
+- [ ] T031 Add acceptance test for new DSL (`DIVIDEND TAX`, `CAPRETURN EXPENSES`, `SPLIT RATIO`).
+- [ ] T032 Refactor `crates/cgt-core/tests/matching_tests.rs` to display every single test file as a separate test case.
 
 **Checkpoint**: Test suite passes, and outputs are verified against original `cgtcalc` data.
 
@@ -86,8 +89,8 @@ ______________________________________________________________________
 
 **Purpose**: Documentation, performance, and final checks.
 
-- [ ] T030 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
-- [ ] T031 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
+- [ ] T033 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
+- [ ] T034 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
 
 ______________________________________________________________________
 
