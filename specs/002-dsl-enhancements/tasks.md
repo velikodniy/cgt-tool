@@ -56,10 +56,10 @@ ______________________________________________________________________
 - [x] T019 Update `crates/cgt-core/src/models.rs` `Operation::Split` and `Operation::Unsplit` to include `split_unsplit_keyword: String`. (Clarified: Keyword is consumed by parser, not stored in model.)
 - [x] T020 Update `crates/cgt-core/src/parser.rs` to parse `SPLIT/UNSPLIT` with `RATIO` keyword. (No code changes required due to pest's implicit consumption of literals.)
 - [x] T021 Update `crates/cgt-core/src/parser.pest` for flexible whitespace and comments. (Previously completed.)
-- [ ] T022 Update all `tests/data/*.cgt` files to the new DSL syntax. (Requires a script to automate transformations.)
-- [ ] T022.1 Create a Python script to automate the transformation of `.cgt` files to the new DSL syntax.
-- [ ] T023 Update `specs/002-dsl-enhancements/quickstart.md` with new DSL examples.
-- [ ] T024 Update `README.md` with new DSL examples.
+- [x] T022 Update all `tests/data/*.cgt` files to the new DSL syntax. (Requires a script to automate transformations.)
+- [x] T022.1 Create a Python script to automate the transformation of `.cgt` files to the new DSL syntax.
+- [x] T023 Update `specs/002-dsl-enhancements/quickstart.md` with new DSL examples.
+- [x] T024 Update `README.md` with new DSL examples.
 
 **Checkpoint**: CLI can parse new DSL syntax and produce expected internal representation.
 

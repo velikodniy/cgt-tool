@@ -28,6 +28,7 @@ tests/        # Integration tests
 
 ## Recent Changes
 
+- 002-dsl-enhancements: Added Rust (Stable)
 - 001-cgt-cli: Added Rust (Stable)
 
 <!-- MANUAL ADDITIONS START -->

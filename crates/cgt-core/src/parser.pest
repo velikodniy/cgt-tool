@@ -21,8 +21,8 @@ cmd_unsplit = { "UNSPLIT" ~ split_args }
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
 buy_sell_args = { ticker ~ amount ~ "@" ~ price ~ ("EXPENSES" ~ expenses)? }
-dividend_args = { ticker ~ amount ~ tax_paid }
-capreturn_args = { ticker ~ amount ~ expenses }
+dividend_args = { ticker ~ amount ~ "TAX" ~ tax_paid }
+capreturn_args = { ticker ~ amount ~ "EXPENSES" ~ expenses }
 split_args = { ticker ~ "RATIO" ~ ratio }
 
 ticker = @{ ASCII_ALPHANUMERIC+ }
