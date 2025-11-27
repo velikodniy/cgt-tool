@@ -67,13 +67,13 @@ description: Task list for 002-dsl-enhancements
 
 ### Implementation for User Story 2
 
-- [ ] T025 Ensure all internal transaction file references consistently use the `.cgt` extension.
-- [ ] T026 Sort transactions within all `tests/data/*.cgt` files chronologically.
-- [ ] T027 Download original `cgtcalc` test data (inputs/outputs) to a temporary location.
-- [ ] T028 Re-convert original `cgtcalc` input data to new `.cgt` format, ensuring chronological order.
-- [ ] T029 Re-convert original `cgtcalc` output data to `.json` format, using precise calculations.
-- [ ] T030 Run `cargo test` to verify every single test case and make sure that every output in tests is correct.
-- [ ] T031 Add acceptance test for new DSL (`DIVIDEND TAX`, `CAPRETURN EXPENSES`, `SPLIT RATIO`).
+- [x] T025 Ensure all internal transaction file references consistently use the `.cgt` extension.
+- [x] T026 Sort transactions within all `tests/data/*.cgt` files chronologically.
+- [x] T027 Download original `cgtcalc` test data (inputs/outputs) to a temporary location.
+- [x] T028 Re-convert original `cgtcalc` input data to new `.cgt` format, ensuring chronological order.
+- [x] T029 Re-convert original `cgtcalc` output data to `.json` format, using precise calculations.
+- [x] T030 Run `cargo test` to verify every single test case and make sure that every output in tests is correct.
+- [x] T031 Add acceptance test for new DSL (`DIVIDEND TAX`, `CAPRETURN EXPENSES`, `SPLIT RATIO`).
 - [ ] T032 Refactor `crates/cgt-core/tests/matching_tests.rs` to display every single test file as a separate test case.
 
 **Checkpoint**: Test suite passes, and outputs are verified against original `cgtcalc` data.
@@ -82,8 +82,8 @@ description: Task list for 002-dsl-enhancements
 
 **Purpose**: Documentation, performance, and final checks.
 
-- [ ] T033 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
-- [ ] T034 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
+- [x] T033 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
+- [x] T034 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
 
 ## Dependencies & Execution Order
 
