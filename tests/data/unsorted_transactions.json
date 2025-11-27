@@ -1,0 +1,24 @@
+{
+  "tax_year": 2023,
+  "matches": [
+    {
+      "date": "2023-01-03",
+      "ticker": "AAPL",
+      "quantity": "10",
+      "proceeds": "1100",
+      "allowable_cost": "933.3333333333333333333333333",
+      "gain_or_loss": "166.6666666666666666666666667",
+      "rule": "Section104"
+    }
+  ],
+  "total_gain": "166.6666666666666666666666667",
+  "total_loss": "0",
+  "net_gain": "166.6666666666666666666666667",
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "quantity": "5",
+      "total_cost": "466.6666666666666666666666667"
+    }
+  ]
+}
