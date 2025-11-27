@@ -1,4 +1,6 @@
-## description: "Task list for 001-cgt-cli"
+---
+description: Task list for 001-cgt-cli
+---
 
 # Tasks: Capital Gains Tax (CGT) CLI Tool
 

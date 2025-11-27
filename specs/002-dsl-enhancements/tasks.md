@@ -1,4 +1,6 @@
-## description: "Task list for 002-dsl-enhancements"
+---
+description: Task list for 002-dsl-enhancements
+---
 
 # Tasks: DSL Enhancements
 
