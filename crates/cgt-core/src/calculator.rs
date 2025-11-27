@@ -1,5 +1,5 @@
-use crate::models::*;
 use crate::error::CgtError;
+use crate::models::*;
 use rust_decimal::Decimal;
 // use rust_decimal::prelude::Zero; // Not used currently
 // use std::cmp::Ordering; // Not used currently

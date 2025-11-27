@@ -2,7 +2,7 @@ use anyhow::Result;
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
-use clap::{Parser}; // Subcommand is in commands.rs
+use clap::Parser; // Subcommand is in commands.rs
 mod commands; // Declare the commands module
 use commands::Commands; // Import the Commands enum
 use schemars::schema_for;

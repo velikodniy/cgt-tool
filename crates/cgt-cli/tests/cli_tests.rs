@@ -15,7 +15,8 @@ fn test_cli_report_fails_without_file() {
 #[test]
 fn test_cli_parse_success() {
     let mut cmd = cargo_bin_cmd!("cgt-cli");
-    cmd.arg("parse").arg("../../tests/data/Simple.cgt")
+    cmd.arg("parse")
+        .arg("../../tests/data/Simple.cgt")
         .assert()
         .success();
 }

@@ -23,3 +23,10 @@ repos:
         types: [rust]
         always_run: true
         pass_filenames: false
+      - id: rustfmt
+        name: cargo fmt
+        entry: cargo fmt --all --
+        language: system
+        types: [rust]
+        always_run: true
+        pass_filenames: false
