@@ -9,7 +9,7 @@
 
 ### User Story 1 - Enhanced DSL Readability (Priority: P1)
 
-The user wants to interact with the CLI using a more natural and readable Domain Specific Language (DSL) by incorporating descriptive keywords like `TAX`, `EXPENSES`, and `SPLIT` directly into transaction commands.
+The user wants to interact with the CLI using a more natural and readable Domain Specific Language (DSL) by incorporating descriptive keywords like `TAX`, `EXPENSES`, and `RATIO` directly into transaction commands.
 
 **Why this priority**: Improves user experience and reduces potential for errors due to cryptic syntax.
 
@@ -19,7 +19,7 @@ The user wants to interact with the CLI using a more natural and readable Domain
 
 1. **Given** a DSL file containing a `DIVIDEND` command with the `TAX` keyword, **When** the file is parsed, **Then** the system correctly extracts the tax paid amount.
 2. **Given** a DSL file containing a `CAPRETURN` command with the `EXPENSES` keyword, **When** the file is parsed, **Then** the system correctly extracts the expenses.
-3. **Given** a DSL file containing a `SPLIT` command with the `SPLIT` keyword, **When** the file is parsed, **Then** the system correctly interprets the split ratio.
+3. **Given** a DSL file containing a `SPLIT` command with the `RATIO` keyword, **When** the file is parsed, **Then** the system correctly interprets the split ratio.
 
 ______________________________________________________________________
 
@@ -40,7 +40,7 @@ ______________________________________________________________________
 
 ### Edge Cases
 
-- What happens if a required keyword (e.g., `TAX` for DIVIDEND, `EXPENSES` for CAPRETURN) is missing in the new DSL?
+- What happens if a required keyword (e.g., `TAX` for DIVIDEND, `EXPENSES` for CAPRETURN, `RATIO` for SPLIT) is missing in the new DSL?
 - How does the system handle an unknown keyword being introduced into a command?
 
 ## Requirements *(mandatory)*
@@ -49,7 +49,7 @@ ______________________________________________________________________
 
 - **FR-001**: System MUST update the DSL grammar to incorporate the `TAX` keyword for `DIVIDEND` commands: `YYYY-MM-DD DIVIDEND TICKER AMOUNT TAX TAX_AMOUNT`.
 - **FR-002**: System MUST update the DSL grammar to incorporate the `EXPENSES` keyword for `CAPRETURN` commands: `YYYY-MM-DD CAPRETURN TICKER AMOUNT EXPENSES EXPENSE_AMOUNT`.
-- **FR-003**: System MUST update the DSL grammar to incorporate the `SPLIT` keyword for `SPLIT` and `UNSPLIT` commands: `YYYY-MM-DD SPLIT FOO SPLIT RATIO` or `YYYY-MM-DD UNSPLIT FOO UNSPLIT RATIO`.
+- **FR-003**: System MUST update the DSL grammar to incorporate the `RATIO` keyword for `SPLIT` and `UNSPLIT` commands: `YYYY-MM-DD SPLIT FOO RATIO RATIO_VALUE` or `YYYY-MM-DD UNSPLIT FOO RATIO RATIO_VALUE`.
 - **FR-004**: System MUST modify the parser (`parser.pest`, `parser.rs`) to correctly interpret these new DSL keywords.
 - **FR-005**: System MUST ensure all internal transaction file references consistently use the `.cgt` extension.
 - **FR-006**: System MUST sort transactions within all test `.cgt` files chronologically (earliest to latest date).
