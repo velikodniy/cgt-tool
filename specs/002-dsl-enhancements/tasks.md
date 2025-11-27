@@ -47,14 +47,14 @@ ______________________________________________________________________
 ### Implementation for User Story 1
 
 - [ ] T012 Update `crates/cgt-core/src/parser.pest` for `DIVIDEND` with `TAX` keyword.
-- [ ] T013 Update `crates/cgt-core/src/parser.rs` to parse `DIVIDEND` with `TAX` keyword.
-- [ ] T014 Update `crates/cgt-core/src/models.rs` `Operation::Dividend` to include `tax_keyword: String`.
+- [ ] T013 Update `crates/cgt-core/src/models.rs` `Operation::Dividend` to include `tax_keyword: String`.
+- [ ] T014 Update `crates/cgt-core/src/parser.rs` to parse `DIVIDEND` with `TAX` keyword.
 - [ ] T015 Update `crates/cgt-core/src/parser.pest` for `CAPRETURN` with `EXPENSES` keyword.
-- [ ] T016 Update `crates/cgt-core/src/parser.rs` to parse `CAPRETURN` with `EXPENSES` keyword.
-- [ ] T017 Update `crates/cgt-core/src/models.rs` `Operation::CapReturn` to include `expenses_keyword: String`.
+- [ ] T016 Update `crates/cgt-core/src/models.rs` `Operation::CapReturn` to include `expenses_keyword: String`.
+- [ ] T017 Update `crates/cgt-core/src/parser.rs` to parse `CAPRETURN` with `EXPENSES` keyword.
 - [ ] T018 Update `crates/cgt-core/src/parser.pest` for `SPLIT/UNSPLIT` with `RATIO` keyword.
-- [ ] T019 Update `crates/cgt-core/src/parser.rs` to parse `SPLIT/UNSPLIT` with `RATIO` keyword.
-- [ ] T020 Update `crates/cgt-core/src/models.rs` `Operation::Split` and `Operation::Unsplit` to include `split_unsplit_keyword: String`.
+- [ ] T019 Update `crates/cgt-core/src/models.rs` `Operation::Split` and `Operation::Unsplit` to include `split_unsplit_keyword: String`.
+- [ ] T020 Update `crates/cgt-core/src/parser.rs` to parse `SPLIT/UNSPLIT` with `RATIO` keyword.
 - [ ] T021 Update `crates/cgt-core/src/parser.pest` for flexible whitespace and comments.
 - [ ] T022 Update all `tests/data/*.cgt` files to the new DSL syntax.
 - [ ] T023 Update `specs/002-dsl-enhancements/quickstart.md` with new DSL examples.
