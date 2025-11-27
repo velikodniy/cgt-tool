@@ -1,5 +1,6 @@
+// This is the main parser entry point
 transaction_list = { SOI ~ (transaction ~ NEWLINE?)* ~ EOI }
-transaction = { date ~ SEP ~ command }
+transaction = { date ~ command }
 
 command = {
     cmd_buy |
@@ -10,19 +11,19 @@ command = {
     cmd_unsplit
 }
 
-cmd_buy = { "BUY" ~ SEP ~ buy_sell_args }
-cmd_sell = { "SELL" ~ SEP ~ buy_sell_args }
-cmd_dividend = { "DIVIDEND" ~ SEP ~ dividend_args }
-cmd_capreturn = { "CAPRETURN" ~ SEP ~ capreturn_args }
-cmd_split = { "SPLIT" ~ SEP ~ split_args }
-cmd_unsplit = { "UNSPLIT" ~ SEP ~ split_args }
+cmd_buy = { "BUY" ~ buy_sell_args }
+cmd_sell = { "SELL" ~ buy_sell_args }
+cmd_dividend = { "DIVIDEND" ~ dividend_args }
+cmd_capreturn = { "CAPRETURN" ~ capreturn_args }
+cmd_split = { "SPLIT" ~ split_args }
+cmd_unsplit = { "UNSPLIT" ~ split_args }
 
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
-buy_sell_args = { ticker ~ SEP ~ amount ~ SEP ~ "@" ~ SEP ~ price ~ (SEP ~ "EXPENSES" ~ SEP ~ expenses)? }
-dividend_args = { ticker ~ SEP ~ amount ~ SEP ~ tax_paid }
-capreturn_args = { ticker ~ SEP ~ amount ~ SEP ~ expenses }
-split_args = { ticker ~ SEP ~ ratio }
+buy_sell_args = { ticker ~ amount ~ "@" ~ price ~ ("EXPENSES" ~ expenses)? }
+dividend_args = { ticker ~ amount ~ tax_paid }
+capreturn_args = { ticker ~ amount ~ expenses }
+split_args = { ticker ~ ratio }
 
 ticker = @{ ASCII_ALPHANUMERIC+ }
 amount = @{ decimal }
@@ -33,5 +34,7 @@ ratio = @{ decimal }
 
 decimal = { ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 
-SEP = _{ " " | "\t" }
+// Define WHITESPACE rule for implicit consumption between rules
+WHITESPACE = _{ (" " | "\t" | NEWLINE)+ | COMMENT }
+COMMENT = { "#" ~ (!NEWLINE ~ ANY)* } // COMMENT consumes up to (but not including) NEWLINE
 NEWLINE = _{ "\r\n" | "\n" | "\r" }
