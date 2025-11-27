@@ -2,39 +2,18 @@ use anyhow::Result;
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
-use clap::{Parser, Subcommand};
+use clap::{Parser}; // Subcommand is in commands.rs
+mod commands; // Declare the commands module
+use commands::Commands; // Import the Commands enum
 use schemars::schema_for;
 use std::fs;
-use std::path::PathBuf;
+// use std::path::PathBuf; // Removed as it's only used in commands.rs
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Parse a transaction file and output JSON
-    Parse {
-        /// Input file path
-        #[arg(required_unless_present = "schema")]
-        file: Option<PathBuf>,
-
-        /// Output JSON schema
-        #[arg(long)]
-        schema: bool,
-    },
-    /// Generate tax report
-    Report {
-        /// Input file path
-        file: PathBuf,
-
-        /// Tax year start (e.g. 2018 for 2018/2019)
-        #[arg(long, default_value = "2018")]
-        year: i32,
-    },
 }
 
 fn main() -> Result<()> {
