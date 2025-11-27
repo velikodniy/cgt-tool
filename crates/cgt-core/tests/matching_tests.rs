@@ -4,7 +4,7 @@ use cgt_core::parser::parse_file;
 use rust_decimal::Decimal;
 use std::fs;
 use std::path::PathBuf;
-use std::str::FromStr;
+// use std::str::FromStr; // Not needed anymore
 
 fn get_test_data_dir() -> PathBuf {
     let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -45,7 +45,7 @@ fn test_data_driven_matching() {
             let expected_report: TaxReport =
                 serde_json::from_str(&output_content).expect("Failed to parse expected output");
 
-                        let year_start = i32::from_str(expected_report.tax_year.split('/').next().unwrap()).unwrap();
+            let year_start = expected_report.tax_year;
 
             let actual_report = calculate(transactions, year_start).expect("Failed to calculate");
 

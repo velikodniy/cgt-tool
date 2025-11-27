@@ -303,7 +303,7 @@ pub fn calculate(
         .sum();
 
     Ok(TaxReport {
-        tax_year: format!("{}/{}", tax_year_start, tax_year_start + 1),
+        tax_year: tax_year_start,
         matches: year_matches,
         total_gain,
         total_loss,

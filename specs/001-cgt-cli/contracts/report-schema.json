@@ -2,10 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Tax Report",
   "type": "object",
-  "properties": {
-    "tax_year": { "type": "string" },
-    "total_gain": { "type": "string", "description": "Decimal string" },
-    "total_loss": { "type": "string", "description": "Decimal string" },
+      "properties": {
+        "tax_year": { "type": "integer" },
+        "total_gain": { "type": "string", "description": "Decimal string" },    "total_loss": { "type": "string", "description": "Decimal string" },
     "net_gain": { "type": "string", "description": "Decimal string" },
     "matches": {
       "type": "array",

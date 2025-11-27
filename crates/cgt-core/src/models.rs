@@ -68,7 +68,7 @@ pub enum MatchRule {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct TaxReport {
-    pub tax_year: String,
+    pub tax_year: i32,
     pub matches: Vec<Match>,
     pub total_gain: Decimal,
     pub total_loss: Decimal,
