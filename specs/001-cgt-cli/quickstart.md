@@ -38,11 +38,12 @@ The binary is located at `target/release/cgt-cli`.
 
 ## Input File Format (DSL)
 
-One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
+One transaction per line. The parser supports flexible whitespace between elements and comments starting with `#`. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
 
 ```text
+# Example transactions
 2025-04-01 BUY AAPL 100 @ 150.00 EXPENSES 5.00
-2025-04-01 BUY AAPL 50 @ 155.00
+2025-04-01 BUY AAPL 50 @ 155.00 # Expenses are optional
 2025-05-01 SELL AAPL 50 @ 160.00 EXPENSES 5.00
 ```
 
