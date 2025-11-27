@@ -14,3 +14,12 @@ repos:
       additional_dependencies:
       - mdformat-gfm
       - mdformat-rustfmt
+  - repo: local # For local Rust commands
+    hooks:
+      - id: clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        types: [rust]
+        always_run: true
+        pass_filenames: false

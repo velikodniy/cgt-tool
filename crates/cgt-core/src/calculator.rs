@@ -1,8 +1,8 @@
-use crate::error::CgtError;
 use crate::models::*;
+use crate::error::CgtError;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::Zero;
-use std::cmp::Ordering;
+// use rust_decimal::prelude::Zero; // Not used currently
+// use std::cmp::Ordering; // Not used currently
 
 pub fn calculate(
     mut transactions: Vec<Transaction>,
@@ -110,7 +110,7 @@ pub fn calculate(
                     }
 
                     let match_qty = remaining_sell.min(remaining_buy);
-                    let unit_cost = *buy_price + (*buy_exp / *buy_qty);
+                    let _unit_cost = *buy_price + (*buy_exp / *buy_qty);
                     let cost_portion =
                         (match_qty * *buy_price) + (*buy_exp * (match_qty / *buy_qty));
 

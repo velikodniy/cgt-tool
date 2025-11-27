@@ -45,8 +45,7 @@ fn test_data_driven_matching() {
             let expected_report: TaxReport =
                 serde_json::from_str(&output_content).expect("Failed to parse expected output");
 
-            let year_start =
-                i32::from_str(&expected_report.tax_year.split('/').next().unwrap()).unwrap();
+                        let year_start = i32::from_str(expected_report.tax_year.split('/').next().unwrap()).unwrap();
 
             let actual_report = calculate(transactions, year_start).expect("Failed to calculate");
 
