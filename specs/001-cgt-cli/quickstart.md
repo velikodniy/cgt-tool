@@ -23,7 +23,7 @@ The binary is located at `target/release/cgt-cli`.
 
 ```bash
 # Output parsed transactions as JSON
-./target/release/cgt-cli parse transactions.txt
+./target/release/cgt-cli parse transactions.cgt
 
 # Generate JSON Schema
 ./target/release/cgt-cli parse --schema
@@ -33,7 +33,7 @@ The binary is located at `target/release/cgt-cli`.
 
 ```bash
 # Generate full tax report
-./target/release/cgt-cli report transactions.txt > report.json
+./target/release/cgt-cli report transactions.cgt > report.json
 ```
 
 ## Input File Format (DSL)

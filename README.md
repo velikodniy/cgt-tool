@@ -15,7 +15,7 @@ cargo install --path crates/cgt-cli
 Verify your input file is parsed correctly:
 
 ```bash
-cgt-cli parse transactions.txt
+cgt-cli parse transactions.cgt
 ```
 
 Output (JSON):
@@ -38,7 +38,7 @@ Output (JSON):
 Calculate gains and losses for a specific tax year:
 
 ```bash
-cgt-cli report transactions.txt --year 2024
+cgt-cli report transactions.cgt --year 2024
 ```
 
 ## Input Format
