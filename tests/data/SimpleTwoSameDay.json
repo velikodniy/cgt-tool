@@ -5,23 +5,23 @@
       "date": "2018-08-28",
       "ticker": "BAR",
       "quantity": "10",
-      "proceeds": "34.2020",
-      "allowable_cost": "54.0650",
-      "gain_or_loss": "-19.8630",
+      "proceeds": "34.202000000000005",
+      "allowable_cost": "54.065000000000005",
+      "gain_or_loss": "-20",
       "rule": "SameDay"
     },
     {
       "date": "2018-08-28",
       "ticker": "FOO",
       "quantity": "10",
-      "proceeds": "34.2020",
-      "allowable_cost": "54.0650",
-      "gain_or_loss": "-19.8630",
+      "proceeds": "34.202000000000005",
+      "allowable_cost": "54.065000000000005",
+      "gain_or_loss": "-20",
       "rule": "SameDay"
     }
   ],
   "total_gain": "0",
-  "total_loss": "39.7260",
-  "net_gain": "-39.7260",
+  "total_loss": "40",
+  "net_gain": "-40",
   "holdings": []
 }

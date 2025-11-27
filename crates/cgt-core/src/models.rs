@@ -26,11 +26,13 @@ pub enum Operation {
     },
     Dividend {
         amount: Decimal,
+        total_value: Decimal,
         tax_paid: Decimal,
     },
     #[serde(rename = "CAPRETURN")]
     CapReturn {
         amount: Decimal,
+        total_value: Decimal,
         expenses: Decimal,
     },
     Split {

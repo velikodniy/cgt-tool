@@ -5,32 +5,32 @@
       "date": "2018-08-28",
       "ticker": "GB00B41YBW71",
       "quantity": "10",
-      "proceeds": "34.2020",
-      "allowable_cost": "54.0650",
-      "gain_or_loss": "-19.8630",
+      "proceeds": "34.202000000000005",
+      "allowable_cost": "54.065000000000005",
+      "gain_or_loss": "-20",
       "rule": "SameDay"
     },
     {
       "date": "2019-08-28",
       "ticker": "GB00B41YBW71",
       "quantity": "10",
-      "proceeds": "34.2020",
-      "allowable_cost": "54.0650",
-      "gain_or_loss": "-19.8630",
+      "proceeds": "34.202000000000005",
+      "allowable_cost": "54.065000000000005",
+      "gain_or_loss": "-20",
       "rule": "BedAndBreakfast"
     },
     {
       "date": "2020-10-28",
       "ticker": "GB00B41YBW71",
       "quantity": "10",
-      "proceeds": "34.2020",
-      "allowable_cost": "54.0650",
-      "gain_or_loss": "-19.8630",
+      "proceeds": "34.202000000000005",
+      "allowable_cost": "54.065000000000005",
+      "gain_or_loss": "-20",
       "rule": "Section104"
     }
   ],
   "total_gain": "0",
-  "total_loss": "59.5890",
-  "net_gain": "-59.5890",
+  "total_loss": "20",
+  "net_gain": "-20",
   "holdings": []
 }

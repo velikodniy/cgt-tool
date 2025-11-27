@@ -6,7 +6,7 @@
       "ticker": "Lobster",
       "quantity": "700",
       "proceeds": "3260.0",
-      "allowable_cost": "2931.0",
+      "allowable_cost": "2930.6690000000003",
       "gain_or_loss": "329",
       "rule": "Section104"
     },
@@ -15,7 +15,7 @@
       "ticker": "Lobster",
       "quantity": "400",
       "proceeds": "1975.0",
-      "allowable_cost": "1675.0",
+      "allowable_cost": "1674.6680000000001",
       "gain_or_loss": "300",
       "rule": "Section104"
     }

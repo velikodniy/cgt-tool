@@ -1,14 +1,14 @@
 {
-  "tax_year": 2018,
+  "tax_year": 2019,
   "matches": [
     {
       "date": "2019-11-05",
       "ticker": "GB00B3TYHH97",
       "quantity": "40",
-      "proceeds": "7756.30",
-      "allowable_cost": "7491.30",
+      "proceeds": "0",
+      "allowable_cost": "0",
       "gain_or_loss": "265",
-      "rule": "Section104"
+      "rule": "BedAndBreakfast"
     }
   ],
   "total_gain": "265",

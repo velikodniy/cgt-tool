@@ -84,6 +84,8 @@ description: Task list for 002-dsl-enhancements
 
 - [x] T033 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
 - [x] T034 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
+- [x] T035 Update DIVIDEND and CAPRETURN DSL to use TOTAL keyword instead of @ per-share format.
+- [x] T036 Refactor calculator to preprocess DIVIDEND/CAPRETURN events before matching (match cgtcalc algorithm).
 
 ## Dependencies & Execution Order
 

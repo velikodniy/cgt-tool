@@ -95,9 +95,17 @@ fn parse_dividend(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operatio
 
     let ticker = inner.next().unwrap().as_str().to_string();
     let amount = parse_decimal(inner.next().unwrap().as_str())?;
+    let total_value = parse_decimal(inner.next().unwrap().as_str())?;
     let tax_paid = parse_decimal(inner.next().unwrap().as_str())?;
 
-    Ok((ticker, Operation::Dividend { amount, tax_paid }))
+    Ok((
+        ticker,
+        Operation::Dividend {
+            amount,
+            total_value,
+            tax_paid,
+        },
+    ))
 }
 
 fn parse_capreturn(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operation), CgtError> {
@@ -106,9 +114,17 @@ fn parse_capreturn(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operati
 
     let ticker = inner.next().unwrap().as_str().to_string();
     let amount = parse_decimal(inner.next().unwrap().as_str())?;
+    let total_value = parse_decimal(inner.next().unwrap().as_str())?;
     let expenses = parse_decimal(inner.next().unwrap().as_str())?;
 
-    Ok((ticker, Operation::CapReturn { amount, expenses }))
+    Ok((
+        ticker,
+        Operation::CapReturn {
+            amount,
+            total_value,
+            expenses,
+        },
+    ))
 }
 
 fn parse_split(

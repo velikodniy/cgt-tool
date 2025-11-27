@@ -4,6 +4,27 @@ use rust_decimal::Decimal;
 // use rust_decimal::prelude::Zero; // Not used currently
 // use std::cmp::Ordering; // Not used currently
 
+/// Tracks an individual acquisition with cost adjustments from CAPRETURN/DIVIDEND events
+#[derive(Debug, Clone)]
+struct AcquisitionTracker {
+    amount: Decimal,
+    price: Decimal,
+    expenses: Decimal,
+    cost_offset: Decimal, // Positive for DIVIDEND (increases cost), negative for CAPRETURN (reduces cost)
+}
+
+impl AcquisitionTracker {
+    fn adjusted_cost(&self) -> Decimal {
+        let base_cost = (self.amount * self.price) + self.expenses;
+        base_cost + self.cost_offset
+    }
+
+    fn adjusted_unit_cost(&self) -> Decimal {
+        self.adjusted_cost() / self.amount
+    }
+}
+
+#[allow(clippy::needless_range_loop)]
 pub fn calculate(
     mut transactions: Vec<Transaction>,
     tax_year_start: i32,
@@ -72,6 +93,129 @@ pub fn calculate(
     }
     let transactions = merged;
 
+    // Create acquisition trackers for all BUY transactions
+    let mut acquisition_trackers: Vec<Option<AcquisitionTracker>> = transactions
+        .iter()
+        .map(|tx| match &tx.operation {
+            Operation::Buy {
+                amount,
+                price,
+                expenses,
+            } => Some(AcquisitionTracker {
+                amount: *amount,
+                price: *price,
+                expenses: *expenses,
+                cost_offset: Decimal::ZERO,
+            }),
+            _ => None,
+        })
+        .collect();
+
+    // Preprocessing Pass 1: Apply CAPRETURN events to reduce acquisition costs
+    for (event_idx, tx) in transactions.iter().enumerate() {
+        if let Operation::CapReturn {
+            amount: event_amount,
+            total_value,
+            expenses: event_expenses,
+        } = &tx.operation
+        {
+            // Track how much of each acquisition is left after sells before this event
+            let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
+                .iter()
+                .map(|opt| opt.as_ref().map(|acq| acq.amount).unwrap_or(Decimal::ZERO))
+                .collect();
+
+            // Process all transactions before this event chronologically to track what's left
+            for before_idx in 0..event_idx {
+                if let Operation::Sell { amount, .. } = &transactions[before_idx].operation {
+                    if transactions[before_idx].date < tx.date {
+                        let mut remaining_to_match = *amount;
+                        // Match against acquisitions in FIFO order
+                        for acq_idx in 0..before_idx {
+                            if remaining_to_match <= Decimal::ZERO {
+                                break;
+                            }
+                            let available = acquisition_amounts_left[acq_idx];
+                            if available > Decimal::ZERO {
+                                let matched = remaining_to_match.min(available);
+                                acquisition_amounts_left[acq_idx] -= matched;
+                                remaining_to_match -= matched;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Apportion the capital return value to acquisitions based on amounts left
+            let net_value = *total_value - *event_expenses;
+            for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
+                if acq_idx >= event_idx {
+                    break;
+                }
+                if let Some(acq) = acq_opt {
+                    let amount_left = acquisition_amounts_left[acq_idx];
+                    if amount_left > Decimal::ZERO && transactions[acq_idx].date < tx.date {
+                        let apportioned_value = net_value * (amount_left / event_amount);
+                        acq.cost_offset -= apportioned_value; // Reduce cost
+                    }
+                }
+            }
+        }
+    }
+
+    // Preprocessing Pass 2: Apply DIVIDEND events to increase acquisition costs
+    for (event_idx, tx) in transactions.iter().enumerate() {
+        if let Operation::Dividend {
+            amount: event_amount,
+            total_value,
+            tax_paid: _,
+        } = &tx.operation
+        {
+            // Track how much of each acquisition is left after sells before this event
+            let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
+                .iter()
+                .map(|opt| opt.as_ref().map(|acq| acq.amount).unwrap_or(Decimal::ZERO))
+                .collect();
+
+            // Process all transactions before this event chronologically to track what's left
+            for before_idx in 0..event_idx {
+                if let Operation::Sell { amount, .. } = &transactions[before_idx].operation {
+                    if transactions[before_idx].date < tx.date {
+                        let mut remaining_to_match = *amount;
+                        // Match against acquisitions in FIFO order
+                        for acq_idx in 0..before_idx {
+                            if remaining_to_match <= Decimal::ZERO {
+                                break;
+                            }
+                            let available = acquisition_amounts_left[acq_idx];
+                            if available > Decimal::ZERO {
+                                let matched = remaining_to_match.min(available);
+                                acquisition_amounts_left[acq_idx] -= matched;
+                                remaining_to_match -= matched;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Apportion the dividend value to acquisitions based on amounts left
+            // Note: For dividends, the value is after tax, so we don't adjust for tax_paid
+            let net_value = *total_value;
+            for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
+                if acq_idx >= event_idx {
+                    break;
+                }
+                if let Some(acq) = acq_opt {
+                    let amount_left = acquisition_amounts_left[acq_idx];
+                    if amount_left > Decimal::ZERO && transactions[acq_idx].date < tx.date {
+                        let apportioned_value = net_value * (amount_left / event_amount);
+                        acq.cost_offset += apportioned_value; // Increase cost
+                    }
+                }
+            }
+        }
+    }
+
     let mut matches = Vec::new();
     let mut pool = Section104Holding {
         ticker: "GLOBAL".to_string(),
@@ -103,9 +247,7 @@ pub fn calculate(
                 }
 
                 if let Operation::Buy {
-                    amount: buy_amount,
-                    price: buy_price,
-                    expenses: buy_exp,
+                    amount: buy_amount, ..
                 } = &transactions[buy_transaction_idx].operation
                 {
                     let remaining_buy_amount = *buy_amount - consumed[buy_transaction_idx];
@@ -114,9 +256,16 @@ pub fn calculate(
                     }
 
                     let matched_quantity = remaining_sell_amount.min(remaining_buy_amount);
-                    let _unit_cost = *buy_price + (*buy_exp / *buy_amount);
-                    let cost_portion = (matched_quantity * *buy_price)
-                        + (*buy_exp * (matched_quantity / *buy_amount));
+
+                    // Use adjusted cost from tracker
+                    let cost_portion =
+                        if let Some(tracker) = &acquisition_trackers[buy_transaction_idx] {
+                            matched_quantity * tracker.adjusted_unit_cost()
+                        } else {
+                            return Err(CgtError::InvalidTransaction(
+                                "Missing acquisition tracker for BUY transaction".to_string(),
+                            ));
+                        };
 
                     consumed[sell_transaction_idx] += matched_quantity;
                     consumed[buy_transaction_idx] += matched_quantity;
@@ -172,9 +321,7 @@ pub fn calculate(
                         ratio: unsplit_ratio,
                     } => cumulative_ratio_effect /= unsplit_ratio,
                     Operation::Buy {
-                        amount: buy_amount,
-                        price: buy_price,
-                        expenses: buy_exp,
+                        amount: buy_amount, ..
                     } => {
                         if days_diff <= 0 {
                             continue;
@@ -195,8 +342,15 @@ pub fn calculate(
                         let matched_quantity_at_buy_time =
                             matched_quantity_at_sell_time * cumulative_ratio_effect;
 
-                        let cost_portion = (matched_quantity_at_buy_time * *buy_price)
-                            + (*buy_exp * (matched_quantity_at_buy_time / *buy_amount));
+                        // Use adjusted cost from tracker
+                        let cost_portion =
+                            if let Some(tracker) = &acquisition_trackers[buy_transaction_idx] {
+                                matched_quantity_at_buy_time * tracker.adjusted_unit_cost()
+                            } else {
+                                return Err(CgtError::InvalidTransaction(
+                                    "Missing acquisition tracker for BUY transaction".to_string(),
+                                ));
+                            };
 
                         consumed[sell_transaction_idx] += matched_quantity_at_sell_time;
                         consumed[buy_transaction_idx] += matched_quantity_at_buy_time;
@@ -230,16 +384,18 @@ pub fn calculate(
     for transaction_idx in 0..transactions.len() {
         let current_transaction = &transactions[transaction_idx];
         match &current_transaction.operation {
-            Operation::Buy {
-                amount,
-                price,
-                expenses,
-            } => {
+            Operation::Buy { amount, .. } => {
                 let remaining_amount = *amount - consumed[transaction_idx];
                 if remaining_amount > Decimal::ZERO {
                     pool.quantity += remaining_amount;
-                    let cost_add =
-                        (remaining_amount * *price) + (*expenses * (remaining_amount / *amount));
+                    // Use adjusted cost from tracker
+                    let cost_add = if let Some(tracker) = &acquisition_trackers[transaction_idx] {
+                        remaining_amount * tracker.adjusted_unit_cost()
+                    } else {
+                        return Err(CgtError::InvalidTransaction(
+                            "Missing acquisition tracker for BUY transaction".to_string(),
+                        ));
+                    };
                     pool.total_cost += cost_add;
                 }
             }
@@ -280,10 +436,8 @@ pub fn calculate(
             Operation::Unsplit { ratio } => {
                 pool.quantity /= *ratio;
             }
-            Operation::CapReturn { amount, expenses } => {
-                let net_return = *amount - *expenses;
-                pool.total_cost -= net_return;
-            }
+            // CAPRETURN and DIVIDEND are handled in preprocessing, nothing to do here
+            Operation::CapReturn { .. } => {}
             Operation::Dividend { .. } => {}
         }
 

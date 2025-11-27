@@ -6,7 +6,7 @@
       "ticker": "GB00B41YBW71",
       "quantity": "20",
       "proceeds": "145.5",
-      "allowable_cost": "164.5",
+      "allowable_cost": "164.3334",
       "gain_or_loss": "-19",
       "rule": "Section104"
     }

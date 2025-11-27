@@ -1,5 +1,5 @@
 {
-  "tax_year": 2018,
+  "tax_year": 2017,
   "matches": [
     {
       "date": "2018-01-01",
@@ -29,8 +29,8 @@
       "rule": "SameDay"
     }
   ],
-  "total_gain": "20000",
+  "total_gain": "0",
   "total_loss": "1000",
-  "net_gain": "19000",
+  "net_gain": "-1000",
   "holdings": []
 }
