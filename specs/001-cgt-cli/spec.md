@@ -21,8 +21,6 @@ The user wants to convert a raw text file containing the custom DSL into a struc
 2. **Given** a DSL file with an invalid date format, **When** the parse command is run, **Then** the system outputs a clear error message indicating the line and nature of the error.
 3. **Given** the command is run with the `--schema` flag (or similar), **When** executed, **Then** it outputs the JSON schema for the transaction format.
 
-______________________________________________________________________
-
 ### User Story 2 - Capital Gains Report Generation (Priority: P1)
 
 The user wants to generate a tax report from their transaction history to understand their capital gains status, applying UK CGT rules (Same Day, Bed & Breakfast, Section 104).
@@ -37,8 +35,6 @@ The user wants to generate a tax report from their transaction history to unders
 2. **Given** a SELL followed by a BUY of the same asset within 30 days, **When** the report is generated, **Then** the system matches them under the "Bed & Breakfast" rule.
 3. **Given** multiple BUYs over time followed by a partial SELL, **When** the report is generated, **Then** the system uses the Section 104 holding (average cost) to calculate the cost basis.
 4. **Given** a complete history, **When** the report is generated, **Then** the output is valid JSON containing a summary of gains/losses for the tax year.
-
-______________________________________________________________________
 
 ### Edge Cases
 

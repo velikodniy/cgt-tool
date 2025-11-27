@@ -14,6 +14,7 @@ repos:
       additional_dependencies:
       - mdformat-gfm
       - mdformat-rustfmt
+      - mdformat-front-matters
   - repo: local # For local Rust commands
     hooks:
       - id: clippy

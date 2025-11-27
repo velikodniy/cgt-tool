@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: "Task list for 001-cgt-cli"
 
 # Tasks: Capital Gains Tax (CGT) CLI Tool
@@ -21,8 +19,6 @@ ______________________________________________________________________
 - [x] T004 [P] Configure clippy and formatting rules in `.cargo/config.toml` or `rustfmt.toml`
 - [x] T005 [P] Set up `tests/` directory for workspace-level integration tests
 
-______________________________________________________________________
-
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 **Purpose**: Core data structures and common utilities
@@ -35,8 +31,6 @@ ______________________________________________________________________
 - [x] T011 Create error types in `crates/cgt-core/src/error.rs` (using `thiserror` if helpful, or std::error)
 
 **Checkpoint**: Core models exist and compile.
-
-______________________________________________________________________
 
 ## Phase 3: User Story 1 - DSL Parsing & Validation (Priority: P1)
 
@@ -62,8 +56,6 @@ ______________________________________________________________________
 
 **Checkpoint**: CLI can parse DSL file and output JSON or error.
 
-______________________________________________________________________
-
 ## Phase 4: User Story 2 - Capital Gains Report Generation (Priority: P1)
 
 **Goal**: Calculate tax liability using UK CGT rules.
@@ -87,8 +79,6 @@ ______________________________________________________________________
 
 **Checkpoint**: CLI can generate accurate tax reports.
 
-______________________________________________________________________
-
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 **Purpose**: Documentation, performance, and final checks.
@@ -98,16 +88,12 @@ ______________________________________________________________________
 - [x] T033 Run clippy and fix all warnings
 - [x] T034 Verify error messages are user-friendly (no raw stack traces)
 
-______________________________________________________________________
-
 ## Phase 6: Post-Implementation Verification
 
 **Purpose**: Deep-dive validation of test data and results.
 
 - [x] T035 Verify all `tests/data/*.json` outputs against the original `cgtcalc` text reports for precision and rounding discrepancies. Download original `cgtcalc` test data (inputs/outputs) if local copies are not sufficient to compare calculations. We should trust the original tests. (Note: Automated tests pass with `epsilon=1.0` to account for `cgtcalc`'s output rounding. A manual human review of calculations against original outputs is recommended for full verification.)
 - [x] T036 Verify that the `calculator`'s internal sorting logic correctly orders transactions, by adding a test case with unsorted transactions.
-
-______________________________________________________________________
 
 ## Dependencies & Execution Order
 

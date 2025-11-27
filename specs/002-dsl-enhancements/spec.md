@@ -21,8 +21,6 @@ The user wants to interact with the CLI using a more natural and readable Domain
 2. **Given** a DSL file containing a `CAPRETURN` command with the `EXPENSES` keyword, **When** the file is parsed, **Then** the system correctly extracts the expenses.
 3. **Given** a DSL file containing a `SPLIT` command with the `RATIO` keyword, **When** the file is parsed, **Then** the system correctly interprets the split ratio.
 
-______________________________________________________________________
-
 ### User Story 2 - Robust Test Suite & Output Validation (Priority: P1)
 
 The user requires high confidence in the accuracy of Capital Gains Tax calculations through a robust test suite where all test inputs (`.cgt` files) are chronologically sorted, and all generated outputs are meticulously validated against trusted original `cgtcalc` outputs.
@@ -35,8 +33,6 @@ The user requires high confidence in the accuracy of Capital Gains Tax calculati
 
 1. **Given** any test `.cgt` file with transactions in arbitrary order, **When** the file is processed (sorted), **Then** the internal processing order is strictly chronological.
 2. **Given** all test cases, **When** reports are generated, **Then** the computed gains/losses (after accounting for precision differences) match the corresponding original `cgtcalc` output.
-
-______________________________________________________________________
 
 ### Edge Cases
 

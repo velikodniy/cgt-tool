@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: "Task list template for feature implementation"
 
 # Tasks: [FEATURE NAME]
@@ -51,8 +49,6 @@ ______________________________________________________________________
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
 
-______________________________________________________________________
-
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
@@ -69,8 +65,6 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
-
-______________________________________________________________________
 
 ## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
 
@@ -96,8 +90,6 @@ ______________________________________________________________________
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
-______________________________________________________________________
-
 ## Phase 4: User Story 2 - [Title] (Priority: P2)
 
 **Goal**: [Brief description of what this story delivers]
@@ -118,8 +110,6 @@ ______________________________________________________________________
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
-______________________________________________________________________
-
 ## Phase 5: User Story 3 - [Title] (Priority: P3)
 
 **Goal**: [Brief description of what this story delivers]
@@ -139,11 +129,7 @@ ______________________________________________________________________
 
 **Checkpoint**: All user stories should now be independently functional
 
-______________________________________________________________________
-
 [Add more user story phases as needed, following the same pattern]
-
-______________________________________________________________________
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
@@ -155,8 +141,6 @@ ______________________________________________________________________
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
-
-______________________________________________________________________
 
 ## Dependencies & Execution Order
 
@@ -192,8 +176,6 @@ ______________________________________________________________________
 - Models within a story marked [P] can run in parallel
 - Different user stories can be worked on in parallel by different team members
 
-______________________________________________________________________
-
 ## Parallel Example: User Story 1
 
 ```bash
@@ -205,8 +187,6 @@ Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 Task: "Create [Entity1] model in src/models/[entity1].py"
 Task: "Create [Entity2] model in src/models/[entity2].py"
 ```
-
-______________________________________________________________________
 
 ## Implementation Strategy
 
@@ -236,8 +216,6 @@ With multiple developers:
    - Developer B: User Story 2
    - Developer C: User Story 3
 3. Stories complete and integrate independently
-
-______________________________________________________________________
 
 ## Notes
 

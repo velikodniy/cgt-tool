@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: "Task list for 002-dsl-enhancements"
 
 # Tasks: DSL Enhancements
@@ -21,8 +19,6 @@ ______________________________________________________________________
 - [x] T004 [P] Configure clippy and formatting rules (already exists)
 - [x] T005 [P] Set up `tests/` directory (already exists)
 
-______________________________________________________________________
-
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 **Purpose**: Core data structures and common utilities
@@ -35,8 +31,6 @@ ______________________________________________________________________
 - [x] T011 Create error types (already exists)
 
 **Checkpoint**: Core models exist and compile.
-
-______________________________________________________________________
 
 ## Phase 3: User Story 1 - Enhanced DSL Readability (Priority: P1)
 
@@ -63,8 +57,6 @@ ______________________________________________________________________
 
 **Checkpoint**: CLI can parse new DSL syntax and produce expected internal representation.
 
-______________________________________________________________________
-
 ## Phase 4: User Story 2 - Robust Test Suite & Output Validation (Priority: P1)
 
 **Goal**: Ensure test suite reliability and validate outputs against original `cgtcalc` data.
@@ -84,16 +76,12 @@ ______________________________________________________________________
 
 **Checkpoint**: Test suite passes, and outputs are verified against original `cgtcalc` data.
 
-______________________________________________________________________
-
 ## Phase 5: Polish & Cross-Cutting Concerns
 
 **Purpose**: Documentation, performance, and final checks.
 
 - [ ] T033 Review code for any remaining hardcoded `.txt` extensions and update to `.cgt`.
 - [ ] T034 Run `cargo clippy --fix` and `cargo fmt` to apply fixes and format.
-
-______________________________________________________________________
 
 ## Dependencies & Execution Order
 
