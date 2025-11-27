@@ -23,7 +23,7 @@ date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 buy_sell_args = { ticker ~ amount ~ "@" ~ price ~ ("EXPENSES" ~ expenses)? }
 dividend_args = { ticker ~ amount ~ tax_paid }
 capreturn_args = { ticker ~ amount ~ expenses }
-split_args = { ticker ~ ratio }
+split_args = { ticker ~ "RATIO" ~ ratio }
 
 ticker = @{ ASCII_ALPHANUMERIC+ }
 amount = @{ decimal }
