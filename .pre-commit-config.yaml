@@ -15,6 +15,7 @@ repos:
       - mdformat-gfm
       - mdformat-rustfmt
       - mdformat-front-matters
+      - mdformat-simple-breaks
   - repo: local # For local Rust commands
     hooks:
       - id: clippy
