@@ -7,7 +7,7 @@ use std::str::FromStr; // Needed for Decimal::from_str
 
 #[test]
 fn test_parse_valid_buy() {
-    let input = "2023-01-01 BUY AAPL 10 150.00 5.00";
+    let input = "2023-01-01 BUY AAPL 10 @ 150.00 EXPENSES 5.00";
     let transactions = parse_file(input).expect("Failed to parse valid BUY transaction");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];

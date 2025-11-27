@@ -38,18 +38,19 @@ The binary is located at `target/release/cgt-cli`.
 
 ## Input File Format (DSL)
 
-One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT PRICE EXPENSES`
+One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
 
 ```text
-2025-04-01 BUY  AAPL 100 150.00 5.00
-2025-04-01 BUY  AAPL 50  155.00 2.50
-2025-05-01 SELL AAPL 50  160.00 5.00
+2025-04-01 BUY AAPL 100 @ 150.00 EXPENSES 5.00
+2025-04-01 BUY AAPL 50 @ 155.00
+2025-05-01 SELL AAPL 50 @ 160.00 EXPENSES 5.00
 ```
 
 - **Actions**: `BUY`, `SELL`, `DIVIDEND`, `CAPRETURN`, `SPLIT`, `UNSPLIT`
-- **Amount**: Quantity of shares
-- **Price**: Price per share (in GBP)
-- **Expenses**: Total transaction fees (in GBP)
+- **BUY/SELL**: `DATE ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
+- **DIVIDEND**: `DATE DIVIDEND TICKER AMOUNT TAX_PAID`
+- **CAPRETURN**: `DATE CAPRETURN TICKER AMOUNT EXPENSES`
+- **SPLIT/UNSPLIT**: `DATE SPLIT TICKER RATIO`
 
 ## Development
 

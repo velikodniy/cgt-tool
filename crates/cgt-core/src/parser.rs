@@ -60,15 +60,18 @@ fn parse_buy_sell(
     pair: pest::iterators::Pair<Rule>,
     action: &str,
 ) -> Result<(String, Operation), CgtError> {
-    // pair is cmd_buy or cmd_sell
-    // inner is buy_sell_args
     let args = pair.into_inner().next().unwrap();
     let mut inner = args.into_inner();
 
     let ticker = inner.next().unwrap().as_str().to_string();
     let amount = parse_decimal(inner.next().unwrap().as_str())?;
     let price = parse_decimal(inner.next().unwrap().as_str())?;
-    let expenses = parse_decimal(inner.next().unwrap().as_str())?;
+
+    let expenses = if let Some(expenses_value_pair) = inner.next() {
+        parse_decimal(expenses_value_pair.as_str())?
+    } else {
+        Decimal::ZERO
+    };
 
     let op = match action {
         "BUY" => Operation::Buy {
