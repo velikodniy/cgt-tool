@@ -5,7 +5,7 @@
 
 ## Summary
 
-Build a high-performance, modular CLI tool in Rust to calculate Capital Gains Tax (CGT) for UK assets. The system will feature a core library (`cgt-core`) with PEG-based parsing and exact financial calculations, and a CLI binary (`cgt-cli`) for user interaction and reporting. The architecture is designed to be WASM-friendly for future web integration.
+Build a high-performance, modular CLI tool in Rust to calculate Capital Gains Tax (CGT) for UK assets. The system features a core library (`cgt-core`) with PEG-based parsing for a human-readable DSL (including optional expenses and comments) and exact financial calculations, and a CLI binary (`cgt-cli`) for user interaction and reporting. The architecture is designed to be WASM-friendly for future web integration.
 
 ## Technical Context
 
@@ -24,6 +24,14 @@ Build a high-performance, modular CLI tool in Rust to calculate Capital Gains Ta
   **Performance Goals**: Parse & process 1000 transactions < 1s
   **Constraints**: Strict FIFO, UK CGT rules (Same Day, B&B, S104), Zero data loss (Decimal)
   **Scale/Scope**: Personal finance scale (hundreds/thousands of transactions)
+
+### DSL Specifics
+
+The Domain Specific Language (DSL) for transactions now supports:
+
+- Flexible whitespace: Multiple spaces between elements are allowed and ignored.
+- Comments: Lines starting with `#` are treated as comments and ignored by the parser.
+- Improved readability for `BUY`/`SELL` operations: `AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`, where `EXPENSES` is an optional keyword followed by its value.
 
 ## Constitution Check
 

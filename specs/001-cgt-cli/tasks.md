@@ -100,6 +100,15 @@ ______________________________________________________________________
 
 ______________________________________________________________________
 
+## Phase 6: Post-Implementation Verification
+
+**Purpose**: Deep-dive validation of test data and results.
+
+- [ ] T035 Verify all `tests/data/*.json` outputs against the original `cgtcalc` text reports for precision and rounding discrepancies. Download original `cgtcalc` test data (inputs/outputs) if local copies are not sufficient to compare calculations. We should trust the original tests.
+- [ ] T036 Ensure all `tests/data/*.cgt` input files are sorted chronologically by date.
+
+______________________________________________________________________
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -108,6 +117,7 @@ ______________________________________________________________________
 - **Foundational (Phase 2)**: Blocks all User Stories.
 - **User Story 1**: Blocks User Story 2 (need parsing before calculating).
 - **User Story 2**: Depends on US1.
+- **Post-Implementation Verification (Phase 6)**: Depends on all prior phases.
 
 ### User Story Dependencies
 
