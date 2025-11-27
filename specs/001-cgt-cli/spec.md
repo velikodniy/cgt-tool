@@ -52,7 +52,7 @@ ______________________________________________________________________
 ### Functional Requirements
 
 - **FR-001**: System MUST parse the following transaction types from a text file: `BUY`, `SELL`, `DIVIDEND`, `CAPRETURN`, `SPLIT`, `UNSPLIT`.
-- **FR-002**: System MUST parse lines matching the pattern: `YYYY-MM-DD ACTION TICKER AMOUNT PRICE EXPENSES` (or similar readable format).
+- **FR-002**: System MUST parse lines matching the pattern: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]` (with support for flexible whitespace and comments).
 - **FR-003**: System MUST output parsed transactions as JSON.
 - **FR-004**: System MUST provide/export a JSON schema for the transaction output.
 - **FR-005**: System MUST implement the "Same Day" matching rule for disposals.
