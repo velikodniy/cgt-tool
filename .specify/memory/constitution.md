@@ -1,50 +1,59 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+Version: 1.0.0 (Initial Constitution)
+Changes:
+- Defined initial principles based on user input (Ousterhout's philosophy, Safety, Testing, UX, Performance).
+- Established governance structure.
+- Templates Status:
+  - .specify/templates/plan-template.md: ✅ Compatible (Generic "Constitution Check" aligns).
+  - .specify/templates/spec-template.md: ✅ Compatible (Generic requirements align).
+  - .specify/templates/tasks-template.md: ✅ Compatible (Supports testing tasks).
+  - .specify/templates/checklist-template.md: ✅ Compatible.
+-->
+# CGT Tool Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Deep Modules & Simplicity
+Complexity is anything that makes software hard to understand or modify. We adhere to "A Philosophy of Software Design" by John Ousterhout. Modules must be "deep"—providing powerful functionality through simple, abstract interfaces. Information hiding is paramount; implementation details must remain internal. If a module exposes its internal complexity, it is a design failure.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Safety & Robustness
+Code must be safe and modularized by default. Design systems to isolate failures (bulkheading). Prefer immutable data structures and strict typing to prevent runtime errors. Error handling must be explicit, graceful, and actionable—never fail silently or leave the system in an undefined state.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Modern Testing Standards (NON-NEGOTIABLE)
+Testing is a primary design activity, not an afterthought. Modern testing approaches (like TDD) are mandatory. Tests must be comprehensive, readable, and maintainable, serving as living documentation of system behavior. A feature is not complete until it is fully tested and automated.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. User Experience Consistency
+User interaction must be consistent, predictable, and polished. Whether CLI or GUI, the interface must respect modern design principles. clear feedback, actionable error messages, and intuitive workflows are required. Do not burden the user with unnecessary complexity.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Performance & Efficiency
+Performance is a core feature. The system must respect user resources (CPU, RAM, Battery). Design for efficiency in critical paths. Measure and profile before optimizing, but architect to avoid inherent bottlenecks.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Architectural Standards
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### Technology Stack & Modernity
+Use the best modern approaches and tools available for the task. Do not cling to legacy patterns if superior modern alternatives exist. Ensure all dependencies are actively maintained and secure.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### Modularity & Extension
+The codebase must be clean, readable, and extendable. Adhere to high cohesion and low coupling. New features should be additive and not require extensive modification of existing stable code (Open/Closed Principle).
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Development Workflow
+
+### Code Quality Gates
+All code changes must pass strict quality gates:
+1.  **Automated Tests**: 100% pass rate required.
+2.  **Linting/Formatting**: Zero tolerance for style violations.
+3.  **Review**: Peer review must focus on simplicity, readability, and architectural alignment.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Constitution Supremacy
+This document is the supreme source of truth for engineering decisions. In conflicts between speed and these principles, these principles prevail.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+### Amendments
+Amendments require consensus and a version bump.
+- **MAJOR**: Removing or redefining a core principle.
+- **MINOR**: Adding a new principle or substantial section.
+- **PATCH**: Clarifications and non-semantic updates.
+
+**Version**: 1.0.0 | **Ratified**: 2025-11-27 | **Last Amended**: 2025-11-27
