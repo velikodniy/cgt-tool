@@ -26,3 +26,65 @@ fn test_parse_valid_buy() {
         panic!("Expected Buy operation");
     }
 }
+
+#[test]
+fn test_parse_dividend_with_tax_keyword() {
+    let input = "2019-11-30 DIVIDEND GB00B3TYHH97 110.93 TAX 0";
+    let transactions = parse_file(input).expect("Failed to parse DIVIDEND with TAX keyword");
+    assert_eq!(transactions.len(), 1);
+    let tx = &transactions[0];
+    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 11, 30).unwrap());
+    assert_eq!(tx.ticker, "GB00B3TYHH97");
+    if let Operation::Dividend { amount, tax_paid } = &tx.operation {
+        assert_eq!(*amount, Decimal::from_str("110.93").unwrap());
+        assert_eq!(*tax_paid, Decimal::from(0));
+    } else {
+        panic!("Expected Dividend operation");
+    }
+}
+
+#[test]
+fn test_parse_capreturn_with_expenses_keyword() {
+    let input = "2019-05-31 CAPRETURN GB00B3TYHH97 149.75 EXPENSES 0";
+    let transactions = parse_file(input).expect("Failed to parse CAPRETURN with EXPENSES keyword");
+    assert_eq!(transactions.len(), 1);
+    let tx = &transactions[0];
+    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 5, 31).unwrap());
+    assert_eq!(tx.ticker, "GB00B3TYHH97");
+    if let Operation::CapReturn { amount, expenses } = &tx.operation {
+        assert_eq!(*amount, Decimal::from_str("149.75").unwrap());
+        assert_eq!(*expenses, Decimal::from(0));
+    } else {
+        panic!("Expected CapReturn operation");
+    }
+}
+
+#[test]
+fn test_parse_split_with_ratio_keyword() {
+    let input = "2019-02-15 SPLIT FOO RATIO 2";
+    let transactions = parse_file(input).expect("Failed to parse SPLIT with RATIO keyword");
+    assert_eq!(transactions.len(), 1);
+    let tx = &transactions[0];
+    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 2, 15).unwrap());
+    assert_eq!(tx.ticker, "FOO");
+    if let Operation::Split { ratio } = &tx.operation {
+        assert_eq!(*ratio, Decimal::from(2));
+    } else {
+        panic!("Expected Split operation");
+    }
+}
+
+#[test]
+fn test_parse_unsplit_with_ratio_keyword() {
+    let input = "2019-02-15 UNSPLIT FOO RATIO 2";
+    let transactions = parse_file(input).expect("Failed to parse UNSPLIT with RATIO keyword");
+    assert_eq!(transactions.len(), 1);
+    let tx = &transactions[0];
+    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 2, 15).unwrap());
+    assert_eq!(tx.ticker, "FOO");
+    if let Operation::Unsplit { ratio } = &tx.operation {
+        assert_eq!(*ratio, Decimal::from(2));
+    } else {
+        panic!("Expected Unsplit operation");
+    }
+}
