@@ -1,13 +1,14 @@
 <!--
 SYNC IMPACT REPORT
-Version: 1.0.0 (Initial Constitution)
+Version: 1.0.0 -> 1.1.0
 Changes:
-- Defined initial principles based on user input (Ousterhout's philosophy, Safety, Testing, UX, Performance).
-- Established governance structure.
+- Modified Principle III (Modern Testing Standards) to explicitly forbid removing or modifying tests without proof.
+- Added Principle VI (Domain Mastery & Verification).
+- Added "Commit Discipline" to Development Workflow.
 - Templates Status:
-  - .specify/templates/plan-template.md: ✅ Compatible (Generic "Constitution Check" aligns).
-  - .specify/templates/spec-template.md: ✅ Compatible (Generic requirements align).
-  - .specify/templates/tasks-template.md: ✅ Compatible (Supports testing tasks).
+  - .specify/templates/plan-template.md: ✅ Compatible.
+  - .specify/templates/spec-template.md: ✅ Compatible.
+  - .specify/templates/tasks-template.md: ✅ Compatible.
   - .specify/templates/checklist-template.md: ✅ Compatible.
 -->
 
@@ -25,7 +26,14 @@ Code must be safe and modularized by default. Design systems to isolate failures
 
 ### III. Modern Testing Standards (NON-NEGOTIABLE)
 
-Testing is a primary design activity, not an afterthought. Modern testing approaches (like TDD) are mandatory. Tests must be comprehensive, readable, and maintainable, serving as living documentation of system behavior. A feature is not complete until it is fully tested and automated.
+Testing is a primary design activity, not an afterthought. Modern testing approaches (like TDD) are mandatory. Tests must be comprehensive, readable, and maintainable, serving as living documentation of system behavior.
+
+**Preservation Rules:**
+
+- **Never remove existing tests.**
+- **Never change previous tests** without explicitly proving that they are incorrect. Changing a test to make code pass is an extremely bad practice.
+
+A feature is not complete until it is fully tested and automated.
 
 ### IV. User Experience Consistency
 
@@ -34,6 +42,10 @@ User interaction must be consistent, predictable, and polished. Whether CLI or G
 ### V. Performance & Efficiency
 
 Performance is a core feature. The system must respect user resources (CPU, RAM, Battery). Design for efficiency in critical paths. Measure and profile before optimizing, but architect to avoid inherent bottlenecks.
+
+### VI. Domain Mastery & Verification
+
+Complete and clear understanding of domain requirements is a prerequisite for implementation. Do not rely on assumptions. Verify implementations against domain rules, using manual computations to validate test expectations if necessary.
 
 ## Architectural Standards
 
@@ -55,6 +67,11 @@ All code changes must pass strict quality gates:
 2. **Linting/Formatting**: Zero tolerance for style violations.
 3. **Review**: Peer review must focus on simplicity, readability, and architectural alignment.
 
+### Commit Discipline
+
+- **Logical Atomicity**: Make logical commits. Never commit multiple logical changes altogether (e.g., adding a library then improving logic). Each change deserves its own commit.
+- **Incremental Progress**: You added a library? Commit. You improved something? Commit.
+
 ## Governance
 
 ### Constitution Supremacy
@@ -69,4 +86,4 @@ Amendments require consensus and a version bump.
 - **MINOR**: Adding a new principle or substantial section.
 - **PATCH**: Clarifications and non-semantic updates.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-27 | **Last Amended**: 2025-11-27
+**Version**: 1.1.0 | **Ratified**: 2025-11-27 | **Last Amended**: 2025-11-27
