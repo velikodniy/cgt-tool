@@ -33,8 +33,6 @@
 1. **Given** [initial state], **When** [action], **Then** [expected outcome]
 2. **Given** [initial state], **When** [action], **Then** [expected outcome]
 
----
-
 ### User Story 2 - [Brief Title] (Priority: P2)
 
 [Describe this user journey in plain language]
@@ -47,8 +45,6 @@
 
 1. **Given** [initial state], **When** [action], **Then** [expected outcome]
 
----
-
 ### User Story 3 - [Brief Title] (Priority: P3)
 
 [Describe this user journey in plain language]
@@ -60,8 +56,6 @@
 **Acceptance Scenarios**:
 
 1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-
----
 
 [Add more user stories as needed, each with an assigned priority]
 
