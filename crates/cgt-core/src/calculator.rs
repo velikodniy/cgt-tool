@@ -1,8 +1,8 @@
 use crate::error::CgtError;
 use crate::models::*;
+use chrono::NaiveDate;
 use rust_decimal::Decimal;
-// use rust_decimal::prelude::Zero; // Not used currently
-// use std::cmp::Ordering; // Not used currently
+use std::collections::HashMap;
 
 /// Tracks an individual acquisition with cost adjustments from CAPRETURN/DIVIDEND events
 #[derive(Debug, Clone)]
@@ -22,6 +22,19 @@ impl AcquisitionTracker {
     fn adjusted_unit_cost(&self) -> Decimal {
         self.adjusted_cost() / self.amount
     }
+}
+
+/// Internal match representation during calculation (before grouping into Disposals)
+#[derive(Debug, Clone)]
+struct InternalMatch {
+    disposal_date: NaiveDate,
+    disposal_ticker: String,
+    quantity: Decimal,
+    proceeds: Decimal,
+    allowable_cost: Decimal,
+    gain_or_loss: Decimal,
+    rule: MatchRule,
+    acquisition_date: Option<NaiveDate>,
 }
 
 pub fn calculate(
@@ -213,7 +226,7 @@ pub fn calculate(
         }
     }
 
-    let mut matches = Vec::new();
+    let mut internal_matches = Vec::new();
     let mut pool = Section104Holding {
         ticker: "GLOBAL".to_string(),
         quantity: Decimal::ZERO,
@@ -270,14 +283,15 @@ pub fn calculate(
 
                     let proceeds =
                         get_proceeds(&transactions[sell_transaction_idx], matched_quantity);
-                    matches.push(Match {
-                        date: transactions[sell_transaction_idx].date,
-                        ticker: transactions[sell_transaction_idx].ticker.clone(),
+                    internal_matches.push(InternalMatch {
+                        disposal_date: transactions[sell_transaction_idx].date,
+                        disposal_ticker: transactions[sell_transaction_idx].ticker.clone(),
                         quantity: matched_quantity,
                         proceeds,
                         allowable_cost: cost_portion,
                         gain_or_loss: proceeds - cost_portion,
                         rule: MatchRule::SameDay,
+                        acquisition_date: None, // Same day - no separate acquisition date needed
                     });
 
                     if remaining_sell_amount <= Decimal::ZERO {
@@ -357,14 +371,15 @@ pub fn calculate(
                             &transactions[sell_transaction_idx],
                             matched_quantity_at_sell_time,
                         );
-                        matches.push(Match {
-                            date: transactions[sell_transaction_idx].date,
-                            ticker: transactions[sell_transaction_idx].ticker.clone(),
+                        internal_matches.push(InternalMatch {
+                            disposal_date: transactions[sell_transaction_idx].date,
+                            disposal_ticker: transactions[sell_transaction_idx].ticker.clone(),
                             quantity: matched_quantity_at_sell_time,
                             proceeds,
                             allowable_cost: cost_portion,
                             gain_or_loss: proceeds - cost_portion,
                             rule: MatchRule::BedAndBreakfast,
+                            acquisition_date: Some(transactions[buy_transaction_idx].date),
                         });
 
                         if remaining_sell_amount <= Decimal::ZERO {
@@ -416,14 +431,15 @@ pub fn calculate(
                     pool.total_cost -= cost_portion;
 
                     let proceeds = get_proceeds(current_transaction, matched_quantity);
-                    matches.push(Match {
-                        date: current_transaction.date,
-                        ticker: current_transaction.ticker.clone(),
+                    internal_matches.push(InternalMatch {
+                        disposal_date: current_transaction.date,
+                        disposal_ticker: current_transaction.ticker.clone(),
                         quantity: matched_quantity,
                         proceeds,
                         allowable_cost: cost_portion,
                         gain_or_loss: proceeds - cost_portion,
                         rule: MatchRule::Section104,
+                        acquisition_date: None, // Section 104 pool has no single acquisition date
                     });
                 }
             }
@@ -443,6 +459,7 @@ pub fn calculate(
         }
     }
 
+    // Filter matches for the requested tax year
     let start_date =
         chrono::NaiveDate::from_ymd_opt(tax_year_start, 4, 6).ok_or(CgtError::InvalidDateYear {
             year: tax_year_start,
@@ -453,13 +470,18 @@ pub fn calculate(
         },
     )?;
 
-    let year_matches: Vec<Match> = matches
+    let year_matches: Vec<InternalMatch> = internal_matches
         .into_iter()
-        .filter(|m| m.date >= start_date && m.date <= end_date)
+        .filter(|m| m.disposal_date >= start_date && m.disposal_date <= end_date)
         .collect();
 
-    let total_gain: Decimal = year_matches
+    // Group matches into disposals by (date, ticker)
+    let disposals = group_matches_into_disposals(year_matches);
+
+    // Calculate totals
+    let total_gain: Decimal = disposals
         .iter()
+        .flat_map(|d| &d.matches)
         .map(|m| {
             if m.gain_or_loss > Decimal::ZERO {
                 m.gain_or_loss
@@ -468,8 +490,9 @@ pub fn calculate(
             }
         })
         .sum();
-    let total_loss: Decimal = year_matches
+    let total_loss: Decimal = disposals
         .iter()
+        .flat_map(|d| &d.matches)
         .map(|m| {
             if m.gain_or_loss < Decimal::ZERO {
                 m.gain_or_loss.abs()
@@ -479,14 +502,64 @@ pub fn calculate(
         })
         .sum();
 
-    Ok(TaxReport {
-        tax_year: tax_year_start,
-        matches: year_matches,
+    // Create tax year summary
+    let tax_period = TaxPeriod::from_date(start_date);
+    let tax_year_summary = TaxYearSummary {
+        period: tax_period,
+        disposals,
         total_gain,
         total_loss,
         net_gain: total_gain - total_loss,
+    };
+
+    Ok(TaxReport {
+        tax_years: vec![tax_year_summary],
         holdings: vec![pool],
     })
+}
+
+/// Group internal matches into Disposal objects by (date, ticker)
+fn group_matches_into_disposals(internal_matches: Vec<InternalMatch>) -> Vec<Disposal> {
+    // Group by (date, ticker)
+    let mut disposal_map: HashMap<(NaiveDate, String), Vec<InternalMatch>> = HashMap::new();
+
+    for m in internal_matches {
+        let key = (m.disposal_date, m.disposal_ticker.clone());
+        disposal_map.entry(key).or_default().push(m);
+    }
+
+    // Convert to Disposal structs
+    let mut disposals: Vec<Disposal> = disposal_map
+        .into_iter()
+        .map(|((date, ticker), matches)| {
+            let total_proceeds: Decimal = matches.iter().map(|m| m.proceeds).sum();
+            let total_quantity: Decimal = matches.iter().map(|m| m.quantity).sum();
+
+            let converted_matches: Vec<Match> = matches
+                .into_iter()
+                .map(|m| Match {
+                    rule: m.rule,
+                    quantity: m.quantity,
+                    allowable_cost: m.allowable_cost,
+                    gain_or_loss: m.gain_or_loss,
+                    acquisition_date: m.acquisition_date,
+                })
+                .collect();
+
+            Disposal {
+                date,
+                ticker,
+                quantity: total_quantity,
+                proceeds: total_proceeds,
+                matches: converted_matches,
+            }
+        })
+        .collect();
+
+    // Sort disposals by date for consistent output
+    disposals.sort_by(|a, b| a.date.cmp(&b.date));
+
+    disposals
 }
 
 fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {

@@ -34,9 +34,6 @@ fn test_data_driven_matching() {
                 continue;
             }
 
-            // Skip unsupported or empty/commented files if necessary
-            // e.g. Blank.cgt is empty, should produce empty report
-
             println!("Testing {}", input_path.display());
 
             let input_content = fs::read_to_string(&input_path).expect("Failed to read input");
@@ -46,66 +43,48 @@ fn test_data_driven_matching() {
             let expected_report: TaxReport =
                 serde_json::from_str(&output_content).expect("Failed to parse expected output");
 
-            let year_start = expected_report.tax_year;
+            // Get the tax year from the first tax year summary
+            let first_tax_year = expected_report
+                .tax_years
+                .first()
+                .expect("Expected report should have at least one tax year");
+            let year_start = first_tax_year.period.start_year() as i32;
 
             let actual_report = calculate(transactions, year_start).expect("Failed to calculate");
 
-            // Filter expected matches to the requested tax year
-            let start_date = chrono::NaiveDate::from_ymd_opt(year_start, 4, 6)
-                .expect("valid tax year start date");
-            let end_date = chrono::NaiveDate::from_ymd_opt(year_start + 1, 4, 5)
-                .expect("valid tax year end date");
-
-            let expected_matches_in_year: Vec<Match> = expected_report
-                .matches
-                .iter()
-                .filter(|m| m.date >= start_date && m.date <= end_date)
-                .cloned()
-                .collect();
-
-            let expected_gain: Decimal = expected_matches_in_year
-                .iter()
-                .map(|m| {
-                    if m.gain_or_loss > rust_decimal::Decimal::ZERO {
-                        m.gain_or_loss
-                    } else {
-                        rust_decimal::Decimal::ZERO
-                    }
-                })
-                .sum();
-
-            let expected_loss: Decimal = expected_matches_in_year
-                .iter()
-                .map(|m| {
-                    if m.gain_or_loss < rust_decimal::Decimal::ZERO {
-                        m.gain_or_loss.abs()
-                    } else {
-                        rust_decimal::Decimal::ZERO
-                    }
-                })
-                .sum();
+            // Get the actual tax year summary
+            let actual_tax_year = actual_report
+                .tax_years
+                .first()
+                .expect("Actual report should have at least one tax year");
 
             // Allow larger precision differences because reference data (cgtcalc output)
             // often rounds to nearest integer or uses 5dp, while we use exact decimal.
             let epsilon = Decimal::new(1, 0); // 1.0
 
             assert!(
-                (actual_report.total_gain - expected_gain).abs() <= epsilon,
+                (actual_tax_year.total_gain - first_tax_year.total_gain).abs() <= epsilon,
                 "Total Gain mismatch for {}. Actual: {}, Expected: {}",
                 input_path.display(),
-                actual_report.total_gain,
-                expected_gain
+                actual_tax_year.total_gain,
+                first_tax_year.total_gain
             );
 
             assert!(
-                (actual_report.total_loss - expected_loss).abs() <= epsilon,
+                (actual_tax_year.total_loss - first_tax_year.total_loss).abs() <= epsilon,
                 "Total Loss mismatch for {}. Actual: {}, Expected: {}",
                 input_path.display(),
-                actual_report.total_loss,
-                expected_loss
+                actual_tax_year.total_loss,
+                first_tax_year.total_loss
             );
 
-            // assert_eq!(actual_report.matches.len(), expected_matches_in_year.len(), "Match count mismatch for {}", input_path.display());
+            // Verify number of disposals match
+            assert_eq!(
+                actual_tax_year.disposals.len(),
+                first_tax_year.disposals.len(),
+                "Disposal count mismatch for {}",
+                input_path.display()
+            );
         }
     }
 }
