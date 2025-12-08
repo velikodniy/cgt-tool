@@ -13,4 +13,10 @@ pub enum CgtError {
 
     #[error("Invalid transaction: {0}")]
     InvalidTransaction(String),
+
+    #[error("Unexpected parser state: expected {expected}")]
+    UnexpectedParserState { expected: &'static str },
+
+    #[error("Invalid date: year {year} is out of valid range")]
+    InvalidDateYear { year: i32 },
 }

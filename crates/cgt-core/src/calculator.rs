@@ -24,7 +24,6 @@ impl AcquisitionTracker {
     }
 }
 
-#[allow(clippy::needless_range_loop)]
 pub fn calculate(
     mut transactions: Vec<Transaction>,
     tax_year_start: i32,
@@ -126,21 +125,20 @@ pub fn calculate(
                 .collect();
 
             // Process all transactions before this event chronologically to track what's left
-            for before_idx in 0..event_idx {
-                if let Operation::Sell { amount, .. } = &transactions[before_idx].operation {
-                    if transactions[before_idx].date < tx.date {
-                        let mut remaining_to_match = *amount;
-                        // Match against acquisitions in FIFO order
-                        for acq_idx in 0..before_idx {
-                            if remaining_to_match <= Decimal::ZERO {
-                                break;
-                            }
-                            let available = acquisition_amounts_left[acq_idx];
-                            if available > Decimal::ZERO {
-                                let matched = remaining_to_match.min(available);
-                                acquisition_amounts_left[acq_idx] -= matched;
-                                remaining_to_match -= matched;
-                            }
+            for (before_idx, before_tx) in transactions.iter().enumerate().take(event_idx) {
+                if let Operation::Sell { amount, .. } = &before_tx.operation
+                    && before_tx.date < tx.date
+                {
+                    let mut remaining_to_match = *amount;
+                    // Match against acquisitions in FIFO order
+                    for amount_left in acquisition_amounts_left.iter_mut().take(before_idx) {
+                        if remaining_to_match <= Decimal::ZERO {
+                            break;
+                        }
+                        if *amount_left > Decimal::ZERO {
+                            let matched = remaining_to_match.min(*amount_left);
+                            *amount_left -= matched;
+                            remaining_to_match -= matched;
                         }
                     }
                 }
@@ -178,21 +176,20 @@ pub fn calculate(
                 .collect();
 
             // Process all transactions before this event chronologically to track what's left
-            for before_idx in 0..event_idx {
-                if let Operation::Sell { amount, .. } = &transactions[before_idx].operation {
-                    if transactions[before_idx].date < tx.date {
-                        let mut remaining_to_match = *amount;
-                        // Match against acquisitions in FIFO order
-                        for acq_idx in 0..before_idx {
-                            if remaining_to_match <= Decimal::ZERO {
-                                break;
-                            }
-                            let available = acquisition_amounts_left[acq_idx];
-                            if available > Decimal::ZERO {
-                                let matched = remaining_to_match.min(available);
-                                acquisition_amounts_left[acq_idx] -= matched;
-                                remaining_to_match -= matched;
-                            }
+            for (before_idx, before_tx) in transactions.iter().enumerate().take(event_idx) {
+                if let Operation::Sell { amount, .. } = &before_tx.operation
+                    && before_tx.date < tx.date
+                {
+                    let mut remaining_to_match = *amount;
+                    // Match against acquisitions in FIFO order
+                    for amount_left in acquisition_amounts_left.iter_mut().take(before_idx) {
+                        if remaining_to_match <= Decimal::ZERO {
+                            break;
+                        }
+                        if *amount_left > Decimal::ZERO {
+                            let matched = remaining_to_match.min(*amount_left);
+                            *amount_left -= matched;
+                            remaining_to_match -= matched;
                         }
                     }
                 }
@@ -446,8 +443,15 @@ pub fn calculate(
         }
     }
 
-    let start_date = chrono::NaiveDate::from_ymd_opt(tax_year_start, 4, 6).unwrap();
-    let end_date = chrono::NaiveDate::from_ymd_opt(tax_year_start + 1, 4, 5).unwrap();
+    let start_date =
+        chrono::NaiveDate::from_ymd_opt(tax_year_start, 4, 6).ok_or(CgtError::InvalidDateYear {
+            year: tax_year_start,
+        })?;
+    let end_date = chrono::NaiveDate::from_ymd_opt(tax_year_start + 1, 4, 5).ok_or(
+        CgtError::InvalidDateYear {
+            year: tax_year_start + 1,
+        },
+    )?;
 
     let year_matches: Vec<Match> = matches
         .into_iter()

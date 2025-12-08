@@ -1,0 +1,6 @@
+# Workspace-level Clippy configuration
+# Strict linting - no panicking code in production
+
+# Allow unwrap/expect in tests only
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
