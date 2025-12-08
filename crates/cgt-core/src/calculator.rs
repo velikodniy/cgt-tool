@@ -512,9 +512,16 @@ pub fn calculate(
         net_gain: total_gain - total_loss,
     };
 
+    // Filter out the GLOBAL placeholder (appears when there are no transactions)
+    let holdings = if pool.ticker == "GLOBAL" {
+        vec![]
+    } else {
+        vec![pool]
+    };
+
     Ok(TaxReport {
         tax_years: vec![tax_year_summary],
-        holdings: vec![pool],
+        holdings,
     })
 }
 
