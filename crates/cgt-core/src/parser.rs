@@ -27,12 +27,22 @@ pub fn parse_file(input: &str) -> Result<Vec<Transaction>, CgtError> {
 
 fn parse_transaction(pair: pest::iterators::Pair<Rule>) -> Result<Transaction, CgtError> {
     let mut inner = pair.into_inner();
-    let date_pair = inner.next().unwrap();
+    let date_pair = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "date" })?;
     let date = NaiveDate::parse_from_str(date_pair.as_str(), "%Y-%m-%d")
         .map_err(|_| CgtError::InvalidTransaction("Invalid date format".to_string()))?;
 
-    let command_pair = inner.next().unwrap();
-    let command_inner = command_pair.into_inner().next().unwrap();
+    let command_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
+        expected: "command",
+    })?;
+    let command_inner =
+        command_pair
+            .into_inner()
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "command inner",
+            })?;
 
     let (ticker, operation) = match command_inner.as_rule() {
         Rule::cmd_buy => parse_buy_sell(command_inner, "BUY")?,
@@ -60,12 +70,31 @@ fn parse_buy_sell(
     pair: pest::iterators::Pair<Rule>,
     action: &str,
 ) -> Result<(String, Operation), CgtError> {
-    let args = pair.into_inner().next().unwrap();
+    let args = pair
+        .into_inner()
+        .next()
+        .ok_or(CgtError::UnexpectedParserState {
+            expected: "buy/sell arguments",
+        })?;
     let mut inner = args.into_inner();
 
-    let ticker = inner.next().unwrap().as_str().to_string();
-    let amount = parse_decimal(inner.next().unwrap().as_str())?;
-    let price = parse_decimal(inner.next().unwrap().as_str())?;
+    let ticker = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
+        .as_str()
+        .to_string();
+    let amount = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState { expected: "amount" })?
+            .as_str(),
+    )?;
+    let price = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState { expected: "price" })?
+            .as_str(),
+    )?;
 
     let expenses = if let Some(expenses_value_pair) = inner.next() {
         parse_decimal(expenses_value_pair.as_str())?
@@ -84,19 +113,51 @@ fn parse_buy_sell(
             price,
             expenses,
         },
-        _ => unreachable!(),
+        _ => {
+            return Err(CgtError::UnexpectedParserState {
+                expected: "BUY or SELL action",
+            });
+        }
     };
     Ok((ticker, op))
 }
 
 fn parse_dividend(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operation), CgtError> {
-    let args = pair.into_inner().next().unwrap();
+    let args = pair
+        .into_inner()
+        .next()
+        .ok_or(CgtError::UnexpectedParserState {
+            expected: "dividend arguments",
+        })?;
     let mut inner = args.into_inner();
 
-    let ticker = inner.next().unwrap().as_str().to_string();
-    let amount = parse_decimal(inner.next().unwrap().as_str())?;
-    let total_value = parse_decimal(inner.next().unwrap().as_str())?;
-    let tax_paid = parse_decimal(inner.next().unwrap().as_str())?;
+    let ticker = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
+        .as_str()
+        .to_string();
+    let amount = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState { expected: "amount" })?
+            .as_str(),
+    )?;
+    let total_value = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "total value",
+            })?
+            .as_str(),
+    )?;
+    let tax_paid = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "tax paid",
+            })?
+            .as_str(),
+    )?;
 
     Ok((
         ticker,
@@ -109,13 +170,41 @@ fn parse_dividend(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operatio
 }
 
 fn parse_capreturn(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operation), CgtError> {
-    let args = pair.into_inner().next().unwrap();
+    let args = pair
+        .into_inner()
+        .next()
+        .ok_or(CgtError::UnexpectedParserState {
+            expected: "capreturn arguments",
+        })?;
     let mut inner = args.into_inner();
 
-    let ticker = inner.next().unwrap().as_str().to_string();
-    let amount = parse_decimal(inner.next().unwrap().as_str())?;
-    let total_value = parse_decimal(inner.next().unwrap().as_str())?;
-    let expenses = parse_decimal(inner.next().unwrap().as_str())?;
+    let ticker = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
+        .as_str()
+        .to_string();
+    let amount = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState { expected: "amount" })?
+            .as_str(),
+    )?;
+    let total_value = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "total value",
+            })?
+            .as_str(),
+    )?;
+    let expenses = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "expenses",
+            })?
+            .as_str(),
+    )?;
 
     Ok((
         ticker,
@@ -131,16 +220,34 @@ fn parse_split(
     pair: pest::iterators::Pair<Rule>,
     action: &str,
 ) -> Result<(String, Operation), CgtError> {
-    let args = pair.into_inner().next().unwrap();
+    let args = pair
+        .into_inner()
+        .next()
+        .ok_or(CgtError::UnexpectedParserState {
+            expected: "split arguments",
+        })?;
     let mut inner = args.into_inner();
 
-    let ticker = inner.next().unwrap().as_str().to_string();
-    let ratio = parse_decimal(inner.next().unwrap().as_str())?;
+    let ticker = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
+        .as_str()
+        .to_string();
+    let ratio = parse_decimal(
+        inner
+            .next()
+            .ok_or(CgtError::UnexpectedParserState { expected: "ratio" })?
+            .as_str(),
+    )?;
 
     let op = match action {
         "SPLIT" => Operation::Split { ratio },
         "UNSPLIT" => Operation::Unsplit { ratio },
-        _ => unreachable!(),
+        _ => {
+            return Err(CgtError::UnexpectedParserState {
+                expected: "SPLIT or UNSPLIT action",
+            });
+        }
     };
     Ok((ticker, op))
 }

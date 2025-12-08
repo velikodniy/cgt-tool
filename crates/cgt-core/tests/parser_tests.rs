@@ -1,9 +1,10 @@
-#[allow(unused_imports)] // Clippy false positive
-use cgt_core::models::{Operation, Transaction};
+#![allow(clippy::expect_used, clippy::panic)]
+
+use cgt_core::models::Operation;
 use cgt_core::parser::parse_file;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
-use std::str::FromStr; // Needed for Decimal::from_str
+use std::str::FromStr;
 
 #[test]
 fn test_parse_valid_buy() {
@@ -11,7 +12,10 @@ fn test_parse_valid_buy() {
     let transactions = parse_file(input).expect("Failed to parse valid BUY transaction");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
-    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2023, 1, 1).unwrap());
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2023, 1, 1).expect("valid test date")
+    );
     assert_eq!(tx.ticker, "AAPL");
     if let Operation::Buy {
         amount,
@@ -20,8 +24,8 @@ fn test_parse_valid_buy() {
     } = &tx.operation
     {
         assert_eq!(*amount, Decimal::from(10));
-        assert_eq!(*price, Decimal::from_str("150.00").unwrap());
-        assert_eq!(*expenses, Decimal::from_str("5.00").unwrap());
+        assert_eq!(*price, Decimal::from_str("150.00").expect("valid decimal"));
+        assert_eq!(*expenses, Decimal::from_str("5.00").expect("valid decimal"));
     } else {
         panic!("Expected Buy operation");
     }
@@ -33,7 +37,10 @@ fn test_parse_dividend_with_tax_keyword() {
     let transactions = parse_file(input).expect("Failed to parse DIVIDEND with TAX keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
-    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 11, 30).unwrap());
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2019, 11, 30).expect("valid test date")
+    );
     assert_eq!(tx.ticker, "GB00B3TYHH97");
     if let Operation::Dividend {
         amount,
@@ -42,7 +49,10 @@ fn test_parse_dividend_with_tax_keyword() {
     } = &tx.operation
     {
         assert_eq!(*amount, Decimal::from(10));
-        assert_eq!(*total_value, Decimal::from_str("110.93").unwrap());
+        assert_eq!(
+            *total_value,
+            Decimal::from_str("110.93").expect("valid decimal")
+        );
         assert_eq!(*tax_paid, Decimal::from(0));
     } else {
         panic!("Expected Dividend operation");
@@ -55,7 +65,10 @@ fn test_parse_capreturn_with_expenses_keyword() {
     let transactions = parse_file(input).expect("Failed to parse CAPRETURN with EXPENSES keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
-    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 5, 31).unwrap());
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2019, 5, 31).expect("valid test date")
+    );
     assert_eq!(tx.ticker, "GB00B3TYHH97");
     if let Operation::CapReturn {
         amount,
@@ -64,7 +77,10 @@ fn test_parse_capreturn_with_expenses_keyword() {
     } = &tx.operation
     {
         assert_eq!(*amount, Decimal::from(10));
-        assert_eq!(*total_value, Decimal::from_str("149.75").unwrap());
+        assert_eq!(
+            *total_value,
+            Decimal::from_str("149.75").expect("valid decimal")
+        );
         assert_eq!(*expenses, Decimal::from(0));
     } else {
         panic!("Expected CapReturn operation");
@@ -77,7 +93,10 @@ fn test_parse_split_with_ratio_keyword() {
     let transactions = parse_file(input).expect("Failed to parse SPLIT with RATIO keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
-    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 2, 15).unwrap());
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2019, 2, 15).expect("valid test date")
+    );
     assert_eq!(tx.ticker, "FOO");
     if let Operation::Split { ratio } = &tx.operation {
         assert_eq!(*ratio, Decimal::from(2));
@@ -92,7 +111,10 @@ fn test_parse_unsplit_with_ratio_keyword() {
     let transactions = parse_file(input).expect("Failed to parse UNSPLIT with RATIO keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
-    assert_eq!(tx.date, NaiveDate::from_ymd_opt(2019, 2, 15).unwrap());
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2019, 2, 15).expect("valid test date")
+    );
     assert_eq!(tx.ticker, "FOO");
     if let Operation::Unsplit { ratio } = &tx.operation {
         assert_eq!(*ratio, Decimal::from(2));

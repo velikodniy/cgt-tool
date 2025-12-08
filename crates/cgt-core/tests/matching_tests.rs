@@ -1,10 +1,11 @@
+#![allow(clippy::expect_used)]
+
 use cgt_core::calculator::calculate;
 use cgt_core::models::*;
 use cgt_core::parser::parse_file;
 use rust_decimal::Decimal;
 use std::fs;
 use std::path::PathBuf;
-// use std::str::FromStr; // Not needed anymore
 
 fn get_test_data_dir() -> PathBuf {
     let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -50,8 +51,10 @@ fn test_data_driven_matching() {
             let actual_report = calculate(transactions, year_start).expect("Failed to calculate");
 
             // Filter expected matches to the requested tax year
-            let start_date = chrono::NaiveDate::from_ymd_opt(year_start, 4, 6).unwrap();
-            let end_date = chrono::NaiveDate::from_ymd_opt(year_start + 1, 4, 5).unwrap();
+            let start_date = chrono::NaiveDate::from_ymd_opt(year_start, 4, 6)
+                .expect("valid tax year start date");
+            let end_date = chrono::NaiveDate::from_ymd_opt(year_start + 1, 4, 5)
+                .expect("valid tax year end date");
 
             let expected_matches_in_year: Vec<Match> = expected_report
                 .matches
