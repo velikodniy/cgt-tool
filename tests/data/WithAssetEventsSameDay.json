@@ -8,11 +8,5 @@
       "net_gain": "0"
     }
   ],
-  "holdings": [
-    {
-      "ticker": "GLOBAL",
-      "quantity": "0",
-      "total_cost": "0"
-    }
-  ]
+  "holdings": []
 }
