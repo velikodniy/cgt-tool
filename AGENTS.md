@@ -30,6 +30,7 @@ cargo build --release   # Build release binary
 
 ## Recent Changes
 
+- 006-multi-ticker: No new dependencies (multi-ticker Section 104 pooling with ticker normalization)
 - 005-internal-data-model: Added Rust 2024 edition + serde, serde_json, chrono, rust_decimal, thiserror, schemars (JsonSchema)
 - 004-test-validation: No new dependencies (documentation and test verification only)
 - 003-strict-clippy-linting: Enforced strict Clippy linting, replaced all unwraps with proper error handling

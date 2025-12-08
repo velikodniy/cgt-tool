@@ -1,0 +1,38 @@
+# Test: MultiTickerBasic
+# Purpose: Basic multi-ticker Section 104 pooling test
+# Rules Tested: Section 104
+# Complexity: Simple
+# Key Features: Two tickers (AAPL, MSFT) with independent Section 104 pools
+# Expected Outcome: AAPL gain £100, MSFT loss £100, Net £0
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#
+#   AAPL Transactions:
+#     2023-06-01 BUY 10 @ £100 + £0 expenses = £1000 (pool: 10 shares, £1000)
+#     2023-09-01 SELL 5 @ £120 - £0 expenses = £600 (proceeds)
+#       Section 104 match: cost = £1000 × (5/10) = £500
+#       Gain: £600 - £500 = £100 ✓
+#     Remaining pool: 5 shares, £500
+#
+#   MSFT Transactions:
+#     2023-06-01 BUY 20 @ £50 + £0 expenses = £1000 (pool: 20 shares, £1000)
+#     2023-09-01 SELL 10 @ £40 - £0 expenses = £400 (proceeds)
+#       Section 104 match: cost = £1000 × (10/20) = £500
+#       Loss: £400 - £500 = -£100 ✓
+#     Remaining pool: 10 shares, £500
+#
+#   Totals:
+#     Total Gain: £100
+#     Total Loss: £100
+#     Net: £0 ✓
+#
+#   Holdings:
+#     AAPL: 5 shares, £500 cost
+#     MSFT: 10 shares, £500 cost
+#
+2023-06-01 BUY AAPL 10 @ 100 EXPENSES 0
+2023-06-01 BUY MSFT 20 @ 50 EXPENSES 0
+2023-09-01 SELL AAPL 5 @ 120 EXPENSES 0
+2023-09-01 SELL MSFT 10 @ 40 EXPENSES 0

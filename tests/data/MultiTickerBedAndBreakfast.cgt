@@ -1,0 +1,52 @@
+# Test: MultiTickerBedAndBreakfast
+# Purpose: Verify B&B matching only matches same ticker
+# Rules Tested: Bed & Breakfast (30-day rule), Section 104
+# Complexity: Medium
+# Key Features: Sell then rebuy within 30 days for DIFFERENT tickers must NOT cross-match
+# Expected Outcome: Each ticker applies B&B within itself only
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#
+#   Scenario:
+#     - Initial holdings in AAPL and MSFT
+#     - Sell both on same day
+#     - Rebuy only AAPL within 30 days
+#     - Rebuy only MSFT within 30 days
+#
+#   If incorrectly implemented, AAPL SELL could B&B match with MSFT BUY (wrong!)
+#
+#   AAPL Transactions:
+#     2023-06-01 BUY 10 @ £100 + £0 expenses = £1000 (Section 104 pool)
+#     2023-07-15 SELL 5 @ £120 - £0 expenses = £600 proceeds
+#     2023-07-20 BUY 5 @ £115 + £0 expenses = £575 (B&B match with 2023-07-15 sell)
+#       B&B: 5 days after sell, matches all 5 shares
+#       Cost = £575
+#       Gain = £600 - £575 = £25 ✓
+#     Remaining from first buy: 5 shares in Section 104 pool = £500
+#
+#   MSFT Transactions:
+#     2023-06-01 BUY 20 @ £50 + £0 expenses = £1000 (Section 104 pool)
+#     2023-07-15 SELL 10 @ £40 - £0 expenses = £400 proceeds
+#     2023-08-01 BUY 10 @ £42 + £0 expenses = £420 (B&B match with 2023-07-15 sell)
+#       B&B: 17 days after sell, matches all 10 shares
+#       Cost = £420
+#       Loss = £400 - £420 = -£20 ✓
+#     Remaining from first buy: 10 shares in Section 104 pool = £500
+#
+#   Totals:
+#     Total Gain: £25
+#     Total Loss: £20
+#     Net: £5 ✓
+#
+#   Holdings:
+#     AAPL: 5 shares, £500 cost (from original pool)
+#     MSFT: 10 shares, £500 cost (from original pool)
+#
+2023-06-01 BUY AAPL 10 @ 100 EXPENSES 0
+2023-06-01 BUY MSFT 20 @ 50 EXPENSES 0
+2023-07-15 SELL AAPL 5 @ 120 EXPENSES 0
+2023-07-15 SELL MSFT 10 @ 40 EXPENSES 0
+2023-07-20 BUY AAPL 5 @ 115 EXPENSES 0
+2023-08-01 BUY MSFT 10 @ 42 EXPENSES 0

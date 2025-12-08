@@ -1,0 +1,52 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-07-15",
+          "ticker": "AAPL",
+          "quantity": "5",
+          "proceeds": "545",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "5",
+              "allowable_cost": "505",
+              "gain_or_loss": "40"
+            }
+          ]
+        },
+        {
+          "date": "2023-07-15",
+          "ticker": "MSFT",
+          "quantity": "10",
+          "proceeds": "445",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "10",
+              "allowable_cost": "505",
+              "gain_or_loss": "-60"
+            }
+          ]
+        }
+      ],
+      "total_gain": "40",
+      "total_loss": "60",
+      "net_gain": "-20"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "quantity": "5",
+      "total_cost": "505"
+    },
+    {
+      "ticker": "MSFT",
+      "quantity": "10",
+      "total_cost": "505"
+    }
+  ]
+}

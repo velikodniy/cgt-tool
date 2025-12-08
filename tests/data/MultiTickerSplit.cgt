@@ -1,0 +1,48 @@
+# Test: MultiTickerSplit
+# Purpose: Verify SPLIT only affects specified ticker's pool
+# Rules Tested: Split, Section 104
+# Complexity: Medium
+# Key Features: Split on one ticker must NOT affect other ticker's pool
+# Expected Outcome: AAPL pool is split 2:1, MSFT pool unchanged
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#
+#   Scenario:
+#     - Buy both AAPL and MSFT
+#     - Apply 2:1 split to AAPL only
+#     - Sell some of each to verify correct pool sizes
+#
+#   AAPL Transactions:
+#     2023-06-01 BUY 10 @ £100 + £0 expenses = £1000 (pool: 10 shares, £1000)
+#     2023-07-01 SPLIT 2:1 (pool: 20 shares, £1000, avg £50)
+#     2023-08-01 SELL 10 @ £60 - £0 expenses = £600 proceeds
+#       Section 104: 10 shares from pool of 20
+#       Cost = £1000 × (10/20) = £500
+#       Gain = £600 - £500 = £100 ✓
+#     Remaining pool: 10 shares, £500, avg £50
+#
+#   MSFT Transactions:
+#     2023-06-01 BUY 20 @ £50 + £0 expenses = £1000 (pool: 20 shares, £1000)
+#     (no split applied to MSFT)
+#     2023-08-01 SELL 10 @ £55 - £0 expenses = £550 proceeds
+#       Section 104: 10 shares from pool of 20
+#       Cost = £1000 × (10/20) = £500
+#       Gain = £550 - £500 = £50 ✓
+#     Remaining pool: 10 shares, £500, avg £50
+#
+#   Totals:
+#     Total Gain: £150
+#     Total Loss: £0
+#     Net: £150 ✓
+#
+#   Holdings:
+#     AAPL: 10 shares, £500 cost (post-split: originally 5 pre-split shares)
+#     MSFT: 10 shares, £500 cost (unchanged by AAPL's split)
+#
+2023-06-01 BUY AAPL 10 @ 100 EXPENSES 0
+2023-06-01 BUY MSFT 20 @ 50 EXPENSES 0
+2023-07-01 SPLIT AAPL RATIO 2
+2023-08-01 SELL AAPL 10 @ 60 EXPENSES 0
+2023-08-01 SELL MSFT 10 @ 55 EXPENSES 0
