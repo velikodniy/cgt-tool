@@ -227,11 +227,7 @@ pub fn calculate(
     }
 
     let mut internal_matches = Vec::new();
-    let mut pool = Section104Holding {
-        ticker: "GLOBAL".to_string(),
-        quantity: Decimal::ZERO,
-        total_cost: Decimal::ZERO,
-    };
+    let mut pool: Option<Section104Holding> = None;
 
     let mut consumed = vec![Decimal::ZERO; transactions.len()];
 
@@ -399,7 +395,6 @@ pub fn calculate(
             Operation::Buy { amount, .. } => {
                 let remaining_amount = *amount - consumed[transaction_idx];
                 if remaining_amount > Decimal::ZERO {
-                    pool.quantity += remaining_amount;
                     // Use adjusted cost from tracker
                     let cost_add = if let Some(tracker) = &acquisition_trackers[transaction_idx] {
                         remaining_amount * tracker.adjusted_unit_cost()
@@ -408,27 +403,40 @@ pub fn calculate(
                             "Missing acquisition tracker for BUY transaction".to_string(),
                         ));
                     };
-                    pool.total_cost += cost_add;
+                    let p = pool.get_or_insert_with(|| Section104Holding {
+                        ticker: current_transaction.ticker.clone(),
+                        quantity: Decimal::ZERO,
+                        total_cost: Decimal::ZERO,
+                    });
+                    p.quantity += remaining_amount;
+                    p.total_cost += cost_add;
                 }
             }
             Operation::Sell { amount, .. } => {
                 let remaining_amount = *amount - consumed[transaction_idx];
                 if remaining_amount > Decimal::ZERO {
-                    if pool.quantity <= Decimal::ZERO {
+                    let p = pool.as_mut().ok_or_else(|| {
+                        CgtError::InvalidTransaction(format!(
+                            "Sell of {} {} on {} with no prior acquisitions",
+                            remaining_amount, current_transaction.ticker, current_transaction.date,
+                        ))
+                    })?;
+
+                    if p.quantity <= Decimal::ZERO {
                         return Err(CgtError::InvalidTransaction(format!(
                             "Sell of {} {} on {} exceeds holding (Pool: {})",
                             remaining_amount,
                             current_transaction.ticker,
                             current_transaction.date,
-                            pool.quantity
+                            p.quantity
                         )));
                     }
 
                     let matched_quantity = remaining_amount;
-                    let cost_portion = pool.total_cost * (matched_quantity / pool.quantity);
+                    let cost_portion = p.total_cost * (matched_quantity / p.quantity);
 
-                    pool.quantity -= matched_quantity;
-                    pool.total_cost -= cost_portion;
+                    p.quantity -= matched_quantity;
+                    p.total_cost -= cost_portion;
 
                     let proceeds = get_proceeds(current_transaction, matched_quantity);
                     internal_matches.push(InternalMatch {
@@ -444,18 +452,18 @@ pub fn calculate(
                 }
             }
             Operation::Split { ratio } => {
-                pool.quantity *= *ratio;
+                if let Some(p) = &mut pool {
+                    p.quantity *= *ratio;
+                }
             }
             Operation::Unsplit { ratio } => {
-                pool.quantity /= *ratio;
+                if let Some(p) = &mut pool {
+                    p.quantity /= *ratio;
+                }
             }
             // CAPRETURN and DIVIDEND are handled in preprocessing, nothing to do here
             Operation::CapReturn { .. } => {}
             Operation::Dividend { .. } => {}
-        }
-
-        if pool.ticker == "GLOBAL" {
-            pool.ticker = current_transaction.ticker.clone();
         }
     }
 
@@ -512,12 +520,8 @@ pub fn calculate(
         net_gain: total_gain - total_loss,
     };
 
-    // Filter out the GLOBAL placeholder (appears when there are no transactions)
-    let holdings = if pool.ticker == "GLOBAL" {
-        vec![]
-    } else {
-        vec![pool]
-    };
+    // Convert Option<Section104Holding> to Vec for output
+    let holdings: Vec<Section104Holding> = pool.into_iter().collect();
 
     Ok(TaxReport {
         tax_years: vec![tax_year_summary],
