@@ -1,27 +1,47 @@
 {
-  "tax_year": 2018,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2018-08-28",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "1990",
-      "allowable_cost": "1010",
-      "gain_or_loss": "980",
-      "rule": "SameDay"
-    },
-    {
-      "date": "2018-10-28",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "3990",
-      "allowable_cost": "5010",
-      "gain_or_loss": "-1020",
-      "rule": "SameDay"
+      "period": "2018/19",
+      "disposals": [
+        {
+          "date": "2018-08-28",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "1990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "1010.00",
+              "gain_or_loss": "980.00"
+            }
+          ]
+        },
+        {
+          "date": "2018-10-28",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "3990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "5010.00",
+              "gain_or_loss": "-1020.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "980.00",
+      "total_loss": "1020.00",
+      "net_gain": "-40.00"
     }
   ],
-  "total_gain": "980",
-  "total_loss": "1020",
-  "net_gain": "-40",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "STOCK",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
 }

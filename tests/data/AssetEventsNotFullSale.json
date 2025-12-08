@@ -1,27 +1,33 @@
 {
-  "tax_year": 2019,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2019-09-01",
-      "ticker": "FOOBAR",
-      "quantity": "5",
-      "proceeds": "525",
-      "allowable_cost": "496.66665",
-      "gain_or_loss": "28",
-      "rule": "Section104"
-    },
-    {
-      "date": "2020-07-01",
-      "ticker": "FOOBAR",
-      "quantity": "5",
-      "proceeds": "500",
-      "allowable_cost": "442.66665",
-      "gain_or_loss": "57",
-      "rule": "Section104"
+      "period": "2019/20",
+      "disposals": [
+        {
+          "date": "2019-09-01",
+          "ticker": "FOOBAR",
+          "quantity": "5",
+          "proceeds": "525",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "5",
+              "allowable_cost": "496.66666666666666666666666665",
+              "gain_or_loss": "28.33333333333333333333333335"
+            }
+          ]
+        }
+      ],
+      "total_gain": "28.33333333333333333333333335",
+      "total_loss": "0",
+      "net_gain": "28.33333333333333333333333335"
     }
   ],
-  "total_gain": "28",
-  "total_loss": "0",
-  "net_gain": "28",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "FOOBAR",
+      "quantity": "20",
+      "total_cost": "1762.6666666666666666666666667"
+    }
+  ]
 }

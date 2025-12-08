@@ -19,4 +19,7 @@ pub enum CgtError {
 
     #[error("Invalid date: year {year} is out of valid range")]
     InvalidDateYear { year: i32 },
+
+    #[error("Invalid tax year: {0} is out of valid range (1900-2100)")]
+    InvalidTaxYear(u16),
 }

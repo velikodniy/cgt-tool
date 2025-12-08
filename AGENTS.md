@@ -30,6 +30,8 @@ cargo build --release   # Build release binary
 
 ## Recent Changes
 
+- 005-internal-data-model: Added Rust 2024 edition + serde, serde_json, chrono, rust_decimal, thiserror, schemars (JsonSchema)
+- 004-test-validation: No new dependencies (documentation and test verification only)
 - 003-strict-clippy-linting: Enforced strict Clippy linting, replaced all unwraps with proper error handling
 - 002-dsl-enhancements: Added TAX, EXPENSES, RATIO keywords for improved DSL readability
 - 001-cgt-cli: Initial CGT CLI tool with PEG parser and UK tax rules (Same Day, B&B, Section 104)

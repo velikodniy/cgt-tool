@@ -1,1 +1,14 @@
+# Test: Blank
+# Purpose: Tests parser handling of empty/comment-only input
+# Rules Tested: N/A (parser edge case)
+# Complexity: Simple
+# Key Features: File contains only comments, no transactions
+# Expected Outcome: No matches, no gains, no losses
+#
+# Verification Status: Verified
+# Verified By: Manual inspection 2025-12-08
+# Verification Notes:
+#   Empty input should produce no matches and no CGT events.
+#   No expected output JSON - test verifies parser doesn't crash.
+#
 # This is intentionally blank

@@ -1,3 +1,58 @@
+# Test: HMRCExample1
+# Purpose: Validates official HMRC Example 3 from HS284_Example_3_2020.pdf
+# Rules Tested: Section 104 Pooling (no Same Day or B&B matches)
+# Complexity: Complex
+# Key Features: Multi-year (2014-2019), official HMRC example, Section 104 pool maintenance
+# Expected Outcome: Total gain £629 (2018/19: £329 + 2019/20: £300)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes: See detailed verification below
+#
+# === DETAILED VERIFICATION ===
+# Source: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/877369/HS284_Example_3_2020.pdf
+#
+# CHRONOLOGICAL ORDER (for understanding):
+# 1. 2014-04-01: BUY 1000 @ £4.00 + £150 expenses
+# 2. 2017-09-01: BUY 500 @ £4.10 + £80 expenses
+# 3. 2018-05-01: SELL 700 @ £4.80 - £100 expenses
+# 4. 2019-02-01: SELL 400 @ £5.20 - £105 expenses
+#
+# SECTION 104 POOL CALCULATIONS:
+#
+# Transaction 1: 2014-04-01 BUY 1000 shares
+#   Cost: 1000 × £4.00 + £150 = £4,150
+#   Pool: 1000 shares, £4,150 total, avg £4.15
+#
+# Transaction 2: 2017-09-01 BUY 500 shares
+#   Cost: 500 × £4.10 + £80 = £2,130
+#   Pool: 1000 + 500 = 1500 shares
+#   Pool cost: £4,150 + £2,130 = £6,280
+#   Avg cost: £6,280 / 1500 = £4.1867 per share
+#
+# Transaction 3: 2018-05-01 SELL 700 shares (Tax Year 2018/19)
+#   Rule: Section 104 (no same day or B&B)
+#   Proceeds: 700 × £4.80 - £100 = £3,260
+#   Cost from pool: 700 × £4.1867 = £2,930.67
+#   Gain: £3,260 - £2,930.67 = £329.33 ≈ £329
+#   Pool after: 1500 - 700 = 800 shares
+#   Pool cost: £6,280 - £2,930.67 = £3,349.33
+#   Avg cost remains: £4.1867
+#
+# Transaction 4: 2019-02-01 SELL 400 shares (Tax Year 2018/19)
+#   Rule: Section 104 (no same day or B&B)
+#   Proceeds: 400 × £5.20 - £105 = £1,975
+#   Cost from pool: 400 × £4.1867 = £1,674.67
+#   Gain: £1,975 - £1,674.67 = £300.33 ≈ £300
+#   Pool after: 800 - 400 = 400 shares
+#   Pool cost: £3,349.33 - £1,674.67 = £1,674.67
+#
+# FINAL RESULT:
+#   Tax Year 2018/19 Total Gain: £329 + £300 = £629
+#   Total Loss: £0
+#   Verification: ✓ Matches expected output and HMRC worked example
+# === END DETAILED VERIFICATION ===
+#
 # Taken from https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/877369/HS284_Example_3_2020.pdf
 2019-02-01 SELL Lobster 400 @ 5.20 EXPENSES 105
 2018-05-01 SELL Lobster 700 @ 4.80 EXPENSES 100

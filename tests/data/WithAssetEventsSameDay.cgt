@@ -1,3 +1,20 @@
+# Test: WithAssetEventsSameDay
+# Purpose: Documents unsupported case - same day buy/sell with asset events
+# Rules Tested: N/A (Unsupported scenario)
+# Complexity: N/A
+# Key Features: Same-day buy AND sell with capital returns - edge case
+# Expected Outcome: No test JSON - scenario not currently supported
+#
+# Verification Status: Not Applicable
+# Verified By: N/A
+# Verification Notes:
+#   This test file documents a scenario that is not currently supported
+#   by the calculator. When both BUY and SELL occur on the same day,
+#   the calculator cannot determine if all shares are being sold.
+#
+#   Original cgtcalc format shown in comments for reference.
+#   No expected output JSON exists for this file.
+#
 # This doesn't currently work because the BUY and SELL on the same day trigger the calculator to believe that not all the shares are being sold. So this case is not currently supported.
 #
 # DIVIDEND 30/11/2019 GB00B3TYHH97 20 110.93

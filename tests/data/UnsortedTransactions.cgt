@@ -1,0 +1,30 @@
+# Test: unsorted_transactions
+# Purpose: Validates parser correctly sorts transactions regardless of input order
+# Rules Tested: Section 104 Pooling (parser ordering test)
+# Complexity: Simple
+# Key Features: Transactions in non-chronological order in input file
+# Expected Outcome: Gain £166.67 (5 shares remaining in pool)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Input order (non-chronological):
+#     2023-01-03 SELL, 2023-01-01 BUY, 2023-01-02 BUY
+#
+#   Parser sorts to chronological order:
+#     2023-01-01 BUY 10 @ £90 = £900
+#     2023-01-02 BUY 5 @ £100 = £500
+#     Pool: 15 shares, £1400, avg £93.33/share
+#
+#     2023-01-03 SELL 10 @ £110:
+#     Proceeds: £1100
+#     Cost: 10 × £93.33 = £933.33
+#     Gain: £1100 - £933.33 = £166.67 ✓
+#
+#   Pool after: 5 shares, £466.67
+#
+#   Note: This is a cgt-tool exclusive test (not from cgtcalc)
+#
+2023-01-03 SELL AAPL 10 @ 110.00
+2023-01-01 BUY AAPL 10 @ 90.00
+2023-01-02 BUY AAPL 5 @ 100.00

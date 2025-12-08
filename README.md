@@ -56,3 +56,19 @@ One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPE
 - **DIVIDEND**: `YYYY-MM-DD DIVIDEND TICKER AMOUNT TAX TAX_AMOUNT`
 - **CAPRETURN**: `YYYY-MM-DD CAPRETURN TICKER AMOUNT EXPENSES EXPENSE_AMOUNT`
 - **SPLIT/UNSPLIT**: `YYYY-MM-DD SPLIT FOO RATIO RATIO_VALUE`
+
+## Tax Rules Documentation
+
+For detailed information about UK CGT share matching rules, see [TAX_RULES.md](./TAX_RULES.md).
+
+## Acknowledgments
+
+The test suite for this project was developed using test cases from [cgtcalc](https://github.com/mattjgalloway/cgtcalc) by Matt Galloway. We are grateful for this reference implementation which helped validate our CGT calculations against UK tax rules.
+
+**Test Data Attribution:**
+
+- Source: https://github.com/mattjgalloway/cgtcalc
+- Commit: 896d91486805e27fcea0e851ee01868b86e161f5
+- Date: 2025-11-21
+
+The test cases have been adapted to our DSL format while preserving the calculation scenarios and expected results

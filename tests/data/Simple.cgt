@@ -1,2 +1,16 @@
+# Test: Simple
+# Purpose: Basic same-day buy/sell matching test
+# Rules Tested: Same Day
+# Complexity: Simple
+# Key Features: Single same-day pair, single ticker
+# Expected Outcome: Loss £20
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Buy: 10 × £4.1565 + £12.5 = £54.065
+#   Sell: 10 × £4.6702 - £12.5 = £34.202
+#   Same Day match → Loss: £34.202 - £54.065 = -£19.86 ≈ -£20 ✓
+#
 2018-08-28 BUY GB00B41YBW71 10 @ 4.1565 EXPENSES 12.5
 2018-08-28 SELL GB00B41YBW71 10 @ 4.6702 EXPENSES 12.5

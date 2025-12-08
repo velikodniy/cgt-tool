@@ -1,3 +1,29 @@
+# Test: SameDayMergeInterleaved
+# Purpose: Tests same-day buy aggregation into Section 104 pool with interleaved transactions
+# Rules Tested: Same Day aggregation, Section 104 Pooling
+# Complexity: Medium
+# Key Features: Buys on one date enter pool, sells on another date from pool
+# Expected Outcome: Loss £19
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Same-day buys on 2018-08-28 aggregate:
+#     Buy 1: 10 × £8 + £2 = £82
+#     Buy 2: 10 × £10 + £2 = £102
+#     Buy 3: 10 × £5 + £12.5 = £62.5
+#     Pool: 30 shares, £246.50, avg £8.2167/share
+#
+#   Same-day sells on 2018-10-28 aggregate:
+#     Sell 1: 10 × £7 - £12.5 = £57.50
+#     Sell 2: 10 × £9 - £2 = £88
+#     Total proceeds: £145.50
+#
+#   Section 104 disposal (20 shares):
+#     Cost: 20 × £8.2167 = £164.33
+#     Proceeds: £145.50
+#     Loss: -£18.83 ≈ -£19 ✓
+#
 2018-08-28 BUY GB00B41YBW71 10 @ 8 EXPENSES 2
 2018-10-28 SELL GB00B41YBW71 10 @ 7 EXPENSES 12.5
 2018-08-28 BUY GB00B41YBW71 10 @ 10 EXPENSES 2
