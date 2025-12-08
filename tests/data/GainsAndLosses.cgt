@@ -1,3 +1,25 @@
+# Test: GainsAndLosses
+# Purpose: Demonstrates both gains and losses in same tax year
+# Rules Tested: Same Day
+# Complexity: Simple
+# Key Features: Two same-day pairs - one gain, one loss
+# Expected Outcome: Total gain £980, Total loss £1020, Net loss £40
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Pair 1 (2018-08-28):
+#     Buy: 1000 × £1 + £10 = £1010
+#     Sell: 1000 × £2 - £10 = £1990
+#     Gain: £1990 - £1010 = £980 ✓
+#
+#   Pair 2 (2018-10-28):
+#     Buy: 1000 × £5 + £10 = £5010
+#     Sell: 1000 × £4 - £10 = £3990
+#     Loss: £3990 - £5010 = -£1020 ✓
+#
+#   Net: £980 - £1020 = -£40 ✓
+#
 2018-08-28 BUY STOCK 1000 @ 1 EXPENSES 10
 2018-08-28 SELL STOCK 1000 @ 2 EXPENSES 10
 2018-10-28 BUY STOCK 1000 @ 5 EXPENSES 10

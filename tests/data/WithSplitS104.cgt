@@ -1,3 +1,25 @@
+# Test: WithSplitS104
+# Purpose: Validates 2:1 stock split affects pool shares but not cost
+# Rules Tested: Stock Split, Section 104 Pooling
+# Complexity: Simple
+# Key Features: 2:1 split doubles shares, maintains total cost
+# Expected Outcome: Gain £40
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Buy: 20 × £10 + £0 = £200
+#   Pool: 20 shares, £200
+#
+#   Split 2:1:
+#   Pool: 40 shares, £200 (cost unchanged)
+#   Avg cost: £5/share
+#
+#   Sell 40 shares:
+#   Proceeds: 40 × £6 - £0 = £240
+#   Cost: £200
+#   Gain: £240 - £200 = £40 ✓
+#
 2019-01-01 BUY FOO 20 @ 10 EXPENSES 0
 2019-02-01 SPLIT FOO RATIO 2
 2019-04-01 SELL FOO 40 @ 6 EXPENSES 0

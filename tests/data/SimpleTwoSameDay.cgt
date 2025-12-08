@@ -1,3 +1,19 @@
+# Test: SimpleTwoSameDay
+# Purpose: Two different tickers with same-day matching on same date
+# Rules Tested: Same Day
+# Complexity: Simple
+# Key Features: Two tickers (BAR, FOO), same date, independent matches
+# Expected Outcome: Total loss £40 (£20 per ticker)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   BAR: Buy 10 × £4.1565 + £12.5 = £54.065, Sell 10 × £4.6702 - £12.5 = £34.202
+#        Loss: -£19.86 ≈ -£20
+#   FOO: Buy 10 × £4.1565 + £12.5 = £54.065, Sell 10 × £4.6702 - £12.5 = £34.202
+#        Loss: -£19.86 ≈ -£20
+#   Total loss: £40 ✓
+#
 2018-08-28 BUY BAR 10 @ 4.1565 EXPENSES 12.5
 2018-08-28 SELL BAR 10 @ 4.6702 EXPENSES 12.5
 2018-08-28 BUY FOO 10 @ 4.1565 EXPENSES 12.5

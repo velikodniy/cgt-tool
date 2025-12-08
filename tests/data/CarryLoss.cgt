@@ -1,3 +1,77 @@
+# Test: CarryLoss
+# Purpose: Validates loss crystallization and potential carry-forward across tax years
+# Rules Tested: Same Day matching across multiple years
+# Complexity: Complex
+# Key Features: First year loss (£1000), subsequent years gains, same-day matching
+# Expected Outcome: Total loss £1000 (Year 1 loss, then £1000 and £19000 gains)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes: See detailed verification below
+#
+# === DETAILED VERIFICATION ===
+#
+# CHRONOLOGICAL ORDER (transactions reordered for understanding):
+# 1. 2018-01-01: BUY 1 @ £1000, expenses £0
+# 2. 2018-01-01: SELL 1 @ £0, expenses £0
+# 3. 2019-01-01: BUY 1 @ £1000, expenses £0
+# 4. 2019-01-01: SELL 1 @ £2000, expenses £0
+# 5. 2020-01-01: BUY 1 @ £1000, expenses £0
+# 6. 2020-01-01: SELL 1 @ £20000, expenses £0
+#
+# All transactions are same-day buy/sell pairs → Same Day Rule applies to each
+#
+# === TAX YEAR 2017/18 (6 Apr 2017 - 5 Apr 2018) ===
+#
+# Transaction pair on 2018-01-01:
+#   Buy: 1 share × £1000 + £0 = £1000
+#   Sell: 1 share × £0 - £0 = £0
+#
+#   Same Day Rule: Buy and sell on same day
+#   Proceeds: £0
+#   Cost: £1000
+#   Loss: £0 - £1000 = -£1000
+#
+# === TAX YEAR 2018/19 (6 Apr 2018 - 5 Apr 2019) ===
+#
+# Transaction pair on 2019-01-01:
+#   Buy: 1 share × £1000 + £0 = £1000
+#   Sell: 1 share × £2000 - £0 = £2000
+#
+#   Same Day Rule: Buy and sell on same day
+#   Proceeds: £2000
+#   Cost: £1000
+#   Gain: £2000 - £1000 = £1000
+#
+# === TAX YEAR 2019/20 (6 Apr 2019 - 5 Apr 2020) ===
+#
+# Transaction pair on 2020-01-01:
+#   Buy: 1 share × £1000 + £0 = £1000
+#   Sell: 1 share × £20000 - £0 = £20000
+#
+#   Same Day Rule: Buy and sell on same day
+#   Proceeds: £20000
+#   Cost: £1000
+#   Gain: £20000 - £1000 = £19000
+#
+# SUMMARY BY TAX YEAR:
+#   2017/18: Loss £1000
+#   2018/19: Gain £1000
+#   2019/20: Gain £19000
+#
+# Loss Carry Forward:
+#   The £1000 loss from 2017/18 can be carried forward to offset
+#   against the £1000 gain in 2018/19, resulting in net £0 taxable gain.
+#   The £19000 gain in 2019/20 would then be fully taxable.
+#
+# FINAL RESULT (from JSON - tax_year: 2017):
+#   Total Gain: £0 (as reported in JSON)
+#   Total Loss: £1000 (the first year loss)
+#   Net Gain: -£1000
+#   Note: JSON shows results for tax_year 2017 (2017/18) only
+#   Verification: ✓ Matches expected output
+# === END DETAILED VERIFICATION ===
+#
 2020-01-01 SELL GB00B41YBW71 1 @ 20000 EXPENSES 0
 2020-01-01 BUY GB00B41YBW71 1 @ 1000 EXPENSES 0
 2019-01-01 SELL GB00B41YBW71 1 @ 2000 EXPENSES 0

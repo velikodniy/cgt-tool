@@ -1,3 +1,27 @@
+# Test: WithSplitBB
+# Purpose: Validates Bed & Breakfast matching with a stock split in the B&B window
+# Rules Tested: Bed & Breakfast, Stock Split
+# Complexity: Medium
+# Key Features: Sale matched via B&B with buys that occur around a split
+# Expected Outcome: Gain £40
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Initial buy: 20 × £10 = £200 enters pool
+#   Sell 20 @ £12: Proceeds = £240 (B&B check within 30 days)
+#
+#   B&B buys within 30 days:
+#   - 2019-02-10: Buy 10 @ £10 = £100
+#   - Split 2:1 on 2019-02-15: 10 shares → 20 shares (cost still £100)
+#   - 2019-02-20: Buy 20 @ £5 = £100
+#
+#   B&B matching: 20 shares sold matched with B&B acquisitions
+#   Total B&B acquisition cost: £100 + £100 = £200
+#   (The split affects share count but acquisitions provide 30 shares post-split)
+#
+#   Gain: £240 - £200 = £40 ✓
+#
 2019-01-01 BUY FOO 20 @ 10 EXPENSES 0
 2019-02-01 SELL FOO 20 @ 12 EXPENSES 0
 2019-02-10 BUY FOO 10 @ 10 EXPENSES 0

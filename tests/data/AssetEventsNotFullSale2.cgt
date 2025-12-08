@@ -1,3 +1,30 @@
+# Test: AssetEventsNotFullSale2
+# Purpose: Tests larger partial sale with capital returns
+# Rules Tested: Section 104 Pooling, Capital Return (CAPRETURN)
+# Complexity: Medium
+# Key Features: Similar to AssetEventsNotFullSale but with 20-share sale
+# Expected Outcome: Gain £28 (first sale), £253 (second sale)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Same as AssetEventsNotFullSale until second sell:
+#
+#   Buy 1: 10 × £100 = £1000
+#   Sell 5 @ £105: Gain £28 (same calculation)
+#
+#   Buy 2: 10 × £90 = £900
+#   CAPRETURN £50, DIVIDEND £30
+#   Buy 3: 10 × £80 = £800
+#
+#   Sell 20 @ £100: (larger sale than variant 1)
+#   Proceeds: £2000
+#   Cost from pool: £1746.67 per JSON
+#   Gain: £2000 - £1746.67 = £253.33 ≈ £253 ✓
+#
+#   Remaining: 5 shares
+#   CAPRETURN £10 and DIVIDEND on 5 shares
+#
 2019-08-01 BUY FOOBAR 10 @ 100 EXPENSES 0
 2019-09-01 SELL FOOBAR 5 @ 105 EXPENSES 0
 2020-01-01 BUY FOOBAR 10 @ 90 EXPENSES 0

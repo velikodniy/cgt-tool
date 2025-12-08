@@ -1,3 +1,25 @@
+# Test: WithUnsplitS104
+# Purpose: Validates reverse split (consolidation) affects pool shares but not cost
+# Rules Tested: Stock Unsplit (Consolidation), Section 104 Pooling
+# Complexity: Simple
+# Key Features: 2:1 consolidation halves shares, maintains total cost
+# Expected Outcome: Gain £40
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Buy: 20 × £10 + £0 = £200
+#   Pool: 20 shares, £200
+#
+#   Unsplit 2:1 (consolidation):
+#   Pool: 10 shares, £200 (cost unchanged)
+#   Avg cost: £20/share
+#
+#   Sell 10 shares:
+#   Proceeds: 10 × £24 - £0 = £240
+#   Cost: £200
+#   Gain: £240 - £200 = £40 ✓
+#
 2019-01-01 BUY FOO 20 @ 10 EXPENSES 0
 2019-02-01 UNSPLIT FOO RATIO 2
 2019-04-01 SELL FOO 10 @ 24 EXPENSES 0

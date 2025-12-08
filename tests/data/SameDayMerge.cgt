@@ -1,3 +1,52 @@
+# Test: SameDayMerge
+# Purpose: Validates Same Day rule with multiple buys merging into Section 104 pool
+# Rules Tested: Same Day aggregation, Section 104 Pooling
+# Complexity: Complex
+# Key Features: Multiple same-day buys merge into pool, later sells from pool
+# Expected Outcome: Loss £19 (Section 104 disposal)
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes: See detailed verification below
+#
+# === DETAILED VERIFICATION ===
+#
+# CHRONOLOGICAL ORDER:
+# 1. 2018-08-28: BUY 10 @ £8.00 + £2 expenses
+# 2. 2018-08-28: BUY 10 @ £10.00 + £2 expenses
+# 3. 2018-08-28: BUY 10 @ £5.00 + £12.5 expenses
+# 4. 2018-10-28: SELL 10 @ £9.00 - £2 expenses
+# 5. 2018-10-28: SELL 10 @ £7.00 - £12.5 expenses
+#
+# Same Day Rule Applied (2018-08-28):
+#   All 3 buys on same day are aggregated:
+#   Total shares: 10 + 10 + 10 = 30 shares
+#   Total cost: (10×8 + 2) + (10×10 + 2) + (10×5 + 12.5) = 82 + 102 + 62.5 = £246.50
+#   Average cost: £246.50 / 30 = £8.2167 per share
+#   All 30 shares enter Section 104 pool
+#
+# Pool after buys: 30 shares, £246.50, avg £8.2167
+#
+# Same Day Rule Applied (2018-10-28):
+#   Both sells on same day are aggregated:
+#   Total shares sold: 10 + 10 = 20 shares
+#   Total proceeds: (10×9 - 2) + (10×7 - 12.5) = 88 + 57.5 = £145.50
+#
+# Section 104 Disposal (no same day buys on 2018-10-28):
+#   Shares sold: 20
+#   Proceeds: £145.50
+#   Cost from pool: 20 × £8.2167 = £164.33
+#   Loss: £145.50 - £164.33 = -£18.83 ≈ -£19
+#
+# Pool after: 30 - 20 = 10 shares, £82.17, avg £8.2167
+#
+# FINAL RESULT:
+#   Total Gain: £0
+#   Total Loss: £19
+#   Net Gain: -£19
+#   Verification: ✓ Matches expected output
+# === END DETAILED VERIFICATION ===
+#
 2018-08-28 BUY GB00B41YBW71 10 @ 8 EXPENSES 2
 2018-08-28 BUY GB00B41YBW71 10 @ 10 EXPENSES 2
 2018-08-28 BUY GB00B41YBW71 10 @ 5 EXPENSES 12.5

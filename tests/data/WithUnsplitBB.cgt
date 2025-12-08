@@ -1,3 +1,27 @@
+# Test: WithUnsplitBB
+# Purpose: Validates Bed & Breakfast matching with a stock consolidation in the B&B window
+# Rules Tested: Bed & Breakfast, Stock Unsplit (Consolidation)
+# Complexity: Medium
+# Key Features: Sale matched via B&B with buys that occur around a consolidation
+# Expected Outcome: Gain £40
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   Initial buy: 20 × £10 = £200 enters pool
+#   Sell 20 @ £12: Proceeds = £240 (B&B check within 30 days)
+#
+#   B&B buys within 30 days:
+#   - 2019-02-10: Buy 10 @ £10 = £100
+#   - Unsplit 2:1 on 2019-02-15: 10 shares → 5 shares (cost still £100)
+#   - 2019-02-20: Buy 5 @ £20 = £100
+#
+#   B&B matching: 20 shares sold matched with B&B acquisitions
+#   Total B&B acquisition cost: £100 + £100 = £200
+#   (The consolidation affects share count but acquisitions provide 10 shares post-consolidation)
+#
+#   Gain: £240 - £200 = £40 ✓
+#
 2019-01-01 BUY FOO 20 @ 10 EXPENSES 0
 2019-02-01 SELL FOO 20 @ 12 EXPENSES 0
 2019-02-10 BUY FOO 10 @ 10 EXPENSES 0

@@ -1,3 +1,39 @@
+# Test: 2024_2025_SpecialYear
+# Purpose: Tests multiple same-day transactions within tax year 2024/25
+# Rules Tested: Same Day
+# Complexity: Simple
+# Key Features: Four same-day pairs, mix of gains and losses
+# Expected Outcome: Total gain £7960, Total loss £2040, Net gain £5920
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#   All transactions in tax year 2024/25 (6 Apr 2024 - 5 Apr 2025)
+#
+#   Pair 1 (2024-08-29):
+#     Buy: 1000 × £10 + £10 = £10,010
+#     Sell: 1000 × £9 - £10 = £8,990
+#     Loss: -£1,020 ✓
+#
+#   Pair 2 (2024-10-29):
+#     Buy: 1000 × £5 + £10 = £5,010
+#     Sell: 1000 × £10 - £10 = £9,990
+#     Gain: £4,980 ✓
+#
+#   Pair 3 (2024-10-30):
+#     Buy: 1000 × £5 + £10 = £5,010
+#     Sell: 1000 × £8 - £10 = £7,990
+#     Gain: £2,980 ✓
+#
+#   Pair 4 (2024-12-30):
+#     Buy: 1000 × £10 + £10 = £10,010
+#     Sell: 1000 × £9 - £10 = £8,990
+#     Loss: -£1,020 ✓
+#
+#   Total gain: £4,980 + £2,980 = £7,960 ✓
+#   Total loss: £1,020 + £1,020 = £2,040 ✓
+#   Net: £7,960 - £2,040 = £5,920 ✓
+#
 2024-08-29 BUY STOCK 1000 @ 10 EXPENSES 10
 2024-08-29 SELL STOCK 1000 @ 9 EXPENSES 10
 2024-10-29 BUY STOCK 1000 @ 5 EXPENSES 10
