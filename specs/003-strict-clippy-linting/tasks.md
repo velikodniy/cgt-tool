@@ -53,9 +53,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Remove `#[allow(unused_imports)]` and fix underlying issue in crates/cgt-core/tests/parser_tests.rs
-- [ ] T005 [US1] Remove `#[allow(clippy::needless_range_loop)]` and refactor to use .iter().enumerate() in crates/cgt-core/src/calculator.rs
-- [ ] T006 [US1] Verify `cargo clippy --lib --bins` passes with zero warnings
+- [x] T004 [US1] Remove `#[allow(unused_imports)]` and fix underlying issue in crates/cgt-core/tests/parser_tests.rs
+- [x] T005 [US1] Remove `#[allow(clippy::needless_range_loop)]` and refactor to use .iter().enumerate() in crates/cgt-core/src/calculator.rs
+- [x] T006 [US1] Verify `cargo clippy --lib --bins` passes with zero warnings
 
 **Checkpoint**: Strict linting enforced - no allow attributes in codebase
 
@@ -69,18 +69,18 @@
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Replace .unwrap() on date_pair extraction with ok_or_else in crates/cgt-core/src/parser.rs:30
-- [ ] T008 [US2] Replace .unwrap() on command_pair extraction with ok_or_else in crates/cgt-core/src/parser.rs:34-35
-- [ ] T009 [US2] Replace .unwrap() on args extraction in parse_buy_sell with ok_or_else in crates/cgt-core/src/parser.rs:63
-- [ ] T010 [US2] Replace .unwrap() on ticker/amount/price extraction in parse_buy_sell with ok_or_else in crates/cgt-core/src/parser.rs:66-68
-- [ ] T011 [US2] Replace .unwrap() on args extraction in parse_dividend with ok_or_else in crates/cgt-core/src/parser.rs:93
-- [ ] T012 [US2] Replace .unwrap() on ticker/amount/total_value/tax_paid extraction in parse_dividend with ok_or_else in crates/cgt-core/src/parser.rs:96-99
-- [ ] T013 [US2] Replace .unwrap() on args extraction in parse_capreturn with ok_or_else in crates/cgt-core/src/parser.rs:112
-- [ ] T014 [US2] Replace .unwrap() on ticker/amount/total_value/expenses extraction in parse_capreturn with ok_or_else in crates/cgt-core/src/parser.rs:115-118
-- [ ] T015 [US2] Replace .unwrap() on args extraction in parse_split with ok_or_else in crates/cgt-core/src/parser.rs:134
-- [ ] T016 [US2] Replace .unwrap() on ticker/ratio extraction in parse_split with ok_or_else in crates/cgt-core/src/parser.rs:137-138
-- [ ] T017 [US2] Verify all parser functions return Result with descriptive errors
-- [ ] T018 [US2] Run `cargo test` to verify existing tests still pass
+- [x] T007 [US2] Replace .unwrap() on date_pair extraction with ok_or in crates/cgt-core/src/parser.rs
+- [x] T008 [US2] Replace .unwrap() on command_pair extraction with ok_or in crates/cgt-core/src/parser.rs
+- [x] T009 [US2] Replace .unwrap() on args extraction in parse_buy_sell with ok_or in crates/cgt-core/src/parser.rs
+- [x] T010 [US2] Replace .unwrap() on ticker/amount/price extraction in parse_buy_sell with ok_or in crates/cgt-core/src/parser.rs
+- [x] T011 [US2] Replace .unwrap() on args extraction in parse_dividend with ok_or in crates/cgt-core/src/parser.rs
+- [x] T012 [US2] Replace .unwrap() on ticker/amount/total_value/tax_paid extraction in parse_dividend with ok_or in crates/cgt-core/src/parser.rs
+- [x] T013 [US2] Replace .unwrap() on args extraction in parse_capreturn with ok_or in crates/cgt-core/src/parser.rs
+- [x] T014 [US2] Replace .unwrap() on ticker/amount/total_value/expenses extraction in parse_capreturn with ok_or in crates/cgt-core/src/parser.rs
+- [x] T015 [US2] Replace .unwrap() on args extraction in parse_split with ok_or in crates/cgt-core/src/parser.rs
+- [x] T016 [US2] Replace .unwrap() on ticker/ratio extraction in parse_split with ok_or in crates/cgt-core/src/parser.rs
+- [x] T017 [US2] Verify all parser functions return Result with descriptive errors
+- [x] T018 [US2] Run `cargo test` to verify existing tests still pass
 
 **Checkpoint**: Parser produces meaningful error messages instead of panicking
 
@@ -94,10 +94,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Replace .unwrap() on tax year start_date creation with ok_or_else returning InvalidDateYear in crates/cgt-core/src/calculator.rs:449
-- [ ] T020 [US3] Replace .unwrap() on tax year end_date creation with ok_or_else returning InvalidDateYear in crates/cgt-core/src/calculator.rs:450
-- [ ] T021 [US3] Verify calculator functions propagate errors correctly
-- [ ] T022 [US3] Run `cargo test` to verify existing tests still pass
+- [x] T019 [US3] Replace .unwrap() on tax year start_date creation with ok_or returning InvalidDateYear in crates/cgt-core/src/calculator.rs
+- [x] T020 [US3] Replace .unwrap() on tax year end_date creation with ok_or returning InvalidDateYear in crates/cgt-core/src/calculator.rs
+- [x] T021 [US3] Verify calculator functions propagate errors correctly
+- [x] T022 [US3] Run `cargo test` to verify existing tests still pass
 
 **Checkpoint**: Calculator produces meaningful error messages for edge cases
 
@@ -107,10 +107,10 @@
 
 **Purpose**: Update test code to use .expect() with descriptive messages and add lint exemptions
 
-- [ ] T023 [P] Add `#![allow(clippy::expect_used)]` to test module in crates/cgt-core/tests/parser_tests.rs
-- [ ] T024 [P] Replace all .unwrap() with .expect("descriptive message") in crates/cgt-core/tests/parser_tests.rs
-- [ ] T025 [P] Add `#![allow(clippy::expect_used)]` to test module in crates/cgt-core/tests/matching_tests.rs
-- [ ] T026 [P] Replace all .unwrap() with .expect("descriptive message") in crates/cgt-core/tests/matching_tests.rs
+- [x] T023 [P] Add `#![allow(clippy::expect_used, clippy::panic)]` to test module in crates/cgt-core/tests/parser_tests.rs
+- [x] T024 [P] Replace all .unwrap() with .expect("descriptive message") in crates/cgt-core/tests/parser_tests.rs
+- [x] T025 [P] Add `#![allow(clippy::expect_used)]` to test module in crates/cgt-core/tests/matching_tests.rs
+- [x] T026 [P] Replace all .unwrap() with .expect("descriptive message") in crates/cgt-core/tests/matching_tests.rs
 
 **Checkpoint**: Test code compiles and passes with strict linting
 
@@ -120,12 +120,12 @@
 
 **Purpose**: Final verification that all success criteria are met
 
-- [ ] T027 Run `cargo clippy --lib --bins -- -D warnings` and verify zero warnings
-- [ ] T028 Run `cargo clippy --tests -- -D warnings` and verify zero warnings (with exemptions)
-- [ ] T029 Run `cargo test` and verify 100% test pass rate
-- [ ] T030 Verify no .unwrap() in production code: `grep -r "\.unwrap()" crates/*/src/`
-- [ ] T031 Verify no #[allow(...)] in production code: `grep -r "#\[allow(" crates/*/src/`
-- [ ] T032 Run quickstart.md validation checklist
+- [x] T027 Run `cargo clippy --lib --bins -- -D warnings` and verify zero warnings
+- [x] T028 Run `cargo clippy --tests -- -D warnings` and verify zero warnings (with exemptions)
+- [x] T029 Run `cargo test` and verify 100% test pass rate
+- [x] T030 Verify no .unwrap() in production code: `grep -r "\.unwrap()" crates/*/src/`
+- [x] T031 Verify no #[allow(...)] in production code: `grep -r "#\[allow(" crates/*/src/`
+- [x] T032 Run quickstart.md validation checklist
 
 ---
 
@@ -209,4 +209,4 @@ Task: "Add expect_used exemption and update matching_tests.rs"
 - Each user story should be independently completable and testable
 - Commit after each task or logical group (per Commit Discipline in constitution)
 - Stop at any checkpoint to validate story independently
-- All .unwrap() replacements follow the ok_or_else pattern from research.md
+- All .unwrap() replacements follow the ok_or pattern from research.md
