@@ -1,18 +1,33 @@
 {
-  "tax_year": 2018,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2019-04-01",
-      "ticker": "FOO",
-      "quantity": "10",
-      "proceeds": "240",
-      "allowable_cost": "200",
-      "gain_or_loss": "40",
-      "rule": "Section104"
+      "period": "2018/19",
+      "disposals": [
+        {
+          "date": "2019-04-01",
+          "ticker": "FOO",
+          "quantity": "10",
+          "proceeds": "240",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "10",
+              "allowable_cost": "200",
+              "gain_or_loss": "40"
+            }
+          ]
+        }
+      ],
+      "total_gain": "40",
+      "total_loss": "0",
+      "net_gain": "40"
     }
   ],
-  "total_gain": "40",
-  "total_loss": "0",
-  "net_gain": "40",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "FOO",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
 }

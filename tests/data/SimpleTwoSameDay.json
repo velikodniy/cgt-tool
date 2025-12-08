@@ -1,27 +1,47 @@
 {
-  "tax_year": 2018,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2018-08-28",
-      "ticker": "BAR",
-      "quantity": "10",
-      "proceeds": "34.202000000000005",
-      "allowable_cost": "54.065000000000005",
-      "gain_or_loss": "-20",
-      "rule": "SameDay"
-    },
-    {
-      "date": "2018-08-28",
-      "ticker": "FOO",
-      "quantity": "10",
-      "proceeds": "34.202000000000005",
-      "allowable_cost": "54.065000000000005",
-      "gain_or_loss": "-20",
-      "rule": "SameDay"
+      "period": "2018/19",
+      "disposals": [
+        {
+          "date": "2018-08-28",
+          "ticker": "BAR",
+          "quantity": "10",
+          "proceeds": "34.2020",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "10",
+              "allowable_cost": "54.0650",
+              "gain_or_loss": "-19.8630"
+            }
+          ]
+        },
+        {
+          "date": "2018-08-28",
+          "ticker": "FOO",
+          "quantity": "10",
+          "proceeds": "34.2020",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "10",
+              "allowable_cost": "54.0650",
+              "gain_or_loss": "-19.8630"
+            }
+          ]
+        }
+      ],
+      "total_gain": "0",
+      "total_loss": "39.7260",
+      "net_gain": "-39.7260"
     }
   ],
-  "total_gain": "0",
-  "total_loss": "40",
-  "net_gain": "-40",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "BAR",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
 }

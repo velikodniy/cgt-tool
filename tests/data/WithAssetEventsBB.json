@@ -1,18 +1,40 @@
 {
-  "tax_year": 2019,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2019-11-05",
-      "ticker": "GB00B3TYHH97",
-      "quantity": "40",
-      "proceeds": "0",
-      "allowable_cost": "0",
-      "gain_or_loss": "265",
-      "rule": "BedAndBreakfast"
+      "period": "2019/20",
+      "disposals": [
+        {
+          "date": "2019-11-05",
+          "ticker": "GB00B3TYHH97",
+          "quantity": "40",
+          "proceeds": "7756.300",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "20",
+              "allowable_cost": "3821.6100",
+              "gain_or_loss": "56.5400",
+              "acquisition_date": "2019-11-10"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "20",
+              "allowable_cost": "3669.59500000",
+              "gain_or_loss": "208.55500000"
+            }
+          ]
+        }
+      ],
+      "total_gain": "265.09500000",
+      "total_loss": "0",
+      "net_gain": "265.09500000"
     }
   ],
-  "total_gain": "265",
-  "total_loss": "0",
-  "net_gain": "265",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "GB00B3TYHH97",
+      "quantity": "20",
+      "total_cost": "3669.59500000"
+    }
+  ]
 }

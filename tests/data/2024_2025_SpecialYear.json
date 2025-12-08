@@ -1,45 +1,75 @@
 {
-  "tax_year": 2024,
-  "matches": [
+  "tax_years": [
     {
-      "date": "2024-08-29",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "8990",
-      "allowable_cost": "10010",
-      "gain_or_loss": "-1020",
-      "rule": "SameDay"
-    },
-    {
-      "date": "2024-10-29",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "9990",
-      "allowable_cost": "5010",
-      "gain_or_loss": "4980",
-      "rule": "SameDay"
-    },
-    {
-      "date": "2024-10-30",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "7990",
-      "allowable_cost": "5010",
-      "gain_or_loss": "2980",
-      "rule": "SameDay"
-    },
-    {
-      "date": "2024-12-30",
-      "ticker": "STOCK",
-      "quantity": "1000",
-      "proceeds": "8990",
-      "allowable_cost": "10010",
-      "gain_or_loss": "-1020",
-      "rule": "SameDay"
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-08-29",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "8990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "10010.00",
+              "gain_or_loss": "-1020.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-10-29",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "9990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "5010.00",
+              "gain_or_loss": "4980.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-10-30",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "7990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "5010.00",
+              "gain_or_loss": "2980.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-12-30",
+          "ticker": "STOCK",
+          "quantity": "1000",
+          "proceeds": "8990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1000",
+              "allowable_cost": "10010.00",
+              "gain_or_loss": "-1020.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "7960.00",
+      "total_loss": "2040.00",
+      "net_gain": "5920.00"
     }
   ],
-  "total_gain": "7960",
-  "total_loss": "2040",
-  "net_gain": "5920",
-  "holdings": []
+  "holdings": [
+    {
+      "ticker": "STOCK",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 {
   "tax_years": [
     {
-      "period": "2023/24",
+      "period": "2018/19",
       "disposals": [],
       "total_gain": "0",
       "total_loss": "0",
@@ -10,9 +10,9 @@
   ],
   "holdings": [
     {
-      "ticker": "AAPL",
-      "quantity": "5",
-      "total_cost": "466.6666666666666666666666666"
+      "ticker": "GLOBAL",
+      "quantity": "0",
+      "total_cost": "0"
     }
   ]
 }
