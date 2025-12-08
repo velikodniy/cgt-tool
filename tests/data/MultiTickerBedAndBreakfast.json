@@ -1,0 +1,54 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-07-15",
+          "ticker": "AAPL",
+          "quantity": "5",
+          "proceeds": "600",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "5",
+              "allowable_cost": "575",
+              "gain_or_loss": "25",
+              "acquisition_date": "2023-07-20"
+            }
+          ]
+        },
+        {
+          "date": "2023-07-15",
+          "ticker": "MSFT",
+          "quantity": "10",
+          "proceeds": "400",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "10",
+              "allowable_cost": "420",
+              "gain_or_loss": "-20",
+              "acquisition_date": "2023-08-01"
+            }
+          ]
+        }
+      ],
+      "total_gain": "25",
+      "total_loss": "20",
+      "net_gain": "5"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "quantity": "5",
+      "total_cost": "500"
+    },
+    {
+      "ticker": "MSFT",
+      "quantity": "10",
+      "total_cost": "500"
+    }
+  ]
+}

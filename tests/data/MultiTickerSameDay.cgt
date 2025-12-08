@@ -1,0 +1,46 @@
+# Test: MultiTickerSameDay
+# Purpose: Verify Same Day matching only matches same ticker
+# Rules Tested: Same Day, Section 104
+# Complexity: Medium
+# Key Features: Same-day buy/sell pairs for DIFFERENT tickers must NOT cross-match
+# Expected Outcome: Each ticker matches within itself only
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-08
+# Verification Notes:
+#
+#   Scenario: On 2023-07-15, we have:
+#     - AAPL: BUY 10, SELL 5 (Same Day should match)
+#     - MSFT: BUY 20, SELL 10 (Same Day should match)
+#
+#   If incorrectly implemented, AAPL SELL could match MSFT BUY (wrong!)
+#
+#   AAPL Transactions:
+#     2023-07-15 BUY 10 @ £100 + £10 expenses = £1010 total cost
+#     2023-07-15 SELL 5 @ £110 - £5 expenses = £545 proceeds
+#       Same Day match: 5 shares from BUY
+#       Cost = £1010 × (5/10) = £505
+#       Gain = £545 - £505 = £40 ✓
+#     Remaining: 5 shares go to Section 104 pool with cost £505
+#
+#   MSFT Transactions:
+#     2023-07-15 BUY 20 @ £50 + £10 expenses = £1010 total cost
+#     2023-07-15 SELL 10 @ £45 - £5 expenses = £445 proceeds
+#       Same Day match: 10 shares from BUY
+#       Cost = £1010 × (10/20) = £505
+#       Loss = £445 - £505 = -£60 ✓
+#     Remaining: 10 shares go to Section 104 pool with cost £505
+#
+#   Totals:
+#     Total Gain: £40
+#     Total Loss: £60
+#     Net: -£20 ✓
+#
+#   Holdings:
+#     AAPL: 5 shares, £505 cost
+#     MSFT: 10 shares, £505 cost
+#
+2023-07-15 BUY AAPL 10 @ 100 EXPENSES 10
+2023-07-15 SELL AAPL 5 @ 110 EXPENSES 5
+2023-07-15 BUY MSFT 20 @ 50 EXPENSES 10
+2023-07-15 SELL MSFT 10 @ 45 EXPENSES 5

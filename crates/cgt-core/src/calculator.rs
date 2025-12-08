@@ -227,7 +227,7 @@ pub fn calculate(
     }
 
     let mut internal_matches = Vec::new();
-    let mut pool: Option<Section104Holding> = None;
+    let mut pools: HashMap<String, Section104Holding> = HashMap::new();
 
     let mut consumed = vec![Decimal::ZERO; transactions.len()];
 
@@ -245,6 +245,12 @@ pub fn calculate(
 
             for buy_transaction_idx in 0..transactions.len() {
                 if sell_transaction_idx == buy_transaction_idx {
+                    continue;
+                }
+                // Must be same ticker
+                if transactions[buy_transaction_idx].ticker
+                    != transactions[sell_transaction_idx].ticker
+                {
                     continue;
                 }
                 if transactions[buy_transaction_idx].date != transactions[sell_transaction_idx].date
@@ -311,8 +317,14 @@ pub fn calculate(
             }
 
             let mut cumulative_ratio_effect = Decimal::ONE;
+            let sell_ticker = &transactions[sell_transaction_idx].ticker;
 
             for buy_transaction_idx in (sell_transaction_idx + 1)..transactions.len() {
+                // Must be same ticker
+                if &transactions[buy_transaction_idx].ticker != sell_ticker {
+                    continue;
+                }
+
                 let days_diff = (transactions[buy_transaction_idx].date
                     - transactions[sell_transaction_idx].date)
                     .num_days();
@@ -388,9 +400,11 @@ pub fn calculate(
         }
     }
 
-    // Pass 3: Section 104
+    // Pass 3: Section 104 (per-ticker pools)
     for transaction_idx in 0..transactions.len() {
         let current_transaction = &transactions[transaction_idx];
+        let ticker = &current_transaction.ticker;
+
         match &current_transaction.operation {
             Operation::Buy { amount, .. } => {
                 let remaining_amount = *amount - consumed[transaction_idx];
@@ -403,11 +417,13 @@ pub fn calculate(
                             "Missing acquisition tracker for BUY transaction".to_string(),
                         ));
                     };
-                    let p = pool.get_or_insert_with(|| Section104Holding {
-                        ticker: current_transaction.ticker.clone(),
-                        quantity: Decimal::ZERO,
-                        total_cost: Decimal::ZERO,
-                    });
+                    let p = pools
+                        .entry(ticker.clone())
+                        .or_insert_with(|| Section104Holding {
+                            ticker: ticker.clone(),
+                            quantity: Decimal::ZERO,
+                            total_cost: Decimal::ZERO,
+                        });
                     p.quantity += remaining_amount;
                     p.total_cost += cost_add;
                 }
@@ -415,20 +431,17 @@ pub fn calculate(
             Operation::Sell { amount, .. } => {
                 let remaining_amount = *amount - consumed[transaction_idx];
                 if remaining_amount > Decimal::ZERO {
-                    let p = pool.as_mut().ok_or_else(|| {
+                    let p = pools.get_mut(ticker).ok_or_else(|| {
                         CgtError::InvalidTransaction(format!(
                             "Sell of {} {} on {} with no prior acquisitions",
-                            remaining_amount, current_transaction.ticker, current_transaction.date,
+                            remaining_amount, ticker, current_transaction.date,
                         ))
                     })?;
 
                     if p.quantity <= Decimal::ZERO {
                         return Err(CgtError::InvalidTransaction(format!(
                             "Sell of {} {} on {} exceeds holding (Pool: {})",
-                            remaining_amount,
-                            current_transaction.ticker,
-                            current_transaction.date,
-                            p.quantity
+                            remaining_amount, ticker, current_transaction.date, p.quantity
                         )));
                     }
 
@@ -441,7 +454,7 @@ pub fn calculate(
                     let proceeds = get_proceeds(current_transaction, matched_quantity);
                     internal_matches.push(InternalMatch {
                         disposal_date: current_transaction.date,
-                        disposal_ticker: current_transaction.ticker.clone(),
+                        disposal_ticker: ticker.clone(),
                         quantity: matched_quantity,
                         proceeds,
                         allowable_cost: cost_portion,
@@ -452,12 +465,12 @@ pub fn calculate(
                 }
             }
             Operation::Split { ratio } => {
-                if let Some(p) = &mut pool {
+                if let Some(p) = pools.get_mut(ticker) {
                     p.quantity *= *ratio;
                 }
             }
             Operation::Unsplit { ratio } => {
-                if let Some(p) = &mut pool {
+                if let Some(p) = pools.get_mut(ticker) {
                     p.quantity /= *ratio;
                 }
             }
@@ -520,8 +533,9 @@ pub fn calculate(
         net_gain: total_gain - total_loss,
     };
 
-    // Convert Option<Section104Holding> to Vec for output
-    let holdings: Vec<Section104Holding> = pool.into_iter().collect();
+    // Convert pools to sorted Vec for output
+    let mut holdings: Vec<Section104Holding> = pools.into_values().collect();
+    holdings.sort_by(|a, b| a.ticker.cmp(&b.ticker));
 
     Ok(TaxReport {
         tax_years: vec![tax_year_summary],

@@ -82,7 +82,7 @@ fn parse_buy_sell(
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
         .as_str()
-        .to_string();
+        .to_uppercase();
     let amount = parse_decimal(
         inner
             .next()
@@ -135,7 +135,7 @@ fn parse_dividend(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operatio
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
         .as_str()
-        .to_string();
+        .to_uppercase();
     let amount = parse_decimal(
         inner
             .next()
@@ -182,7 +182,7 @@ fn parse_capreturn(pair: pest::iterators::Pair<Rule>) -> Result<(String, Operati
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
         .as_str()
-        .to_string();
+        .to_uppercase();
     let amount = parse_decimal(
         inner
             .next()
@@ -232,7 +232,7 @@ fn parse_split(
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "ticker" })?
         .as_str()
-        .to_string();
+        .to_uppercase();
     let ratio = parse_decimal(
         inner
             .next()
