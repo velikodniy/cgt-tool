@@ -1,4 +1,6 @@
-## description: "Task list template for feature implementation"
+---
+description: Task list template for feature implementation
+---
 
 # Tasks: [FEATURE NAME]
 
@@ -49,6 +51,8 @@
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
 
+---
+
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
@@ -65,6 +69,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+
+---
 
 ## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
 
@@ -90,6 +96,8 @@ Examples of foundational tasks (adjust based on your project):
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
+---
+
 ## Phase 4: User Story 2 - [Title] (Priority: P2)
 
 **Goal**: [Brief description of what this story delivers]
@@ -110,6 +118,8 @@ Examples of foundational tasks (adjust based on your project):
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
+---
+
 ## Phase 5: User Story 3 - [Title] (Priority: P3)
 
 **Goal**: [Brief description of what this story delivers]
@@ -129,7 +139,11 @@ Examples of foundational tasks (adjust based on your project):
 
 **Checkpoint**: All user stories should now be independently functional
 
+---
+
 [Add more user story phases as needed, following the same pattern]
+
+---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
@@ -141,6 +155,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+
+---
 
 ## Dependencies & Execution Order
 
@@ -176,6 +192,8 @@ Examples of foundational tasks (adjust based on your project):
 - Models within a story marked [P] can run in parallel
 - Different user stories can be worked on in parallel by different team members
 
+---
+
 ## Parallel Example: User Story 1
 
 ```bash
@@ -187,6 +205,8 @@ Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 Task: "Create [Entity1] model in src/models/[entity1].py"
 Task: "Create [Entity2] model in src/models/[entity2].py"
 ```
+
+---
 
 ## Implementation Strategy
 
@@ -216,6 +236,8 @@ With multiple developers:
    - Developer B: User Story 2
    - Developer C: User Story 3
 3. Stories complete and integrate independently
+
+---
 
 ## Notes
 
