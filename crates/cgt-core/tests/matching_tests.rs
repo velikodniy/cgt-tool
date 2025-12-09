@@ -8,12 +8,21 @@ use rust_decimal::Decimal;
 use std::fs;
 use std::path::PathBuf;
 
-fn get_test_data_dir() -> PathBuf {
+fn get_test_inputs_dir() -> PathBuf {
     let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     d.pop(); // crates
     d.pop(); // root
     d.push("tests");
-    d.push("data");
+    d.push("inputs");
+    d
+}
+
+fn get_test_json_dir() -> PathBuf {
+    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    d.pop(); // crates
+    d.pop(); // root
+    d.push("tests");
+    d.push("json");
     d
 }
 
@@ -46,8 +55,9 @@ fn find_first_sale_date(transactions: &[Transaction]) -> Option<chrono::NaiveDat
 
 #[test]
 fn test_data_driven_matching() {
-    let data_dir = get_test_data_dir();
-    let entries = fs::read_dir(&data_dir).expect("Failed to read test data dir");
+    let inputs_dir = get_test_inputs_dir();
+    let json_dir = get_test_json_dir();
+    let entries = fs::read_dir(&inputs_dir).expect("Failed to read test inputs dir");
 
     for entry in entries {
         let entry = entry.expect("Failed to read entry");
@@ -55,7 +65,12 @@ fn test_data_driven_matching() {
 
         if path.extension().and_then(|s| s.to_str()) == Some("cgt") {
             let input_path = path;
-            let output_path = input_path.with_extension("json");
+            let file_stem = input_path
+                .file_stem()
+                .expect("No file stem")
+                .to_str()
+                .expect("Invalid UTF-8");
+            let output_path = json_dir.join(format!("{}.json", file_stem));
 
             if !output_path.exists() {
                 println!("Skipping {} (no matching json)", input_path.display());

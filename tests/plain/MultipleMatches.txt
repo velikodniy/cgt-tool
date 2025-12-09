@@ -1,0 +1,29 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2018/2019   £-20   £34        £11700      £0
+
+# TAX YEAR DETAILS
+
+## 2018/2019
+
+1) SELL 10 GB00B41YBW71 on 28/08/2018 - LOSS £19
+   Same Day: 10 shares
+   Proceeds: 10 × £4.6702 = £34
+   Cost: £54
+   Result: £-20
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+28/08/2018 SELL 10 GB00B41YBW71 @ £4.6702 (£12.5 fees)
+28/08/2018 BUY 10 GB00B41YBW71 @ £4.1565 (£12.5 fees)
+28/08/2019 SELL 10 GB00B41YBW71 @ £4.6702 (£12.5 fees)
+20/09/2019 BUY 10 GB00B41YBW71 @ £4.1565 (£12.5 fees)
+28/08/2020 BUY 10 GB00B41YBW71 @ £4.1565 (£12.5 fees)
+28/10/2020 SELL 10 GB00B41YBW71 @ £4.6702 (£12.5 fees)

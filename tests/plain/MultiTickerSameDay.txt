@@ -1,0 +1,34 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2023/2024   £-20   £990       £6000       £0
+
+# TAX YEAR DETAILS
+
+## 2023/2024
+
+1) SELL 5 AAPL on 15/07/2023 - GAIN £40
+   Same Day: 5 shares
+   Proceeds: 5 × £110 = £545
+   Cost: £505
+   Result: £40
+
+2) SELL 10 MSFT on 15/07/2023 - LOSS £60
+   Same Day: 10 shares
+   Proceeds: 10 × £45 = £445
+   Cost: £505
+   Result: £-60
+
+
+# HOLDINGS
+
+AAPL: 5 units at £101 avg cost
+MSFT: 10 units at £50.5 avg cost
+
+# TRANSACTIONS
+
+15/07/2023 BUY 10 AAPL @ £100 (£10 fees)
+15/07/2023 SELL 5 AAPL @ £110 (£5 fees)
+15/07/2023 BUY 20 MSFT @ £50 (£10 fees)
+15/07/2023 SELL 10 MSFT @ £45 (£5 fees)
