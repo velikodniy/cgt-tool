@@ -1,0 +1,47 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-06-01",
+          "ticker": "ACCFUND",
+          "quantity": "50",
+          "proceeds": "595",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "502.50",
+              "gain_or_loss": "92.50"
+            }
+          ]
+        },
+        {
+          "date": "2023-12-01",
+          "ticker": "ACCFUND",
+          "quantity": "50",
+          "proceeds": "545",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "527.50",
+              "gain_or_loss": "17.50"
+            }
+          ]
+        }
+      ],
+      "total_gain": "110.00",
+      "total_loss": "0.00",
+      "net_gain": "110.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ACCFUND",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
+}

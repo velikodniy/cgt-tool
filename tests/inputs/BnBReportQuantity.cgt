@@ -1,0 +1,42 @@
+# Test: BnBReportQuantity
+# Purpose: Tests B&B match reports only matched quantity, not entire pool
+# Rules Tested: Bed & Breakfast (30-day rule), Section 104
+# Complexity: Medium
+# Key Features: Partial B&B match with remaining S104 pool disposal
+# Expected Outcome: B&B reports 30 shares matched (not 100 pool), S104 reports 70 shares
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   Key test: When selling 100 shares with only 30 rebought within 30 days,
+#   the B&B should match only 30 shares, and remaining 70 go to Section 104.
+#
+#   Step 1: Buy 100 @ £10 + £10 expenses
+#     Pool: 100 shares, cost = £1,010
+#
+#   Step 2: Sell 100 @ £15 - £10 expenses (total proceeds £1,490)
+#     - Must check B&B first (30 day rule)
+#     - Only 30 shares rebought within 30 days
+#
+#   Step 3: Buy 30 @ £12 + £5 expenses (within 30 days of sell)
+#     This triggers B&B match for 30 of the 100 sold shares
+#
+#   Disposal breakdown:
+#     B&B portion (30 shares):
+#       Proceeds: 30/100 × £1,490 = £447
+#       Cost: 30 × £12 + £5 = £365
+#       Gain: £447 - £365 = £82 ✓
+#
+#     Section 104 portion (70 shares):
+#       Proceeds: 70/100 × £1,490 = £1,043
+#       Cost: 70/100 × £1,010 = £707
+#       Gain: £1,043 - £707 = £336 ✓
+#
+#   Total gain: £82 + £336 = £418 ✓
+#   Total loss: £0
+#
+#   Final holdings: 0 shares (all sold and B&B acquisition already matched)
+#
+2023-01-01 BUY PARTBNB 100 @ 10 EXPENSES 10
+2023-06-15 SELL PARTBNB 100 @ 15 EXPENSES 10
+2023-06-25 BUY PARTBNB 30 @ 12 EXPENSES 5

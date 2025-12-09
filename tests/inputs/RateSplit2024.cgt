@@ -1,0 +1,35 @@
+# Test: RateSplit2024
+# Purpose: Tests 2024/25 rate split at 30 October 2024 boundary
+# Rules Tested: Same Day, Rate band differentiation
+# Complexity: Simple
+# Key Features: Disposal on 29 Oct (pre-cutover) and 30 Oct (post-cutover)
+# Expected Outcome: Total gain £2,960, Total loss £0, Net gain £2,960
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   HMRC 2024/25 rate change effective 30 October 2024:
+#   - Pre-30 Oct: Basic 10%, Higher 20%
+#   - On/after 30 Oct: Basic 18%, Higher 24%
+#
+#   This fixture tests that disposals are correctly dated.
+#   Rate application happens at tax return time, not during calculation.
+#
+#   Disposal 1 (29 Oct 2024 - pre-cutover):
+#     Buy: 100 × £50 + £10 = £5,010
+#     Sell same day: 100 × £60 - £10 = £5,990
+#     Gain: £5,990 - £5,010 = £980 ✓
+#
+#   Disposal 2 (30 Oct 2024 - post-cutover):
+#     Buy: 100 × £50 + £10 = £5,010
+#     Sell same day: 100 × £70 - £10 = £6,990
+#     Gain: £6,990 - £5,010 = £1,980 ✓
+#
+#   Total gain: £980 + £1,980 = £2,960 ✓
+#   Total loss: £0 ✓
+#   Net: £2,960 ✓
+#
+2024-10-29 BUY STOCK 100 @ 50 EXPENSES 10
+2024-10-29 SELL STOCK 100 @ 60 EXPENSES 10
+2024-10-30 BUY STOCK 100 @ 50 EXPENSES 10
+2024-10-30 SELL STOCK 100 @ 70 EXPENSES 10

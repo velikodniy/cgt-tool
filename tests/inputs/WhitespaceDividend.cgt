@@ -1,0 +1,30 @@
+# Test: WhitespaceDividend
+# Purpose: Tests parser handles extra whitespace (tabs and multiple spaces)
+# Rules Tested: Parser whitespace handling, Section 104 Pooling
+# Complexity: Simple
+# Key Features: Tabs and extra spaces in DIVIDEND line and other lines
+# Expected Outcome: Parses correctly, same result as normal spacing
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   The pest grammar uses WHITESPACE = _{ (" " | "\t" | NEWLINE)+ | COMMENT }
+#   which should consume any amount of spaces/tabs between tokens.
+#
+#   Step 1: Buy 100 @ £10 + £5 expenses (uses tabs)
+#     Pool: 100 shares, cost = £1,005
+#
+#   Step 2: Dividend TOTAL £50 TAX £0 (uses extra spaces and tabs)
+#     Pool: 100 shares, cost = £1,005 + £50 = £1,055
+#
+#   Step 3: Sell 100 @ £12 - £5 expenses (uses mixed spacing)
+#     Proceeds: 100 × £12 - £5 = £1,195
+#     Cost: £1,055
+#     Gain: £1,195 - £1,055 = £140 ✓
+#
+#   Total gain: £140 ✓
+#   Total loss: £0
+#
+2023-01-01	BUY	SPACEY	100	@	10	EXPENSES	5
+2023-06-15		DIVIDEND    SPACEY    100    TOTAL    50    TAX    0
+2023-12-01  SELL   SPACEY   100   @   12   EXPENSES   5

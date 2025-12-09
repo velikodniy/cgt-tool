@@ -1,0 +1,26 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2023/24     £580   £2,490     £6,000      £0
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 100 EQFUND on 01/12/2023 - GAIN £580
+   Section 104: 100 shares @ £19.10
+   Proceeds: 100 × £25 = £2,490
+   Cost: £1,910
+   Result: £580
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+01/01/2023 BUY 100 EQFUND @ £20 (£10 fees)
+15/06/2023 CAPRETURN 100 EQFUND £100
+01/12/2023 SELL 100 EQFUND @ £25 (£10 fees)

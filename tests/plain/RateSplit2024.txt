@@ -1,0 +1,33 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2024/25     £2,960 £12,980    £3,000      £0
+
+# TAX YEAR DETAILS
+
+## 2024/25
+
+1) SELL 100 STOCK on 29/10/2024 - GAIN £980
+   Same Day: 100 shares
+   Proceeds: 100 × £60 = £5,990
+   Cost: £5,010
+   Result: £980
+
+2) SELL 100 STOCK on 30/10/2024 - GAIN £1,980
+   Same Day: 100 shares
+   Proceeds: 100 × £70 = £6,990
+   Cost: £5,010
+   Result: £1,980
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+29/10/2024 BUY 100 STOCK @ £50 (£10 fees)
+29/10/2024 SELL 100 STOCK @ £60 (£10 fees)
+30/10/2024 BUY 100 STOCK @ £50 (£10 fees)
+30/10/2024 SELL 100 STOCK @ £70 (£10 fees)

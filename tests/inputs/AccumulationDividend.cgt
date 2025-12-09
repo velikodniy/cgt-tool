@@ -1,0 +1,38 @@
+# Test: AccumulationDividend
+# Purpose: Tests accumulation dividend adjusts pool only for shares held on dividend date
+# Rules Tested: Section 104 Pooling, Accumulation Dividend
+# Complexity: Medium
+# Key Features: Partial disposal before dividend, dividend adjusts remaining shares only
+# Expected Outcome: Gain £92.50 (first sale) + £17.50 (second sale) = £110 total
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   HMRC accumulation dividend rule: Adjust pool cost only for units held on dividend date.
+#   Dividend does NOT retroactively alter gains for previously disposed units.
+#
+#   Step 1: Buy 100 @ £10 + £5 expenses
+#     Pool: 100 shares, cost = £1,005
+#
+#   Step 2: Sell 50 @ £12 - £5 expenses (S104 match)
+#     Proceeds: 50 × £12 - £5 = £595
+#     Cost: 50/100 × £1,005 = £502.50
+#     Gain: £595 - £502.50 = £92.50 ✓
+#     Pool after: 50 shares, cost = £502.50
+#
+#   Step 3: Dividend on remaining 50 shares, TOTAL £25
+#     Pool adjustment: cost = £502.50 + £25 = £527.50 ✓
+#     (Only adjusts for 50 shares held on dividend date)
+#
+#   Step 4: Sell remaining 50 @ £11 - £5 expenses
+#     Proceeds: 50 × £11 - £5 = £545
+#     Cost: £527.50
+#     Gain: £545 - £527.50 = £17.50 ✓
+#
+#   Total gain: £92.50 + £17.50 = £110 ✓
+#   Total loss: £0
+#
+2023-01-01 BUY ACCFUND 100 @ 10 EXPENSES 5
+2023-06-01 SELL ACCFUND 50 @ 12 EXPENSES 5
+2023-07-15 DIVIDEND ACCFUND 50 TOTAL 25 TAX 0
+2023-12-01 SELL ACCFUND 50 @ 11 EXPENSES 5
