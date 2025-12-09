@@ -1,9 +1,11 @@
 pub mod calculator;
 pub mod error;
+pub mod exemption;
 pub mod models;
 pub mod parser;
 
 pub use error::CgtError;
+pub use exemption::get_exemption;
 pub use models::*;
 
 #[cfg(test)]

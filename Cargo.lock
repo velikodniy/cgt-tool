@@ -232,6 +232,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "cgt-core",
+ "cgt-formatter-plain",
  "clap",
  "predicates",
  "schemars",
@@ -251,6 +252,15 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "cgt-formatter-plain"
+version = "0.1.0"
+dependencies = [
+ "cgt-core",
+ "chrono",
+ "rust_decimal",
 ]
 
 [[package]]
