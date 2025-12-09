@@ -1,38 +1,9 @@
 //! Plain text formatter for CGT tax reports.
 
+use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
-use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::fmt::Write;
-
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-fn format_currency(value: Decimal) -> String {
-    format!("£{}", value.floor())
-}
-
-fn format_decimal(value: Decimal) -> String {
-    let s = value.to_string();
-    if s.contains('.') {
-        s.trim_end_matches('0').trim_end_matches('.').to_string()
-    } else {
-        s
-    }
-}
-
-fn format_date(date: NaiveDate) -> String {
-    date.format("%d/%m/%Y").to_string()
-}
-
-fn format_tax_year(start_year: u16) -> String {
-    format!("{}/{}", start_year, start_year + 1)
-}
-
-// =============================================================================
-// Main Format Function
-// =============================================================================
 
 /// Format a tax report as plain text.
 ///
@@ -263,7 +234,11 @@ fn format_disposal(
                 }
             }
             MatchRule::Section104 => {
-                let cost_per_share = m.allowable_cost / m.quantity;
+                let cost_per_share = if m.quantity != Decimal::ZERO {
+                    m.allowable_cost / m.quantity
+                } else {
+                    Decimal::ZERO
+                };
                 let _ = writeln!(
                     out,
                     "   Section 104: {} shares @ £{}",
@@ -288,7 +263,13 @@ fn format_disposal(
                 None
             }
         })
-        .unwrap_or(disposal.proceeds / disposal.quantity);
+        .unwrap_or_else(|| {
+            if disposal.quantity != Decimal::ZERO {
+                disposal.proceeds / disposal.quantity
+            } else {
+                Decimal::ZERO
+            }
+        });
 
     let _ = writeln!(
         out,
@@ -304,13 +285,15 @@ fn format_disposal(
 }
 
 #[cfg(test)]
+#[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+    use chrono::NaiveDate;
 
     #[test]
     fn test_format_currency() {
         assert_eq!(format_currency(Decimal::from(100)), "£100");
-        assert_eq!(format_currency(Decimal::new(-196, 1)), "£-20");
+        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£20");
     }
 
     #[test]

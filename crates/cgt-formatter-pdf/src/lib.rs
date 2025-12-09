@@ -3,6 +3,7 @@
 //! This crate generates professional PDF documents from tax reports
 //! without requiring any external tool installation.
 
+use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
 use chrono::{Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -16,55 +17,8 @@ static TEMPLATE: &str = include_str!("templates/report.typ");
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-fn format_currency(value: Decimal) -> String {
-    let floored = value.floor();
-    let abs_value = floored.abs();
-    let formatted = format_with_commas(abs_value);
-    if floored < Decimal::ZERO {
-        format!("-£{formatted}")
-    } else {
-        format!("£{formatted}")
-    }
-}
-
-fn format_with_commas(value: Decimal) -> String {
-    let s = value.to_string();
-    let integer_part = s.split('.').next().unwrap_or("0");
-
-    let chars: Vec<char> = integer_part.chars().collect();
-    let mut result = String::with_capacity(chars.len() + chars.len() / 3);
-    for (i, c) in chars.iter().enumerate() {
-        if i > 0 && (chars.len() - i) % 3 == 0 {
-            result.push(',');
-        }
-        result.push(*c);
-    }
-    result
-}
-
-fn format_decimal(value: Decimal) -> String {
-    let s = value.to_string();
-    if s.contains('.') {
-        s.trim_end_matches('0').trim_end_matches('.').to_string()
-    } else {
-        s
-    }
-}
-
 fn format_price(value: Decimal) -> String {
     format!("£{}", format_decimal(value))
-}
-
-fn format_date(date: NaiveDate) -> String {
-    date.format("%d/%m/%Y").to_string()
-}
-
-fn format_tax_year(start_year: u16) -> String {
-    format!("{}/{}", start_year, start_year + 1)
 }
 
 /// Sort transactions by date, then by ticker for deterministic output.
@@ -79,10 +33,6 @@ where
             .then_with(|| get_ticker(a).cmp(get_ticker(b)))
     });
 }
-
-// =============================================================================
-// Data Conversion to Typst Dict
-// =============================================================================
 
 fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Result<Dict, CgtError> {
     let mut data = Dict::new();
@@ -375,10 +325,6 @@ fn format_match_description(m: &cgt_core::Match) -> String {
         }
     }
 }
-
-// =============================================================================
-// Main Format Function
-// =============================================================================
 
 /// Generate a PDF report from tax data.
 ///
