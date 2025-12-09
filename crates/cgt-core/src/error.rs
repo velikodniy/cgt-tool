@@ -22,4 +22,7 @@ pub enum CgtError {
 
     #[error("Invalid tax year: {0} is out of valid range (1900-2100)")]
     InvalidTaxYear(u16),
+
+    #[error("Unsupported tax year {0} for CGT exemption lookup - please update the tool")]
+    UnsupportedExemptionYear(u16),
 }

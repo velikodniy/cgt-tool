@@ -1,0 +1,35 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2019/2020   £60    £480       £12000      £0
+
+# TAX YEAR DETAILS
+
+## 2019/2020
+
+1) SELL 40 GB00B3TYHH97 on 01/12/2019 - GAIN £60
+   Section 104: 40 shares @ £10.5
+   Proceeds: 40 × £12 = £480
+   Cost: £420
+   Result: £60
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+29/08/2018 BUY 20 GB00B3TYHH97 @ £10 (£0 fees)
+15/03/2019 BUY 20 GB00B3TYHH97 @ £10 (£0 fees)
+01/12/2019 SELL 40 GB00B3TYHH97 @ £12 (£0 fees)
+01/02/2020 BUY 100 GB00B3TYHH97 @ £20 (£0 fees)
+01/06/2020 SELL 100 GB00B3TYHH97 @ £25 (£0 fees)
+
+# ASSET EVENTS
+
+31/05/2019 CAPRETURN GB00B3TYHH97 40 £50
+31/05/2019 DIVIDEND GB00B3TYHH97 40 £70
+31/05/2020 CAPRETURN GB00B3TYHH97 100 £140
+31/05/2020 DIVIDEND GB00B3TYHH97 100 £100

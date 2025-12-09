@@ -1,0 +1,32 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2018/2019   £40    £240       £11700      £0
+
+# TAX YEAR DETAILS
+
+## 2018/2019
+
+1) SELL 20 FOO on 01/02/2019 - GAIN £40
+   B&B: 10 shares from 10/02/2019
+   B&B: 10 shares from 20/02/2019
+   Proceeds: 20 × £12 = £240
+   Cost: £200
+   Result: £40
+
+
+# HOLDINGS
+
+FOO: 10 units at £20 avg cost
+
+# TRANSACTIONS
+
+01/01/2019 BUY 20 FOO @ £10 (£0 fees)
+01/02/2019 SELL 20 FOO @ £12 (£0 fees)
+10/02/2019 BUY 10 FOO @ £10 (£0 fees)
+20/02/2019 BUY 5 FOO @ £20 (£0 fees)
+
+# ASSET EVENTS
+
+15/02/2019 UNSPLIT FOO 2
