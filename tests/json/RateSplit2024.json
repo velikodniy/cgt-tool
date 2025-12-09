@@ -1,0 +1,47 @@
+{
+  "tax_years": [
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-10-29",
+          "ticker": "STOCK",
+          "quantity": "100",
+          "proceeds": "5990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "100",
+              "allowable_cost": "5010.00",
+              "gain_or_loss": "980.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-10-30",
+          "ticker": "STOCK",
+          "quantity": "100",
+          "proceeds": "6990",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "100",
+              "allowable_cost": "5010.00",
+              "gain_or_loss": "1980.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "2960.00",
+      "total_loss": "0.00",
+      "net_gain": "2960.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "STOCK",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
+}
