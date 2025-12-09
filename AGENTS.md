@@ -4,6 +4,7 @@ Auto-generated from all feature plans. Last updated: 2025-12-08
 
 ## Active Technologies
 
+- Rust 2024 edition (workspace uses stable Rust) + rust_decimal, chrono, pest (DSL parsing), anyhow/thiserror (errors), typst-as-lib (formatting; PDF not in scope for this feature), cargo workspace crates `cgt-core`, `cgt-cli`, formatters (010-better-testing)
 - Rust 2024 edition + pest (parsing), thiserror (error types), anyhow (CLI error handling), chrono (dates), rust_decimal (numbers), typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
 
 ## Project Structure
@@ -30,15 +31,9 @@ cargo build --release   # Build release binary
 
 ## Recent Changes
 
+- 010-better-testing: Added Rust 2024 edition (workspace uses stable Rust) + rust_decimal, chrono, pest (DSL parsing), anyhow/thiserror (errors), typst-as-lib (formatting; PDF not in scope for this feature), cargo workspace crates `cgt-core`, `cgt-cli`, formatters
 - 009-codebase-refactoring: Added Rust 2024 edition + pest (parsing), rust_decimal, chrono, thiserror, anyhow, typst-as-lib, toml (new), tera or minijinja (new for plain text templates)
 - 008-pdf-typst-formatter: Added Rust 2024 edition (matching existing crates) + typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
-- 007-plain-formatter: Added Rust 2024 edition (existing) + cgt-core (existing), clap (CLI), rust_decimal, chrono
-- 006-multi-ticker: No new dependencies (multi-ticker Section 104 pooling with ticker normalization)
-- 005-internal-data-model: Added Rust 2024 edition + serde, serde_json, chrono, rust_decimal, thiserror, schemars (JsonSchema)
-- 004-test-validation: No new dependencies (documentation and test verification only)
-- 003-strict-clippy-linting: Enforced strict Clippy linting, replaced all unwraps with proper error handling
-- 002-dsl-enhancements: Added TAX, EXPENSES, RATIO keywords for improved DSL readability
-- 001-cgt-cli: Initial CGT CLI tool with PEG parser and UK tax rules (Same Day, B&B, Section 104)
 
 <!-- MANUAL ADDITIONS START -->
 
