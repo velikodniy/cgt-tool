@@ -4,9 +4,26 @@
 //! The exemption is the amount of gains you can make before paying CGT.
 
 use crate::CgtError;
+use crate::config::Config;
 use rust_decimal::Decimal;
+use std::sync::OnceLock;
+
+/// Global configuration loaded once with override support.
+static CONFIG: OnceLock<Config> = OnceLock::new();
+
+/// Get the global configuration, loading it with overrides on first access.
+fn get_config() -> &'static Config {
+    CONFIG.get_or_init(Config::load_with_overrides)
+}
 
 /// Get the UK annual CGT exemption for a given tax year start.
+///
+/// Uses configuration with override support. On first call, loads configuration from:
+/// 1. Embedded defaults
+/// 2. `./config.toml` (current directory)
+/// 3. `~/.config/cgt-tool/config.toml` (user config directory)
+///
+/// Override files take precedence over embedded defaults.
 ///
 /// # Arguments
 /// * `year` - The calendar year when the tax year starts (e.g., 2023 for 2023/24)
@@ -23,20 +40,7 @@ use rust_decimal::Decimal;
 /// assert_eq!(exemption, rust_decimal::Decimal::from(6000));
 /// ```
 pub fn get_exemption(year: u16) -> Result<Decimal, CgtError> {
-    match year {
-        2014 => Ok(Decimal::from(11000)),
-        2015 => Ok(Decimal::from(11100)),
-        2016 => Ok(Decimal::from(11100)),
-        2017 => Ok(Decimal::from(11300)),
-        2018 => Ok(Decimal::from(11700)),
-        2019 => Ok(Decimal::from(12000)),
-        2020 => Ok(Decimal::from(12300)),
-        2021 => Ok(Decimal::from(12300)),
-        2022 => Ok(Decimal::from(12300)),
-        2023 => Ok(Decimal::from(6000)),
-        2024 => Ok(Decimal::from(3000)),
-        _ => Err(CgtError::UnsupportedExemptionYear(year)),
-    }
+    get_config().get_exemption(year)
 }
 
 #[cfg(test)]

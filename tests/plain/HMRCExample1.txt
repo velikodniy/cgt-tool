@@ -2,22 +2,22 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2018/2019   £629   £5235      £11700      £0
+2018/19     £629   £5,235     £11,700     £0
 
 # TAX YEAR DETAILS
 
-## 2018/2019
+## 2018/19
 
 1) SELL 700 LOBSTER on 01/05/2018 - GAIN £329
    Section 104: 700 shares @ £4.19
-   Proceeds: 700 × £4.8 = £3260
-   Cost: £2930
+   Proceeds: 700 × £4.8 = £3,260
+   Cost: £2,930
    Result: £329
 
 2) SELL 400 LOBSTER on 01/02/2019 - GAIN £300
    Section 104: 400 shares @ £4.19
-   Proceeds: 400 × £5.2 = £1975
-   Cost: £1674
+   Proceeds: 400 × £5.2 = £1,975
+   Cost: £1,674
    Result: £300
 
 

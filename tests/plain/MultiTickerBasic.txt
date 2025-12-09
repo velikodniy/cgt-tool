@@ -2,11 +2,11 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2023/2024   £0     £1000      £6000       £0
+2023/24     £0     £1,000     £6,000      £0
 
 # TAX YEAR DETAILS
 
-## 2023/2024
+## 2023/24
 
 1) SELL 5 AAPL on 01/09/2023 - GAIN £100
    Section 104: 5 shares @ £100
@@ -18,7 +18,7 @@ Tax year    Gain   Proceeds   Exemption   Taxable gain
    Section 104: 10 shares @ £50
    Proceeds: 10 × £40 = £400
    Cost: £500
-   Result: £-100
+   Result: -£100
 
 
 # HOLDINGS

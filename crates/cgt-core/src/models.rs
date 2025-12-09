@@ -5,10 +5,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::CgtError;
 
-// =============================================================================
-// TaxPeriod - Validated UK tax year identifier
-// =============================================================================
-
 /// A validated UK tax year identifier (April 6 to April 5).
 ///
 /// Stores the start year internally and serializes to "YYYY/YY" format (e.g., "2023/24").
@@ -130,10 +126,6 @@ impl JsonSchema for TaxPeriod {
     }
 }
 
-// =============================================================================
-// Transaction types
-// =============================================================================
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Transaction {
     pub date: NaiveDate,
@@ -174,20 +166,12 @@ pub enum Operation {
     },
 }
 
-// =============================================================================
-// Section 104 Holdings
-// =============================================================================
-
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct Section104Holding {
     pub ticker: String,
     pub quantity: Decimal,
     pub total_cost: Decimal,
 }
-
-// =============================================================================
-// Matching Rules and Matches
-// =============================================================================
 
 /// Enumeration of HMRC share matching rules.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
@@ -211,10 +195,6 @@ pub struct Match {
     pub acquisition_date: Option<NaiveDate>,
 }
 
-// =============================================================================
-// Disposals
-// =============================================================================
-
 /// A sale event that triggers CGT calculation.
 ///
 /// Contains the sale details and how it was matched to acquisitions.
@@ -227,10 +207,6 @@ pub struct Disposal {
     pub matches: Vec<Match>,
 }
 
-// =============================================================================
-// Tax Year Summary
-// =============================================================================
-
 /// Summary of CGT activity within a single UK tax year.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub struct TaxYearSummary {
@@ -240,10 +216,6 @@ pub struct TaxYearSummary {
     pub total_loss: Decimal,
     pub net_gain: Decimal,
 }
-
-// =============================================================================
-// Tax Report
-// =============================================================================
 
 /// The complete CGT calculation output.
 ///

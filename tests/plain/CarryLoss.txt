@@ -2,17 +2,17 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2017/2018   £-1000 £0         £11300      £0
+2017/18     -£1,000£0         £11,300     £0
 
 # TAX YEAR DETAILS
 
-## 2017/2018
+## 2017/18
 
-1) SELL 1 GB00B41YBW71 on 01/01/2018 - LOSS £1000
+1) SELL 1 GB00B41YBW71 on 01/01/2018 - LOSS £1,000
    Same Day: 1 shares
    Proceeds: 1 × £0 = £0
-   Cost: £1000
-   Result: £-1000
+   Cost: £1,000
+   Result: -£1,000
 
 
 # HOLDINGS

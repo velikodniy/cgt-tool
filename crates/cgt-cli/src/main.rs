@@ -1,7 +1,8 @@
-use anyhow::Result;
+use anyhow::{Result, bail};
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
+use cgt_core::validate;
 use clap::Parser;
 mod commands;
 use commands::{Commands, OutputFormat};
@@ -41,6 +42,26 @@ fn main() -> Result<()> {
         } => {
             let content = fs::read_to_string(file)?;
             let transactions = parse_file(&content)?;
+
+            // Validate transactions before calculation
+            let validation = validate(&transactions);
+
+            // Print warnings
+            for warning in &validation.warnings {
+                eprintln!("{}", warning);
+            }
+
+            // Bail on errors
+            if !validation.is_valid() {
+                for error in &validation.errors {
+                    eprintln!("{}", error);
+                }
+                bail!(
+                    "Validation failed with {} error(s)",
+                    validation.errors.len()
+                );
+            }
+
             let report = calculate(transactions.clone(), *year)?;
 
             match format {

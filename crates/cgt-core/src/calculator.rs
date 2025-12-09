@@ -20,7 +20,11 @@ impl AcquisitionTracker {
     }
 
     fn adjusted_unit_cost(&self) -> Decimal {
-        self.adjusted_cost() / self.amount
+        if self.amount != Decimal::ZERO {
+            self.adjusted_cost() / self.amount
+        } else {
+            Decimal::ZERO
+        }
     }
 }
 
@@ -165,7 +169,10 @@ pub fn calculate(
                 }
                 if let Some(acq) = acq_opt {
                     let amount_left = acquisition_amounts_left[acq_idx];
-                    if amount_left > Decimal::ZERO && transactions[acq_idx].date < tx.date {
+                    if amount_left > Decimal::ZERO
+                        && transactions[acq_idx].date < tx.date
+                        && *event_amount != Decimal::ZERO
+                    {
                         let apportioned_value = net_value * (amount_left / event_amount);
                         acq.cost_offset -= apportioned_value; // Reduce cost
                     }
@@ -217,7 +224,10 @@ pub fn calculate(
                 }
                 if let Some(acq) = acq_opt {
                     let amount_left = acquisition_amounts_left[acq_idx];
-                    if amount_left > Decimal::ZERO && transactions[acq_idx].date < tx.date {
+                    if amount_left > Decimal::ZERO
+                        && transactions[acq_idx].date < tx.date
+                        && *event_amount != Decimal::ZERO
+                    {
                         let apportioned_value = net_value * (amount_left / event_amount);
                         acq.cost_offset += apportioned_value; // Increase cost
                     }
@@ -338,7 +348,11 @@ pub fn calculate(
                     }
                     Operation::Unsplit {
                         ratio: unsplit_ratio,
-                    } => cumulative_ratio_effect /= unsplit_ratio,
+                    } => {
+                        if *unsplit_ratio != Decimal::ZERO {
+                            cumulative_ratio_effect /= unsplit_ratio
+                        }
+                    }
                     Operation::Buy {
                         amount: buy_amount, ..
                     } => {
@@ -470,7 +484,9 @@ pub fn calculate(
                 }
             }
             Operation::Unsplit { ratio } => {
-                if let Some(p) = pools.get_mut(ticker) {
+                if let Some(p) = pools.get_mut(ticker)
+                    && *ratio != Decimal::ZERO
+                {
                     p.quantity /= *ratio;
                 }
             }
@@ -595,7 +611,11 @@ fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {
     } = &current_transaction.operation
     {
         let gross = qty * *price;
-        let exp_portion = *expenses * (qty / *amount);
+        let exp_portion = if *amount != Decimal::ZERO {
+            *expenses * (qty / *amount)
+        } else {
+            Decimal::ZERO
+        };
         gross - exp_portion
     } else {
         Decimal::ZERO
