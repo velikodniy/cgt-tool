@@ -1,0 +1,32 @@
+# Test: DividendAfterFullDisposal
+# Purpose: Tests dividend when holdings are zero (should not error, no pool change)
+# Rules Tested: Section 104 Pooling, Dividend handling with zero holdings
+# Complexity: Simple
+# Key Features: Full disposal before dividend, dividend has no effect
+# Expected Outcome: Gain £90, no error from dividend line
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   HMRC rule: Dividend line when holdings are zero should be accepted.
+#   It should not mutate pools (there are none) and should not produce an error.
+#
+#   Step 1: Buy 100 @ £10 + £5 expenses
+#     Pool: 100 shares, cost = £1,005
+#
+#   Step 2: Sell all 100 @ £11 - £5 expenses
+#     Proceeds: 100 × £11 - £5 = £1,095
+#     Cost: £1,005
+#     Gain: £1,095 - £1,005 = £90 ✓
+#     Pool after: 0 shares, cost = £0
+#
+#   Step 3: Dividend line (holdings = 0)
+#     No pool to adjust, should be silently accepted
+#     No error, no pool change ✓
+#
+#   Total gain: £90 ✓
+#   Total loss: £0
+#
+2023-01-01 BUY FUNDZERO 100 @ 10 EXPENSES 5
+2023-06-01 SELL FUNDZERO 100 @ 11 EXPENSES 5
+2023-07-15 DIVIDEND FUNDZERO 0 TOTAL 0 TAX 0
