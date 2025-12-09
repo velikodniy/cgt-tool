@@ -30,6 +30,7 @@ cargo build --release   # Build release binary
 
 ## Recent Changes
 
+- 009-codebase-refactoring: Added Rust 2024 edition + pest (parsing), rust_decimal, chrono, thiserror, anyhow, typst-as-lib, toml (new), tera or minijinja (new for plain text templates)
 - 008-pdf-typst-formatter: Added Rust 2024 edition (matching existing crates) + typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
 - 007-plain-formatter: Added Rust 2024 edition (existing) + cgt-core (existing), clap (CLI), rust_decimal, chrono
 - 006-multi-ticker: No new dependencies (multi-ticker Section 104 pooling with ticker normalization)
