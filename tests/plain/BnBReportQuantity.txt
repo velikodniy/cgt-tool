@@ -1,0 +1,30 @@
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2023/24     £418   £1,490     £6,000      £0
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 100 PARTBNB on 15/06/2023 - GAIN £418
+   B&B: 30 shares from 25/06/2023
+   Proceeds: 30 × £15 = £447
+   Cost: £365
+   Result: £82
+   Section 104: 70 shares @ £10.10
+   Proceeds: 70 × £15 = £1,043
+   Cost: £707
+   Result: £336
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+01/01/2023 BUY 100 PARTBNB @ £10 (£10 fees)
+15/06/2023 SELL 100 PARTBNB @ £15 (£10 fees)
+25/06/2023 BUY 30 PARTBNB @ £12 (£5 fees)
