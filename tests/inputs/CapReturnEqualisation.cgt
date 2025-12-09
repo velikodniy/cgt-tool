@@ -1,0 +1,30 @@
+# Test: CapReturnEqualisation
+# Purpose: Tests CAPRETURN reduces pool cost by lump sum (no share count required)
+# Rules Tested: Section 104 Pooling, Capital Return (CAPRETURN)
+# Complexity: Simple
+# Key Features: Capital return reduces pool cost, no quantity in calculation
+# Expected Outcome: Gain £580
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   HMRC rule: Capital return (equalisation) reduces pool cost by the total amount.
+#   This is a lump-sum reduction, not per-share.
+#
+#   Step 1: Buy 100 @ £20 + £10 expenses
+#     Pool: 100 shares, cost = £2,010
+#
+#   Step 2: CAPRETURN payment, TOTAL £100 (quantity is for reference only)
+#     Pool: 100 shares, cost = £2,010 - £100 = £1,910 ✓
+#
+#   Step 3: Sell 100 @ £25 - £10 expenses
+#     Proceeds: 100 × £25 - £10 = £2,490
+#     Cost: £1,910
+#     Gain: £2,490 - £1,910 = £580 ✓
+#
+#   Total gain: £580 ✓
+#   Total loss: £0
+#
+2023-01-01 BUY EQFUND 100 @ 20 EXPENSES 10
+2023-06-15 CAPRETURN EQFUND 100 TOTAL 100 EXPENSES 0
+2023-12-01 SELL EQFUND 100 @ 25 EXPENSES 10
