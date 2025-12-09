@@ -2,15 +2,15 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2022/2023   £166   £1100      £12300      £0
+2022/23     £166   £1,100     £12,300     £0
 
 # TAX YEAR DETAILS
 
-## 2022/2023
+## 2022/23
 
 1) SELL 10 AAPL on 03/01/2023 - GAIN £166
    Section 104: 10 shares @ £93.33
-   Proceeds: 10 × £110 = £1100
+   Proceeds: 10 × £110 = £1,100
    Cost: £933
    Result: £166
 

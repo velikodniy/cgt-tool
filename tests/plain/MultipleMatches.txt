@@ -2,17 +2,17 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2018/2019   £-20   £34        £11700      £0
+2018/19     -£20   £34        £11,700     £0
 
 # TAX YEAR DETAILS
 
-## 2018/2019
+## 2018/19
 
 1) SELL 10 GB00B41YBW71 on 28/08/2018 - LOSS £19
    Same Day: 10 shares
    Proceeds: 10 × £4.6702 = £34
    Cost: £54
-   Result: £-20
+   Result: -£20
 
 
 # HOLDINGS

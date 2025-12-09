@@ -2,11 +2,11 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2018/2019   £0     £0         £11700      £0
+2018/19     £0     £0         £11,700     £0
 
 # TAX YEAR DETAILS
 
-## 2018/2019
+## 2018/19
 
 
 # HOLDINGS

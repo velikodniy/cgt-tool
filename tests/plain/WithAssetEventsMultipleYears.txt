@@ -2,11 +2,11 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2019/2020   £60    £480       £12000      £0
+2019/20     £60    £480       £12,000     £0
 
 # TAX YEAR DETAILS
 
-## 2019/2020
+## 2019/20
 
 1) SELL 40 GB00B3TYHH97 on 01/12/2019 - GAIN £60
    Section 104: 40 shares @ £10.5

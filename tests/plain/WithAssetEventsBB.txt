@@ -2,17 +2,17 @@
 
 Tax year    Gain   Proceeds   Exemption   Taxable gain
 ==========================================================
-2019/2020   £265   £7756      £12000      £0
+2019/20     £265   £7,756     £12,000     £0
 
 # TAX YEAR DETAILS
 
-## 2019/2020
+## 2019/20
 
 1) SELL 40 GB00B3TYHH97 on 05/11/2019 - GAIN £265
    B&B: 20 shares from 10/11/2019
    Section 104: 20 shares @ £183.48
-   Proceeds: 40 × £194.22 = £7756
-   Cost: £7491
+   Proceeds: 40 × £194.22 = £7,756
+   Cost: £7,491
    Result: £265
 
 
