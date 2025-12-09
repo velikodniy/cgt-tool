@@ -41,6 +41,38 @@ Calculate gains and losses for a specific tax year:
 cgt-cli report transactions.cgt --year 2024
 ```
 
+Output formats: `--format plain` (default) or `--format json`
+
+Example plain text output:
+
+```text
+# SUMMARY
+
+Tax year    Gain   Proceeds   Exemption   Taxable gain
+==========================================================
+2024/2025   £500   £8000      £3000       £0
+
+# TAX YEAR DETAILS
+
+## 2024/2025
+
+1) SELL 50 AAPL on 01/05/2025 - GAIN £500
+   Section 104: 50 shares @ £150
+   Proceeds: 50 × £160 = £8000
+   Cost: £7500
+   Result: £500
+
+# HOLDINGS
+
+AAPL: 100 units at £152.5 avg cost
+
+# TRANSACTIONS
+
+01/04/2025 BUY 100 AAPL @ £150 (£5 fees)
+01/04/2025 BUY 50 AAPL @ £155 (£0 fees)
+01/05/2025 SELL 50 AAPL @ £160 (£5 fees)
+```
+
 ## Input Format
 
 One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
