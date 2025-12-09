@@ -41,7 +41,21 @@ Calculate gains and losses for a specific tax year:
 cgt-cli report transactions.cgt --year 2024
 ```
 
-Output formats: `--format plain` (default) or `--format json`
+Output formats: `--format plain` (default), `--format json`, or `--format pdf`
+
+### Generate PDF Report
+
+Generate a professional PDF document for tax reporting:
+
+```bash
+cgt-cli report transactions.cgt --year 2024 --format pdf
+```
+
+By default, the PDF is saved to `transactions.pdf`. Use `--output` for a custom path:
+
+```bash
+cgt-cli report transactions.cgt --year 2024 --format pdf --output report.pdf
+```
 
 Example plain text output:
 

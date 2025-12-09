@@ -25,4 +25,7 @@ pub enum CgtError {
 
     #[error("Unsupported tax year {0} for CGT exemption lookup - please update the tool")]
     UnsupportedExemptionYear(u16),
+
+    #[error("PDF generation failed: {0}")]
+    PdfGeneration(String),
 }

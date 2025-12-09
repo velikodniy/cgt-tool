@@ -33,7 +33,12 @@ fn main() -> Result<()> {
                 println!("{}", json);
             }
         }
-        Commands::Report { file, year, format } => {
+        Commands::Report {
+            file,
+            year,
+            format,
+            output,
+        } => {
             let content = fs::read_to_string(file)?;
             let transactions = parse_file(&content)?;
             let report = calculate(transactions.clone(), *year)?;
@@ -44,6 +49,12 @@ fn main() -> Result<()> {
                 }
                 OutputFormat::Json => {
                     println!("{}", serde_json::to_string_pretty(&report)?);
+                }
+                OutputFormat::Pdf => {
+                    let pdf_bytes = cgt_formatter_pdf::format(&report, &transactions)?;
+                    let output_path = output.clone().unwrap_or_else(|| file.with_extension("pdf"));
+                    fs::write(&output_path, pdf_bytes)?;
+                    println!("PDF written to {}", output_path.display());
                 }
             }
         }

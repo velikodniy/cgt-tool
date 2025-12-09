@@ -4,7 +4,7 @@ Auto-generated from all feature plans. Last updated: 2025-12-08
 
 ## Active Technologies
 
-- Rust 2024 edition + pest (parsing), thiserror (error types), anyhow (CLI error handling), chrono (dates), rust_decimal (numbers)
+- Rust 2024 edition + pest (parsing), thiserror (error types), anyhow (CLI error handling), chrono (dates), rust_decimal (numbers), typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
 
 ## Project Structure
 
@@ -30,6 +30,7 @@ cargo build --release   # Build release binary
 
 ## Recent Changes
 
+- 008-pdf-typst-formatter: Added Rust 2024 edition (matching existing crates) + typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
 - 007-plain-formatter: Added Rust 2024 edition (existing) + cgt-core (existing), clap (CLI), rust_decimal, chrono
 - 006-multi-ticker: No new dependencies (multi-ticker Section 104 pooling with ticker normalization)
 - 005-internal-data-model: Added Rust 2024 edition + serde, serde_json, chrono, rust_decimal, thiserror, schemars (JsonSchema)

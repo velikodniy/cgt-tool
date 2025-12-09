@@ -9,6 +9,8 @@ pub enum OutputFormat {
     Plain,
     /// JSON format (machine-readable)
     Json,
+    /// PDF format (printable document)
+    Pdf,
 }
 
 #[derive(Subcommand)]
@@ -32,8 +34,12 @@ pub enum Commands {
         #[arg(long)]
         year: i32,
 
-        /// Output format (plain or json)
+        /// Output format (plain, json, or pdf)
         #[arg(long, short, value_enum, default_value_t = OutputFormat::Plain)]
         format: OutputFormat,
+
+        /// Output file path (required for PDF format)
+        #[arg(long, short)]
+        output: Option<PathBuf>,
     },
 }
