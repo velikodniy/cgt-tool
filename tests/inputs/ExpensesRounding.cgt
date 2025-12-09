@@ -1,0 +1,31 @@
+# Test: ExpensesRounding
+# Purpose: Tests expenses/stamp duty treatment and precision handling
+# Rules Tested: Section 104 Pooling, Expenses treatment
+# Complexity: Simple
+# Key Features: Fees on buy add to cost, fees on sell reduce proceeds
+# Expected Outcome: Gain £968.02
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2025-12-09
+# Verification Notes:
+#   HMRC rules:
+#   - Buy expenses (fees, stamp duty): Added to allowable cost
+#   - Sell expenses (fees): Deducted from proceeds
+#   - No rounding until final report; internal uses full precision
+#
+#   Step 1: Buy 150 @ £33.33 + £12.50 stamp + £9.99 commission
+#     Base cost: 150 × £33.33 = £4,999.50
+#     Total expenses: £12.50 + £9.99 = £22.49
+#     Pool: 150 shares, cost = £4,999.50 + £22.49 = £5,021.99 ✓
+#
+#   Step 2: Sell 150 @ £40.00 - £9.99 commission
+#     Gross proceeds: 150 × £40.00 = £6,000.00
+#     Net proceeds: £6,000.00 - £9.99 = £5,990.01 ✓
+#     Cost: £5,021.99
+#     Gain: £5,990.01 - £5,021.99 = £968.02 ✓
+#
+#   Total gain: £968.02 ✓
+#   Total loss: £0
+#
+2023-01-15 BUY PRECFUND 150 @ 33.33 EXPENSES 22.49
+2023-11-20 SELL PRECFUND 150 @ 40.00 EXPENSES 9.99

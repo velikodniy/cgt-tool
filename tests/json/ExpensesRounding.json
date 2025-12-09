@@ -1,0 +1,33 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-11-20",
+          "ticker": "PRECFUND",
+          "quantity": "150",
+          "proceeds": "5990.01",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "150",
+              "allowable_cost": "5021.99",
+              "gain_or_loss": "968.02"
+            }
+          ]
+        }
+      ],
+      "total_gain": "968.02",
+      "total_loss": "0.00",
+      "net_gain": "968.02"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "PRECFUND",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ]
+}
