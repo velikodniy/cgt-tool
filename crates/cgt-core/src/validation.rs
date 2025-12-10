@@ -140,23 +140,23 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative price
-                if *price < Decimal::ZERO {
+                // Check negative price (GBP value)
+                if price.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative price: {}", price),
+                        message: format!("BUY with negative price: {}", price.gbp),
                     });
                 }
 
-                // Check negative expenses
-                if *expenses < Decimal::ZERO {
+                // Check negative expenses (GBP value)
+                if expenses.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative expenses: {}", expenses),
+                        message: format!("BUY with negative expenses: {}", expenses.gbp),
                     });
                 }
 
@@ -196,23 +196,23 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative price
-                if *price < Decimal::ZERO {
+                // Check negative price (GBP value)
+                if price.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative price: {}", price),
+                        message: format!("SELL with negative price: {}", price.gbp),
                     });
                 }
 
-                // Check negative expenses
-                if *expenses < Decimal::ZERO {
+                // Check negative expenses (GBP value)
+                if expenses.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative expenses: {}", expenses),
+                        message: format!("SELL with negative expenses: {}", expenses.gbp),
                     });
                 }
 
@@ -308,13 +308,13 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative total value
-                if *total_value < Decimal::ZERO {
+                // Check negative total value (GBP value)
+                if total_value.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("DIVIDEND with negative total value: {}", total_value),
+                        message: format!("DIVIDEND with negative total value: {}", total_value.gbp),
                     });
                 }
             }
@@ -344,23 +344,26 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative total value
-                if *total_value < Decimal::ZERO {
+                // Check negative total value (GBP value)
+                if total_value.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative total value: {}", total_value),
+                        message: format!(
+                            "CAPRETURN with negative total value: {}",
+                            total_value.gbp
+                        ),
                     });
                 }
 
-                // Check negative expenses
-                if *expenses < Decimal::ZERO {
+                // Check negative expenses (GBP value)
+                if expenses.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative expenses: {}", expenses),
+                        message: format!("CAPRETURN with negative expenses: {}", expenses.gbp),
                     });
                 }
             }
@@ -373,6 +376,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::CurrencyAmount;
 
     fn make_buy(date: &str, ticker: &str, amount: i64, price: i64, expenses: i64) -> Transaction {
         Transaction {
@@ -380,8 +384,8 @@ mod tests {
             ticker: ticker.to_string(),
             operation: Operation::Buy {
                 amount: Decimal::from(amount),
-                price: Decimal::from(price),
-                expenses: Decimal::from(expenses),
+                price: CurrencyAmount::gbp(Decimal::from(price)),
+                expenses: CurrencyAmount::gbp(Decimal::from(expenses)),
             },
         }
     }
@@ -392,8 +396,8 @@ mod tests {
             ticker: ticker.to_string(),
             operation: Operation::Sell {
                 amount: Decimal::from(amount),
-                price: Decimal::from(price),
-                expenses: Decimal::from(expenses),
+                price: CurrencyAmount::gbp(Decimal::from(price)),
+                expenses: CurrencyAmount::gbp(Decimal::from(expenses)),
             },
         }
     }

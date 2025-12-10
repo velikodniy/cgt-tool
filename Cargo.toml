@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatter-pdf", "crates/cgt-cli"]
+members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatter-pdf", "crates/cgt-cli", "crates/cgt-fx"]
 resolver = "2"
 
 [workspace.lints.clippy]

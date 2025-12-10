@@ -38,10 +38,10 @@ pub fn match_same_day(
         let matched_qty = (*remaining).min(available);
         let cost = ledger.consume_shares_on_date(sell_tx.date, matched_qty);
 
-        // Calculate proportional proceeds and expenses
+        // Calculate proportional proceeds and expenses (using GBP values)
         let proportion = matched_qty / *sell_amount;
-        let proceeds = matched_qty * *sell_price;
-        let expenses = *sell_expenses * proportion;
+        let proceeds = matched_qty * sell_price.gbp;
+        let expenses = sell_expenses.gbp * proportion;
 
         let gain_or_loss = proceeds - cost - expenses;
 

@@ -11,7 +11,7 @@ mod section104;
 pub use acquisition_ledger::{AcquisitionLedger, AcquisitionLot};
 
 use crate::error::CgtError;
-use crate::models::{MatchRule, Operation, Section104Holding, Transaction};
+use crate::models::{CurrencyAmount, MatchRule, Operation, Section104Holding, Transaction};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -102,13 +102,16 @@ impl Matcher {
                             expenses: next_expenses,
                         },
                     ) => {
+                        // Merge using GBP values
                         let total_cost =
-                            (*current_amount * *current_price) + (next_amount * next_price);
+                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
                         *current_amount += next_amount;
                         if *current_amount != Decimal::ZERO {
-                            *current_price = total_cost / *current_amount;
+                            let new_price = total_cost / *current_amount;
+                            *current_price = CurrencyAmount::gbp(new_price);
                         }
-                        *current_expenses += next_expenses;
+                        current_expenses.gbp += next_expenses.gbp;
+                        current_expenses.amount += next_expenses.amount;
                     }
                     (
                         Operation::Sell {
@@ -122,13 +125,16 @@ impl Matcher {
                             expenses: next_expenses,
                         },
                     ) => {
+                        // Merge using GBP values
                         let total_proceeds =
-                            (*current_amount * *current_price) + (next_amount * next_price);
+                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
                         *current_amount += next_amount;
                         if *current_amount != Decimal::ZERO {
-                            *current_price = total_proceeds / *current_amount;
+                            let new_price = total_proceeds / *current_amount;
+                            *current_price = CurrencyAmount::gbp(new_price);
                         }
-                        *current_expenses += next_expenses;
+                        current_expenses.gbp += next_expenses.gbp;
+                        current_expenses.amount += next_expenses.amount;
                     }
                     (_, next_op) => {
                         merged.push(current);
@@ -160,7 +166,7 @@ impl Matcher {
             } = &tx.operation
             {
                 let ledger = self.ledgers.entry(tx.ticker.clone()).or_default();
-                ledger.add_acquisition(idx, tx.date, *amount, *price, *expenses);
+                ledger.add_acquisition(idx, tx.date, *amount, price.gbp, expenses.gbp);
             }
         }
 
@@ -180,7 +186,7 @@ impl Matcher {
                     expenses: event_expenses,
                 } => {
                     if let Some(ledger) = self.ledgers.get_mut(&tx.ticker) {
-                        let net_value = *total_value - *event_expenses;
+                        let net_value = total_value.gbp - event_expenses.gbp;
                         ledger.apply_cost_adjustment(
                             event_idx,
                             tx.date,
@@ -200,7 +206,7 @@ impl Matcher {
                             event_idx,
                             tx.date,
                             *event_amount,
-                            *total_value, // Positive = increase cost
+                            total_value.gbp, // Positive = increase cost
                             transactions,
                         );
                     }
@@ -248,8 +254,8 @@ impl Matcher {
                 expenses,
             } => {
                 let mut remaining = *amount;
-                let gross_proceeds = *amount * *price;
-                let total_expenses = *expenses;
+                let gross_proceeds = *amount * price.gbp;
+                let total_expenses = expenses.gbp;
 
                 // 1. Same Day matching
                 let same_day_matched =

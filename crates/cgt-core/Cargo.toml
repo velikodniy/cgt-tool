@@ -13,6 +13,8 @@ thiserror = "1.0"
 serde_json = "1.0"
 schemars = { version = "0.8", features = ["rust_decimal", "chrono"] }
 toml = "0.8"
+cgt-fx = { path = "../cgt-fx" }
+iso_currency = "0.5"
 
 [lints]
 workspace = true

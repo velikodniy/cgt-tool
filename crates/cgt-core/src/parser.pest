@@ -1,5 +1,7 @@
-// This is the main parser entry point
-transaction_list = { SOI ~ (transaction ~ NEWLINE?)* ~ EOI }
+// CGT DSL Grammar
+// Each line is either a transaction, a comment, or blank
+transaction_list = { SOI ~ (line ~ NEWLINE)* ~ line? ~ EOI }
+line = _{ transaction | COMMENT | "" }
 transaction = { date ~ command }
 
 command = {
@@ -20,22 +22,34 @@ cmd_unsplit = { "UNSPLIT" ~ split_args }
 
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
-buy_sell_args = { ticker ~ amount ~ "@" ~ price ~ ("EXPENSES" ~ expenses)? }
-dividend_args = { ticker ~ amount ~ "TOTAL" ~ total_value ~ "TAX" ~ tax_paid }
-capreturn_args = { ticker ~ amount ~ "TOTAL" ~ total_value ~ "EXPENSES" ~ expenses }
+// Amount with optional currency code (ISO 4217, 3 uppercase letters)
+// Must not match keywords (TAX, EXPENSES, TOTAL, RATIO, BUY, SELL)
+money = { decimal ~ currency_code? }
+currency_code = @{
+    !("TAX" | "BUY") ~
+    ASCII_ALPHA_UPPER{3} ~
+    !(ASCII_ALPHANUMERIC | "-")
+}
+
+// BUY/SELL: ticker amount @ price [currency] [EXPENSES expenses [currency]]
+buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ expenses_clause? }
+expenses_clause = { "EXPENSES" ~ money }
+
+// DIVIDEND: ticker amount TOTAL value [currency] TAX tax [currency]
+dividend_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "TAX" ~ money }
+
+// CAPRETURN: ticker amount TOTAL value [currency] EXPENSES expenses [currency]
+capreturn_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "EXPENSES" ~ money }
+
+// SPLIT/UNSPLIT: ticker RATIO ratio
 split_args = { ticker ~ "RATIO" ~ ratio }
 
 ticker = @{ ASCII_ALPHANUMERIC+ }
-amount = @{ decimal }
-price = @{ decimal }
-total_value = @{ decimal }
-expenses = @{ decimal }
-tax_paid = @{ decimal }
+quantity = @{ decimal }
 ratio = @{ decimal }
+decimal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 
-decimal = { ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
-
-// Define WHITESPACE rule for implicit consumption between rules
-WHITESPACE = _{ (" " | "\t" | NEWLINE)+ | COMMENT }
-COMMENT = { "#" ~ (!NEWLINE ~ ANY)* } // COMMENT consumes up to (but not including) NEWLINE
+// Whitespace between tokens (no newlines - transactions must be on separate lines)
+WHITESPACE = _{ " " | "\t" }
+COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 NEWLINE = _{ "\r\n" | "\n" | "\r" }

@@ -7,6 +7,7 @@ edition = "2024"
 cgt-core = { path = "../cgt-core" }
 rust_decimal = "1"
 chrono = "0.4"
+iso_currency = "0.5"
 
 [lints]
 workspace = true

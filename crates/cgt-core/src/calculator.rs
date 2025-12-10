@@ -67,11 +67,14 @@ pub fn calculate(
                             expenses: next_expenses,
                         },
                     ) => {
+                        // Merge using GBP values
                         let total_cost =
-                            (*current_amount * *current_price) + (next_amount * next_price);
+                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
                         *current_amount += next_amount;
-                        *current_price = total_cost / *current_amount;
-                        *current_expenses += next_expenses;
+                        let new_price_gbp = total_cost / *current_amount;
+                        *current_price = CurrencyAmount::gbp(new_price_gbp);
+                        current_expenses.gbp += next_expenses.gbp;
+                        current_expenses.amount += next_expenses.amount;
                     }
                     (
                         Operation::Sell {
@@ -85,11 +88,14 @@ pub fn calculate(
                             expenses: next_expenses,
                         },
                     ) => {
+                        // Merge using GBP values
                         let total_proceeds =
-                            (*current_amount * *current_price) + (next_amount * next_price);
+                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
                         *current_amount += next_amount;
-                        *current_price = total_proceeds / *current_amount;
-                        *current_expenses += next_expenses;
+                        let new_price_gbp = total_proceeds / *current_amount;
+                        *current_price = CurrencyAmount::gbp(new_price_gbp);
+                        current_expenses.gbp += next_expenses.gbp;
+                        current_expenses.amount += next_expenses.amount;
                     }
                     (_, next_op) => {
                         merged.push(current);
@@ -109,7 +115,7 @@ pub fn calculate(
     }
     let transactions = merged;
 
-    // Create acquisition trackers for all BUY transactions
+    // Create acquisition trackers for all BUY transactions (using GBP values)
     let mut acquisition_trackers: Vec<Option<AcquisitionTracker>> = transactions
         .iter()
         .map(|tx| match &tx.operation {
@@ -119,8 +125,8 @@ pub fn calculate(
                 expenses,
             } => Some(AcquisitionTracker {
                 amount: *amount,
-                price: *price,
-                expenses: *expenses,
+                price: price.gbp,
+                expenses: expenses.gbp,
                 cost_offset: Decimal::ZERO,
             }),
             _ => None,
@@ -135,6 +141,8 @@ pub fn calculate(
             expenses: event_expenses,
         } = &tx.operation
         {
+            let total_value = total_value.gbp;
+            let event_expenses = event_expenses.gbp;
             // Track how much of each acquisition is left after sells before this event
             let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
                 .iter()
@@ -162,7 +170,7 @@ pub fn calculate(
             }
 
             // Apportion the capital return value to acquisitions based on amounts left
-            let net_value = *total_value - *event_expenses;
+            let net_value = total_value - event_expenses;
             for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
                 if acq_idx >= event_idx {
                     break;
@@ -189,6 +197,7 @@ pub fn calculate(
             tax_paid: _,
         } = &tx.operation
         {
+            let total_value = total_value.gbp;
             // Track how much of each acquisition is left after sells before this event
             let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
                 .iter()
@@ -217,7 +226,7 @@ pub fn calculate(
 
             // Apportion the dividend value to acquisitions based on amounts left
             // Note: For dividends, the value is after tax, so we don't adjust for tax_paid
-            let net_value = *total_value;
+            let net_value = total_value;
             for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
                 if acq_idx >= event_idx {
                     break;
@@ -610,9 +619,9 @@ fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {
         expenses,
     } = &current_transaction.operation
     {
-        let gross = qty * *price;
+        let gross = qty * price.gbp;
         let exp_portion = if *amount != Decimal::ZERO {
-            *expenses * (qty / *amount)
+            expenses.gbp * (qty / *amount)
         } else {
             Decimal::ZERO
         };

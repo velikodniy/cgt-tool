@@ -1,9 +1,28 @@
 //! Plain text formatter for CGT tax reports.
 
 use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
-use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
+use cgt_core::{
+    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+};
 use rust_decimal::Decimal;
 use std::fmt::Write;
+
+/// Format a CurrencyAmount as GBP for plain text output.
+/// Shows original currency in parentheses only if it's not GBP.
+fn format_amount(amount: &CurrencyAmount) -> String {
+    let gbp = format_decimal(amount.gbp);
+    if amount.is_gbp() {
+        gbp
+    } else {
+        // Show original amount in parentheses
+        format!(
+            "{} ({} {})",
+            gbp,
+            format_decimal(amount.amount),
+            amount.code()
+        )
+    }
+}
 
 /// Format a tax report as plain text.
 ///
@@ -98,8 +117,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_decimal(*price),
-                    format_decimal(*expenses)
+                    format_amount(price),
+                    format_amount(expenses)
                 );
             }
             Operation::Sell {
@@ -113,8 +132,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_decimal(*price),
-                    format_decimal(*expenses)
+                    format_amount(price),
+                    format_amount(expenses)
                 );
             }
             _ => {}
@@ -151,7 +170,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
-                        format_decimal(*total_value)
+                        format_amount(total_value)
                     );
                 }
                 Operation::CapReturn {
@@ -165,7 +184,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
-                        format_decimal(*total_value)
+                        format_amount(total_value)
                     );
                 }
                 Operation::Split { ratio } => {
@@ -255,7 +274,7 @@ fn format_disposal(
         .find_map(|t| {
             if t.ticker == disposal.ticker && t.date == disposal.date {
                 if let Operation::Sell { price, .. } = &t.operation {
-                    Some(*price)
+                    Some(price.gbp)
                 } else {
                     None
                 }

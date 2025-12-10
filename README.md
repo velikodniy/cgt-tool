@@ -27,8 +27,16 @@ Output (JSON):
     "ticker": "AAPL",
     "action": "BUY",
     "amount": "100",
-    "price": "150.00",
-    "expenses": "5.00"
+    "price": {
+      "amount": "150.00",
+      "currency": "GBP",
+      "gbp": "150.00"
+    },
+    "expenses": {
+      "amount": "5.00",
+      "currency": "GBP",
+      "gbp": "5.00"
+    }
   }
 ]
 ```
@@ -89,7 +97,7 @@ AAPL: 100 units at £152.5 avg cost
 
 ## Input Format
 
-One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
+One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [CURRENCY] [EXPENSES EXPENSE_AMOUNT [CURRENCY]]`
 
 ```text
 # This is a comment and will be ignored
@@ -98,10 +106,77 @@ One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPE
 2025-05-01 SELL AAPL 50 @ 160.00 EXPENSES 5.00
 ```
 
-- **BUY/SELL**: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [EXPENSES EXPENSE_AMOUNT]`
-- **DIVIDEND**: `YYYY-MM-DD DIVIDEND TICKER AMOUNT TAX TAX_AMOUNT`
-- **CAPRETURN**: `YYYY-MM-DD CAPRETURN TICKER AMOUNT EXPENSES EXPENSE_AMOUNT`
-- **SPLIT/UNSPLIT**: `YYYY-MM-DD SPLIT FOO RATIO RATIO_VALUE`
+- **BUY/SELL**: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [CURRENCY] [EXPENSES EXPENSE_AMOUNT [CURRENCY]]`
+- **DIVIDEND**: `YYYY-MM-DD DIVIDEND TICKER AMOUNT TOTAL VALUE [CURRENCY] TAX TAX_AMOUNT [CURRENCY]`
+- **CAPRETURN**: `YYYY-MM-DD CAPRETURN TICKER AMOUNT TOTAL VALUE [CURRENCY] EXPENSES EXPENSE_AMOUNT [CURRENCY]`
+- **SPLIT/UNSPLIT**: `YYYY-MM-DD SPLIT TICKER RATIO RATIO_VALUE`
+
+## Multi-Currency Support
+
+The tool supports transactions in foreign currencies. Amounts are automatically converted to GBP using HMRC exchange rates for UK tax calculations.
+
+### Syntax
+
+Add a 3-letter ISO 4217 currency code after any monetary amount:
+
+```text
+# Buy US shares in USD
+2024-06-15 BUY AAPL 100 @ 150.00 USD EXPENSES 10.00 USD
+
+# Receive dividend in EUR
+2024-09-01 DIVIDEND MSFT 50 TOTAL 125.00 EUR TAX 18.75 EUR
+
+# Mix currencies (price in USD, expenses in GBP)
+2024-10-01 BUY TSLA 10 @ 250.00 USD EXPENSES 5.00
+```
+
+If no currency code is specified, GBP is assumed.
+
+### Exchange Rates
+
+The tool uses HMRC monthly average exchange rates for currency conversion.
+
+**Bundled rates**: The tool includes rates for 150+ currencies covering January 2015 through August 2025 (latest published HMRC monthly XMLs at build time). These are embedded at compile time and require no additional setup.
+
+**Custom rates**: To use additional or updated rates, provide a folder containing XML files:
+
+```bash
+cgt-cli report transactions.cgt --year 2024 --fx-folder ./my-rates
+```
+
+**Downloading rates**: Use the included script to download missing or updated rates:
+
+```bash
+# Download missing rates to the bundled folder (requires rebuild)
+./scripts/download-fx-rates.sh
+
+# Download to a custom folder (no rebuild needed)
+./scripts/download-fx-rates.sh ./my-rates
+```
+
+**Rate source**: Monthly XML files are available from the UK Government. FX parsing is IO-free and WASM-friendly; `cgt-cli` handles reading XML files and passes their contents into the parser:
+
+- Current rates (2021+): https://www.trade-tariff.service.gov.uk/exchange_rates
+- API: `https://www.trade-tariff.service.gov.uk/api/v2/exchange_rates/files/monthly_xml_YYYY-MM.xml`
+- Historical rates (pre-2021): https://webarchive.nationalarchives.gov.uk/ukgwa/20231016190054/https://www.gov.uk/government/collections/exchange-rates-for-customs-and-vat
+
+Files should be named `YYYY-MM.xml` (e.g., `2024-12.xml`); a `monthly_xml_YYYY-MM.xml` prefix also works. The CLI reads the folder, passes XML strings into the FX parser, and enforces that the embedded `<Period>` matches the file's year/month.
+
+**Note**: The bundled rates cover January 2015 through August 2025. For transactions before 2015, you'll need to manually download historical rates from the National Archives (requires browser access) and place them in a custom `--fx-folder`.
+
+### Report Output
+
+- **Plain text**: Shows GBP values with original currency in parentheses when applicable
+- **PDF**: Shows currency symbols (e.g., $, €) for foreign amounts
+- **JSON**: Includes full `CurrencyAmount` objects with `amount`, `currency`, and `gbp` fields
+
+Example plain text output with foreign currency:
+
+```text
+# TRANSACTIONS
+
+15/06/2024 BUY 100 AAPL @ £118.42 (150 USD) (£7.89 (10 USD) fees)
+```
 
 ## Tax Rules Documentation
 

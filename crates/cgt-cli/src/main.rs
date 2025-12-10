@@ -1,8 +1,9 @@
 use anyhow::{Result, bail};
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
-use cgt_core::parser::parse_file;
+use cgt_core::parser::{parse_file, parse_file_with_fx};
 use cgt_core::validate;
+use cgt_fx::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
 use commands::{Commands, OutputFormat};
@@ -14,6 +15,25 @@ use std::fs;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+}
+
+fn read_fx_folder(path: &std::path::Path) -> Result<Vec<RateFile>> {
+    let mut files = Vec::new();
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let file_path = entry.path();
+        if file_path.extension().and_then(|e| e.to_str()) != Some("xml") {
+            continue;
+        }
+        let xml = fs::read_to_string(&file_path)?;
+        let modified = fs::metadata(&file_path).and_then(|m| m.modified()).ok();
+        files.push(RateFile {
+            name: file_path,
+            modified,
+            xml,
+        });
+    }
+    Ok(files)
 }
 
 fn main() -> Result<()> {
@@ -39,9 +59,27 @@ fn main() -> Result<()> {
             year,
             format,
             output,
+            fx_folder,
         } => {
             let content = fs::read_to_string(file)?;
-            let transactions = parse_file(&content)?;
+
+            // Load FX cache if a folder is specified, otherwise parse without FX
+            let transactions = if let Some(folder) = fx_folder {
+                let folder_files = read_fx_folder(folder)?;
+                let fx_cache = load_cache_with_overrides(folder_files)?;
+                parse_file_with_fx(&content, Some(&fx_cache))?
+            } else {
+                // Try parsing without FX first
+                match parse_file(&content) {
+                    Ok(txns) => txns,
+                    Err(cgt_core::CgtError::MissingFxRate { .. }) => {
+                        // If we hit a missing FX rate, try loading bundled cache
+                        let fx_cache = load_default_cache()?;
+                        parse_file_with_fx(&content, Some(&fx_cache))?
+                    }
+                    Err(e) => return Err(e.into()),
+                }
+            };
 
             // Validate transactions before calculation
             let validation = validate(&transactions);

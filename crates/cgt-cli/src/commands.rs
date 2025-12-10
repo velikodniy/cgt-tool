@@ -41,5 +41,11 @@ pub enum Commands {
         /// Output file path (required for PDF format)
         #[arg(long, short)]
         output: Option<PathBuf>,
+
+        /// Folder containing monthly FX rate XML files from trade-tariff.service.gov.uk.
+        /// If not provided, bundled rates are used. If a required month/currency is
+        /// missing from provided files, falls back to bundled rates with a warning.
+        #[arg(long, value_name = "PATH")]
+        fx_folder: Option<PathBuf>,
     },
 }

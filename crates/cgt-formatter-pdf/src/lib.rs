@@ -4,7 +4,9 @@
 //! without requiring any external tool installation.
 
 use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
-use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
+use cgt_core::{
+    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+};
 use chrono::{Local, NaiveDate};
 use rust_decimal::Decimal;
 use typst::foundations::{Dict, IntoValue, Value};
@@ -19,6 +21,19 @@ static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
 fn format_price(value: Decimal) -> String {
     format!("£{}", format_decimal(value))
+}
+
+/// Format a CurrencyAmount for PDF output.
+/// Shows GBP value with original currency in parentheses if not GBP.
+fn format_amount(amount: &CurrencyAmount) -> String {
+    let gbp = format!("£{}", format_decimal(amount.gbp));
+    if amount.is_gbp() {
+        gbp
+    } else {
+        // Show original amount with currency symbol in parentheses
+        let orig = format!("{}{}", amount.symbol(), format_decimal(amount.amount));
+        format!("{} ({})", gbp, orig)
+    }
 }
 
 /// Sort transactions by date, then by ticker for deterministic output.
@@ -143,12 +158,12 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 amount,
                 price,
                 expenses,
-            } => Some((t.date, &t.ticker, "BUY", *amount, *price, *expenses)),
+            } => Some((t.date, &t.ticker, "BUY", *amount, price, expenses)),
             Operation::Sell {
                 amount,
                 price,
                 expenses,
-            } => Some((t.date, &t.ticker, "SELL", *amount, *price, *expenses)),
+            } => Some((t.date, &t.ticker, "SELL", *amount, price, expenses)),
             _ => None,
         })
         .collect();
@@ -163,8 +178,8 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 op_type.into_value(),
                 ticker.clone().into_value(),
                 format_decimal(amount).into_value(),
-                format_price(price).into_value(),
-                format_price(expenses).into_value(),
+                format_amount(price).into_value(),
+                format_amount(expenses).into_value(),
             ]
         })
         .collect();
@@ -184,7 +199,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 } => (
                     "DIVIDEND",
                     format_decimal(*amount),
-                    format_currency(*total_value),
+                    format_amount(total_value),
                 ),
                 Operation::CapReturn {
                     amount,
@@ -193,7 +208,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 } => (
                     "CAPRETURN",
                     format_decimal(*amount),
-                    format_currency(*total_value),
+                    format_amount(total_value),
                 ),
                 Operation::Split { ratio } => ("SPLIT", format_decimal(*ratio), "-".to_string()),
                 Operation::Unsplit { ratio } => {
@@ -231,7 +246,7 @@ fn find_sell_price(disposal: &Disposal, transactions: &[Transaction]) -> Decimal
                 && t.date == disposal.date
                 && let Operation::Sell { price, .. } = &t.operation
             {
-                return Some(*price);
+                return Some(price.gbp);
             }
             None
         })

@@ -36,6 +36,16 @@ pub enum CgtError {
 
     #[error("PDF generation failed: {0}")]
     PdfGeneration(String),
+
+    #[error("Invalid currency code '{code}': not a recognized ISO 4217 currency")]
+    InvalidCurrencyCode { code: String },
+
+    #[error("Missing FX rate for {currency} in {year}-{month:02}")]
+    MissingFxRate {
+        currency: String,
+        year: i32,
+        month: u32,
+    },
 }
 
 /// Rich error context for parse errors with line numbers and suggestions.

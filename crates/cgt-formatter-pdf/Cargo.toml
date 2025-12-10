@@ -7,6 +7,7 @@ edition = "2024"
 cgt-core = { path = "../cgt-core" }
 rust_decimal = "1"
 chrono = "0.4"
+iso_currency = "0.4"
 typst = "0.14"
 typst-as-lib = "0.15"
 typst-pdf = "0.14"
