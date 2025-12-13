@@ -60,7 +60,7 @@ fn format_with_commas(value: Decimal) -> String {
     let chars: Vec<char> = integer_part.chars().collect();
     let mut result = String::with_capacity(chars.len() + chars.len() / 3);
     for (i, c) in chars.iter().enumerate() {
-        if i > 0 && (chars.len() - i) % 3 == 0 {
+        if i > 0 && (chars.len() - i).is_multiple_of(3) {
             result.push(',');
         }
         result.push(*c);
