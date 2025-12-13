@@ -229,7 +229,7 @@ fn parse_money(
                     },
                 )?;
 
-                let gbp = amount * rate_entry.rate_to_gbp;
+                let gbp = amount / rate_entry.rate_per_gbp;
                 Ok(CurrencyAmount::foreign(amount, currency, gbp))
             }
         }

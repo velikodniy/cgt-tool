@@ -125,7 +125,7 @@ pub fn parse_monthly_rates(
 
         entries.push(RateEntry {
             key,
-            rate_to_gbp: rate_decimal,
+            rate_per_gbp: rate_decimal,
             source: source.clone(),
             minor_units,
             symbol,

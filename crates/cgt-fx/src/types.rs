@@ -31,7 +31,9 @@ pub enum RateSource {
 #[derive(Debug, Clone, PartialEq)]
 pub struct RateEntry {
     pub key: RateKey,
-    pub rate_to_gbp: Decimal,
+    /// HMRC exchange rate: foreign currency units per 1 GBP.
+    /// To convert foreign amount to GBP: `foreign_amount / rate_per_gbp`
+    pub rate_per_gbp: Decimal,
     pub source: RateSource,
     pub minor_units: u8,
     pub symbol: Option<String>,

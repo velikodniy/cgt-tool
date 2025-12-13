@@ -41,7 +41,7 @@ fn folder_rate_overrides_bundled_for_same_month() {
     // Folder rate should override bundled for EUR Dec 2024
     let eur = cache.get("EUR", 2024, 12).unwrap();
     assert_eq!(
-        eur.rate_to_gbp.to_string(),
+        eur.rate_per_gbp.to_string(),
         "9.9999",
         "Folder rate should override bundled"
     );
@@ -49,7 +49,7 @@ fn folder_rate_overrides_bundled_for_same_month() {
     // USD from bundled should still be present (not overridden)
     let usd = cache.get("USD", 2024, 12).unwrap();
     assert!(
-        usd.rate_to_gbp.to_string() != "9.9999",
+        usd.rate_per_gbp.to_string() != "9.9999",
         "USD should use bundled rate"
     );
 }
@@ -66,7 +66,7 @@ fn folder_adds_rates_for_missing_months() {
     // Jan 2025 EUR should come from folder (bundled covers 2015-2025)
     let eur = cache.get("EUR", 2025, 1).unwrap();
     assert_eq!(
-        eur.rate_to_gbp.to_string(),
+        eur.rate_per_gbp.to_string(),
         "1.2500",
         "Folder rate for Jan 2025 should be available"
     );
@@ -74,7 +74,7 @@ fn folder_adds_rates_for_missing_months() {
     // Dec 2024 EUR should still come from bundled
     let eur_dec = cache.get("EUR", 2024, 12).unwrap();
     assert!(
-        eur_dec.rate_to_gbp.to_string() != "1.2500",
+        eur_dec.rate_per_gbp.to_string() != "1.2500",
         "Bundled Dec 2024 rate should remain"
     );
 }
@@ -127,8 +127,8 @@ fn cache_lookup_is_case_insensitive() {
     assert!(mixed.is_some(), "Mixed case lookup should work");
 
     assert_eq!(
-        lower.unwrap().rate_to_gbp,
-        upper.unwrap().rate_to_gbp,
+        lower.unwrap().rate_per_gbp,
+        upper.unwrap().rate_per_gbp,
         "All lookups should return same rate"
     );
 }

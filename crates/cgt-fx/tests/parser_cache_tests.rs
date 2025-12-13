@@ -45,7 +45,7 @@ fn parses_monthly_rates_and_enriches_currency() {
         u16::from(eur.minor_units),
         Currency::EUR.exponent().unwrap()
     );
-    assert_eq!(eur.rate_to_gbp, Decimal::from_str("1.1328").unwrap());
+    assert_eq!(eur.rate_per_gbp, Decimal::from_str("1.1328").unwrap());
     assert!(eur.symbol.as_deref().unwrap().contains("€"));
 }
 
@@ -60,7 +60,7 @@ fn load_cache_merges_folder_over_bundled() {
 
     // Folder-provided rates for March 2025 should be present
     let eur = cache.get("EUR", 2025, 3).unwrap();
-    assert_eq!(eur.rate_to_gbp, Decimal::from_str_exact("1.1328").unwrap());
+    assert_eq!(eur.rate_per_gbp, Decimal::from_str_exact("1.1328").unwrap());
     // Ensure bundled rates still present
     assert!(cache.get("USD", 2024, 12).is_some());
 }
