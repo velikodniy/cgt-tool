@@ -10,6 +10,57 @@ cargo install --path crates/cgt-cli
 
 ## Usage
 
+### Convert Broker Exports
+
+Convert broker export files to CGT DSL format:
+
+#### Charles Schwab
+
+```bash
+# Basic conversion (transactions only)
+cgt-cli convert schwab transactions.csv
+
+# With RSU vesting data (requires equity awards file)
+cgt-cli convert schwab transactions.csv --awards awards.json
+
+# Save to file instead of stdout
+cgt-cli convert schwab transactions.csv --output output.cgt
+```
+
+**Supported Schwab transaction types:**
+
+- Buy/Sell transactions
+- RSU vesting (Stock Plan Activity) - requires `--awards` file with Fair Market Value data
+- Dividends (Cash Dividend, Qualified Dividend, Short/Long Term Cap Gain)
+- Dividend tax withholding (NRA Tax Adj, NRA Withholding)
+- Date formats: `MM/DD/YYYY` and `as of MM/DD/YYYY`
+
+**Unsupported/skipped transaction types:**
+
+- Wire transfers (Wire Sent/Received)
+- Interest payments (Credit Interest)
+- Stock splits (requires manual ratio entry)
+- Other non-CGT-relevant transactions
+
+**Getting Schwab export files:**
+
+1. Log in to Schwab.com
+2. Navigate to Accounts → History
+3. Select date range and account
+4. Export as CSV (for transactions)
+5. For RSUs: Navigate to Stock Plan → Award History → Export as JSON
+
+**Example output:**
+
+```text
+# Converted from Charles Schwab export
+# Source files: transactions.csv
+# Converted: 2025-12-13T19:12:32.513258+00:00
+
+2023-04-25 BUY GOOG 10 @ 125.50 USD EXPENSES 4.95 USD
+2023-05-10 SELL GOOG 5 @ 130.00 USD EXPENSES 2.50 USD
+```
+
 ### Parse Transactions
 
 Verify your input file is parsed correctly:
