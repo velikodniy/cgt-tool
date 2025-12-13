@@ -1,43 +1,82 @@
-# cgt-tool Development Guidelines
+# CGT Tool - Agent Instructions
 
-Auto-generated from all feature plans. Last updated: 2025-12-08
+Capital Gains Tax calculator for UK assets implementing HMRC share matching rules.
 
-## Active Technologies
+## Principles
 
-- Rust 2024 edition (stable workspace) + rust_decimal, chrono, pest, serde; planned XML parsing via quick-xml; error handling via anyhow/thiserror; new FX conversion crate to be added to the workspace (011-multi-currency)
-- Rust 2024 edition (workspace uses stable Rust) + rust_decimal, chrono, pest (DSL parsing), anyhow/thiserror (errors), typst-as-lib (formatting; PDF not in scope for this feature), cargo workspace crates `cgt-core`, `cgt-cli`, formatters (010-better-testing)
-- Rust 2024 edition + pest (parsing), thiserror (error types), anyhow (CLI error handling), chrono (dates), rust_decimal (numbers), typst-as-lib (v0.15+), typst-pdf, typst-assets (for embedded fonts)
+### Deep Modules
 
-## Project Structure
+Provide powerful functionality through simple interfaces. Hide implementation details. If a module exposes its internal complexity, it is a design failure.
 
-```text
-crates/cgt-core/src/   # Core library
-crates/cgt-cli/src/    # CLI binary
-crates/cgt-core/tests/ # Integration tests
-```
+### Safety First
+
+- No `.unwrap()`, `.expect()`, `panic!()`, `todo!()`, `unimplemented!()` in production code
+- Explicit error handling with `thiserror` (libraries) and `anyhow` (CLI)
+- Prefer immutable data and strict typing
+
+### Tests Are Sacred
+
+- **Never remove tests** without proving they are incorrect
+- **Never modify tests** to make code pass
+- A feature is incomplete until fully tested
+
+### Domain Mastery
+
+Verify implementations against HMRC guidance (`TAX_RULES.md`). Do not guess tax calculations.
 
 ## Commands
 
 ```bash
-cargo test              # Run all tests
-cargo clippy            # Run linter (strict - denies unwrap, expect, panic)
-cargo build --release   # Build release binary
+cargo build                 # Debug build
+cargo build --release       # Release build
+cargo test                  # All tests
+cargo clippy               # Lint (strict: denies unwrap/expect/panic)
+cargo fmt                  # Format
 ```
 
-## Code Style
+## Structure
 
-- Rust 2024 edition: Follow standard conventions
-- No `.unwrap()` or `.expect()` in production code - use proper error handling
-- Use `thiserror` for error types, `anyhow` for CLI error handling
+```
+crates/
+├── cgt-core/              # Parsing, calculation, data model
+├── cgt-cli/               # CLI binary
+├── cgt-formatter-plain/   # Plain text output
+├── cgt-formatter-pdf/     # PDF output (Typst)
+└── cgt-fx/                # FX conversion
+tests/
+├── inputs/                # .cgt test files
+├── json/                  # Expected JSON
+└── plain/                 # Expected plain text
+```
 
-## Recent Changes
+## Rules
 
-- 011-multi-currency: Added Rust 2024 edition (stable workspace) + rust_decimal, chrono, pest, serde; planned XML parsing via quick-xml; error handling via anyhow/thiserror; new FX conversion crate to be added to the workspace
+- Rust 2024 edition, `rust_decimal` for money, `chrono` for dates
+- `pest` grammar for DSL parsing (`cgt-core/src/parser.pest`)
+- Unix newlines, standard Rust naming
 
-- 010-better-testing: Added Rust 2024 edition (workspace uses stable Rust) + rust_decimal, chrono, pest (DSL parsing), anyhow/thiserror (errors), typst-as-lib (formatting; PDF not in scope for this feature), cargo workspace crates `cgt-core`, `cgt-cli`, formatters
+## Never
 
-- 009-codebase-refactoring: Added Rust 2024 edition + pest (parsing), rust_decimal, chrono, thiserror, anyhow, typst-as-lib, toml (new), tera or minijinja (new for plain text templates)
+- Remove or modify tests without proving incorrectness
+- Commit code that fails `cargo clippy` or `cargo test`
+- Guess tax calculations—verify against `TAX_RULES.md`
 
-<!-- MANUAL ADDITIONS START -->
+## Commits
 
-<!-- MANUAL ADDITIONS END -->
+Format: `type: description` (feat/fix/test/docs/chore/refactor)
+
+Run `cargo fmt && cargo clippy` before committing.
+
+## Domain
+
+- **Matching order**: Same Day → Bed & Breakfast (30 days) → Section 104 Pool
+- **Tax year**: 6 April to 5 April (e.g., 2024/25 = 6 Apr 2024 – 5 Apr 2025)
+- **Reference**: `TAX_RULES.md`, HMRC CG51500-CG51600
+
+## OpenSpec
+
+Spec-driven development. See `openspec/AGENTS.md` for workflow.
+
+- `openspec/specs/` — Current truth (what IS built)
+- `openspec/changes/` — Proposals (what SHOULD change)
+- `openspec/project.md` — Project context
