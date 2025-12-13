@@ -1,0 +1,593 @@
+use cgt_converter::BrokerConverter;
+use cgt_converter::schwab::{AwardsFormat, SchwabConverter, SchwabInput};
+
+#[test]
+fn test_basic_buy_sell() {
+    let csv = include_str!("fixtures/schwab/transactions_basic.csv");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert!(result.cgt_content.contains("2023-04-25 BUY XYZZ"));
+    assert!(result.cgt_content.contains("@ 125.50 USD"));
+    assert!(result.cgt_content.contains("EXPENSES 4.95 USD"));
+    assert!(result.cgt_content.contains("2023-05-10 SELL XYZZ"));
+    assert!(result.cgt_content.contains("@ 130.00 USD"));
+    assert!(result.cgt_content.contains("EXPENSES 2.50 USD"));
+
+    // Should contain header
+    assert!(
+        result
+            .cgt_content
+            .contains("# Converted from Charles Schwab")
+    );
+}
+
+#[test]
+fn test_rsu_vesting_with_awards() {
+    let csv = include_str!("fixtures/schwab/transactions_rsu.csv");
+    let awards = include_str!("fixtures/schwab/awards.json");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should contain RSU vesting as BUY with FMV price
+    assert!(
+        result
+            .cgt_content
+            .contains("# RSU Vesting - FMV from awards file")
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 BUY XYZZ 67.2 @ 125.6445 USD")
+    );
+
+    // Should contain the sell
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 SELL XYZZ 20.2 @ 125.6445 USD")
+    );
+
+    // Should mention both source files
+    assert!(result.cgt_content.contains("awards.json"));
+}
+
+#[test]
+fn test_rsu_vesting_without_awards_fails() {
+    let csv = include_str!("fixtures/schwab/transactions_rsu.csv");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input);
+
+    // Should fail because RSU needs FMV from awards file
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_dividend_with_tax() {
+    let csv = include_str!("fixtures/schwab/transactions_dividend.csv");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should combine dividend with tax
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-07-15 DIVIDEND FOO 50.00 USD TAX 7.50 USD")
+    );
+}
+
+#[test]
+fn test_date_formats() {
+    // Test "as of" date format
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+as of 04/25/2023,Buy,XYZZ,XYZZ CORP,10,$125.50,$4.95,-$1259.95
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should parse "as of" date correctly
+    assert!(result.cgt_content.contains("2023-04-25 BUY XYZZ"));
+}
+
+#[test]
+fn test_chronological_sorting() {
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+06/15/2023,Buy,FOO,FOO INC,5,$150.00,$2.00,-$752.00
+04/10/2023,Buy,XYZZ,XYZZ CORP,10,$125.00,$4.00,-$1254.00
+05/20/2023,Sell,XYZZ,XYZZ CORP,5,$130.00,$2.00,$648.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Find the positions of each transaction
+    let goog_buy_pos = result.cgt_content.find("2023-04-10 BUY XYZZ").unwrap();
+    let goog_sell_pos = result.cgt_content.find("2023-05-20 SELL XYZZ").unwrap();
+    let aapl_buy_pos = result.cgt_content.find("2023-06-15 BUY FOO").unwrap();
+
+    // Should be sorted chronologically (oldest first)
+    assert!(goog_buy_pos < goog_sell_pos);
+    assert!(goog_sell_pos < aapl_buy_pos);
+}
+
+#[test]
+fn test_rsu_vesting_with_csv_awards() {
+    let csv = include_str!("fixtures/schwab/transactions_rsu.csv");
+    let awards_csv = include_str!("fixtures/schwab/awards.csv");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: Some(awards_csv.to_string()),
+        awards_format: Some(AwardsFormat::Csv),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should contain RSU vesting as BUY with FMV price from CSV
+    assert!(
+        result
+            .cgt_content
+            .contains("# RSU Vesting - FMV from awards file")
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 BUY XYZZ 67.2 @ 125.6445 USD")
+    );
+
+    // Should contain the sell
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 SELL XYZZ 20.2 @ 125.6445 USD")
+    );
+
+    // Should mention CSV in source files
+    assert!(result.cgt_content.contains("awards.csv"));
+}
+
+#[test]
+fn test_skipped_transactions() {
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,XYZZ CORP,10,$125.00,$4.00,-$1254.00
+05/01/2023,Wire Sent,--,WIRE TO EXTERNAL ACCOUNT,--,--,--,-$1000.00
+05/15/2023,Credit Interest,--,INTEREST EARNED,--,--,--,$5.25
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should have warnings for skipped transactions
+    assert_eq!(result.skipped_count, 2);
+    assert!(result.warnings.iter().any(|w| w.contains("Wire Sent")));
+    assert!(
+        result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Credit Interest"))
+    );
+
+    // Output should contain the Buy and comments for skipped transactions
+    assert!(result.cgt_content.contains("BUY XYZZ"));
+    // Unsupported transactions are now added as comments
+    assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
+    assert!(result.cgt_content.contains("# SKIPPED: Credit Interest"));
+}
+
+// ===========================================
+// Date Format Integration Tests
+// ===========================================
+
+#[test]
+fn test_date_format_as_of_suffix() {
+    // Real-world format: "MM/DD/YYYY as of MM/DD/YYYY"
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+03/20/2024 as of 03/19/2024,Buy,XYZZ,XYZZ CORP,10,$125.50,$4.95,-$1259.95
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Should use the "as of" date (03/19/2024)
+    assert!(result.cgt_content.contains("2024-03-19 BUY XYZZ"));
+}
+
+#[test]
+fn test_date_format_single_digit_month() {
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+1/5/2024 as of 1/4/2024,Buy,XYZZ,XYZZ CORP,10,$125.50,$4.95,-$1259.95
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("2024-01-04 BUY XYZZ"));
+}
+
+#[test]
+fn test_mixed_date_formats() {
+    // Mix of different date formats in the same file
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,XYZZ CORP,10,$125.00,$4.00,-$1254.00
+as of 05/10/2023,Sell,XYZZ,XYZZ CORP,5,$130.00,$2.00,$648.00
+06/15/2023 as of 06/14/2023,Buy,FOO,FOO INC,20,$150.00,$5.00,-$3005.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("2023-04-25 BUY XYZZ"));
+    assert!(result.cgt_content.contains("2023-05-10 SELL XYZZ"));
+    assert!(result.cgt_content.contains("2023-06-14 BUY FOO"));
+}
+
+// ===========================================
+// RSU Vesting Scenarios
+// ===========================================
+
+#[test]
+fn test_rsu_vest_and_sell_to_cover() {
+    // Typical RSU scenario: vest shares, immediately sell some to cover taxes
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Stock Plan Activity,ACME,ACME CORP,100,--,--,--
+04/25/2023,Sell,ACME,ACME CORP,30,$50.25,$0.05,$1507.45
+"#;
+
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "04/25/2023", "FairMarketValuePrice": "$50.25"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should have BUY for vesting
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 BUY ACME 100 @ 50.25 USD")
+    );
+    // Should have SELL for tax withholding
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 SELL ACME 30 @ 50.25 USD")
+    );
+}
+
+#[test]
+fn test_rsu_multiple_vests_same_day() {
+    // Multiple RSU grants vesting on the same day
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Stock Plan Activity,ACME,ACME CORP RSU 1,50,--,--,--
+04/25/2023,Stock Plan Activity,ACME,ACME CORP RSU 2,75,--,--,--
+04/25/2023,Sell,ACME,ACME CORP,40,$50.25,$0.05,$2009.95
+"#;
+
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "04/25/2023", "FairMarketValuePrice": "$50.25"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should have two BUY transactions for the two vests
+    let buy_count = result.cgt_content.matches("BUY ACME").count();
+    assert_eq!(buy_count, 2);
+    assert!(result.cgt_content.contains("BUY ACME 50 @ 50.25 USD"));
+    assert!(result.cgt_content.contains("BUY ACME 75 @ 50.25 USD"));
+}
+
+#[test]
+fn test_rsu_with_fmv_date_mismatch_uses_lookback() {
+    // Transaction date slightly different from awards date (uses 7-day lookback)
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/28/2023,Stock Plan Activity,ACME,ACME CORP,100,--,--,--
+"#;
+
+    // Award date is 04/25 but transaction is 04/28 (3 days later)
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "04/25/2023", "FairMarketValuePrice": "$50.25"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Should find FMV via lookback
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-28 BUY ACME 100 @ 50.25 USD")
+    );
+}
+
+// ===========================================
+// Dividend Scenarios
+// ===========================================
+
+#[test]
+fn test_multiple_dividend_types() {
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+07/15/2023,Cash Dividend,FOO,DIVIDEND,--,--,--,$50.00
+07/15/2023,Qualified Dividend,BAR,QUALIFIED DIV,--,--,--,$30.00
+07/15/2023,Short Term Cap Gain,ETFX,SHORT TERM GAIN,--,--,--,$10.00
+07/15/2023,Long Term Cap Gain,ETFX,LONG TERM GAIN,--,--,--,$20.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert!(result.cgt_content.contains("DIVIDEND FOO 50.00 USD"));
+    assert!(result.cgt_content.contains("DIVIDEND BAR 30.00 USD"));
+    // Capital gains treated as dividends
+    assert!(result.cgt_content.contains("DIVIDEND ETFX 10.00 USD"));
+    assert!(result.cgt_content.contains("DIVIDEND ETFX 20.00 USD"));
+}
+
+#[test]
+fn test_dividend_with_multiple_tax_withholdings() {
+    // NRA tax withholding split across multiple entries
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+07/15/2023,Cash Dividend,FOO,DIVIDEND,--,--,--,$100.00
+07/15/2023,NRA Tax Adj,FOO,TAX ADJ,--,--,--,-$10.00
+07/15/2023,NRA Withholding,FOO,TAX WITHHOLD,--,--,--,-$5.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Tax should be combined: 10 + 5 = 15
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND FOO 100.00 USD TAX 15.00 USD")
+    );
+}
+
+#[test]
+fn test_dividend_without_tax() {
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+07/15/2023,Cash Dividend,ETFX,ETF DIVIDEND,--,--,--,$50.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // No TAX clause when no withholding
+    assert!(result.cgt_content.contains("DIVIDEND ETFX 50.00 USD"));
+    assert!(!result.cgt_content.contains("TAX"));
+}
+
+// ===========================================
+// Variable CSV Field Counts
+// ===========================================
+
+#[test]
+fn test_csv_with_extra_fields() {
+    // Real exports sometimes have extra trailing fields
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,XYZZ CORP,10,$125.50,$4.95,-$1259.95,extra,field
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("2023-04-25 BUY XYZZ"));
+}
+
+#[test]
+fn test_csv_with_fewer_fields() {
+    // Some rows might have fewer fields (trailing commas omitted)
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,XYZZ CORP,10,$125.50,$4.95,-$1259.95
+05/01/2023,Wire Sent,--,WIRE OUT,--,--,--
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("BUY XYZZ"));
+    assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
+}
+
+// ===========================================
+// Typical Full Workflow Test
+// ===========================================
+
+#[test]
+fn test_typical_monthly_activity() {
+    // Simulate a typical month with RSU vest, sell-to-cover, regular trades, and dividends
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/01/2023,Cash Dividend,ETFX,DIVIDEND,--,--,--,$25.50
+04/15/2023,Stock Plan Activity,ACME,RSU VEST,100,--,--,--
+04/15/2023,Sell,ACME,SELL TO COVER,30,$55.00,$0.05,$1649.95
+04/20/2023,Buy,FOO,FOO INC,5,$165.00,$4.95,-$829.95
+04/25/2023,Sell,FOO,FOO INC,5,$170.00,$4.95,$845.05
+04/28/2023,Credit Interest,--,INTEREST,--,--,--,$1.25
+04/30/2023,Wire Sent,--,TRANSFER OUT,--,--,--,-$500.00
+"#;
+
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "04/15/2023", "FairMarketValuePrice": "$55.00"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Check all CGT-relevant transactions are present
+    assert!(result.cgt_content.contains("DIVIDEND ETFX 25.50 USD"));
+    assert!(result.cgt_content.contains("BUY ACME 100 @ 55.00 USD"));
+    assert!(result.cgt_content.contains("SELL ACME 30 @ 55.00 USD"));
+    assert!(result.cgt_content.contains("BUY FOO 5 @ 165.00 USD"));
+    assert!(result.cgt_content.contains("SELL FOO 5 @ 170.00 USD"));
+
+    // Check non-CGT transactions are skipped
+    assert!(
+        result
+            .warnings
+            .iter()
+            .any(|w| w.contains("Credit Interest"))
+    );
+    assert!(result.warnings.iter().any(|w| w.contains("Wire Sent")));
+    assert_eq!(result.skipped_count, 2);
+
+    // Verify chronological order
+    let div_pos = result.cgt_content.find("DIVIDEND ETFX").unwrap();
+    let rsu_pos = result.cgt_content.find("BUY ACME 100").unwrap();
+    let foo_buy_pos = result.cgt_content.find("BUY FOO").unwrap();
+    let foo_sell_pos = result.cgt_content.find("SELL FOO").unwrap();
+
+    assert!(div_pos < rsu_pos);
+    assert!(rsu_pos < foo_buy_pos);
+    assert!(foo_buy_pos < foo_sell_pos);
+}
+
+#[test]
+fn test_multi_year_transactions() {
+    // Transactions spanning multiple years
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+12/15/2022,Buy,XYZZ,XYZZ CORP,10,$90.00,$4.00,-$904.00
+03/15/2023,Buy,XYZZ,XYZZ CORP,5,$100.00,$4.00,-$504.00
+06/15/2023,Sell,XYZZ,XYZZ CORP,10,$110.00,$4.00,$1096.00
+12/15/2023,Sell,XYZZ,XYZZ CORP,5,$120.00,$4.00,$596.00
+01/15/2024,Buy,XYZZ,XYZZ CORP,15,$115.00,$4.00,-$1729.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Check all transactions present and sorted
+    assert!(result.cgt_content.contains("2022-12-15 BUY XYZZ"));
+    assert!(result.cgt_content.contains("2023-03-15 BUY XYZZ"));
+    assert!(result.cgt_content.contains("2023-06-15 SELL XYZZ"));
+    assert!(result.cgt_content.contains("2023-12-15 SELL XYZZ"));
+    assert!(result.cgt_content.contains("2024-01-15 BUY XYZZ"));
+
+    // Verify chronological order
+    let positions: Vec<_> = [
+        "2022-12-15",
+        "2023-03-15",
+        "2023-06-15",
+        "2023-12-15",
+        "2024-01-15",
+    ]
+    .iter()
+    .map(|date| result.cgt_content.find(date).unwrap())
+    .collect();
+
+    for i in 1..positions.len() {
+        assert!(
+            positions[i - 1] < positions[i],
+            "Transactions not in chronological order"
+        );
+    }
+}

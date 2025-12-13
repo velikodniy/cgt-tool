@@ -6,7 +6,7 @@ use cgt_core::validate;
 use cgt_fx::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
-use commands::{Commands, OutputFormat};
+use commands::{BrokerCommands, Commands, OutputFormat};
 use schemars::schema_for;
 use std::fs;
 
@@ -114,6 +114,56 @@ fn main() -> Result<()> {
                     let output_path = output.clone().unwrap_or_else(|| file.with_extension("pdf"));
                     fs::write(&output_path, pdf_bytes)?;
                     println!("PDF written to {}", output_path.display());
+                }
+            }
+        }
+        Commands::Convert { broker } => {
+            match broker {
+                BrokerCommands::Schwab {
+                    transactions,
+                    awards,
+                    output,
+                } => {
+                    use cgt_converter::BrokerConverter;
+                    use cgt_converter::schwab::{AwardsFormat, SchwabConverter, SchwabInput};
+
+                    // Read transactions CSV
+                    let transactions_csv = fs::read_to_string(transactions)?;
+
+                    // Read awards file if provided and determine format
+                    let (awards_content, awards_format) = if let Some(awards_path) = awards {
+                        let content = fs::read_to_string(awards_path)?;
+                        let format = match awards_path.extension().and_then(|e| e.to_str()) {
+                            Some("json") => AwardsFormat::Json,
+                            Some("csv") => AwardsFormat::Csv,
+                            _ => bail!("Awards file must have .json or .csv extension"),
+                        };
+                        (Some(content), Some(format))
+                    } else {
+                        (None, None)
+                    };
+
+                    // Convert
+                    let converter = SchwabConverter::new();
+                    let input = SchwabInput {
+                        transactions_csv,
+                        awards_content,
+                        awards_format,
+                    };
+
+                    let result = converter.convert(&input)?;
+
+                    // Print warnings to stderr
+                    for warning in &result.warnings {
+                        eprintln!("WARNING: {}", warning);
+                    }
+
+                    // Write output
+                    if let Some(output_path) = output {
+                        fs::write(output_path, &result.cgt_content)?;
+                    } else {
+                        println!("{}", result.cgt_content);
+                    }
                 }
             }
         }

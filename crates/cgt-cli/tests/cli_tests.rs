@@ -142,3 +142,43 @@ fn test_pdf_format_generates_valid_pdfs() {
         let _ = fs::remove_file(&output_path);
     }
 }
+
+#[test]
+fn test_convert_schwab_basic() {
+    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    cmd.arg("convert")
+        .arg("schwab")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_basic.csv")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("2023-04-25 BUY XYZZ"))
+        .stdout(predicates::str::contains("@ 125.50 USD"))
+        .stdout(predicates::str::contains("2023-05-10 SELL XYZZ"))
+        .stdout(predicates::str::contains("# Converted from Charles Schwab"));
+}
+
+#[test]
+fn test_convert_schwab_with_awards() {
+    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    cmd.arg("convert")
+        .arg("schwab")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")
+        .arg("--awards")
+        .arg("../cgt-converter/tests/fixtures/schwab/awards.json")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("# RSU Vesting"))
+        .stdout(predicates::str::contains(
+            "2023-04-25 BUY XYZZ 67.2 @ 125.6445",
+        ));
+}
+
+#[test]
+fn test_convert_schwab_rsu_without_awards_fails() {
+    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    cmd.arg("convert")
+        .arg("schwab")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")
+        .assert()
+        .failure();
+}

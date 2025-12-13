@@ -48,4 +48,26 @@ pub enum Commands {
         #[arg(long, value_name = "PATH")]
         fx_folder: Option<PathBuf>,
     },
+    /// Convert broker export files to CGT DSL format
+    Convert {
+        #[command(subcommand)]
+        broker: BrokerCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum BrokerCommands {
+    /// Convert Charles Schwab export files
+    Schwab {
+        /// Path to Schwab transactions CSV file
+        transactions: PathBuf,
+
+        /// Optional path to Schwab equity awards JSON file (required for RSU vesting)
+        #[arg(long)]
+        awards: Option<PathBuf>,
+
+        /// Output file path (if not provided, prints to stdout)
+        #[arg(long, short)]
+        output: Option<PathBuf>,
+    },
 }
