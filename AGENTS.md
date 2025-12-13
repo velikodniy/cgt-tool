@@ -11,6 +11,7 @@ Provide powerful functionality through simple interfaces. Hide implementation de
 ### Safety First
 
 - No `.unwrap()`, `.expect()`, `panic!()`, `todo!()`, `unimplemented!()` in production code
+- No `#[allow(...)]` attributes to suppress warnings - fix the underlying issue instead
 - Explicit error handling with `thiserror` (libraries) and `anyhow` (CLI)
 - Prefer immutable data and strict typing
 
