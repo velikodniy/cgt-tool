@@ -50,3 +50,20 @@ The system SHALL use UK formatting: £ symbol, 2 decimal places, DD/MM/YYYY date
 
 - **WHEN** transaction was in foreign currency
 - **THEN** display as `£118.42 (150 USD)`
+
+### Requirement: Proceeds Breakdown
+
+The plain text disposal calculation SHALL display net proceeds using the explicit formula of quantity × unit price minus sale expenses, and the shown net figure SHALL match the calculated proceeds.
+
+#### Scenario: Sell with sale expenses
+
+- **WHEN** a disposal includes sale expenses
+- **THEN** the proceeds line is shown as `<quantity> × £<unit price> - £<sale expenses> = £<net proceeds>`
+- **AND** `<net proceeds>` equals `(unit price × quantity) - sale expenses` rounded using the currency’s minor units (per the currency policy).
+
+#### Scenario: Sell without sale expenses
+
+- **WHEN** sale expenses are zero
+- **THEN** the proceeds line is shown as `<quantity> × £<unit price> = £<net proceeds>`
+- **AND** `<net proceeds>` equals `unit price × quantity` rounded using the currency’s minor units (per the currency policy).
+- **AND** the proceeds line omits the `- £0` term when sale expenses are zero.
