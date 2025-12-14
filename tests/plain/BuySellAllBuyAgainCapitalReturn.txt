@@ -1,18 +1,18 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2018/19     £1,084 £19,409    £11,700     £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2018/19     £1,084.50   £19,409.50  £11,700.00    £0.00
 
 # TAX YEAR DETAILS
 
 ## 2018/19
 
-1) SELL 100 GB00B3TYHH97 on 01/02/2019 - GAIN £1,084
+1) SELL 100 GB00B3TYHH97 on 01/02/2019 - GAIN £1,084.50
    Section 104: 100 shares @ £183.25
-   Proceeds: 100 × £194.22 = £19,409
-   Cost: £18,325
-   Result: £1,084
+   Proceeds: 100 × £194.22 - £12.50 fees = £19,409.50
+   Cost: £18,325.00
+   Result: £1,084.50
 
 
 # HOLDINGS

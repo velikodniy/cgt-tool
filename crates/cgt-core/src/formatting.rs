@@ -3,7 +3,7 @@
 //! This module provides consistent formatting across all output formats (plain text, PDF).
 
 use chrono::NaiveDate;
-use rust_decimal::Decimal;
+use rust_decimal::{Decimal, RoundingStrategy};
 
 /// Policy for formatting values in reports.
 ///
@@ -29,34 +29,47 @@ impl FormattingPolicy {
     }
 }
 
-/// Format a decimal value as currency with thousands separators.
+/// Format a decimal value as currency with thousands separators and minor units.
 ///
-/// Uses UK convention: negative values display as `-£100` (sign before symbol).
+/// Uses UK convention: negative values display as `-£100.00` (sign before symbol)
+/// and values are rounded to two decimal places (GBP minor units).
 ///
 /// # Examples
 /// ```
 /// use rust_decimal::Decimal;
 /// use cgt_core::formatting::format_currency;
 ///
-/// assert_eq!(format_currency(Decimal::from(1234)), "£1,234");
-/// assert_eq!(format_currency(Decimal::from(-100)), "-£100");
+/// assert_eq!(format_currency(Decimal::from(1234)), "£1,234.00");
+/// assert_eq!(format_currency(Decimal::from(-100)), "-£100.00");
 /// ```
 pub fn format_currency(value: Decimal) -> String {
-    let floored = value.floor();
-    let abs_value = floored.abs();
-    let formatted = format_with_commas(abs_value);
-    if floored < Decimal::ZERO {
-        format!("-£{formatted}")
+    format_currency_with_minor_units(value, '£', 2)
+}
+
+/// Format a decimal value as currency using the provided symbol and minor units.
+pub fn format_currency_with_minor_units(value: Decimal, symbol: char, minor_units: u32) -> String {
+    let rounded = value.round_dp_with_strategy(minor_units, RoundingStrategy::MidpointAwayFromZero);
+    let abs_str = format_decimal_fixed(rounded.abs(), minor_units);
+    let mut parts = abs_str.split('.');
+    let integer_part = parts.next().unwrap_or("0");
+    let fractional_part = parts.next();
+    let formatted_int = format_with_commas_str(integer_part);
+
+    let formatted = if let Some(frac) = fractional_part {
+        format!("{formatted_int}.{frac}")
     } else {
-        format!("£{formatted}")
+        formatted_int
+    };
+
+    if rounded.is_sign_negative() {
+        format!("-{symbol}{formatted}")
+    } else {
+        format!("{symbol}{formatted}")
     }
 }
 
-/// Add thousands separators to a decimal value.
-fn format_with_commas(value: Decimal) -> String {
-    let s = value.to_string();
-    let integer_part = s.split('.').next().unwrap_or("0");
-
+/// Add thousands separators to an integer string.
+fn format_with_commas_str(integer_part: &str) -> String {
     let chars: Vec<char> = integer_part.chars().collect();
     let mut result = String::with_capacity(chars.len() + chars.len() / 3);
     for (i, c) in chars.iter().enumerate() {
@@ -66,6 +79,12 @@ fn format_with_commas(value: Decimal) -> String {
         result.push(*c);
     }
     result
+}
+
+/// Format a decimal value to a fixed number of fractional digits.
+pub fn format_decimal_fixed(value: Decimal, precision: u32) -> String {
+    let rounded = value.round_dp_with_strategy(precision, RoundingStrategy::MidpointAwayFromZero);
+    format!("{rounded:.precision$}", precision = precision as usize)
 }
 
 /// Format a decimal value, removing trailing zeros after the decimal point.
@@ -120,27 +139,35 @@ mod tests {
 
     #[test]
     fn test_format_currency_positive() {
-        assert_eq!(format_currency(Decimal::from(100)), "£100");
-        assert_eq!(format_currency(Decimal::from(1234)), "£1,234");
-        assert_eq!(format_currency(Decimal::from(1000000)), "£1,000,000");
+        assert_eq!(format_currency(Decimal::from(100)), "£100.00");
+        assert_eq!(format_currency(Decimal::from(1234)), "£1,234.00");
+        assert_eq!(format_currency(Decimal::from(1000000)), "£1,000,000.00");
     }
 
     #[test]
     fn test_format_currency_negative() {
-        assert_eq!(format_currency(Decimal::from(-20)), "-£20");
-        assert_eq!(format_currency(Decimal::from(-1234)), "-£1,234");
-        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£20");
+        assert_eq!(format_currency(Decimal::from(-20)), "-£20.00");
+        assert_eq!(format_currency(Decimal::from(-1234)), "-£1,234.00");
+        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£19.60");
     }
 
     #[test]
     fn test_format_currency_zero() {
-        assert_eq!(format_currency(Decimal::ZERO), "£0");
+        assert_eq!(format_currency(Decimal::ZERO), "£0.00");
     }
 
     #[test]
-    fn test_format_currency_floors_decimals() {
-        assert_eq!(format_currency(Decimal::new(10099, 2)), "£100");
-        assert_eq!(format_currency(Decimal::new(-10099, 2)), "-£101");
+    fn test_format_currency_rounds_decimals() {
+        assert_eq!(format_currency(Decimal::new(10099, 2)), "£100.99");
+        assert_eq!(format_currency(Decimal::new(100999, 3)), "£101.00");
+        assert_eq!(format_currency(Decimal::new(-100999, 3)), "-£101.00");
+    }
+
+    #[test]
+    fn test_format_decimal_fixed() {
+        assert_eq!(format_decimal_fixed(Decimal::new(1234, 2), 2), "12.34");
+        assert_eq!(format_decimal_fixed(Decimal::new(1234, 2), 4), "12.3400");
+        assert_eq!(format_decimal_fixed(Decimal::new(-56789, 3), 2), "-56.79");
     }
 
     #[test]

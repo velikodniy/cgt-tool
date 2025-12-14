@@ -1,24 +1,24 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2023/24     £5     £1,000     £6,000      £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2023/24     £5.00       £1,000.00   £6,000.00     £0.00
 
 # TAX YEAR DETAILS
 
 ## 2023/24
 
-1) SELL 5 AAPL on 15/07/2023 - GAIN £25
+1) SELL 5 AAPL on 15/07/2023 - GAIN £25.00
    B&B: 5 shares from 20/07/2023
-   Proceeds: 5 × £120 = £600
-   Cost: £575
-   Result: £25
+   Proceeds: 5 × £120 = £600.00
+   Cost: £575.00
+   Result: £25.00
 
-2) SELL 10 MSFT on 15/07/2023 - LOSS £20
+2) SELL 10 MSFT on 15/07/2023 - LOSS £20.00
    B&B: 10 shares from 01/08/2023
-   Proceeds: 10 × £40 = £400
-   Cost: £420
-   Result: -£20
+   Proceeds: 10 × £40 = £400.00
+   Cost: £420.00
+   Result: -£20.00
 
 
 # HOLDINGS

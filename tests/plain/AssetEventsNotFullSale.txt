@@ -1,18 +1,18 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2019/20     £28    £525       £12,000     £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2019/20     £28.33      £525.00     £12,000.00    £0.00
 
 # TAX YEAR DETAILS
 
 ## 2019/20
 
-1) SELL 5 FOOBAR on 01/09/2019 - GAIN £28
+1) SELL 5 FOOBAR on 01/09/2019 - GAIN £28.33
    Section 104: 5 shares @ £99.33
-   Proceeds: 5 × £105 = £525
-   Cost: £496
-   Result: £28
+   Proceeds: 5 × £105 = £525.00
+   Cost: £496.67
+   Result: £28.33
 
 
 # HOLDINGS
@@ -29,7 +29,7 @@ FOOBAR: 20 units at £88.13 avg cost
 
 # ASSET EVENTS
 
-01/04/2020 DIVIDEND FOOBAR 15 £30
-01/04/2020 CAPRETURN FOOBAR 15 £50
-01/04/2021 DIVIDEND FOOBAR 20 £40
-01/04/2021 CAPRETURN FOOBAR 10 £10
+01/04/2020 DIVIDEND FOOBAR 15 £30.00
+01/04/2020 CAPRETURN FOOBAR 15 £50.00
+01/04/2021 DIVIDEND FOOBAR 20 £40.00
+01/04/2021 CAPRETURN FOOBAR 10 £10.00

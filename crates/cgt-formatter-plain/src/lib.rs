@@ -1,6 +1,8 @@
 //! Plain text formatter for CGT tax reports.
 
-use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
+use cgt_core::formatting::{
+    format_currency, format_date, format_decimal, format_decimal_fixed, format_tax_year,
+};
 use cgt_core::{
     CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
 };
@@ -10,17 +12,22 @@ use std::fmt::Write;
 /// Format a CurrencyAmount as GBP for plain text output.
 /// Shows original currency in parentheses only if it's not GBP.
 fn format_amount(amount: &CurrencyAmount) -> String {
-    let gbp = format_decimal(amount.gbp);
+    let gbp = format_currency(amount.gbp);
     if amount.is_gbp() {
         gbp
     } else {
-        // Show original amount in parentheses
-        format!(
-            "{} ({} {})",
-            gbp,
-            format_decimal(amount.amount),
-            amount.code()
-        )
+        let orig = format_decimal_fixed(amount.amount, amount.minor_units() as u32);
+        format!("{} ({} {})", gbp, orig, amount.code())
+    }
+}
+
+fn format_unit_amount(amount: &CurrencyAmount) -> String {
+    let symbol = amount.symbol();
+    let value = format_decimal(amount.amount);
+    if symbol.is_empty() {
+        format!("{}{}", amount.code(), value)
+    } else {
+        format!("{}{}", symbol, value)
     }
 }
 
@@ -35,11 +42,12 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     let _ = writeln!(out, "# SUMMARY\n");
     let _ = writeln!(
         out,
-        "Tax year    Gain   Proceeds   Exemption   Taxable gain"
+        "{:<12}{:<12}{:<12}{:<14}Taxable gain",
+        "Tax year", "Gain", "Proceeds", "Exemption"
     );
     let _ = writeln!(
         out,
-        "=========================================================="
+        "=============================================================="
     );
 
     for year in &report.tax_years {
@@ -49,7 +57,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
         let _ = writeln!(
             out,
-            "{:<12}{:<7}{:<11}{:<12}{}",
+            "{:<12}{:<12}{:<12}{:<14}{}",
             format_tax_year(year.period.start_year()),
             format_currency(year.net_gain),
             format_currency(proceeds),
@@ -113,12 +121,12 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             } => {
                 let _ = writeln!(
                     out,
-                    "{} BUY {} {} @ £{} (£{} fees)",
+                    "{} BUY {} {} @ {} ({} fees)",
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_amount(price),
-                    format_amount(expenses)
+                    format_unit_amount(price),
+                    format_unit_amount(expenses)
                 );
             }
             Operation::Sell {
@@ -128,12 +136,12 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             } => {
                 let _ = writeln!(
                     out,
-                    "{} SELL {} {} @ £{} (£{} fees)",
+                    "{} SELL {} {} @ {} ({} fees)",
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_amount(price),
-                    format_amount(expenses)
+                    format_unit_amount(price),
+                    format_unit_amount(expenses)
                 );
             }
             _ => {}
@@ -166,7 +174,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                 } => {
                     let _ = writeln!(
                         out,
-                        "{} DIVIDEND {} {} £{}",
+                        "{} DIVIDEND {} {} {}",
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
@@ -180,7 +188,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                 } => {
                     let _ = writeln!(
                         out,
-                        "{} CAPRETURN {} {} £{}",
+                        "{} CAPRETURN {} {} {}",
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
@@ -269,12 +277,15 @@ fn format_disposal(
     }
 
     // Calculation
-    let sell_price = transactions
+    let (sell_price, sell_expenses) = transactions
         .iter()
         .find_map(|t| {
             if t.ticker == disposal.ticker && t.date == disposal.date {
-                if let Operation::Sell { price, .. } = &t.operation {
-                    Some(price.gbp)
+                if let Operation::Sell {
+                    price, expenses, ..
+                } = &t.operation
+                {
+                    Some((price.gbp, expenses.gbp))
                 } else {
                     None
                 }
@@ -284,19 +295,30 @@ fn format_disposal(
         })
         .unwrap_or_else(|| {
             if disposal.quantity != Decimal::ZERO {
-                disposal.proceeds / disposal.quantity
+                (disposal.proceeds / disposal.quantity, Decimal::ZERO)
             } else {
-                Decimal::ZERO
+                (Decimal::ZERO, Decimal::ZERO)
             }
         });
 
-    let _ = writeln!(
-        out,
-        "   Proceeds: {} × £{} = {}",
-        format_decimal(disposal.quantity),
-        format_decimal(sell_price),
-        format_currency(disposal.proceeds)
-    );
+    if sell_expenses > Decimal::ZERO {
+        let _ = writeln!(
+            out,
+            "   Proceeds: {} × £{} - {} fees = {}",
+            format_decimal(disposal.quantity),
+            format_decimal(sell_price),
+            format_currency(sell_expenses),
+            format_currency(disposal.proceeds)
+        );
+    } else {
+        let _ = writeln!(
+            out,
+            "   Proceeds: {} × £{} = {}",
+            format_decimal(disposal.quantity),
+            format_decimal(sell_price),
+            format_currency(disposal.proceeds)
+        );
+    }
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
     let _ = writeln!(out, "   Cost: {}", format_currency(total_cost));
@@ -307,17 +329,92 @@ fn format_disposal(
 #[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+    use cgt_core::{
+        CurrencyAmount, Disposal, Match, MatchRule, Operation, TaxPeriod, TaxReport, TaxYearSummary,
+    };
     use chrono::NaiveDate;
 
     #[test]
     fn test_format_currency() {
-        assert_eq!(format_currency(Decimal::from(100)), "£100");
-        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£20");
+        assert_eq!(format_currency(Decimal::from(100)), "£100.00");
+        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£19.60");
     }
 
     #[test]
     fn test_format_date() {
         let date = NaiveDate::from_ymd_opt(2018, 8, 28).expect("valid date");
         assert_eq!(format_date(date), "28/08/2018");
+    }
+
+    #[test]
+    fn test_proceeds_line_with_fees() {
+        let date = NaiveDate::from_ymd_opt(2018, 8, 28).expect("valid date");
+        let ticker = "GB00B41YBW71".to_string();
+        let disposal = Disposal {
+            date,
+            ticker: ticker.clone(),
+            quantity: Decimal::from(10),
+            proceeds: Decimal::new(34202, 3),
+            matches: vec![Match {
+                rule: MatchRule::SameDay,
+                quantity: Decimal::from(10),
+                allowable_cost: Decimal::new(54065, 3),
+                gain_or_loss: Decimal::new(-19863, 3),
+                acquisition_date: None,
+            }],
+        };
+
+        let report = TaxReport {
+            tax_years: vec![TaxYearSummary {
+                period: TaxPeriod::new(2018).expect("valid tax year"),
+                disposals: vec![disposal],
+                total_gain: Decimal::ZERO,
+                total_loss: Decimal::new(19863, 3),
+                net_gain: Decimal::new(-19863, 3),
+            }],
+            holdings: vec![],
+        };
+
+        let transactions = vec![Transaction {
+            date,
+            ticker,
+            operation: Operation::Sell {
+                amount: Decimal::from(10),
+                price: CurrencyAmount::gbp(Decimal::new(46702, 4)),
+                expenses: CurrencyAmount::gbp(Decimal::new(125, 1)),
+            },
+        }];
+
+        let output = format(&report, &transactions).expect("format should succeed");
+        assert!(output.contains("Proceeds: 10 × £4.6702 - £12.50 fees = £34.20"));
+    }
+
+    #[test]
+    fn test_dividend_single_symbol() {
+        let date = NaiveDate::from_ymd_opt(2020, 4, 1).expect("valid date");
+        let report = TaxReport {
+            tax_years: vec![TaxYearSummary {
+                period: TaxPeriod::new(2020).expect("valid tax year"),
+                disposals: vec![],
+                total_gain: Decimal::ZERO,
+                total_loss: Decimal::ZERO,
+                net_gain: Decimal::ZERO,
+            }],
+            holdings: vec![],
+        };
+
+        let transactions = vec![Transaction {
+            date,
+            ticker: "FOOBAR".to_string(),
+            operation: Operation::Dividend {
+                amount: Decimal::from(15),
+                total_value: CurrencyAmount::gbp(Decimal::new(3000, 2)),
+                tax_paid: CurrencyAmount::gbp(Decimal::ZERO),
+            },
+        }];
+
+        let output = format(&report, &transactions).expect("format should succeed");
+        assert!(output.contains("DIVIDEND FOOBAR 15 £30.00"));
+        assert!(!output.contains("££"));
     }
 }

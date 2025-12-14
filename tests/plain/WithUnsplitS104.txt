@@ -1,18 +1,18 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2018/19     £40    £240       £11,700     £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2018/19     £40.00      £240.00     £11,700.00    £0.00
 
 # TAX YEAR DETAILS
 
 ## 2018/19
 
-1) SELL 10 FOO on 01/04/2019 - GAIN £40
+1) SELL 10 FOO on 01/04/2019 - GAIN £40.00
    Section 104: 10 shares @ £20
-   Proceeds: 10 × £24 = £240
-   Cost: £200
-   Result: £40
+   Proceeds: 10 × £24 = £240.00
+   Cost: £200.00
+   Result: £40.00
 
 
 # HOLDINGS

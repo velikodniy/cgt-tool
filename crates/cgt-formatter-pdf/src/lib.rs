@@ -3,7 +3,9 @@
 //! This crate generates professional PDF documents from tax reports
 //! without requiring any external tool installation.
 
-use cgt_core::formatting::{format_currency, format_date, format_decimal, format_tax_year};
+use cgt_core::formatting::{
+    format_currency, format_date, format_decimal, format_decimal_fixed, format_tax_year,
+};
 use cgt_core::{
     CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
 };
@@ -26,12 +28,15 @@ fn format_price(value: Decimal) -> String {
 /// Format a CurrencyAmount for PDF output.
 /// Shows GBP value with original currency in parentheses if not GBP.
 fn format_amount(amount: &CurrencyAmount) -> String {
-    let gbp = format!("£{}", format_decimal(amount.gbp));
+    let gbp = format_currency(amount.gbp);
     if amount.is_gbp() {
         gbp
     } else {
-        // Show original amount with currency symbol in parentheses
-        let orig = format!("{}{}", amount.symbol(), format_decimal(amount.amount));
+        let orig = format!(
+            "{} {}",
+            format_decimal_fixed(amount.amount, amount.minor_units() as u32),
+            amount.code()
+        );
         format!("{} ({})", gbp, orig)
     }
 }
@@ -118,7 +123,10 @@ fn build_tax_years(report: &TaxReport, transactions: &[Transaction]) -> Vec<Valu
 
             let disposals: Vec<Value> = sorted_disposals
                 .into_iter()
-                .map(|d| build_disposal_dict(d, find_sell_price(d, transactions)).into_value())
+                .map(|d| {
+                    let (sell_price, sell_expenses) = find_sell_details(d, transactions);
+                    build_disposal_dict(d, sell_price, sell_expenses).into_value()
+                })
                 .collect();
 
             year_dict.insert("disposals".into(), disposals.into_value());
@@ -238,28 +246,30 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
     (!rows.is_empty(), rows)
 }
 
-fn find_sell_price(disposal: &Disposal, transactions: &[Transaction]) -> Decimal {
+fn find_sell_details(disposal: &Disposal, transactions: &[Transaction]) -> (Decimal, Decimal) {
     transactions
         .iter()
         .find_map(|t| {
             if t.ticker == disposal.ticker
                 && t.date == disposal.date
-                && let Operation::Sell { price, .. } = &t.operation
+                && let Operation::Sell {
+                    price, expenses, ..
+                } = &t.operation
             {
-                return Some(price.gbp);
+                return Some((price.gbp, expenses.gbp));
             }
             None
         })
         .unwrap_or_else(|| {
             if disposal.quantity != Decimal::ZERO {
-                disposal.proceeds / disposal.quantity
+                (disposal.proceeds / disposal.quantity, Decimal::ZERO)
             } else {
-                Decimal::ZERO
+                (Decimal::ZERO, Decimal::ZERO)
             }
         })
 }
 
-fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal) -> Dict {
+fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_expenses: Decimal) -> Dict {
     let mut dict = Dict::new();
 
     let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
@@ -295,16 +305,23 @@ fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal) -> Dict {
     dict.insert("matches".into(), matches.into_value());
 
     // Proceeds calculation
-    dict.insert(
-        "proceeds_calc".into(),
+    let proceeds_calc = if sell_expenses > Decimal::ZERO {
+        format!(
+            "{} × {} - {} fees = {}",
+            format_decimal(disposal.quantity),
+            format_price(sell_price),
+            format_currency(sell_expenses),
+            format_currency(disposal.proceeds)
+        )
+    } else {
         format!(
             "{} × {} = {}",
             format_decimal(disposal.quantity),
             format_price(sell_price),
             format_currency(disposal.proceeds)
         )
-        .into_value(),
-    );
+    };
+    dict.insert("proceeds_calc".into(), proceeds_calc.into_value());
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
     dict.insert(
@@ -376,13 +393,15 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8
 #[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+    use cgt_core::{Disposal, Match, MatchRule};
+    use typst::foundations::Value;
 
     #[test]
     fn test_format_currency() {
-        assert_eq!(format_currency(Decimal::from(100)), "£100");
-        assert_eq!(format_currency(Decimal::from(-20)), "-£20");
-        assert_eq!(format_currency(Decimal::from(1234)), "£1,234");
-        assert_eq!(format_currency(Decimal::from(1000000)), "£1,000,000");
+        assert_eq!(format_currency(Decimal::from(100)), "£100.00");
+        assert_eq!(format_currency(Decimal::from(-20)), "-£20.00");
+        assert_eq!(format_currency(Decimal::from(1234)), "£1,234.00");
+        assert_eq!(format_currency(Decimal::from(1000000)), "£1,000,000.00");
     }
 
     #[test]
@@ -392,24 +411,35 @@ mod tests {
     }
 
     #[test]
-    fn test_pdf_starts_with_header() {
-        use cgt_core::{TaxPeriod, TaxYearSummary};
-
-        let report = TaxReport {
-            tax_years: vec![TaxYearSummary {
-                period: TaxPeriod::new(2023).expect("valid year"),
-                disposals: vec![],
-                total_gain: Decimal::ZERO,
-                total_loss: Decimal::ZERO,
-                net_gain: Decimal::ZERO,
+    fn test_proceeds_calc_with_fees() {
+        let date = NaiveDate::from_ymd_opt(2018, 8, 28).expect("valid date");
+        let disposal = Disposal {
+            date,
+            ticker: "GB00B41YBW71".to_string(),
+            quantity: Decimal::from(10),
+            proceeds: Decimal::new(34202, 3),
+            matches: vec![Match {
+                rule: MatchRule::SameDay,
+                quantity: Decimal::from(10),
+                allowable_cost: Decimal::new(54065, 3),
+                gain_or_loss: Decimal::new(-19863, 3),
+                acquisition_date: None,
             }],
-            holdings: vec![],
+        };
+        let dict = build_disposal_dict(&disposal, Decimal::new(46702, 4), Decimal::new(125, 1));
+
+        let proceeds_value = dict
+            .get("proceeds_calc")
+            .expect("proceeds calculation present");
+        assert!(
+            matches!(proceeds_value, Value::Str(_)),
+            "unexpected proceeds value: {proceeds_value:?}"
+        );
+        let proceeds = match proceeds_value {
+            Value::Str(s) => s.as_str().to_string(),
+            _ => String::new(),
         };
 
-        let pdf = format(&report, &[]).expect("PDF generation should succeed");
-        assert!(
-            pdf.starts_with(b"%PDF"),
-            "PDF should start with %PDF header"
-        );
+        assert_eq!(proceeds, "10 × £4.6702 - £12.50 fees = £34.20");
     }
 }

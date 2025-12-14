@@ -1,8 +1,8 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2018/19     £0     £0         £11,700     £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2018/19     £0.00       £0.00       £11,700.00    £0.00
 
 # TAX YEAR DETAILS
 

@@ -1,24 +1,24 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2018/19     -£40   £68        £11,700     £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2018/19     -£39.73     £68.40      £11,700.00    £0.00
 
 # TAX YEAR DETAILS
 
 ## 2018/19
 
-1) SELL 10 BAR on 28/08/2018 - LOSS £19
+1) SELL 10 BAR on 28/08/2018 - LOSS £19.86
    Same Day: 10 shares
-   Proceeds: 10 × £4.6702 = £34
-   Cost: £54
-   Result: -£20
+   Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
+   Cost: £54.07
+   Result: -£19.86
 
-2) SELL 10 FOO on 28/08/2018 - LOSS £19
+2) SELL 10 FOO on 28/08/2018 - LOSS £19.86
    Same Day: 10 shares
-   Proceeds: 10 × £4.6702 = £34
-   Cost: £54
-   Result: -£20
+   Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
+   Cost: £54.07
+   Result: -£19.86
 
 
 # HOLDINGS
