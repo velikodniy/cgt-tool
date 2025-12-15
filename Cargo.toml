@@ -2,6 +2,10 @@
 members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatter-pdf", "crates/cgt-cli", "crates/cgt-money", "crates/cgt-format", "crates/cgt-converter"]
 resolver = "2"
 
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
 [workspace.lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"

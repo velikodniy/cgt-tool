@@ -16,7 +16,7 @@
 
 set -e
 
-RATES_DIR="${1:-crates/cgt-fx/resources/rates}"
+RATES_DIR="${1:-crates/cgt-money/resources/rates}"
 START_YEAR="${2:-2021}"
 BASE_URL="https://www.trade-tariff.service.gov.uk/api/v2/exchange_rates/files"
 
@@ -36,7 +36,7 @@ downloaded=0
 skipped=0
 failed=0
 
-for year in $(seq $START_YEAR $CURRENT_YEAR); do
+for year in $(seq "$START_YEAR" "$CURRENT_YEAR"); do
     for month in $(seq -w 1 12); do
         # Skip future months
         if [ "$year" -eq "$CURRENT_YEAR" ] && [ "$month" -gt "$CURRENT_MONTH" ]; then
@@ -78,4 +78,4 @@ echo "  Downloaded: $downloaded"
 echo "  Skipped (existing): $skipped"
 echo "  Failed: $failed"
 echo
-echo "Total files in $RATES_DIR: $(ls -1 "$RATES_DIR"/*.xml 2>/dev/null | wc -l | tr -d ' ')"
+echo "Total files in $RATES_DIR: $(find "$RATES_DIR" -name '*.xml' 2>/dev/null | wc -l | tr -d ' ')"

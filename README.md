@@ -4,8 +4,44 @@ A CLI tool to calculate Capital Gains Tax for UK assets using the "Same Day", "B
 
 ## Installation
 
+### Pre-built Binaries (Recommended)
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/vadim-projects/cgt-tool/releases):
+
+| Platform                   | Download                     |
+| -------------------------- | ---------------------------- |
+| Linux (x86_64)             | `cgt-cli-linux-x86_64`       |
+| Linux (ARM64/Raspberry Pi) | `cgt-cli-linux-aarch64`      |
+| macOS (Intel)              | `cgt-cli-macos-x86_64`       |
+| macOS (Apple Silicon)      | `cgt-cli-macos-aarch64`      |
+| Windows (x86_64)           | `cgt-cli-windows-x86_64.exe` |
+
+After downloading, make the binary executable (Linux/macOS):
+
+```bash
+chmod +x cgt-cli-*
+./cgt-cli-linux-x86_64 --help
+```
+
+Optionally, move it to a directory in your PATH:
+
+```bash
+sudo mv cgt-cli-linux-x86_64 /usr/local/bin/cgt-cli
+```
+
+### Build from Source
+
+Requires [Rust](https://rustup.rs/) 1.85+ (2024 edition):
+
 ```bash
 cargo install --path crates/cgt-cli
+```
+
+Or build manually:
+
+```bash
+cargo build --release -p cgt-cli
+./target/release/cgt-cli --help
 ```
 
 ## Usage

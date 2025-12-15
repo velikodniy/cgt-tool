@@ -1,0 +1,140 @@
+name: Update FX Rates
+
+on:
+  # Run on the last Friday of each month at 10:00 UTC
+  # HMRC publishes rates on the penultimate Thursday of each month
+  schedule:
+    - cron: '0 10 25-31 * 5'  # Every Friday between 25th-31st
+  workflow_dispatch:  # Manual trigger
+
+env:
+  RATES_DIR: crates/cgt-money/resources/rates
+
+jobs:
+  check-schedule:
+    name: Check if Last Friday
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check if last Friday of month
+        id: check
+        run: |
+          # For manual triggers, always run
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if this is the last Friday of the month
+          today=$(date +%d)
+          next_week=$(date -d "+7 days" +%d)
+
+          # If next Friday would be in the next month (smaller day number), this is the last Friday
+          if [ "$next_week" -lt "$today" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  update-rates:
+    name: Update FX Rates
+    needs: check-schedule
+    if: needs.check-schedule.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Count existing rates
+        id: before
+        run: |
+          count=$(find "$RATES_DIR" -name '*.xml' | wc -l | tr -d ' ')
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "Found $count existing rate files"
+
+      - name: Download new rates
+        run: |
+          chmod +x scripts/download-fx-rates.sh
+          ./scripts/download-fx-rates.sh "$RATES_DIR"
+
+      - name: Count rates after download
+        id: after
+        run: |
+          count=$(find "$RATES_DIR" -name '*.xml' | wc -l | tr -d ' ')
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "Found $count rate files after download"
+
+      - name: Check for new files
+        id: check_new
+        run: |
+          before=${{ steps.before.outputs.count }}
+          after=${{ steps.after.outputs.count }}
+
+          if [ "$after" -gt "$before" ]; then
+            new_count=$((after - before))
+            echo "has_new=true" >> $GITHUB_OUTPUT
+            echo "new_count=$new_count" >> $GITHUB_OUTPUT
+            echo "Downloaded $new_count new rate file(s)"
+          else
+            echo "has_new=false" >> $GITHUB_OUTPUT
+            echo "No new rates found"
+          fi
+
+      - name: Bump versions
+        if: steps.check_new.outputs.has_new == 'true'
+        id: bump
+        run: |
+          # Function to bump minor version
+          bump_minor() {
+            local file=$1
+            local current=$(grep -E '^version = "[0-9]+\.[0-9]+\.[0-9]+"' "$file" | head -1 | sed 's/version = "\([^"]*\)"/\1/')
+            local major=$(echo "$current" | cut -d. -f1)
+            local minor=$(echo "$current" | cut -d. -f2)
+            local patch=$(echo "$current" | cut -d. -f3)
+            local new_minor=$((minor + 1))
+            local new_version="${major}.${new_minor}.0"
+
+            sed -i "s/^version = \"$current\"/version = \"$new_version\"/" "$file"
+            echo "$new_version"
+          }
+
+          # Bump cgt-money
+          money_version=$(bump_minor crates/cgt-money/Cargo.toml)
+          echo "Bumped cgt-money to $money_version"
+
+          # Bump cgt-cli
+          cli_version=$(bump_minor crates/cgt-cli/Cargo.toml)
+          echo "Bumped cgt-cli to $cli_version"
+
+          echo "cli_version=$cli_version" >> $GITHUB_OUTPUT
+
+      - name: Commit changes
+        if: steps.check_new.outputs.has_new == 'true'
+        run: |
+          git add "$RATES_DIR"/*.xml
+          git add crates/cgt-money/Cargo.toml
+          git add crates/cgt-cli/Cargo.toml
+
+          month=$(date +%B\ %Y)
+          git commit -m "chore: update FX rates for $month
+
+          Downloaded ${{ steps.check_new.outputs.new_count }} new rate file(s) from HMRC."
+
+      - name: Create and push tag
+        if: steps.check_new.outputs.has_new == 'true'
+        run: |
+          version="v${{ steps.bump.outputs.cli_version }}"
+          git tag -a "$version" -m "Release $version - FX rate update"
+          git push origin main
+          git push origin "$version"
+          echo "Created and pushed tag: $version"
