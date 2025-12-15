@@ -76,3 +76,23 @@ The PDF disposal calculation SHALL display net proceeds using quantity × unit p
 - **THEN** the proceeds line is shown as `<quantity> × £<unit price> = £<net proceeds>`
 - **AND** `<net proceeds>` equals `unit price × quantity` rounded using the currency’s minor units (per the currency policy).
 - **AND** the proceeds line omits the `- £0` term when sale expenses are zero.
+
+### Requirement: Shared Formatter Dependency
+
+The system SHALL use `cgt-format` for all currency formatting instead of implementing local helpers.
+
+#### Scenario: Currency formatting source
+
+- **WHEN** formatting currency values in PDF output
+- **THEN** use `CurrencyFormatter` from `cgt-format`
+- **AND** do not implement ad-hoc formatting helpers
+
+### Requirement: Formatting Parity
+
+The system SHALL produce identical currency/date formatting as the plain text formatter.
+
+#### Scenario: Consistent output across formats
+
+- **WHEN** formatting the same value in PDF and plain text
+- **THEN** the formatted string is identical
+- **AND** both use the same `CurrencyFormatter` implementation
