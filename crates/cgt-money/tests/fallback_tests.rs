@@ -1,6 +1,6 @@
 //! Tests for FX rate fallback behavior between provided folder and bundled rates.
 
-use cgt_fx::{FxCache, RateFile, load_cache_with_overrides, load_default_cache};
+use cgt_money::{FxCache, RateFile, load_cache_with_overrides, load_default_cache};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 

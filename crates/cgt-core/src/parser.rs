@@ -1,8 +1,7 @@
 use crate::error::{CgtError, ParseErrorContext, suggest_transaction_type};
 use crate::models::{CurrencyAmount, Operation, Transaction};
-use cgt_fx::FxCache;
+use cgt_money::{Currency, FxCache};
 use chrono::{Datelike, NaiveDate};
-use iso_currency::Currency;
 use pest::Parser;
 use pest::error::LineColLocation;
 use pest_derive::Parser;

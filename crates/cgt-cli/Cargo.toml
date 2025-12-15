@@ -7,7 +7,7 @@ edition = "2024"
 cgt-core = { path = "../cgt-core" }
 cgt-formatter-plain = { path = "../cgt-formatter-plain" }
 cgt-formatter-pdf = { path = "../cgt-formatter-pdf" }
-cgt-fx = { path = "../cgt-fx" }
+cgt-money = { path = "../cgt-money" }
 cgt-converter = { path = "../cgt-converter" }
 clap = { version = "4.4", features = ["derive"] }
 anyhow = "1.0"

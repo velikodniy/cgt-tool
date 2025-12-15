@@ -2,7 +2,6 @@ pub mod calculator;
 pub mod config;
 pub mod error;
 pub mod exemption;
-pub mod formatting;
 pub mod matcher;
 pub mod models;
 pub mod parser;

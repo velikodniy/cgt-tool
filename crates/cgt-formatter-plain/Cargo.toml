@@ -5,9 +5,9 @@ edition = "2024"
 
 [dependencies]
 cgt-core = { path = "../cgt-core" }
+cgt-format = { path = "../cgt-format" }
 rust_decimal = "1"
 chrono = "0.4"
-iso_currency = "0.5"
 
 [lints]
 workspace = true

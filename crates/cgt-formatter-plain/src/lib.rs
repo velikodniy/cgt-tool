@@ -1,34 +1,15 @@
 //! Plain text formatter for CGT tax reports.
 
-use cgt_core::formatting::{
-    format_currency, format_date, format_decimal, format_decimal_fixed, format_tax_year,
-};
-use cgt_core::{
-    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
+use cgt_format::{
+    CurrencyFormatter, format_currency, format_date, format_decimal, format_tax_year,
 };
 use rust_decimal::Decimal;
 use std::fmt::Write;
 
-/// Format a CurrencyAmount as GBP for plain text output.
-/// Shows original currency in parentheses only if it's not GBP.
-fn format_amount(amount: &CurrencyAmount) -> String {
-    let gbp = format_currency(amount.gbp);
-    if amount.is_gbp() {
-        gbp
-    } else {
-        let orig = format_decimal_fixed(amount.amount, amount.minor_units() as u32);
-        format!("{} ({} {})", gbp, orig, amount.code())
-    }
-}
-
-fn format_unit_amount(amount: &CurrencyAmount) -> String {
-    let symbol = amount.symbol();
-    let value = format_decimal(amount.amount);
-    if symbol.is_empty() {
-        format!("{}{}", amount.code(), value)
-    } else {
-        format!("{}{}", symbol, value)
-    }
+/// Shared formatter instance for currency formatting.
+fn formatter() -> CurrencyFormatter {
+    CurrencyFormatter::uk()
 }
 
 /// Format a tax report as plain text.
@@ -125,8 +106,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_unit_amount(price),
-                    format_unit_amount(expenses)
+                    formatter().format_unit(price),
+                    formatter().format_unit(expenses)
                 );
             }
             Operation::Sell {
@@ -140,8 +121,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_date(t.date),
                     format_decimal(*amount),
                     t.ticker,
-                    format_unit_amount(price),
-                    format_unit_amount(expenses)
+                    formatter().format_unit(price),
+                    formatter().format_unit(expenses)
                 );
             }
             _ => {}
@@ -178,7 +159,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
-                        format_amount(total_value)
+                        formatter().format_amount(total_value)
                     );
                 }
                 Operation::CapReturn {
@@ -192,7 +173,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         format_date(t.date),
                         t.ticker,
                         format_decimal(*amount),
-                        format_amount(total_value)
+                        formatter().format_amount(total_value)
                     );
                 }
                 Operation::Split { ratio } => {

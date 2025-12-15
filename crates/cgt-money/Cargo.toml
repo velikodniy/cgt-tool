@@ -1,5 +1,5 @@
 [package]
-name = "cgt-fx"
+name = "cgt-money"
 version = "0.1.0"
 edition = "2024"
 
@@ -10,6 +10,7 @@ include_dir = "0.7"
 iso_currency = "0.5"
 quick-xml = { version = "0.36", features = ["serialize"] }
 rust_decimal = { version = "1", default-features = false, features = ["serde", "std"] }
+schemars = { version = "0.8", features = ["rust_decimal"] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 

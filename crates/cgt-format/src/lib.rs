@@ -1,7 +1,8 @@
 //! Shared formatting utilities for currency, dates, and numbers.
 //!
-//! This module provides consistent formatting across all output formats (plain text, PDF).
+//! This crate provides consistent formatting across all output formats (plain text, PDF).
 
+use cgt_money::CurrencyAmount;
 use chrono::NaiveDate;
 use rust_decimal::{Decimal, RoundingStrategy};
 
@@ -29,6 +30,64 @@ impl FormattingPolicy {
     }
 }
 
+/// Currency formatter with configurable rounding.
+///
+/// Provides methods for formatting `CurrencyAmount` values with proper
+/// symbol handling, thousands separators, and rounding behavior.
+#[derive(Debug, Clone)]
+pub struct CurrencyFormatter {
+    #[allow(dead_code)] // Reserved for future locale-specific formatting
+    policy: FormattingPolicy,
+}
+
+impl CurrencyFormatter {
+    /// Create a new currency formatter with UK defaults.
+    pub fn uk() -> Self {
+        Self {
+            policy: FormattingPolicy::uk(),
+        }
+    }
+
+    /// Format a `CurrencyAmount` as GBP, rounded to currency minor units.
+    ///
+    /// For totals, proceeds, costs - values that should be shown rounded.
+    /// Shows original currency in parentheses only if it's not GBP.
+    pub fn format_amount(&self, amount: &CurrencyAmount) -> String {
+        let gbp = format_currency(amount.gbp);
+        if amount.is_gbp() {
+            gbp
+        } else {
+            let orig = format_decimal_fixed(amount.amount, amount.minor_units() as u32);
+            format!("{} ({} {})", gbp, orig, amount.code())
+        }
+    }
+
+    /// Format a `CurrencyAmount` preserving full precision.
+    ///
+    /// For unit prices where precision matters in transaction breakdowns.
+    /// Uses currency symbol (or ISO code as fallback) with trimmed decimals.
+    pub fn format_unit(&self, amount: &CurrencyAmount) -> String {
+        let symbol = amount.symbol();
+        let value = format_decimal(amount.amount);
+        if symbol.is_empty() {
+            format!("{}{}", amount.code(), value)
+        } else {
+            format!("{}{}", symbol, value)
+        }
+    }
+
+    /// Format a raw decimal as GBP currency.
+    pub fn format_decimal(&self, value: Decimal) -> String {
+        format_currency(value)
+    }
+}
+
+impl Default for CurrencyFormatter {
+    fn default() -> Self {
+        Self::uk()
+    }
+}
+
 /// Format a decimal value as currency with thousands separators and minor units.
 ///
 /// Uses UK convention: negative values display as `-£100.00` (sign before symbol)
@@ -37,7 +96,7 @@ impl FormattingPolicy {
 /// # Examples
 /// ```
 /// use rust_decimal::Decimal;
-/// use cgt_core::formatting::format_currency;
+/// use cgt_format::format_currency;
 ///
 /// assert_eq!(format_currency(Decimal::from(1234)), "£1,234.00");
 /// assert_eq!(format_currency(Decimal::from(-100)), "-£100.00");
@@ -92,7 +151,7 @@ pub fn format_decimal_fixed(value: Decimal, precision: u32) -> String {
 /// # Examples
 /// ```
 /// use rust_decimal::Decimal;
-/// use cgt_core::formatting::format_decimal;
+/// use cgt_format::format_decimal;
 ///
 /// assert_eq!(format_decimal(Decimal::new(1234, 1)), "123.4");
 /// assert_eq!(format_decimal(Decimal::new(12300, 2)), "123");
@@ -111,7 +170,7 @@ pub fn format_decimal(value: Decimal) -> String {
 /// # Examples
 /// ```
 /// use chrono::NaiveDate;
-/// use cgt_core::formatting::format_date;
+/// use cgt_format::format_date;
 ///
 /// let date = NaiveDate::from_ymd_opt(2024, 3, 15).unwrap();
 /// assert_eq!(format_date(date), "15/03/2024");
@@ -124,7 +183,7 @@ pub fn format_date(date: NaiveDate) -> String {
 ///
 /// # Examples
 /// ```
-/// use cgt_core::formatting::format_tax_year;
+/// use cgt_format::format_tax_year;
 ///
 /// assert_eq!(format_tax_year(2023), "2023/24");
 /// assert_eq!(format_tax_year(2014), "2014/15");
@@ -200,5 +259,26 @@ mod tests {
         assert_eq!(policy.currency_symbol, '£');
         assert_eq!(policy.date_format, "%d/%m/%Y");
         assert!(policy.use_thousands_separator);
+    }
+
+    #[test]
+    fn test_currency_formatter_format_amount_gbp() {
+        let formatter = CurrencyFormatter::uk();
+        let amount = CurrencyAmount::gbp(Decimal::new(12345, 2));
+        assert_eq!(formatter.format_amount(&amount), "£123.45");
+    }
+
+    #[test]
+    fn test_currency_formatter_format_unit_gbp() {
+        let formatter = CurrencyFormatter::uk();
+        let amount = CurrencyAmount::gbp(Decimal::new(46702, 4));
+        assert_eq!(formatter.format_unit(&amount), "£4.6702");
+    }
+
+    #[test]
+    fn test_currency_formatter_format_unit_trims_zeros() {
+        let formatter = CurrencyFormatter::uk();
+        let amount = CurrencyAmount::gbp(Decimal::new(12500, 2));
+        assert_eq!(formatter.format_unit(&amount), "£125");
     }
 }

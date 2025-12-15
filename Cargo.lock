@@ -362,7 +362,7 @@ dependencies = [
  "cgt-core",
  "cgt-formatter-pdf",
  "cgt-formatter-plain",
- "cgt-fx",
+ "cgt-money",
  "clap",
  "predicates",
  "schemars",
@@ -387,9 +387,8 @@ dependencies = [
 name = "cgt-core"
 version = "0.1.0"
 dependencies = [
- "cgt-fx",
+ "cgt-money",
  "chrono",
- "iso_currency 0.5.3",
  "pest",
  "pest_derive",
  "rust_decimal",
@@ -401,12 +400,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cgt-format"
+version = "0.1.0"
+dependencies = [
+ "cgt-money",
+ "chrono",
+ "rust_decimal",
+]
+
+[[package]]
 name = "cgt-formatter-pdf"
 version = "0.1.0"
 dependencies = [
  "cgt-core",
+ "cgt-format",
  "chrono",
- "iso_currency 0.4.4",
  "rust_decimal",
  "typst",
  "typst-as-lib",
@@ -418,22 +426,23 @@ name = "cgt-formatter-plain"
 version = "0.1.0"
 dependencies = [
  "cgt-core",
+ "cgt-format",
  "chrono",
- "iso_currency 0.5.3",
  "rust_decimal",
 ]
 
 [[package]]
-name = "cgt-fx"
+name = "cgt-money"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
  "filetime",
  "include_dir",
- "iso_currency 0.5.3",
+ "iso_currency",
  "quick-xml 0.36.2",
  "rust_decimal",
+ "schemars",
  "serde",
  "tempfile",
  "thiserror 1.0.69",
@@ -1528,15 +1537,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20633e788d3948ea7336861fdb09ec247f5dae4267e8f0743fa97de26c28624d"
 dependencies = [
  "lazy_static",
-]
-
-[[package]]
-name = "iso_currency"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33f07181be95c82347a07cf4caf43d2acd8a7e8d08ef1db75e10ed5a9aec3c1b"
-dependencies = [
- "iso_country",
 ]
 
 [[package]]

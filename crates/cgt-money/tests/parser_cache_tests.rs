@@ -1,4 +1,4 @@
-use cgt_fx::{
+use cgt_money::{
     FxCache, FxParseError, RateFile, RateSource, load_cache_with_overrides, parse_monthly_rates,
 };
 use iso_currency::Currency;

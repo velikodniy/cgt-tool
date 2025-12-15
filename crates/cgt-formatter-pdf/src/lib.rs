@@ -3,11 +3,9 @@
 //! This crate generates professional PDF documents from tax reports
 //! without requiring any external tool installation.
 
-use cgt_core::formatting::{
-    format_currency, format_date, format_decimal, format_decimal_fixed, format_tax_year,
-};
-use cgt_core::{
-    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
+use cgt_format::{
+    CurrencyFormatter, format_currency, format_date, format_decimal, format_tax_year,
 };
 use chrono::{Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -21,24 +19,13 @@ static TEMPLATE: &str = include_str!("templates/report.typ");
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
-fn format_price(value: Decimal) -> String {
-    format!("£{}", format_decimal(value))
+/// Shared formatter instance for currency formatting.
+fn formatter() -> CurrencyFormatter {
+    CurrencyFormatter::uk()
 }
 
-/// Format a CurrencyAmount for PDF output.
-/// Shows GBP value with original currency in parentheses if not GBP.
-fn format_amount(amount: &CurrencyAmount) -> String {
-    let gbp = format_currency(amount.gbp);
-    if amount.is_gbp() {
-        gbp
-    } else {
-        let orig = format!(
-            "{} {}",
-            format_decimal_fixed(amount.amount, amount.minor_units() as u32),
-            amount.code()
-        );
-        format!("{} ({})", gbp, orig)
-    }
+fn format_price(value: Decimal) -> String {
+    format!("£{}", format_decimal(value))
 }
 
 /// Sort transactions by date, then by ticker for deterministic output.
@@ -186,8 +173,8 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 op_type.into_value(),
                 ticker.clone().into_value(),
                 format_decimal(amount).into_value(),
-                format_amount(price).into_value(),
-                format_amount(expenses).into_value(),
+                formatter().format_amount(price).into_value(),
+                formatter().format_amount(expenses).into_value(),
             ]
         })
         .collect();
@@ -207,7 +194,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 } => (
                     "DIVIDEND",
                     format_decimal(*amount),
-                    format_amount(total_value),
+                    formatter().format_amount(total_value),
                 ),
                 Operation::CapReturn {
                     amount,
@@ -216,7 +203,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 } => (
                     "CAPRETURN",
                     format_decimal(*amount),
-                    format_amount(total_value),
+                    formatter().format_amount(total_value),
                 ),
                 Operation::Split { ratio } => ("SPLIT", format_decimal(*ratio), "-".to_string()),
                 Operation::Unsplit { ratio } => {

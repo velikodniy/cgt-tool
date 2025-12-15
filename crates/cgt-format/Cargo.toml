@@ -1,0 +1,12 @@
+[package]
+name = "cgt-format"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cgt-money = { path = "../cgt-money" }
+chrono = { version = "0.4", default-features = false }
+rust_decimal = "1"
+
+[lints]
+workspace = true

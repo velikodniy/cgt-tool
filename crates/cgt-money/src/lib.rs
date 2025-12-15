@@ -1,3 +1,4 @@
+mod amount;
 mod cache;
 mod loader;
 mod parser;
@@ -5,7 +6,9 @@ mod types;
 
 use include_dir::{Dir, include_dir};
 
+pub use amount::CurrencyAmount;
 pub use cache::FxCache;
+pub use iso_currency::Currency;
 pub use loader::{FxLoaderError, RateFile, load_bundled_cache, load_cache_with_folder_files};
 pub use parser::{FxParseError, parse_monthly_rates};
 pub use types::{RateEntry, RateKey, RateSource};

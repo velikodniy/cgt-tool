@@ -3,7 +3,7 @@ use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
 use cgt_core::parser::{parse_file, parse_file_with_fx};
 use cgt_core::validate;
-use cgt_fx::{RateFile, load_cache_with_overrides, load_default_cache};
+use cgt_money::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
 use commands::{BrokerCommands, Commands, OutputFormat};
