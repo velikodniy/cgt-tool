@@ -9,7 +9,7 @@ use rust_decimal::Decimal;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-pub use awards::{AwardsData, AwardsFormat};
+pub use awards::{AwardLookup, AwardsData, AwardsFormat};
 
 /// Input for Schwab converter
 #[derive(Debug, Clone)]
@@ -364,12 +364,14 @@ fn process_transactions(
                 });
             }
             "Stock Plan Activity" => {
-                // RSU vesting - need FMV from awards file
+                // RSU vesting - need FMV and vest date from awards file
+                // Per HMRC guidance (CG14250, ERSM20192), acquisition date is the vest date
+                // (when conditions are satisfied), not the settlement date from transactions
                 let quantity = txn.quantity.ok_or_else(|| {
                     ConvertError::InvalidTransaction("Stock Plan Activity missing quantity".into())
                 })?;
 
-                let fmv = if let Some(awards_data) = awards {
+                let award_lookup = if let Some(awards_data) = awards {
                     awards_data.get_fmv(&txn.date, &txn.symbol)?
                 } else {
                     return Err(ConvertError::MissingFairMarketValue {
@@ -379,10 +381,11 @@ fn process_transactions(
                 };
 
                 cgt_transactions.push(CgtTransaction::Buy {
-                    date: txn.date,
+                    // Use vest date from awards file as CGT acquisition date
+                    date: award_lookup.vest_date,
                     symbol: txn.symbol,
                     quantity,
-                    price: fmv,
+                    price: award_lookup.fmv,
                     expenses: Decimal::ZERO,
                     comment: Some("RSU Vesting - FMV from awards file".to_string()),
                 });

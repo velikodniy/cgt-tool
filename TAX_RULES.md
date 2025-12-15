@@ -204,6 +204,48 @@ Cost of Disposal = Number of Shares Sold × Average Cost Per Share
 
 ## Special Cases
 
+### RSU Acquisition Date
+
+**HMRC Reference:** CG14250, ERSM20192
+
+When Restricted Stock Units (RSUs) vest, two dates are relevant:
+
+1. **Vest Date (Lapse Date)**: When vesting conditions are satisfied and the employee becomes unconditionally entitled to the shares
+2. **Settlement Date**: When shares are deposited into the brokerage account (typically T+2, i.e., 2 business days after vest)
+
+For CGT purposes, the **vest date** is the acquisition date, not the settlement date. HMRC guidance is clear:
+
+- **CG14250**: "If the contract is conditional the date of disposal is the date all of the conditions are satisfied"
+- **ERSM20192**: "An RSU award will vest when all the conditions laid down to be satisfied before the stock or shares may be issued have been met"
+
+This distinction matters for share matching rules:
+
+- **Same Day Rule**: Uses the vest date for matching
+- **Bed & Breakfast Rule**: The 30-day window is calculated from the vest date
+
+### Example: RSU Vest Date Impact on Same Day Matching
+
+**Scenario:**
+
+- RSU vests on 15 January 2024 (vest date)
+- Shares settle in brokerage on 17 January 2024 (settlement date, T+2)
+- Employee sells 30 shares on 15 January 2024
+
+**Correct Treatment (using vest date):**
+
+- Acquisition date: 15 January 2024
+- Sale date: 15 January 2024
+- **Same Day Rule applies** - sale matches with acquisition
+
+**Incorrect Treatment (using settlement date):**
+
+- Acquisition date: 17 January 2024
+- Sale date: 15 January 2024
+- Same Day Rule would NOT apply (dates differ)
+- Sale would incorrectly match against Section 104 pool
+
+The cgt-tool uses the vest date from the awards file when processing RSU vesting transactions from broker exports.
+
 ### Stock Splits and Bonus Issues
 
 **HMRC Reference:** CG51746
@@ -264,12 +306,17 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 
 ### HMRC Capital Gains Manual
 
+- [CG14250 - Date of Disposal: Conditional Contracts](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg14250)
 - [CG51500 - Share Identification: Introduction](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51500)
 - [CG51560 - Same Day and Bed & Breakfast Rules](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51560)
 - [CG51575 - Section 104 Holdings](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51575)
 - [CG51590 - Share Identification: Examples](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51590)
 - [CG51746 - Bonus and Rights Issues](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51746)
 - [CG58620 - Capital Returns](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg58620)
+
+### HMRC Employment-Related Securities Manual
+
+- [ERSM20192 - Restricted Stock Units: Vesting](https://www.gov.uk/hmrc-internal-manuals/employment-related-securities/ersm20192)
 
 ### HMRC Helpsheets
 
@@ -282,6 +329,6 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-12-08
-**Source:** HMRC Capital Gains Manual (CG51500-CG51600)
+**Document Version:** 1.1
+**Last Updated:** 2025-12-15
+**Source:** HMRC Capital Gains Manual (CG51500-CG51600), HMRC Employment-Related Securities Manual (ERSM20192)

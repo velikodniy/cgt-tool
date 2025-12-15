@@ -349,13 +349,14 @@ fn test_rsu_multiple_vests_same_day() {
 }
 
 #[test]
-fn test_rsu_with_fmv_date_mismatch_uses_lookback() {
-    // Transaction date slightly different from awards date (uses 7-day lookback)
+fn test_rsu_vest_date_used_for_cgt_acquisition() {
+    // Settlement date in transactions (04/28) differs from vest date in awards (04/25)
+    // Per HMRC guidance (CG14250, ERSM20192), the vest date should be used as CGT acquisition date
     let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
 04/28/2023,Stock Plan Activity,ACME,ACME CORP,100,--,--,--
 "#;
 
-    // Award date is 04/25 but transaction is 04/28 (3 days later)
+    // Award/vest date is 04/25 but transaction settlement is 04/28 (T+2 settlement)
     let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "04/25/2023", "FairMarketValuePrice": "$50.25"}]}"#;
 
     let converter = SchwabConverter::new();
@@ -366,11 +367,18 @@ fn test_rsu_with_fmv_date_mismatch_uses_lookback() {
     };
 
     let result = converter.convert(&input).unwrap();
-    // Should find FMV via lookback
+    // Should use VEST date (04/25) not settlement date (04/28) for CGT acquisition
     assert!(
         result
             .cgt_content
-            .contains("2023-04-28 BUY ACME 100 @ 50.25 USD")
+            .contains("2023-04-25 BUY ACME 100 @ 50.25 USD"),
+        "Expected vest date 2023-04-25 but got: {}",
+        result.cgt_content
+    );
+    // Should NOT use the settlement date
+    assert!(
+        !result.cgt_content.contains("2023-04-28 BUY ACME"),
+        "Settlement date should not be used for RSU acquisition"
     );
 }
 
@@ -590,4 +598,83 @@ fn test_multi_year_transactions() {
             "Transactions not in chronological order"
         );
     }
+}
+
+// ===========================================
+// RSU Vest Date for CGT Tests
+// ===========================================
+
+#[test]
+fn test_rsu_same_day_matching_with_vest_date() {
+    // Scenario: RSU vests on 01/15, shares settle on 01/17 (T+2)
+    // Employee sells some shares on 01/15 (vest date)
+    // CGT Same Day rule should match sale with acquisition on vest date
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+01/17/2024,Stock Plan Activity,ACME,RSU VEST,100,--,--,--
+01/15/2024,Sell,ACME,ACME CORP,30,$55.00,$0.05,$1649.95
+"#;
+
+    // Award vest date is 01/15 (matches the sale date)
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "01/15/2024", "FairMarketValuePrice": "$55.00"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // BUY should use vest date (01/15), enabling Same Day matching with the sale
+    assert!(
+        result
+            .cgt_content
+            .contains("2024-01-15 BUY ACME 100 @ 55.00 USD"),
+        "RSU acquisition should use vest date 2024-01-15, not settlement date. Output: {}",
+        result.cgt_content
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("2024-01-15 SELL ACME 30 @ 55.00 USD"),
+        "Sale should be on 2024-01-15"
+    );
+
+    // Both BUY and SELL are now on same date, enabling Same Day matching for CGT
+}
+
+#[test]
+fn test_rsu_bnb_window_with_vest_date() {
+    // Scenario: Employee sells shares on 01/10
+    // RSU vests on 02/05 (26 days after sale) - within B&B 30-day window
+    // Shares settle on 02/07 (28 days after sale)
+    // B&B should use vest date (26 days) not settlement date (28 days)
+    let transactions = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+01/10/2024,Sell,ACME,ACME CORP,30,$50.00,$0.05,$1499.95
+02/07/2024,Stock Plan Activity,ACME,RSU VEST,100,--,--,--
+"#;
+
+    // Award vest date is 02/05 (26 days after sale, within B&B window)
+    let awards = r#"{"EquityAwards": [{"Symbol": "ACME", "EventDate": "02/05/2024", "FairMarketValuePrice": "$52.00"}]}"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: transactions.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // BUY should use vest date (02/05) which is 26 days after sale (within B&B window)
+    // If settlement date (02/07 = 28 days) was used, it would still be within window,
+    // but the cost basis date would be wrong
+    assert!(
+        result
+            .cgt_content
+            .contains("2024-02-05 BUY ACME 100 @ 52.00 USD"),
+        "RSU acquisition should use vest date 2024-02-05. Output: {}",
+        result.cgt_content
+    );
 }

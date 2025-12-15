@@ -21,13 +21,29 @@ pub struct AwardsData {
     fmv_map: HashMap<(String, NaiveDate), Decimal>,
 }
 
+/// Result of looking up an award by date
+#[derive(Debug, Clone)]
+pub struct AwardLookup {
+    /// The Fair Market Value at vest
+    pub fmv: Decimal,
+    /// The actual vest/lapse date (for CGT acquisition date)
+    pub vest_date: NaiveDate,
+}
+
 impl AwardsData {
-    /// Get Fair Market Value for a specific symbol and date
+    /// Get Fair Market Value and vest date for a specific symbol and date
     /// Implements 7-day lookback for date matching
-    pub fn get_fmv(&self, date: &NaiveDate, symbol: &str) -> Result<Decimal, ConvertError> {
+    ///
+    /// Returns the FMV and the actual vest date found (which may differ from
+    /// the query date due to T+2 settlement). The vest date should be used
+    /// as the CGT acquisition date per HMRC guidance.
+    pub fn get_fmv(&self, date: &NaiveDate, symbol: &str) -> Result<AwardLookup, ConvertError> {
         // Try exact match first
         if let Some(fmv) = self.fmv_map.get(&(symbol.to_string(), *date)) {
-            return Ok(*fmv);
+            return Ok(AwardLookup {
+                fmv: *fmv,
+                vest_date: *date,
+            });
         }
 
         // Try 7-day lookback (for awards that may have slightly different dates)
@@ -35,7 +51,10 @@ impl AwardsData {
             if let Some(earlier_date) = date.checked_sub_signed(chrono::Duration::days(days_back))
                 && let Some(fmv) = self.fmv_map.get(&(symbol.to_string(), earlier_date))
             {
-                return Ok(*fmv);
+                return Ok(AwardLookup {
+                    fmv: *fmv,
+                    vest_date: earlier_date,
+                });
             }
         }
 
@@ -189,8 +208,13 @@ mod tests {
         let date1 = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
         let date2 = NaiveDate::from_ymd_opt(2023, 6, 15).unwrap();
 
-        assert_eq!(awards.get_fmv(&date1, "XYZZ").unwrap(), dec!(125.6445));
-        assert_eq!(awards.get_fmv(&date2, "BAR").unwrap(), dec!(340.50));
+        let lookup1 = awards.get_fmv(&date1, "XYZZ").unwrap();
+        assert_eq!(lookup1.fmv, dec!(125.6445));
+        assert_eq!(lookup1.vest_date, date1);
+
+        let lookup2 = awards.get_fmv(&date2, "BAR").unwrap();
+        assert_eq!(lookup2.fmv, dec!(340.50));
+        assert_eq!(lookup2.vest_date, date2);
     }
 
     #[test]
@@ -206,14 +230,19 @@ mod tests {
         }"#;
 
         let awards = parse_awards_json(json).unwrap();
+        let vest_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
 
-        // Exact match
+        // Exact match - vest_date should equal query date
         let exact_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&exact_date, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&exact_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date);
 
-        // 3 days later (should find via lookback)
+        // 3 days later (should find via lookback) - vest_date should be the original award date
         let later_date = NaiveDate::from_ymd_opt(2023, 4, 28).unwrap();
-        assert_eq!(awards.get_fmv(&later_date, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&later_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date); // Returns vest date, not query date
 
         // 8 days later (should fail - beyond lookback window)
         let too_late = NaiveDate::from_ymd_opt(2023, 5, 3).unwrap();
@@ -251,11 +280,13 @@ mod tests {
         let lapse_date1 = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
         let lapse_date2 = NaiveDate::from_ymd_opt(2023, 6, 15).unwrap();
 
-        assert_eq!(
-            awards.get_fmv(&lapse_date1, "XYZZ").unwrap(),
-            dec!(125.6445)
-        );
-        assert_eq!(awards.get_fmv(&lapse_date2, "BAR").unwrap(), dec!(340.50));
+        let lookup1 = awards.get_fmv(&lapse_date1, "XYZZ").unwrap();
+        assert_eq!(lookup1.fmv, dec!(125.6445));
+        assert_eq!(lookup1.vest_date, lapse_date1);
+
+        let lookup2 = awards.get_fmv(&lapse_date2, "BAR").unwrap();
+        assert_eq!(lookup2.fmv, dec!(340.50));
+        assert_eq!(lookup2.vest_date, lapse_date2);
     }
 
     #[test]
@@ -268,7 +299,9 @@ mod tests {
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
 
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(1125.50));
+        let lookup = awards.get_fmv(&lapse_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(1125.50));
+        assert_eq!(lookup.vest_date, lapse_date);
     }
 
     #[test]
@@ -325,8 +358,11 @@ mod tests {
         let awards_csv = parse_awards(csv, AwardsFormat::Csv).unwrap();
 
         let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards_json.get_fmv(&date, "XYZZ").unwrap(), dec!(125.00));
-        assert_eq!(awards_csv.get_fmv(&date, "XYZZ").unwrap(), dec!(125.00));
+        assert_eq!(
+            awards_json.get_fmv(&date, "XYZZ").unwrap().fmv,
+            dec!(125.00)
+        );
+        assert_eq!(awards_csv.get_fmv(&date, "XYZZ").unwrap().fmv, dec!(125.00));
     }
 
     // ===========================================
@@ -351,7 +387,9 @@ mod tests {
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
 
         // Last FMV for this date should be used
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(130.00));
+        let lookup = awards.get_fmv(&lapse_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(130.00));
+        assert_eq!(lookup.vest_date, lapse_date);
     }
 
     #[test]
@@ -369,9 +407,18 @@ mod tests {
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
 
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(125.00));
-        assert_eq!(awards.get_fmv(&lapse_date, "BAR").unwrap(), dec!(340.50));
-        assert_eq!(awards.get_fmv(&lapse_date, "FOO").unwrap(), dec!(175.25));
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "XYZZ").unwrap().fmv,
+            dec!(125.00)
+        );
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "BAR").unwrap().fmv,
+            dec!(340.50)
+        );
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "FOO").unwrap().fmv,
+            dec!(175.25)
+        );
     }
 
     #[test]
@@ -389,8 +436,8 @@ mod tests {
         let date1 = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
         let date2 = NaiveDate::from_ymd_opt(2023, 6, 15).unwrap();
 
-        assert_eq!(awards.get_fmv(&date1, "XYZZ").unwrap(), dec!(125.00));
-        assert_eq!(awards.get_fmv(&date2, "BAR").unwrap(), dec!(340.50));
+        assert_eq!(awards.get_fmv(&date1, "XYZZ").unwrap().fmv, dec!(125.00));
+        assert_eq!(awards.get_fmv(&date2, "BAR").unwrap().fmv, dec!(340.50));
     }
 
     #[test]
@@ -403,7 +450,10 @@ mod tests {
 
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(125.00));
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "XYZZ").unwrap().fmv,
+            dec!(125.00)
+        );
     }
 
     #[test]
@@ -416,7 +466,10 @@ mod tests {
 
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(125.6445));
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "XYZZ").unwrap().fmv,
+            dec!(125.6445)
+        );
     }
 
     #[test]
@@ -429,7 +482,10 @@ mod tests {
 
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(125.00));
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "XYZZ").unwrap().fmv,
+            dec!(125.00)
+        );
     }
 
     #[test]
@@ -455,7 +511,10 @@ mod tests {
         let awards = parse_awards_csv(csv).unwrap();
         let lapse_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
         // Only the second FMV should be recorded (for the valid transaction row)
-        assert_eq!(awards.get_fmv(&lapse_date, "XYZZ").unwrap(), dec!(130.00));
+        assert_eq!(
+            awards.get_fmv(&lapse_date, "XYZZ").unwrap().fmv,
+            dec!(130.00)
+        );
     }
 
     // ===========================================
@@ -467,14 +526,19 @@ mod tests {
         // Test exact boundary of 7-day lookback
         let json = r#"{"EquityAwards": [{"Symbol": "XYZZ", "EventDate": "04/20/2023", "FairMarketValuePrice": "125.00"}]}"#;
         let awards = parse_awards_json(json).unwrap();
+        let vest_date = NaiveDate::from_ymd_opt(2023, 4, 20).unwrap();
 
         // Day 0 (exact match)
         let day0 = NaiveDate::from_ymd_opt(2023, 4, 20).unwrap();
-        assert_eq!(awards.get_fmv(&day0, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&day0, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date);
 
-        // Day 7 (last valid lookback day)
+        // Day 7 (last valid lookback day) - vest_date should still be the original
         let day7 = NaiveDate::from_ymd_opt(2023, 4, 27).unwrap();
-        assert_eq!(awards.get_fmv(&day7, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&day7, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date);
 
         // Day 8 (beyond lookback window)
         let day8 = NaiveDate::from_ymd_opt(2023, 4, 28).unwrap();
@@ -492,7 +556,9 @@ mod tests {
 
         let exact_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
         // Should return 125.00 (exact match) not 120.00 (via lookback)
-        assert_eq!(awards.get_fmv(&exact_date, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&exact_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, exact_date);
     }
 
     #[test]
@@ -505,8 +571,11 @@ mod tests {
         let awards = parse_awards_json(json).unwrap();
 
         let query_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+        let expected_vest_date = NaiveDate::from_ymd_opt(2023, 4, 23).unwrap();
         // Should find 04/23 (2 days back) before 04/20 (5 days back)
-        assert_eq!(awards.get_fmv(&query_date, "XYZZ").unwrap(), dec!(123.00));
+        let lookup = awards.get_fmv(&query_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(123.00));
+        assert_eq!(lookup.vest_date, expected_vest_date);
     }
 
     #[test]
@@ -516,7 +585,7 @@ mod tests {
         let awards = parse_awards_json(json).unwrap();
 
         let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&date, "XYZZ").unwrap(), dec!(125.00));
+        assert_eq!(awards.get_fmv(&date, "XYZZ").unwrap().fmv, dec!(125.00));
         assert!(awards.get_fmv(&date, "goog").is_err());
         assert!(awards.get_fmv(&date, "Goog").is_err());
     }
@@ -527,9 +596,12 @@ mod tests {
         let json = r#"{"EquityAwards": [{"Symbol": "XYZZ", "EventDate": "03/28/2023", "FairMarketValuePrice": "125.00"}]}"#;
         let awards = parse_awards_json(json).unwrap();
 
+        let vest_date = NaiveDate::from_ymd_opt(2023, 3, 28).unwrap();
         // April 3 looking back to March 28 (6 days)
         let april_date = NaiveDate::from_ymd_opt(2023, 4, 3).unwrap();
-        assert_eq!(awards.get_fmv(&april_date, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&april_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date);
     }
 
     #[test]
@@ -538,9 +610,12 @@ mod tests {
         let json = r#"{"EquityAwards": [{"Symbol": "XYZZ", "EventDate": "12/28/2022", "FairMarketValuePrice": "125.00"}]}"#;
         let awards = parse_awards_json(json).unwrap();
 
+        let vest_date = NaiveDate::from_ymd_opt(2022, 12, 28).unwrap();
         // January 3, 2023 looking back to December 28, 2022 (6 days)
         let jan_date = NaiveDate::from_ymd_opt(2023, 1, 3).unwrap();
-        assert_eq!(awards.get_fmv(&jan_date, "XYZZ").unwrap(), dec!(125.00));
+        let lookup = awards.get_fmv(&jan_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.00));
+        assert_eq!(lookup.vest_date, vest_date);
     }
 
     // ===========================================
@@ -568,10 +643,10 @@ mod tests {
         let awards = parse_awards_json(json).unwrap();
         let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
 
-        assert_eq!(awards.get_fmv(&date, "A").unwrap(), dec!(125.00));
-        assert_eq!(awards.get_fmv(&date, "B").unwrap(), dec!(125.00));
-        assert_eq!(awards.get_fmv(&date, "C").unwrap(), dec!(125.6445));
-        assert_eq!(awards.get_fmv(&date, "D").unwrap(), dec!(0.50));
+        assert_eq!(awards.get_fmv(&date, "A").unwrap().fmv, dec!(125.00));
+        assert_eq!(awards.get_fmv(&date, "B").unwrap().fmv, dec!(125.00));
+        assert_eq!(awards.get_fmv(&date, "C").unwrap().fmv, dec!(125.6445));
+        assert_eq!(awards.get_fmv(&date, "D").unwrap().fmv, dec!(0.50));
     }
 
     #[test]
@@ -584,6 +659,6 @@ mod tests {
 
         let awards = parse_awards_json(json).unwrap();
         let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-        assert_eq!(awards.get_fmv(&date, "XYZZ").unwrap(), dec!(125.00));
+        assert_eq!(awards.get_fmv(&date, "XYZZ").unwrap().fmv, dec!(125.00));
     }
 }
