@@ -1,7 +1,7 @@
 [package]
 name = "cgt-converter"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
