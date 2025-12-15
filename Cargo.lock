@@ -392,6 +392,7 @@ dependencies = [
  "pest",
  "pest_derive",
  "rust_decimal",
+ "rust_decimal_macros",
  "schemars",
  "serde",
  "serde_json",

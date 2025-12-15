@@ -19,3 +19,4 @@ cgt-money = { path = "../cgt-money" }
 workspace = true
 
 [dev-dependencies]
+rust_decimal_macros = "1.39"

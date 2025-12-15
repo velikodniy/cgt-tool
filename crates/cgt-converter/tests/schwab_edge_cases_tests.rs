@@ -384,3 +384,186 @@ fn test_very_precise_amounts() {
     assert!(result.cgt_content.contains("125.6445"));
     assert!(result.cgt_content.contains("0.1234"));
 }
+
+// Share quantity precision tests
+// Verify that parsing preserves exact decimal values without floating-point rounding
+
+#[test]
+fn test_quantity_precision_no_floating_point_errors() {
+    // This test catches floating-point representation errors
+    // 0.1 + 0.2 != 0.3 in floating point, but should work with Decimal
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,TEST,0.1,$100.00,$0,-$10.00
+04/26/2023,Buy,XYZZ,TEST,0.2,$100.00,$0,-$20.00
+04/27/2023,Sell,XYZZ,TEST,0.3,$110.00,$0,$33.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // All quantities should be preserved exactly
+    assert!(result.cgt_content.contains("BUY XYZZ 0.1 @"));
+    assert!(result.cgt_content.contains("BUY XYZZ 0.2 @"));
+    assert!(result.cgt_content.contains("SELL XYZZ 0.3 @"));
+}
+
+#[test]
+fn test_rsu_quantity_precision_from_json_awards() {
+    // Test that JSON parsing doesn't introduce floating-point rounding errors
+    // in share quantities from equity awards
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Stock Plan Activity,ACME,RSU VEST,67.201495,--,--,$8443.47
+"#;
+
+    let awards = r#"{
+        "EquityAwards": [
+            {
+                "Symbol": "ACME",
+                "EventDate": "04/25/2023",
+                "FairMarketValuePrice": "$125.6445"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Quantity from CSV should be exact
+    assert!(
+        result.cgt_content.contains("BUY ACME 67.201495 @ 125.6445"),
+        "Quantity and price should be preserved exactly: {}",
+        result.cgt_content
+    );
+}
+
+#[test]
+fn test_extremely_small_fractional_shares() {
+    // Very small fractional shares (e.g., from dividend reinvestment plans)
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,DRIP,0.000001,$100000.00,$0,-$0.10
+04/26/2023,Sell,XYZZ,SELL,0.000001,$110000.00,$0,$0.11
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("0.000001"));
+}
+
+#[test]
+fn test_large_quantity_no_precision_loss() {
+    // Large quantities should not lose precision
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,XYZZ,TEST,12345678.901234,$0.00001,$0,-$123.46
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(result.cgt_content.contains("12345678.901234"));
+    assert!(result.cgt_content.contains("0.00001"));
+}
+
+#[test]
+fn test_fmv_price_precision_preserved() {
+    // FMV prices from awards should maintain full precision
+    // Some awards have prices like $125.6445 (4 decimal places)
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Stock Plan Activity,ACME,RSU VEST,100,--,--,--
+"#;
+
+    let awards = r#"{
+        "EquityAwards": [
+            {
+                "Symbol": "ACME",
+                "EventDate": "04/25/2023",
+                "FairMarketValuePrice": "$1234.567890"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: Some(awards.to_string()),
+        awards_format: Some(AwardsFormat::Json),
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Full precision should be preserved
+    assert!(
+        result.cgt_content.contains("1234.567890") || result.cgt_content.contains("1234.56789"),
+        "FMV price precision should be preserved"
+    );
+}
+
+// Additional edge cases
+
+#[test]
+fn test_dividend_negative_amount_handling() {
+    // Some brokers report dividends with negative amounts for adjustments
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+07/15/2023,Cash Dividend,FOO,DIVIDEND CORRECTION,--,--,--,-$10.00
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    // Should handle negative amount (abs value)
+    assert!(result.cgt_content.contains("DIVIDEND FOO 10.00 USD"));
+}
+
+#[test]
+fn test_tax_withholding_types() {
+    // Both "NRA Tax Adj" and "NRA Withholding" should be recognized as tax
+    let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+07/15/2023,Cash Dividend,FOO,DIVIDEND,--,--,--,$100.00
+07/15/2023,NRA Tax Adj,FOO,TAX ADJUSTMENT,--,--,--,-$15.00
+07/20/2023,Cash Dividend,BAR,DIVIDEND,--,--,--,$50.00
+07/20/2023,NRA Withholding,BAR,WITHHOLDING TAX,--,--,--,-$7.50
+"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_csv: csv.to_string(),
+        awards_content: None,
+        awards_format: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND FOO 100.00 USD TAX 15.00 USD")
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND BAR 50.00 USD TAX 7.50 USD")
+    );
+}
