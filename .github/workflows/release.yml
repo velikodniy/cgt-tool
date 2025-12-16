@@ -143,3 +143,16 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+
+  notify-tap:
+    name: Notify Homebrew Tap
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger tap update
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.TAP_REPO_TOKEN }}
+          repository: velikodniy/homebrew-tap
+          event-type: cgt-tool-release
+          client-payload: '{"tag_name": "${{ github.ref_name }}"}'
