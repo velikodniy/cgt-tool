@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change restructure-crates. Update Purpose after archive.
+Provide formatting rules and utilities for currency amounts, decimals, dates, and UK tax year display across CGT outputs.
 
 ## Requirements
 

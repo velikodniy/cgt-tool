@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change restructure-crates. Update Purpose after archive.
+Specify money primitives, precision, and exchange-rate handling, including bundled and custom HMRC rates for converting foreign amounts to GBP.
 
 ## Requirements
 

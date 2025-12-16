@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change publish-homebrew-formula. Update Purpose after archive.
+Define automation for distributing cgt-tool via Homebrew, including tap installation, release-sourced binaries, and workflows that keep the formula updated and verified.
 
 ## Requirements
 

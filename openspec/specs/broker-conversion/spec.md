@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-broker-converters. Update Purpose after archive.
+Define broker conversion interfaces and behaviors for turning broker exports (e.g., Schwab) into CGT DSL while remaining IO-free, deterministic, and well-validated.
 
 ## Requirements
 
