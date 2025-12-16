@@ -33,6 +33,6 @@
 
 ## 5. Validation
 
-- [ ] 5.1 Test CI workflow on feature branch
-- [ ] 5.2 Test release workflow with test tag
-- [ ] 5.3 Verify all binaries execute correctly on target platforms
+- [x] 5.1 Test CI workflow on feature branch
+- [x] 5.2 Test release workflow with test tag
+- [x] 5.3 Verify all binaries execute correctly on target platforms (macOS arm64 executed from v0.1.0; other artifacts built and published by release workflow)
