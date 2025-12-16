@@ -4,6 +4,14 @@ A CLI tool to calculate Capital Gains Tax for UK assets using the "Same Day", "B
 
 ## Installation
 
+### Homebrew (macOS & Linux)
+
+```bash
+brew tap velikodniy/tap
+brew install cgt-tool
+cgt-tool --version
+```
+
 ### Pre-built Binaries (Recommended)
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/vadim-projects/cgt-tool/releases):
