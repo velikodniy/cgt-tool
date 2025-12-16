@@ -15,11 +15,11 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Parse a transaction file and output JSON
+    /// Parse transaction file(s) and output JSON
     Parse {
-        /// Input file path
+        /// Input file path(s)
         #[arg(required_unless_present = "schema")]
-        file: Option<PathBuf>,
+        files: Vec<PathBuf>,
 
         /// Output JSON schema
         #[arg(long)]
@@ -27,8 +27,9 @@ pub enum Commands {
     },
     /// Generate tax report
     Report {
-        /// Input file path
-        file: PathBuf,
+        /// Input file path(s)
+        #[arg(required = true)]
+        files: Vec<PathBuf>,
 
         /// Tax year start (e.g. 2018 for 2018/2019)
         #[arg(long)]

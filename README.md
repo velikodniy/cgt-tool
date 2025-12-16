@@ -113,6 +113,12 @@ Verify your input file is parsed correctly:
 cgt-tool parse transactions.cgt
 ```
 
+You can also parse multiple files at once:
+
+```bash
+cgt-tool parse file1.cgt file2.cgt file3.cgt
+```
+
 Output (JSON):
 
 ```json
@@ -144,6 +150,12 @@ Calculate gains and losses for a specific tax year:
 cgt-tool report transactions.cgt --year 2024
 ```
 
+You can combine multiple input files (e.g., separate files per broker or year):
+
+```bash
+cgt-tool report broker1.cgt broker2.cgt --year 2024
+```
+
 Output formats: `--format plain` (default), `--format json`, or `--format pdf`
 
 ### Generate PDF Report
@@ -154,7 +166,7 @@ Generate a professional PDF document for tax reporting:
 cgt-tool report transactions.cgt --year 2024 --format pdf
 ```
 
-By default, the PDF is saved to `transactions.pdf`. Use `--output` for a custom path:
+By default, the PDF is saved to `<input>.pdf` (or `report.pdf` when using multiple input files). Use `--output` for a custom path:
 
 ```bash
 cgt-tool report transactions.cgt --year 2024 --format pdf --output report.pdf

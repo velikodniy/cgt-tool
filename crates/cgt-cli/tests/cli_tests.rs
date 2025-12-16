@@ -182,3 +182,171 @@ fn test_convert_schwab_rsu_without_awards_fails() {
         .assert()
         .failure();
 }
+
+#[test]
+fn test_parse_multiple_files() {
+    // Create temp files with simple transactions
+    let temp_dir = std::env::temp_dir();
+    let file1 = temp_dir.join("multi_parse_test1.cgt");
+    let file2 = temp_dir.join("multi_parse_test2.cgt");
+
+    fs::write(&file1, "2018-01-01 BUY AAPL 10 @ 100.00\n").expect("Failed to write file1");
+    fs::write(&file2, "2018-01-02 BUY AAPL 5 @ 110.00\n").expect("Failed to write file2");
+
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
+    let output = cmd
+        .arg("parse")
+        .arg(&file1)
+        .arg(&file2)
+        .output()
+        .expect("Failed to run CLI");
+
+    assert!(output.status.success(), "CLI should succeed");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Should contain both transactions
+    assert!(stdout.contains("2018-01-01"), "Should contain first date");
+    assert!(stdout.contains("2018-01-02"), "Should contain second date");
+
+    // Clean up
+    let _ = fs::remove_file(&file1);
+    let _ = fs::remove_file(&file2);
+}
+
+#[test]
+fn test_report_multiple_files() {
+    // Create temp files with transactions for same tax year
+    let temp_dir = std::env::temp_dir();
+    let file1 = temp_dir.join("multi_report_test1.cgt");
+    let file2 = temp_dir.join("multi_report_test2.cgt");
+
+    // File 1: Buy transaction
+    fs::write(&file1, "2018-08-01 BUY AAPL 10 @ 100.00\n").expect("Failed to write file1");
+    // File 2: Sell transaction
+    fs::write(&file2, "2018-08-02 SELL AAPL 10 @ 110.00\n").expect("Failed to write file2");
+
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
+    let output = cmd
+        .arg("report")
+        .arg("--year")
+        .arg("2018")
+        .arg("--format")
+        .arg("plain")
+        .arg(&file1)
+        .arg(&file2)
+        .output()
+        .expect("Failed to run CLI");
+
+    assert!(
+        output.status.success(),
+        "CLI should succeed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // Should show a gain from the combined transactions
+    assert!(stdout.contains("AAPL"), "Should contain ticker");
+    assert!(stdout.contains("2018/19"), "Should show tax year");
+
+    // Clean up
+    let _ = fs::remove_file(&file1);
+    let _ = fs::remove_file(&file2);
+}
+
+#[test]
+fn test_pdf_multiple_files_default_filename() {
+    let temp_dir = std::env::temp_dir();
+    let file1 = temp_dir.join("pdf_multi_test1.cgt");
+    let file2 = temp_dir.join("pdf_multi_test2.cgt");
+    let expected_output = temp_dir.join("report.pdf");
+
+    // Clean up any existing file first
+    let _ = fs::remove_file(&expected_output);
+
+    fs::write(&file1, "2018-08-01 BUY AAPL 10 @ 100.00\n").expect("Failed to write file1");
+    fs::write(&file2, "2018-08-02 SELL AAPL 10 @ 110.00\n").expect("Failed to write file2");
+
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
+    let output = cmd
+        .arg("report")
+        .arg("--year")
+        .arg("2018")
+        .arg("--format")
+        .arg("pdf")
+        .arg(&file1)
+        .arg(&file2)
+        .current_dir(&temp_dir)
+        .output()
+        .expect("Failed to run CLI");
+
+    assert!(
+        output.status.success(),
+        "CLI should succeed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("report.pdf"),
+        "Should output to report.pdf for multiple files"
+    );
+
+    // Clean up
+    let _ = fs::remove_file(&file1);
+    let _ = fs::remove_file(&file2);
+    let _ = fs::remove_file(&expected_output);
+}
+
+#[test]
+fn test_pdf_overwrite_protection() {
+    let temp_dir = std::env::temp_dir();
+    let input_file = temp_dir.join("pdf_overwrite_test.cgt");
+    let existing_pdf = temp_dir.join("pdf_overwrite_test.pdf");
+
+    fs::write(
+        &input_file,
+        "2018-08-01 BUY AAPL 10 @ 100.00\n2018-08-02 SELL AAPL 10 @ 110.00\n",
+    )
+    .expect("Failed to write input file");
+
+    // Create an existing PDF file that should not be overwritten
+    fs::write(&existing_pdf, "existing content").expect("Failed to create existing PDF");
+
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
+    let output = cmd
+        .arg("report")
+        .arg("--year")
+        .arg("2018")
+        .arg("--format")
+        .arg("pdf")
+        .arg(&input_file)
+        .current_dir(&temp_dir)
+        .output()
+        .expect("Failed to run CLI");
+
+    // Should fail because file exists
+    assert!(
+        !output.status.success(),
+        "CLI should fail when output file exists"
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("already exists"),
+        "Should mention file exists: {}",
+        stderr
+    );
+    assert!(
+        stderr.contains("--output"),
+        "Should suggest using --output: {}",
+        stderr
+    );
+
+    // Verify existing file was not modified
+    let content = fs::read_to_string(&existing_pdf).expect("Failed to read existing PDF");
+    assert_eq!(content, "existing content", "File should not be modified");
+
+    // Clean up
+    let _ = fs::remove_file(&input_file);
+    let _ = fs::remove_file(&existing_pdf);
+}

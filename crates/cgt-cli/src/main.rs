@@ -17,6 +17,17 @@ struct Cli {
     command: Commands,
 }
 
+/// Read and concatenate multiple input files.
+/// Returns the combined content with newlines between files.
+fn read_and_concatenate_files(files: &[std::path::PathBuf]) -> Result<String> {
+    let mut contents = Vec::with_capacity(files.len());
+    for path in files {
+        let content = fs::read_to_string(path)?;
+        contents.push(content);
+    }
+    Ok(contents.join("\n"))
+}
+
 fn read_fx_folder(path: &std::path::Path) -> Result<Vec<RateFile>> {
     let mut files = Vec::new();
     for entry in fs::read_dir(path)? {
@@ -40,28 +51,28 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Parse { file, schema } => {
+        Commands::Parse { files, schema } => {
             if *schema {
                 let schema = schema_for!(Vec<Transaction>);
                 println!("{}", serde_json::to_string_pretty(&schema)?);
                 return Ok(());
             }
 
-            if let Some(path) = file {
-                let content = fs::read_to_string(path)?;
+            if !files.is_empty() {
+                let content = read_and_concatenate_files(files)?;
                 let transactions = parse_file(&content)?;
                 let json = serde_json::to_string_pretty(&transactions)?;
                 println!("{}", json);
             }
         }
         Commands::Report {
-            file,
+            files,
             year,
             format,
             output,
             fx_folder,
         } => {
-            let content = fs::read_to_string(file)?;
+            let content = read_and_concatenate_files(files)?;
 
             // Load FX cache if a folder is specified, otherwise parse without FX
             let transactions = if let Some(folder) = fx_folder {
@@ -111,7 +122,27 @@ fn main() -> Result<()> {
                 }
                 OutputFormat::Pdf => {
                     let pdf_bytes = cgt_formatter_pdf::format(&report, &transactions)?;
-                    let output_path = output.clone().unwrap_or_else(|| file.with_extension("pdf"));
+                    let (output_path, is_default) = match output {
+                        Some(p) => (p.clone(), false),
+                        None => {
+                            // Use first file's name for single input, "report.pdf" for multiple
+                            let default_path = if files.len() == 1 {
+                                files[0].with_extension("pdf")
+                            } else {
+                                std::path::PathBuf::from("report.pdf")
+                            };
+                            (default_path, true)
+                        }
+                    };
+
+                    // Refuse to overwrite existing files when using default output path
+                    if is_default && output_path.exists() {
+                        bail!(
+                            "Output file '{}' already exists. Use --output to specify a different path.",
+                            output_path.display()
+                        );
+                    }
+
                     fs::write(&output_path, pdf_bytes)?;
                     println!("PDF written to {}", output_path.display());
                 }
