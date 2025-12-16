@@ -94,12 +94,12 @@ impl Matcher {
                         Operation::Buy {
                             amount: current_amount,
                             price: current_price,
-                            expenses: current_expenses,
+                            fees: current_fees,
                         },
                         Operation::Buy {
                             amount: next_amount,
                             price: next_price,
-                            expenses: next_expenses,
+                            fees: next_fees,
                         },
                     ) => {
                         // Merge using GBP values
@@ -110,19 +110,19 @@ impl Matcher {
                             let new_price = total_cost / *current_amount;
                             *current_price = CurrencyAmount::gbp(new_price);
                         }
-                        current_expenses.gbp += next_expenses.gbp;
-                        current_expenses.amount += next_expenses.amount;
+                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                     }
                     (
                         Operation::Sell {
                             amount: current_amount,
                             price: current_price,
-                            expenses: current_expenses,
+                            fees: current_fees,
                         },
                         Operation::Sell {
                             amount: next_amount,
                             price: next_price,
-                            expenses: next_expenses,
+                            fees: next_fees,
                         },
                     ) => {
                         // Merge using GBP values
@@ -133,8 +133,8 @@ impl Matcher {
                             let new_price = total_proceeds / *current_amount;
                             *current_price = CurrencyAmount::gbp(new_price);
                         }
-                        current_expenses.gbp += next_expenses.gbp;
-                        current_expenses.amount += next_expenses.amount;
+                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                     }
                     (_, next_op) => {
                         merged.push(current);
@@ -162,11 +162,11 @@ impl Matcher {
             if let Operation::Buy {
                 amount,
                 price,
-                expenses,
+                fees,
             } = &tx.operation
             {
                 let ledger = self.ledgers.entry(tx.ticker.clone()).or_default();
-                ledger.add_acquisition(idx, tx.date, *amount, price.gbp, expenses.gbp);
+                ledger.add_acquisition(idx, tx.date, *amount, price.gbp, fees.gbp);
             }
         }
 
@@ -183,10 +183,10 @@ impl Matcher {
                 Operation::CapReturn {
                     amount: event_amount,
                     total_value,
-                    expenses: event_expenses,
+                    fees: event_fees,
                 } => {
                     if let Some(ledger) = self.ledgers.get_mut(&tx.ticker) {
-                        let net_value = total_value.gbp - event_expenses.gbp;
+                        let net_value = total_value.gbp - event_fees.gbp;
                         ledger.apply_cost_adjustment(
                             event_idx,
                             tx.date,
@@ -251,11 +251,11 @@ impl Matcher {
             Operation::Sell {
                 amount,
                 price,
-                expenses,
+                fees,
             } => {
                 let mut remaining = *amount;
                 let gross_proceeds = *amount * price.gbp;
-                let total_expenses = expenses.gbp;
+                let total_fees = fees.gbp;
 
                 // 1. Same Day matching
                 let same_day_matched =
@@ -282,7 +282,7 @@ impl Matcher {
                         tx,
                         remaining,
                         gross_proceeds,
-                        total_expenses,
+                        total_fees,
                         *amount,
                     )?;
                     if let Some(m) = s104_matched {

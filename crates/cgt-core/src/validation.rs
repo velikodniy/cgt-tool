@@ -118,7 +118,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             Operation::Buy {
                 amount,
                 price,
-                expenses,
+                fees,
             } => {
                 // Check zero quantity
                 if *amount == Decimal::ZERO {
@@ -150,13 +150,13 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative expenses (GBP value)
-                if expenses.gbp < Decimal::ZERO {
+                // Check negative fees (GBP value)
+                if fees.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative expenses: {}", expenses.gbp),
+                        message: format!("BUY with negative fees: {}", fees.gbp),
                     });
                 }
 
@@ -174,7 +174,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             Operation::Sell {
                 amount,
                 price,
-                expenses,
+                fees,
             } => {
                 // Check zero quantity
                 if *amount == Decimal::ZERO {
@@ -206,13 +206,13 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative expenses (GBP value)
-                if expenses.gbp < Decimal::ZERO {
+                // Check negative fees (GBP value)
+                if fees.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative expenses: {}", expenses.gbp),
+                        message: format!("SELL with negative fees: {}", fees.gbp),
                     });
                 }
 
@@ -322,7 +322,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             Operation::CapReturn {
                 amount,
                 total_value,
-                expenses,
+                fees,
             } => {
                 // Check zero quantity
                 if *amount == Decimal::ZERO {
@@ -357,13 +357,13 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative expenses (GBP value)
-                if expenses.gbp < Decimal::ZERO {
+                // Check negative fees (GBP value)
+                if fees.gbp < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative expenses: {}", expenses.gbp),
+                        message: format!("CAPRETURN with negative fees: {}", fees.gbp),
                     });
                 }
             }
@@ -378,26 +378,26 @@ mod tests {
     use super::*;
     use crate::models::CurrencyAmount;
 
-    fn make_buy(date: &str, ticker: &str, amount: i64, price: i64, expenses: i64) -> Transaction {
+    fn make_buy(date: &str, ticker: &str, amount: i64, price: i64, fees: i64) -> Transaction {
         Transaction {
             date: date.parse().unwrap(),
             ticker: ticker.to_string(),
             operation: Operation::Buy {
                 amount: Decimal::from(amount),
                 price: CurrencyAmount::gbp(Decimal::from(price)),
-                expenses: CurrencyAmount::gbp(Decimal::from(expenses)),
+                fees: CurrencyAmount::gbp(Decimal::from(fees)),
             },
         }
     }
 
-    fn make_sell(date: &str, ticker: &str, amount: i64, price: i64, expenses: i64) -> Transaction {
+    fn make_sell(date: &str, ticker: &str, amount: i64, price: i64, fees: i64) -> Transaction {
         Transaction {
             date: date.parse().unwrap(),
             ticker: ticker.to_string(),
             operation: Operation::Sell {
                 amount: Decimal::from(amount),
                 price: CurrencyAmount::gbp(Decimal::from(price)),
-                expenses: CurrencyAmount::gbp(Decimal::from(expenses)),
+                fees: CurrencyAmount::gbp(Decimal::from(fees)),
             },
         }
     }
@@ -453,11 +453,11 @@ mod tests {
     }
 
     #[test]
-    fn test_negative_expenses() {
+    fn test_negative_fees() {
         let txns = vec![make_buy("2020-01-01", "AAPL", 100, 150, -10)];
         let result = validate(&txns);
         assert!(!result.is_valid());
-        assert!(result.errors[0].message.contains("negative expenses"));
+        assert!(result.errors[0].message.contains("negative fees"));
     }
 
     #[test]

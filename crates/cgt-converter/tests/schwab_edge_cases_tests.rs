@@ -308,7 +308,7 @@ fn test_large_numbers_with_commas() {
 
     let result = converter.convert(&input).unwrap();
     assert!(result.cgt_content.contains("BUY XYZZ 1000 @ 1250.50 USD"));
-    assert!(result.cgt_content.contains("EXPENSES 49.95 USD"));
+    assert!(result.cgt_content.contains("FEES 49.95 USD"));
 }
 
 #[test]

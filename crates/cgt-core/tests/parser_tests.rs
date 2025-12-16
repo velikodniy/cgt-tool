@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 #[test]
 fn test_parse_valid_buy() {
-    let input = "2023-01-01 BUY AAPL 10 @ 150.00 EXPENSES 5.00";
+    let input = "2023-01-01 BUY AAPL 10 @ 150.00 FEES 5.00";
     let transactions = parse_file(input).expect("Failed to parse valid BUY transaction");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
@@ -20,7 +20,7 @@ fn test_parse_valid_buy() {
     if let Operation::Buy {
         amount,
         price,
-        expenses,
+        fees,
     } = &tx.operation
     {
         assert_eq!(*amount, Decimal::from(10));
@@ -29,11 +29,8 @@ fn test_parse_valid_buy() {
             Decimal::from_str("150.00").expect("valid decimal")
         );
         assert!(price.is_gbp());
-        assert_eq!(
-            expenses.gbp,
-            Decimal::from_str("5.00").expect("valid decimal")
-        );
-        assert!(expenses.is_gbp());
+        assert_eq!(fees.gbp, Decimal::from_str("5.00").expect("valid decimal"));
+        assert!(fees.is_gbp());
     } else {
         panic!("Expected Buy operation");
     }
@@ -70,9 +67,9 @@ fn test_parse_dividend_with_tax_keyword() {
 }
 
 #[test]
-fn test_parse_capreturn_with_expenses_keyword() {
-    let input = "2019-05-31 CAPRETURN GB00B3TYHH97 10 TOTAL 149.75 EXPENSES 0";
-    let transactions = parse_file(input).expect("Failed to parse CAPRETURN with EXPENSES keyword");
+fn test_parse_capreturn_with_fees_keyword() {
+    let input = "2019-05-31 CAPRETURN GB00B3TYHH97 10 TOTAL 149.75 FEES 0";
+    let transactions = parse_file(input).expect("Failed to parse CAPRETURN with FEES keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
     assert_eq!(
@@ -83,7 +80,7 @@ fn test_parse_capreturn_with_expenses_keyword() {
     if let Operation::CapReturn {
         amount,
         total_value,
-        expenses,
+        fees,
     } = &tx.operation
     {
         assert_eq!(*amount, Decimal::from(10));
@@ -92,8 +89,8 @@ fn test_parse_capreturn_with_expenses_keyword() {
             Decimal::from_str("149.75").expect("valid decimal")
         );
         assert!(total_value.is_gbp());
-        assert_eq!(expenses.gbp, Decimal::from(0));
-        assert!(expenses.is_gbp());
+        assert_eq!(fees.gbp, Decimal::from(0));
+        assert!(fees.is_gbp());
     } else {
         panic!("Expected CapReturn operation");
     }
@@ -144,16 +141,13 @@ fn test_parse_buy_without_currency_defaults_to_gbp() {
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
 
-    if let Operation::Buy {
-        price, expenses, ..
-    } = &tx.operation
-    {
+    if let Operation::Buy { price, fees, .. } = &tx.operation {
         assert!(price.is_gbp(), "Price should be GBP");
         assert_eq!(
             price.gbp,
             Decimal::from_str("150.00").expect("valid decimal")
         );
-        assert!(expenses.is_gbp(), "Expenses should be GBP");
+        assert!(fees.is_gbp(), "Fees should be GBP");
     } else {
         panic!("Expected Buy operation");
     }
@@ -166,10 +160,7 @@ fn test_parse_buy_with_gbp_currency_treated_as_default() {
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
 
-    if let Operation::Buy {
-        price, expenses, ..
-    } = &tx.operation
-    {
+    if let Operation::Buy { price, fees, .. } = &tx.operation {
         // Explicit GBP should be treated the same as default
         assert!(
             price.is_gbp(),
@@ -179,7 +170,7 @@ fn test_parse_buy_with_gbp_currency_treated_as_default() {
             price.gbp,
             Decimal::from_str("150.00").expect("valid decimal")
         );
-        assert!(expenses.is_gbp());
+        assert!(fees.is_gbp());
     } else {
         panic!("Expected Buy operation");
     }
@@ -209,20 +200,14 @@ fn test_parse_split_not_confused_with_currency() {
 }
 
 #[test]
-fn test_parse_expenses_keyword_not_confused_with_currency() {
-    // Make sure EXPENSES keyword is parsed correctly, not as currency
-    let input = "2024-01-15 BUY AAPL 100 @ 150.00 EXPENSES 5.00";
+fn test_parse_fees_keyword_not_confused_with_currency() {
+    // Make sure FEES keyword is parsed correctly, not as currency
+    let input = "2024-01-15 BUY AAPL 100 @ 150.00 FEES 5.00";
     let transactions = parse_file(input).expect("Failed to parse");
 
-    if let Operation::Buy {
-        price, expenses, ..
-    } = &transactions[0].operation
-    {
+    if let Operation::Buy { price, fees, .. } = &transactions[0].operation {
         assert!(price.is_gbp());
-        assert_eq!(
-            expenses.gbp,
-            Decimal::from_str("5.00").expect("valid decimal")
-        );
+        assert_eq!(fees.gbp, Decimal::from_str("5.00").expect("valid decimal"));
     } else {
         panic!("Expected Buy operation");
     }

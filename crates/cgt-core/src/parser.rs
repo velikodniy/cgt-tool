@@ -269,14 +269,14 @@ fn parse_buy_sell(
         .ok_or(CgtError::UnexpectedParserState { expected: "price" })?;
     let price = parse_money(price_pair, date, ctx)?;
 
-    // Optional expenses clause
-    let expenses = if let Some(expenses_clause) = inner.next() {
+    // Optional fees clause
+    let fees = if let Some(fees_clause) = inner.next() {
         let money_pair =
-            expenses_clause
+            fees_clause
                 .into_inner()
                 .next()
                 .ok_or(CgtError::UnexpectedParserState {
-                    expected: "expenses amount",
+                    expected: "fees amount",
                 })?;
         parse_money(money_pair, date, ctx)?
     } else {
@@ -287,13 +287,13 @@ fn parse_buy_sell(
         Operation::Buy {
             amount,
             price,
-            expenses,
+            fees,
         }
     } else {
         Operation::Sell {
             amount,
             price,
-            expenses,
+            fees,
         }
     };
 
@@ -381,17 +381,17 @@ fn parse_capreturn(
     })?;
     let total_value = parse_money(total_value_pair, date, ctx)?;
 
-    let expenses_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
-        expected: "expenses",
-    })?;
-    let expenses = parse_money(expenses_pair, date, ctx)?;
+    let fees_pair = inner
+        .next()
+        .ok_or(CgtError::UnexpectedParserState { expected: "fees" })?;
+    let fees = parse_money(fees_pair, date, ctx)?;
 
     Ok((
         ticker,
         Operation::CapReturn {
             amount,
             total_value,
-            expenses,
+            fees,
         },
     ))
 }

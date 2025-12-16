@@ -111,8 +111,8 @@ fn build_tax_years(report: &TaxReport, transactions: &[Transaction]) -> Vec<Valu
             let disposals: Vec<Value> = sorted_disposals
                 .into_iter()
                 .map(|d| {
-                    let (sell_price, sell_expenses) = find_sell_details(d, transactions);
-                    build_disposal_dict(d, sell_price, sell_expenses).into_value()
+                    let (sell_price, sell_fees) = find_sell_details(d, transactions);
+                    build_disposal_dict(d, sell_price, sell_fees).into_value()
                 })
                 .collect();
 
@@ -152,13 +152,13 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
             Operation::Buy {
                 amount,
                 price,
-                expenses,
-            } => Some((t.date, &t.ticker, "BUY", *amount, price, expenses)),
+                fees,
+            } => Some((t.date, &t.ticker, "BUY", *amount, price, fees)),
             Operation::Sell {
                 amount,
                 price,
-                expenses,
-            } => Some((t.date, &t.ticker, "SELL", *amount, price, expenses)),
+                fees,
+            } => Some((t.date, &t.ticker, "SELL", *amount, price, fees)),
             _ => None,
         })
         .collect();
@@ -167,14 +167,14 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
 
     let rows: Vec<Value> = txns
         .into_iter()
-        .flat_map(|(date, ticker, op_type, amount, price, expenses)| {
+        .flat_map(|(date, ticker, op_type, amount, price, fees)| {
             [
                 format_date(date).into_value(),
                 op_type.into_value(),
                 ticker.clone().into_value(),
                 format_decimal(amount).into_value(),
                 formatter().format_amount(price).into_value(),
-                formatter().format_amount(expenses).into_value(),
+                formatter().format_amount(fees).into_value(),
             ]
         })
         .collect();
@@ -239,11 +239,9 @@ fn find_sell_details(disposal: &Disposal, transactions: &[Transaction]) -> (Deci
         .find_map(|t| {
             if t.ticker == disposal.ticker
                 && t.date == disposal.date
-                && let Operation::Sell {
-                    price, expenses, ..
-                } = &t.operation
+                && let Operation::Sell { price, fees, .. } = &t.operation
             {
-                return Some((price.gbp, expenses.gbp));
+                return Some((price.gbp, fees.gbp));
             }
             None
         })
@@ -256,7 +254,7 @@ fn find_sell_details(disposal: &Disposal, transactions: &[Transaction]) -> (Deci
         })
 }
 
-fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_expenses: Decimal) -> Dict {
+fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_fees: Decimal) -> Dict {
     let mut dict = Dict::new();
 
     let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
@@ -292,12 +290,12 @@ fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_expenses: 
     dict.insert("matches".into(), matches.into_value());
 
     // Proceeds calculation
-    let proceeds_calc = if sell_expenses > Decimal::ZERO {
+    let proceeds_calc = if sell_fees > Decimal::ZERO {
         format!(
             "{} × {} - {} fees = {}",
             format_decimal(disposal.quantity),
             format_price(sell_price),
-            format_currency(sell_expenses),
+            format_currency(sell_fees),
             format_currency(disposal.proceeds)
         )
     } else {

@@ -23,7 +23,7 @@ cmd_unsplit = { "UNSPLIT" ~ split_args }
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
 // Amount with optional currency code (ISO 4217, 3 uppercase letters)
-// Must not match keywords (TAX, EXPENSES, TOTAL, RATIO, BUY, SELL)
+// Must not match keywords (TAX, FEES, TOTAL, RATIO, BUY, SELL)
 money = { decimal ~ currency_code? }
 currency_code = @{
     !("TAX" | "BUY") ~
@@ -31,15 +31,15 @@ currency_code = @{
     !(ASCII_ALPHANUMERIC | "-")
 }
 
-// BUY/SELL: ticker amount @ price [currency] [EXPENSES expenses [currency]]
-buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ expenses_clause? }
-expenses_clause = { "EXPENSES" ~ money }
+// BUY/SELL: ticker amount @ price [currency] [FEES fees [currency]]
+buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ fees_clause? }
+fees_clause = { "FEES" ~ money }
 
 // DIVIDEND: ticker amount TOTAL value [currency] TAX tax [currency]
 dividend_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "TAX" ~ money }
 
-// CAPRETURN: ticker amount TOTAL value [currency] EXPENSES expenses [currency]
-capreturn_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "EXPENSES" ~ money }
+// CAPRETURN: ticker amount TOTAL value [currency] FEES fees [currency]
+capreturn_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "FEES" ~ money }
 
 // SPLIT/UNSPLIT: ticker RATIO ratio
 split_args = { ticker ~ "RATIO" ~ ratio }

@@ -12,7 +12,7 @@ The system SHALL parse: BUY, SELL, DIVIDEND, CAPRETURN, SPLIT, UNSPLIT.
 
 #### Scenario: Parse BUY/SELL
 
-- **WHEN** a line contains `YYYY-MM-DD BUY|SELL TICKER QUANTITY @ PRICE [EXPENSES AMOUNT]`
+- **WHEN** a line contains `YYYY-MM-DD BUY|SELL TICKER QUANTITY @ PRICE [FEES AMOUNT]`
 - **THEN** extract all fields into a transaction record
 
 #### Scenario: Parse DIVIDEND

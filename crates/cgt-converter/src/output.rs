@@ -32,7 +32,7 @@ pub fn format_buy(
     if let Some(exp) = expenses
         && exp > Decimal::ZERO
     {
-        line.push_str(&format!(" EXPENSES {} {}", format_amount(exp), currency));
+        line.push_str(&format!(" FEES {} {}", format_amount(exp), currency));
     }
 
     line
@@ -59,7 +59,7 @@ pub fn format_sell(
     if let Some(exp) = expenses
         && exp > Decimal::ZERO
     {
-        line.push_str(&format!(" EXPENSES {} {}", format_amount(exp), currency));
+        line.push_str(&format!(" FEES {} {}", format_amount(exp), currency));
     }
 
     line
@@ -142,10 +142,7 @@ mod tests {
             "USD",
             Some(dec!(4.95)),
         );
-        assert_eq!(
-            result,
-            "2023-05-10 BUY XYZZ 10 @ 130.00 USD EXPENSES 4.95 USD"
-        );
+        assert_eq!(result, "2023-05-10 BUY XYZZ 10 @ 130.00 USD FEES 4.95 USD");
     }
 
     #[test]
@@ -161,7 +158,7 @@ mod tests {
         );
         assert_eq!(
             result,
-            "2023-06-14 SELL XYZZ 62.601495 @ 113.75 USD EXPENSES 0.17 USD"
+            "2023-06-14 SELL XYZZ 62.601495 @ 113.75 USD FEES 0.17 USD"
         );
     }
 

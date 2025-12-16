@@ -24,7 +24,7 @@ pub fn match_bed_and_breakfast(
     let Operation::Sell {
         amount: sell_amount,
         price: sell_price,
-        expenses: sell_expenses,
+        fees: sell_fees,
     } = &sell_tx.operation
     else {
         return Ok(results);
@@ -42,19 +42,19 @@ pub fn match_bed_and_breakfast(
 
         match bnb_result {
             Some((matched_qty, cost, acquisition_date)) => {
-                // Calculate proportional proceeds and expenses (using GBP values)
+                // Calculate proportional proceeds and fees (using GBP values)
                 let proportion = matched_qty / *sell_amount;
                 let proceeds = matched_qty * sell_price.gbp;
-                let expenses = sell_expenses.gbp * proportion;
+                let fees = sell_fees.gbp * proportion;
 
-                let gain_or_loss = proceeds - cost - expenses;
+                let gain_or_loss = proceeds - cost - fees;
 
                 results.push(MatchResult {
                     disposal_date: sell_tx.date,
                     disposal_ticker: sell_tx.ticker.clone(),
                     quantity: matched_qty,
                     proceeds,
-                    allowable_cost: cost + expenses,
+                    allowable_cost: cost + fees,
                     gain_or_loss,
                     rule: MatchRule::BedAndBreakfast,
                     acquisition_date: Some(acquisition_date),

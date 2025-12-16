@@ -131,12 +131,12 @@ pub enum Operation {
     Buy {
         amount: Decimal,
         price: CurrencyAmount,
-        expenses: CurrencyAmount,
+        fees: CurrencyAmount,
     },
     Sell {
         amount: Decimal,
         price: CurrencyAmount,
-        expenses: CurrencyAmount,
+        fees: CurrencyAmount,
     },
     Dividend {
         amount: Decimal,
@@ -147,7 +147,7 @@ pub enum Operation {
     CapReturn {
         amount: Decimal,
         total_value: CurrencyAmount,
-        expenses: CurrencyAmount,
+        fees: CurrencyAmount,
     },
     Split {
         ratio: Decimal,

@@ -9,13 +9,13 @@ use std::collections::HashMap;
 struct AcquisitionTracker {
     amount: Decimal,
     price: Decimal,
-    expenses: Decimal,
+    fees: Decimal,
     cost_offset: Decimal, // Positive for DIVIDEND (increases cost), negative for CAPRETURN (reduces cost)
 }
 
 impl AcquisitionTracker {
     fn adjusted_cost(&self) -> Decimal {
-        let base_cost = (self.amount * self.price) + self.expenses;
+        let base_cost = (self.amount * self.price) + self.fees;
         base_cost + self.cost_offset
     }
 
@@ -59,12 +59,12 @@ pub fn calculate(
                         Operation::Buy {
                             amount: current_amount,
                             price: current_price,
-                            expenses: current_expenses,
+                            fees: current_fees,
                         },
                         Operation::Buy {
                             amount: next_amount,
                             price: next_price,
-                            expenses: next_expenses,
+                            fees: next_fees,
                         },
                     ) => {
                         // Merge using GBP values
@@ -73,19 +73,19 @@ pub fn calculate(
                         *current_amount += next_amount;
                         let new_price_gbp = total_cost / *current_amount;
                         *current_price = CurrencyAmount::gbp(new_price_gbp);
-                        current_expenses.gbp += next_expenses.gbp;
-                        current_expenses.amount += next_expenses.amount;
+                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                     }
                     (
                         Operation::Sell {
                             amount: current_amount,
                             price: current_price,
-                            expenses: current_expenses,
+                            fees: current_fees,
                         },
                         Operation::Sell {
                             amount: next_amount,
                             price: next_price,
-                            expenses: next_expenses,
+                            fees: next_fees,
                         },
                     ) => {
                         // Merge using GBP values
@@ -94,8 +94,8 @@ pub fn calculate(
                         *current_amount += next_amount;
                         let new_price_gbp = total_proceeds / *current_amount;
                         *current_price = CurrencyAmount::gbp(new_price_gbp);
-                        current_expenses.gbp += next_expenses.gbp;
-                        current_expenses.amount += next_expenses.amount;
+                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                     }
                     (_, next_op) => {
                         merged.push(current);
@@ -122,11 +122,11 @@ pub fn calculate(
             Operation::Buy {
                 amount,
                 price,
-                expenses,
+                fees,
             } => Some(AcquisitionTracker {
                 amount: *amount,
                 price: price.gbp,
-                expenses: expenses.gbp,
+                fees: fees.gbp,
                 cost_offset: Decimal::ZERO,
             }),
             _ => None,
@@ -138,11 +138,11 @@ pub fn calculate(
         if let Operation::CapReturn {
             amount: event_amount,
             total_value,
-            expenses: event_expenses,
+            fees: event_fees,
         } = &tx.operation
         {
             let total_value = total_value.gbp;
-            let event_expenses = event_expenses.gbp;
+            let event_fees = event_fees.gbp;
             // Track how much of each acquisition is left after sells before this event
             let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
                 .iter()
@@ -170,7 +170,7 @@ pub fn calculate(
             }
 
             // Apportion the capital return value to acquisitions based on amounts left
-            let net_value = total_value - event_expenses;
+            let net_value = total_value - event_fees;
             for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
                 if acq_idx >= event_idx {
                     break;
@@ -616,12 +616,12 @@ fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {
     if let Operation::Sell {
         amount,
         price,
-        expenses,
+        fees,
     } = &current_transaction.operation
     {
         let gross = qty * price.gbp;
         let exp_portion = if *amount != Decimal::ZERO {
-            expenses.gbp * (qty / *amount)
+            fees.gbp * (qty / *amount)
         } else {
             Decimal::ZERO
         };

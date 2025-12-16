@@ -235,7 +235,7 @@ fn test_proceeds_deduct_selling_expenses() {
     // Reference: CG15250 (Allowable Incidental Costs)
     let cgt_content = r#"
 2024-01-01 BUY ACME 100 @ 10.00 GBP
-2024-06-01 SELL ACME 100 @ 15.00 GBP EXPENSES 25.00 GBP
+2024-06-01 SELL ACME 100 @ 15.00 GBP FEES 25.00 GBP
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
@@ -262,7 +262,7 @@ fn test_proceeds_with_zero_expenses() {
     // When expenses are zero, proceeds should equal gross sale amount
     let cgt_content = r#"
 2024-01-01 BUY ACME 100 @ 10.00 GBP
-2024-06-01 SELL ACME 100 @ 15.00 GBP EXPENSES 0.00 GBP
+2024-06-01 SELL ACME 100 @ 15.00 GBP FEES 0.00 GBP
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
@@ -281,7 +281,7 @@ fn test_expenses_apportioned_in_partial_sale() {
     // When selling part of a position, expenses should be apportioned
     let cgt_content = r#"
 2024-01-01 BUY ACME 100 @ 10.00 GBP
-2024-06-01 SELL ACME 40 @ 15.00 GBP EXPENSES 20.00 GBP
+2024-06-01 SELL ACME 40 @ 15.00 GBP FEES 20.00 GBP
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
@@ -304,7 +304,7 @@ fn test_expenses_apportioned_across_match_rules() {
     // (Same-day, B&B, S104)
     let cgt_content = r#"
 2024-01-01 BUY ACME 100 @ 10.00 GBP
-2024-06-01 SELL ACME 150 @ 15.00 GBP EXPENSES 30.00 GBP
+2024-06-01 SELL ACME 150 @ 15.00 GBP FEES 30.00 GBP
 2024-06-01 BUY ACME 50 @ 14.00 GBP
 "#;
 

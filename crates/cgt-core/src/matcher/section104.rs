@@ -15,7 +15,7 @@ pub fn match_section_104(
     sell_tx: &Transaction,
     remaining: Decimal,
     gross_proceeds: Decimal,
-    total_expenses: Decimal,
+    total_fees: Decimal,
     total_sell_amount: Decimal,
 ) -> Result<Option<MatchResult>, CgtError> {
     if remaining == Decimal::ZERO {
@@ -46,19 +46,19 @@ pub fn match_section_104(
     pool.quantity -= matched_qty;
     pool.total_cost -= cost;
 
-    // Calculate proportional proceeds and expenses
+    // Calculate proportional proceeds and fees
     let proportion = matched_qty / total_sell_amount;
     let proceeds = gross_proceeds * proportion;
-    let expenses = total_expenses * proportion;
+    let fees = total_fees * proportion;
 
-    let gain_or_loss = proceeds - cost - expenses;
+    let gain_or_loss = proceeds - cost - fees;
 
     Ok(Some(MatchResult {
         disposal_date: sell_tx.date,
         disposal_ticker: sell_tx.ticker.clone(),
         quantity: matched_qty,
         proceeds,
-        allowable_cost: cost + expenses,
+        allowable_cost: cost + fees,
         gain_or_loss,
         rule: MatchRule::Section104,
         acquisition_date: None,

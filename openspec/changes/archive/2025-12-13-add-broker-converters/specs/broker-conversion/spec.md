@@ -29,12 +29,12 @@ The system SHALL parse Charles Schwab transaction CSV exports containing columns
 #### Scenario: Parse basic buy transaction
 
 - **WHEN** CSV contains row `07/02/2020,Buy,VUAG,VUAG INC,$30.2,30.5,$4,-$925.1`
-- **THEN** output `2020-07-02 BUY VUAG 30.5 @ 30.2 USD EXPENSES 4 USD`
+- **THEN** output `2020-07-02 BUY VUAG 30.5 @ 30.2 USD FEES 4 USD`
 
 #### Scenario: Parse sell transaction
 
 - **WHEN** CSV contains row `06/06/2020,Sell,VUAG,VUAG INC,$33,90,$5,$2965`
-- **THEN** output `2020-06-06 SELL VUAG 90 @ 33 USD EXPENSES 5 USD`
+- **THEN** output `2020-06-06 SELL VUAG 90 @ 33 USD FEES 5 USD`
 
 #### Scenario: Parse dividend
 

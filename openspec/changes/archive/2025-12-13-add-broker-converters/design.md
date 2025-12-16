@@ -129,10 +129,10 @@ Output includes:
 2023-04-25 BUY GOOG 67.2 @ 125.6445 USD
 
 # Regular purchase
-2023-05-10 BUY GOOG 10 @ 130.00 USD EXPENSES 4.95 USD
+2023-05-10 BUY GOOG 10 @ 130.00 USD FEES 4.95 USD
 
 # Sale (partial - tax withholding)
-2023-06-14 SELL GOOG 62.601495 @ 113.75 USD EXPENSES 0.17 USD
+2023-06-14 SELL GOOG 62.601495 @ 113.75 USD FEES 0.17 USD
 ```
 
 ### Decision 5: Schwab Transaction Type Mapping

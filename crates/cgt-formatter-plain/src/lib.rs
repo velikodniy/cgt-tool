@@ -98,7 +98,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             Operation::Buy {
                 amount,
                 price,
-                expenses,
+                fees,
             } => {
                 let _ = writeln!(
                     out,
@@ -107,13 +107,13 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_decimal(*amount),
                     t.ticker,
                     formatter().format_unit(price),
-                    formatter().format_unit(expenses)
+                    formatter().format_unit(fees)
                 );
             }
             Operation::Sell {
                 amount,
                 price,
-                expenses,
+                fees,
             } => {
                 let _ = writeln!(
                     out,
@@ -122,7 +122,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     format_decimal(*amount),
                     t.ticker,
                     formatter().format_unit(price),
-                    formatter().format_unit(expenses)
+                    formatter().format_unit(fees)
                 );
             }
             _ => {}
@@ -258,15 +258,12 @@ fn format_disposal(
     }
 
     // Calculation
-    let (sell_price, sell_expenses) = transactions
+    let (sell_price, sell_fees) = transactions
         .iter()
         .find_map(|t| {
             if t.ticker == disposal.ticker && t.date == disposal.date {
-                if let Operation::Sell {
-                    price, expenses, ..
-                } = &t.operation
-                {
-                    Some((price.gbp, expenses.gbp))
+                if let Operation::Sell { price, fees, .. } = &t.operation {
+                    Some((price.gbp, fees.gbp))
                 } else {
                     None
                 }
@@ -282,13 +279,13 @@ fn format_disposal(
             }
         });
 
-    if sell_expenses > Decimal::ZERO {
+    if sell_fees > Decimal::ZERO {
         let _ = writeln!(
             out,
             "   Proceeds: {} × £{} - {} fees = {}",
             format_decimal(disposal.quantity),
             format_decimal(sell_price),
-            format_currency(sell_expenses),
+            format_currency(sell_fees),
             format_currency(disposal.proceeds)
         );
     } else {
@@ -362,7 +359,7 @@ mod tests {
             operation: Operation::Sell {
                 amount: Decimal::from(10),
                 price: CurrencyAmount::gbp(Decimal::new(46702, 4)),
-                expenses: CurrencyAmount::gbp(Decimal::new(125, 1)),
+                fees: CurrencyAmount::gbp(Decimal::new(125, 1)),
             },
         }];
 

@@ -16,10 +16,10 @@ fn test_basic_buy_sell() {
 
     assert!(result.cgt_content.contains("2023-04-25 BUY XYZZ"));
     assert!(result.cgt_content.contains("@ 125.50 USD"));
-    assert!(result.cgt_content.contains("EXPENSES 4.95 USD"));
+    assert!(result.cgt_content.contains("FEES 4.95 USD"));
     assert!(result.cgt_content.contains("2023-05-10 SELL XYZZ"));
     assert!(result.cgt_content.contains("@ 130.00 USD"));
-    assert!(result.cgt_content.contains("EXPENSES 2.50 USD"));
+    assert!(result.cgt_content.contains("FEES 2.50 USD"));
 
     // Should contain header
     assert!(
