@@ -6,19 +6,19 @@ use std::path::Path;
 
 #[test]
 fn test_cli_parse_fails_without_args() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.assert().failure();
 }
 
 #[test]
 fn test_cli_report_fails_without_file() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("report").assert().failure();
 }
 
 #[test]
 fn test_cli_parse_success() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("parse")
         .arg("../../tests/inputs/Simple.cgt")
         .assert()
@@ -64,7 +64,7 @@ fn test_plain_format_outputs() {
         let expected_output = fs::read_to_string(&expected_path)
             .unwrap_or_else(|e| panic!("Failed to read {}: {}", expected_path, e));
 
-        let mut cmd = cargo_bin_cmd!("cgt-cli");
+        let mut cmd = cargo_bin_cmd!("cgt-tool");
         let output = cmd
             .arg("report")
             .arg("--year")
@@ -102,7 +102,7 @@ fn test_pdf_format_generates_valid_pdfs() {
         // Clean up any existing file
         let _ = fs::remove_file(&output_path);
 
-        let mut cmd = cargo_bin_cmd!("cgt-cli");
+        let mut cmd = cargo_bin_cmd!("cgt-tool");
         let output = cmd
             .arg("report")
             .arg("--year")
@@ -145,7 +145,7 @@ fn test_pdf_format_generates_valid_pdfs() {
 
 #[test]
 fn test_convert_schwab_basic() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
         .arg("../cgt-converter/tests/fixtures/schwab/transactions_basic.csv")
@@ -159,7 +159,7 @@ fn test_convert_schwab_basic() {
 
 #[test]
 fn test_convert_schwab_with_awards() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
         .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")
@@ -175,7 +175,7 @@ fn test_convert_schwab_with_awards() {
 
 #[test]
 fn test_convert_schwab_rsu_without_awards_fails() {
-    let mut cmd = cargo_bin_cmd!("cgt-cli");
+    let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
         .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")

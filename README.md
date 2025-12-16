@@ -8,25 +8,25 @@ A CLI tool to calculate Capital Gains Tax for UK assets using the "Same Day", "B
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/vadim-projects/cgt-tool/releases):
 
-| Platform                   | Download                     |
-| -------------------------- | ---------------------------- |
-| Linux (x86_64)             | `cgt-cli-linux-x86_64`       |
-| Linux (ARM64/Raspberry Pi) | `cgt-cli-linux-aarch64`      |
-| macOS (Intel)              | `cgt-cli-macos-x86_64`       |
-| macOS (Apple Silicon)      | `cgt-cli-macos-aarch64`      |
-| Windows (x86_64)           | `cgt-cli-windows-x86_64.exe` |
+| Platform                   | Download                      |
+| -------------------------- | ----------------------------- |
+| Linux (x86_64)             | `cgt-tool-linux-x86_64`       |
+| Linux (ARM64/Raspberry Pi) | `cgt-tool-linux-aarch64`      |
+| macOS (Intel)              | `cgt-tool-macos-x86_64`       |
+| macOS (Apple Silicon)      | `cgt-tool-macos-aarch64`      |
+| Windows (x86_64)           | `cgt-tool-windows-x86_64.exe` |
 
 After downloading, make the binary executable (Linux/macOS):
 
 ```bash
-chmod +x cgt-cli-*
-./cgt-cli-linux-x86_64 --help
+chmod +x cgt-tool-*
+./cgt-tool-linux-x86_64 --help
 ```
 
 Optionally, move it to a directory in your PATH:
 
 ```bash
-sudo mv cgt-cli-linux-x86_64 /usr/local/bin/cgt-cli
+sudo mv cgt-tool-linux-x86_64 /usr/local/bin/cgt-tool
 ```
 
 ### Build from Source
@@ -41,7 +41,7 @@ Or build manually:
 
 ```bash
 cargo build --release -p cgt-cli
-./target/release/cgt-cli --help
+./target/release/cgt-tool --help
 ```
 
 ## Usage
@@ -54,13 +54,13 @@ Convert broker export files to CGT DSL format:
 
 ```bash
 # Basic conversion (transactions only)
-cgt-cli convert schwab transactions.csv
+cgt-tool convert schwab transactions.csv
 
 # With RSU vesting data (requires equity awards file)
-cgt-cli convert schwab transactions.csv --awards awards.json
+cgt-tool convert schwab transactions.csv --awards awards.json
 
 # Save to file instead of stdout
-cgt-cli convert schwab transactions.csv --output output.cgt
+cgt-tool convert schwab transactions.csv --output output.cgt
 ```
 
 **Supported Schwab transaction types:**
@@ -102,7 +102,7 @@ cgt-cli convert schwab transactions.csv --output output.cgt
 Verify your input file is parsed correctly:
 
 ```bash
-cgt-cli parse transactions.cgt
+cgt-tool parse transactions.cgt
 ```
 
 Output (JSON):
@@ -133,7 +133,7 @@ Output (JSON):
 Calculate gains and losses for a specific tax year:
 
 ```bash
-cgt-cli report transactions.cgt --year 2024
+cgt-tool report transactions.cgt --year 2024
 ```
 
 Output formats: `--format plain` (default), `--format json`, or `--format pdf`
@@ -143,13 +143,13 @@ Output formats: `--format plain` (default), `--format json`, or `--format pdf`
 Generate a professional PDF document for tax reporting:
 
 ```bash
-cgt-cli report transactions.cgt --year 2024 --format pdf
+cgt-tool report transactions.cgt --year 2024 --format pdf
 ```
 
 By default, the PDF is saved to `transactions.pdf`. Use `--output` for a custom path:
 
 ```bash
-cgt-cli report transactions.cgt --year 2024 --format pdf --output report.pdf
+cgt-tool report transactions.cgt --year 2024 --format pdf --output report.pdf
 ```
 
 Example plain text output:
@@ -228,7 +228,7 @@ The tool uses HMRC monthly average exchange rates for currency conversion.
 **Custom rates**: To use additional or updated rates, provide a folder containing XML files:
 
 ```bash
-cgt-cli report transactions.cgt --year 2024 --fx-folder ./my-rates
+cgt-tool report transactions.cgt --year 2024 --fx-folder ./my-rates
 ```
 
 **Downloading rates**: Use the included script to download missing or updated rates:
@@ -241,7 +241,7 @@ cgt-cli report transactions.cgt --year 2024 --fx-folder ./my-rates
 ./scripts/download-fx-rates.sh ./my-rates
 ```
 
-**Rate source**: Monthly XML files are available from the UK Government. FX parsing is IO-free and WASM-friendly; `cgt-cli` handles reading XML files and passes their contents into the parser:
+**Rate source**: Monthly XML files are available from the UK Government. FX parsing is IO-free and WASM-friendly; `cgt-tool` handles reading XML files and passes their contents into the parser:
 
 - Current rates (2021+): https://www.trade-tariff.service.gov.uk/exchange_rates
 - API: `https://www.trade-tariff.service.gov.uk/api/v2/exchange_rates/files/monthly_xml_YYYY-MM.xml`

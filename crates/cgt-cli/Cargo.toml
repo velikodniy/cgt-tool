@@ -3,6 +3,10 @@ name = "cgt-cli"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "cgt-tool"
+path = "src/main.rs"
+
 [dependencies]
 cgt-core = { path = "../cgt-core" }
 cgt-formatter-plain = { path = "../cgt-formatter-plain" }

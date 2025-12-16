@@ -9,7 +9,7 @@ CLI tool for UK Capital Gains Tax calculation. Implements HMRC share matching ru
 - **Language**: Rust 2024 edition
 - **Crates**:
   - `cgt-core` — Parsing, calculation engine, data model
-  - `cgt-cli` — CLI binary (clap)
+  - `cgt-cli` — CLI binary `cgt-tool` (clap)
   - `cgt-formatter-plain` — Plain text reports
   - `cgt-formatter-pdf` — PDF reports (typst-as-lib)
   - `cgt-fx` — FX conversion (HMRC rates)

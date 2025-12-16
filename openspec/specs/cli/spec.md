@@ -12,7 +12,7 @@ The system SHALL provide `parse` to validate and output transactions as JSON.
 
 #### Scenario: Parse file
 
-- **WHEN** `cgt-cli parse file.cgt` is run
+- **WHEN** `cgt-tool parse file.cgt` is run
 - **THEN** output parsed transactions as JSON to stdout
 - **AND** output errors with line numbers to stderr if invalid
 
@@ -22,7 +22,7 @@ The system SHALL provide `report` to generate CGT reports.
 
 #### Scenario: Generate report
 
-- **WHEN** `cgt-cli report file.cgt --year 2024` is run
+- **WHEN** `cgt-tool report file.cgt --year 2024` is run
 - **THEN** generate report for tax year 2024/25
 
 ### Requirement: Format Selection

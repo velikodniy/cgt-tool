@@ -18,29 +18,29 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact_name: cgt-cli
-            asset_name: cgt-cli-linux-x86_64
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-linux-x86_64
 
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
-            artifact_name: cgt-cli
-            asset_name: cgt-cli-linux-aarch64
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-linux-aarch64
             use_cross: true
 
           - target: x86_64-apple-darwin
             os: macos-latest
-            artifact_name: cgt-cli
-            asset_name: cgt-cli-macos-x86_64
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-macos-x86_64
 
           - target: aarch64-apple-darwin
             os: macos-14
-            artifact_name: cgt-cli
-            asset_name: cgt-cli-macos-aarch64
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-macos-aarch64
 
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            artifact_name: cgt-cli.exe
-            asset_name: cgt-cli-windows-x86_64.exe
+            artifact_name: cgt-tool.exe
+            asset_name: cgt-tool-windows-x86_64.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -138,7 +138,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/cgt-cli-*
+            release/cgt-tool-*
             release/checksums.txt
           generate_release_notes: true
           draft: false
