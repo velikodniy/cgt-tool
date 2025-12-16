@@ -15,4 +15,4 @@ jobs:
           token: ${{ secrets.TAP_REPO_TOKEN }}
           repository: velikodniy/homebrew-tap
           event-type: cgt-tool-release
-          client-payload: '{"tag": "${{ github.event.release.tag_name }}"}'
+          client-payload: '{"tag_name": "${{ github.event.release.tag_name }}"}'
