@@ -53,12 +53,11 @@ impl CurrencyFormatter {
     /// For totals, proceeds, costs - values that should be shown rounded.
     /// Shows original currency in parentheses only if it's not GBP.
     pub fn format_amount(&self, amount: &CurrencyAmount) -> String {
-        let gbp = format_currency(amount.gbp);
         if amount.is_gbp() {
-            gbp
+            format_currency(amount.amount)
         } else {
             let orig = format_decimal_fixed(amount.amount, amount.minor_units() as u32);
-            format!("{} ({} {})", gbp, orig, amount.code())
+            format!("{} {}", orig, amount.code())
         }
     }
 
@@ -195,6 +194,7 @@ pub fn format_tax_year(start_year: u16) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cgt_money::Currency;
 
     #[test]
     fn test_format_currency_positive() {
@@ -264,21 +264,21 @@ mod tests {
     #[test]
     fn test_currency_formatter_format_amount_gbp() {
         let formatter = CurrencyFormatter::uk();
-        let amount = CurrencyAmount::gbp(Decimal::new(12345, 2));
+        let amount = CurrencyAmount::new(Decimal::new(12345, 2), Currency::GBP);
         assert_eq!(formatter.format_amount(&amount), "£123.45");
     }
 
     #[test]
     fn test_currency_formatter_format_unit_gbp() {
         let formatter = CurrencyFormatter::uk();
-        let amount = CurrencyAmount::gbp(Decimal::new(46702, 4));
+        let amount = CurrencyAmount::new(Decimal::new(46702, 4), Currency::GBP);
         assert_eq!(formatter.format_unit(&amount), "£4.6702");
     }
 
     #[test]
     fn test_currency_formatter_format_unit_trims_zeros() {
         let formatter = CurrencyFormatter::uk();
-        let amount = CurrencyAmount::gbp(Decimal::new(12500, 2));
+        let amount = CurrencyAmount::new(Decimal::new(12500, 2), Currency::GBP);
         assert_eq!(formatter.format_unit(&amount), "£125");
     }
 }

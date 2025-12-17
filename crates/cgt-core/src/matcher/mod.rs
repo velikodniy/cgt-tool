@@ -12,6 +12,7 @@ pub use acquisition_ledger::{AcquisitionLedger, AcquisitionLot};
 
 use crate::error::CgtError;
 use crate::models::{CurrencyAmount, MatchRule, Operation, Section104Holding, Transaction};
+use cgt_money::Currency;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -103,14 +104,14 @@ impl Matcher {
                         },
                     ) => {
                         // Merge using GBP values
-                        let total_cost =
-                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
+                        let total_cost = (*current_amount * current_price.amount)
+                            + (next_amount * next_price.amount);
                         *current_amount += next_amount;
                         if *current_amount != Decimal::ZERO {
                             let new_price = total_cost / *current_amount;
-                            *current_price = CurrencyAmount::gbp(new_price);
+                            *current_price = CurrencyAmount::new(new_price, Currency::GBP);
                         }
-                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                         current_fees.amount += next_fees.amount;
                     }
                     (
@@ -126,14 +127,14 @@ impl Matcher {
                         },
                     ) => {
                         // Merge using GBP values
-                        let total_proceeds =
-                            (*current_amount * current_price.gbp) + (next_amount * next_price.gbp);
+                        let total_proceeds = (*current_amount * current_price.amount)
+                            + (next_amount * next_price.amount);
                         *current_amount += next_amount;
                         if *current_amount != Decimal::ZERO {
                             let new_price = total_proceeds / *current_amount;
-                            *current_price = CurrencyAmount::gbp(new_price);
+                            *current_price = CurrencyAmount::new(new_price, Currency::GBP);
                         }
-                        current_fees.gbp += next_fees.gbp;
+                        current_fees.amount += next_fees.amount;
                         current_fees.amount += next_fees.amount;
                     }
                     (_, next_op) => {
@@ -166,7 +167,7 @@ impl Matcher {
             } = &tx.operation
             {
                 let ledger = self.ledgers.entry(tx.ticker.clone()).or_default();
-                ledger.add_acquisition(idx, tx.date, *amount, price.gbp, fees.gbp);
+                ledger.add_acquisition(idx, tx.date, *amount, price.amount, fees.amount);
             }
         }
 
@@ -186,7 +187,7 @@ impl Matcher {
                     fees: event_fees,
                 } => {
                     if let Some(ledger) = self.ledgers.get_mut(&tx.ticker) {
-                        let net_value = total_value.gbp - event_fees.gbp;
+                        let net_value = total_value.amount - event_fees.amount;
                         ledger.apply_cost_adjustment(
                             event_idx,
                             tx.date,
@@ -206,7 +207,7 @@ impl Matcher {
                             event_idx,
                             tx.date,
                             *event_amount,
-                            total_value.gbp, // Positive = increase cost
+                            total_value.amount, // Positive = increase cost
                             transactions,
                         );
                     }
@@ -254,8 +255,8 @@ impl Matcher {
                 fees,
             } => {
                 let mut remaining = *amount;
-                let gross_proceeds = *amount * price.gbp;
-                let total_fees = fees.gbp;
+                let gross_proceeds = *amount * price.amount;
+                let total_fees = fees.amount;
 
                 // 1. Same Day matching
                 let same_day_matched =

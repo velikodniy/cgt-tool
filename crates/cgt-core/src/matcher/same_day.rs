@@ -40,8 +40,8 @@ pub fn match_same_day(
 
         // Calculate proportional proceeds and fees (using GBP values)
         let proportion = matched_qty / *sell_amount;
-        let proceeds = matched_qty * sell_price.gbp;
-        let fees = sell_fees.gbp * proportion;
+        let proceeds = matched_qty * sell_price.amount;
+        let fees = sell_fees.amount * proportion;
 
         let gain_or_loss = proceeds - cost - fees;
 

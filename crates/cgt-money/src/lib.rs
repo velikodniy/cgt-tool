@@ -6,7 +6,7 @@ mod types;
 
 use include_dir::{Dir, include_dir};
 
-pub use amount::CurrencyAmount;
+pub use amount::{CurrencyAmount, FxConversionError};
 pub use cache::FxCache;
 pub use iso_currency::Currency;
 pub use loader::{FxLoaderError, RateFile, load_bundled_cache, load_cache_with_folder_files};

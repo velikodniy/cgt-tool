@@ -1,51 +1,67 @@
 //! Currency amount type for monetary values with currency information.
 
+use crate::cache::FxCache;
+use chrono::{Datelike, NaiveDate};
 use iso_currency::Currency;
 use rust_decimal::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+/// Error during FX conversion to GBP.
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum FxConversionError {
+    #[error("Missing FX rate for {currency} in {year}-{month:02}")]
+    MissingRate {
+        currency: String,
+        year: i32,
+        month: u32,
+    },
+}
 
 /// A monetary amount with currency information.
 ///
-/// Stores the original amount and currency, along with the GBP equivalent
-/// for UK tax calculations. For GBP amounts, `gbp` equals `amount`.
+/// Stores the original amount and currency. GBP equivalents are computed on-demand
+/// by consumers using FX rates.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CurrencyAmount {
     /// The original amount as entered
     pub amount: Decimal,
     /// The currency (defaults to GBP)
     pub currency: Currency,
-    /// The GBP equivalent (same as amount for GBP, converted for others)
-    pub gbp: Decimal,
 }
 
 impl CurrencyAmount {
-    /// Create a new CurrencyAmount in GBP.
-    pub fn gbp(amount: Decimal) -> Self {
-        Self {
-            amount,
-            currency: Currency::GBP,
-            gbp: amount,
-        }
-    }
-
-    /// Create a new CurrencyAmount with a foreign currency.
-    /// The GBP amount must be provided (from FX conversion).
-    pub fn foreign(amount: Decimal, currency: Currency, gbp: Decimal) -> Self {
-        debug_assert!(
-            currency != Currency::GBP,
-            "Use CurrencyAmount::gbp() for GBP"
-        );
-        Self {
-            amount,
-            currency,
-            gbp,
-        }
+    /// Create a new CurrencyAmount with the given currency.
+    pub fn new(amount: Decimal, currency: Currency) -> Self {
+        Self { amount, currency }
     }
 
     /// Check if this amount is in GBP.
     pub fn is_gbp(&self) -> bool {
         self.currency == Currency::GBP
+    }
+
+    /// Convert this amount to GBP using FX rates for the given date.
+    pub fn to_gbp(
+        &self,
+        date: NaiveDate,
+        fx_cache: &FxCache,
+    ) -> Result<Decimal, FxConversionError> {
+        if self.is_gbp() {
+            return Ok(self.amount);
+        }
+
+        let code = self.currency.code();
+        let rate_entry = fx_cache.get(code, date.year(), date.month()).ok_or(
+            FxConversionError::MissingRate {
+                currency: code.to_string(),
+                year: date.year(),
+                month: date.month(),
+            },
+        )?;
+
+        Ok(self.amount / rate_entry.rate_per_gbp)
     }
 
     /// Get the currency's minor units (decimal places for display).
@@ -66,7 +82,7 @@ impl CurrencyAmount {
 
 impl Default for CurrencyAmount {
     fn default() -> Self {
-        Self::gbp(Decimal::ZERO)
+        Self::new(Decimal::ZERO, Currency::GBP)
     }
 }
 
@@ -78,10 +94,9 @@ impl Serialize for CurrencyAmount {
     {
         use serde::ser::SerializeStruct;
 
-        let mut state = serializer.serialize_struct("CurrencyAmount", 3)?;
+        let mut state = serializer.serialize_struct("CurrencyAmount", 2)?;
         state.serialize_field("amount", &self.amount)?;
         state.serialize_field("currency", self.currency.code())?;
-        state.serialize_field("gbp", &self.gbp)?;
         state.end()
     }
 }
@@ -107,21 +122,21 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
                 E: serde::de::Error,
             {
                 let amount: Decimal = v.parse().map_err(E::custom)?;
-                Ok(CurrencyAmount::gbp(amount))
+                Ok(CurrencyAmount::new(amount, Currency::GBP))
             }
 
             fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,
             {
-                Ok(CurrencyAmount::gbp(Decimal::from(v)))
+                Ok(CurrencyAmount::new(Decimal::from(v), Currency::GBP))
             }
 
             fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,
             {
-                Ok(CurrencyAmount::gbp(Decimal::from(v)))
+                Ok(CurrencyAmount::new(Decimal::from(v), Currency::GBP))
             }
 
             fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
@@ -130,7 +145,7 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
             {
                 use std::str::FromStr;
                 let amount = Decimal::from_str(&v.to_string()).map_err(E::custom)?;
-                Ok(CurrencyAmount::gbp(amount))
+                Ok(CurrencyAmount::new(amount, Currency::GBP))
             }
 
             fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
@@ -139,13 +154,15 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
             {
                 let mut amount: Option<Decimal> = None;
                 let mut currency: Option<String> = None;
-                let mut gbp: Option<Decimal> = None;
 
                 while let Some(key) = map.next_key::<String>()? {
                     match key.as_str() {
                         "amount" => amount = Some(map.next_value()?),
                         "currency" => currency = Some(map.next_value()?),
-                        "gbp" => gbp = Some(map.next_value()?),
+                        // Accept legacy field but ignore it
+                        "gbp" => {
+                            let _: serde::de::IgnoredAny = map.next_value()?;
+                        }
                         _ => {
                             let _: serde::de::IgnoredAny = map.next_value()?;
                         }
@@ -153,19 +170,13 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
                 }
 
                 let amount = amount.ok_or_else(|| serde::de::Error::missing_field("amount"))?;
-                let currency_code =
-                    currency.ok_or_else(|| serde::de::Error::missing_field("currency"))?;
-                let gbp = gbp.ok_or_else(|| serde::de::Error::missing_field("gbp"))?;
+                let currency_code = currency.unwrap_or_else(|| "GBP".to_string());
 
                 let currency = Currency::from_code(&currency_code).ok_or_else(|| {
                     serde::de::Error::custom(format!("invalid currency code: '{currency_code}'"))
                 })?;
 
-                if currency == Currency::GBP {
-                    Ok(CurrencyAmount::gbp(amount))
-                } else {
-                    Ok(CurrencyAmount::foreign(amount, currency, gbp))
-                }
+                Ok(CurrencyAmount::new(amount, currency))
             }
         }
 
@@ -179,25 +190,37 @@ impl JsonSchema for CurrencyAmount {
     }
 
     fn json_schema(generator: &mut schemars::r#gen::SchemaGenerator) -> schemars::schema::Schema {
-        use schemars::schema::{InstanceType, Schema, SchemaObject, SingleOrVec};
+        use schemars::schema::{
+            InstanceType, Metadata, ObjectValidation, Schema, SchemaObject, SingleOrVec,
+        };
 
         // CurrencyAmount can be either a plain decimal (for GBP) or an object
         let decimal_schema = generator.subschema_for::<Decimal>();
 
         let obj_schema = SchemaObject {
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
+            object: Some(Box::new(ObjectValidation {
+                properties: [
+                    ("amount".to_string(), generator.subschema_for::<Decimal>()),
+                    ("currency".to_string(), generator.subschema_for::<String>()),
+                ]
+                .into_iter()
+                .collect(),
+                required: ["amount".to_string()].into_iter().collect(),
+                ..Default::default()
+            })),
+            metadata: Some(Box::new(Metadata {
+                description: Some(
+                    "A monetary amount: plain number for GBP, or object with currency".to_owned(),
+                ),
+                ..Default::default()
+            })),
             ..Default::default()
         };
 
         Schema::Object(SchemaObject {
             subschemas: Some(Box::new(schemars::schema::SubschemaValidation {
                 any_of: Some(vec![decimal_schema, Schema::Object(obj_schema)]),
-                ..Default::default()
-            })),
-            metadata: Some(Box::new(schemars::schema::Metadata {
-                description: Some(
-                    "A monetary amount: plain number for GBP, or object with currency".to_owned(),
-                ),
                 ..Default::default()
             })),
             ..Default::default()

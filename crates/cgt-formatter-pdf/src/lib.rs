@@ -241,7 +241,7 @@ fn find_sell_details(disposal: &Disposal, transactions: &[Transaction]) -> (Deci
                 && t.date == disposal.date
                 && let Operation::Sell { price, fees, .. } = &t.operation
             {
-                return Some((price.gbp, fees.gbp));
+                return Some((price.amount, fees.amount));
             }
             None
         })

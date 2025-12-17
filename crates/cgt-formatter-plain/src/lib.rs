@@ -263,7 +263,7 @@ fn format_disposal(
         .find_map(|t| {
             if t.ticker == disposal.ticker && t.date == disposal.date {
                 if let Operation::Sell { price, fees, .. } = &t.operation {
-                    Some((price.gbp, fees.gbp))
+                    Some((price.amount, fees.amount))
                 } else {
                     None
                 }
@@ -308,7 +308,8 @@ fn format_disposal(
 mod tests {
     use super::*;
     use cgt_core::{
-        CurrencyAmount, Disposal, Match, MatchRule, Operation, TaxPeriod, TaxReport, TaxYearSummary,
+        Currency, CurrencyAmount, Disposal, Match, MatchRule, Operation, TaxPeriod, TaxReport,
+        TaxYearSummary,
     };
     use chrono::NaiveDate;
 
@@ -358,8 +359,8 @@ mod tests {
             ticker,
             operation: Operation::Sell {
                 amount: Decimal::from(10),
-                price: CurrencyAmount::gbp(Decimal::new(46702, 4)),
-                fees: CurrencyAmount::gbp(Decimal::new(125, 1)),
+                price: CurrencyAmount::new(Decimal::new(46702, 4), Currency::GBP),
+                fees: CurrencyAmount::new(Decimal::new(125, 1), Currency::GBP),
             },
         }];
 
@@ -386,8 +387,8 @@ mod tests {
             ticker: "FOOBAR".to_string(),
             operation: Operation::Dividend {
                 amount: Decimal::from(15),
-                total_value: CurrencyAmount::gbp(Decimal::new(3000, 2)),
-                tax_paid: CurrencyAmount::gbp(Decimal::ZERO),
+                total_value: CurrencyAmount::new(Decimal::new(3000, 2), Currency::GBP),
+                tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
             },
         }];
 

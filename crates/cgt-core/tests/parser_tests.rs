@@ -25,11 +25,14 @@ fn test_parse_valid_buy() {
     {
         assert_eq!(*amount, Decimal::from(10));
         assert_eq!(
-            price.gbp,
+            price.amount,
             Decimal::from_str("150.00").expect("valid decimal")
         );
         assert!(price.is_gbp());
-        assert_eq!(fees.gbp, Decimal::from_str("5.00").expect("valid decimal"));
+        assert_eq!(
+            fees.amount,
+            Decimal::from_str("5.00").expect("valid decimal")
+        );
         assert!(fees.is_gbp());
     } else {
         panic!("Expected Buy operation");
@@ -55,11 +58,11 @@ fn test_parse_dividend_with_tax_keyword() {
     {
         assert_eq!(*amount, Decimal::from(10));
         assert_eq!(
-            total_value.gbp,
+            total_value.amount,
             Decimal::from_str("110.93").expect("valid decimal")
         );
         assert!(total_value.is_gbp());
-        assert_eq!(tax_paid.gbp, Decimal::from(0));
+        assert_eq!(tax_paid.amount, Decimal::from(0));
         assert!(tax_paid.is_gbp());
     } else {
         panic!("Expected Dividend operation");
@@ -85,11 +88,11 @@ fn test_parse_capreturn_with_fees_keyword() {
     {
         assert_eq!(*amount, Decimal::from(10));
         assert_eq!(
-            total_value.gbp,
+            total_value.amount,
             Decimal::from_str("149.75").expect("valid decimal")
         );
         assert!(total_value.is_gbp());
-        assert_eq!(fees.gbp, Decimal::from(0));
+        assert_eq!(fees.amount, Decimal::from(0));
         assert!(fees.is_gbp());
     } else {
         panic!("Expected CapReturn operation");
@@ -144,7 +147,7 @@ fn test_parse_buy_without_currency_defaults_to_gbp() {
     if let Operation::Buy { price, fees, .. } = &tx.operation {
         assert!(price.is_gbp(), "Price should be GBP");
         assert_eq!(
-            price.gbp,
+            price.amount,
             Decimal::from_str("150.00").expect("valid decimal")
         );
         assert!(fees.is_gbp(), "Fees should be GBP");
@@ -167,7 +170,7 @@ fn test_parse_buy_with_gbp_currency_treated_as_default() {
             "Explicit GBP price should be treated as GBP"
         );
         assert_eq!(
-            price.gbp,
+            price.amount,
             Decimal::from_str("150.00").expect("valid decimal")
         );
         assert!(fees.is_gbp());
@@ -207,7 +210,10 @@ fn test_parse_fees_keyword_not_confused_with_currency() {
 
     if let Operation::Buy { price, fees, .. } = &transactions[0].operation {
         assert!(price.is_gbp());
-        assert_eq!(fees.gbp, Decimal::from_str("5.00").expect("valid decimal"));
+        assert_eq!(
+            fees.amount,
+            Decimal::from_str("5.00").expect("valid decimal")
+        );
     } else {
         panic!("Expected Buy operation");
     }

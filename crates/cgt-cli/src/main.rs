@@ -1,8 +1,7 @@
 use anyhow::{Result, bail};
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
-use cgt_core::parser::{parse_file, parse_file_with_fx};
-use cgt_core::validate;
+use cgt_core::parser::parse_file;
 use cgt_money::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
@@ -74,44 +73,17 @@ fn main() -> Result<()> {
         } => {
             let content = read_and_concatenate_files(files)?;
 
-            // Load FX cache if a folder is specified, otherwise parse without FX
-            let transactions = if let Some(folder) = fx_folder {
+            // Load FX cache (bundled by default, override if folder provided)
+            let fx_cache = if let Some(folder) = fx_folder {
                 let folder_files = read_fx_folder(folder)?;
-                let fx_cache = load_cache_with_overrides(folder_files)?;
-                parse_file_with_fx(&content, Some(&fx_cache))?
+                load_cache_with_overrides(folder_files)?
             } else {
-                // Try parsing without FX first
-                match parse_file(&content) {
-                    Ok(txns) => txns,
-                    Err(cgt_core::CgtError::MissingFxRate { .. }) => {
-                        // If we hit a missing FX rate, try loading bundled cache
-                        let fx_cache = load_default_cache()?;
-                        parse_file_with_fx(&content, Some(&fx_cache))?
-                    }
-                    Err(e) => return Err(e.into()),
-                }
+                load_default_cache()?
             };
 
-            // Validate transactions before calculation
-            let validation = validate(&transactions);
+            let transactions = parse_file(&content)?;
 
-            // Print warnings
-            for warning in &validation.warnings {
-                eprintln!("{}", warning);
-            }
-
-            // Bail on errors
-            if !validation.is_valid() {
-                for error in &validation.errors {
-                    eprintln!("{}", error);
-                }
-                bail!(
-                    "Validation failed with {} error(s)",
-                    validation.errors.len()
-                );
-            }
-
-            let report = calculate(transactions.clone(), *year)?;
+            let report = calculate(transactions.clone(), *year, Some(&fx_cache))?;
 
             match format {
                 OutputFormat::Plain => {

@@ -141,22 +141,22 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
 
                 // Check negative price (GBP value)
-                if price.gbp < Decimal::ZERO {
+                if price.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative price: {}", price.gbp),
+                        message: format!("BUY with negative price: {}", price.amount),
                     });
                 }
 
                 // Check negative fees (GBP value)
-                if fees.gbp < Decimal::ZERO {
+                if fees.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative fees: {}", fees.gbp),
+                        message: format!("BUY with negative fees: {}", fees.amount),
                     });
                 }
 
@@ -197,22 +197,22 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
 
                 // Check negative price (GBP value)
-                if price.gbp < Decimal::ZERO {
+                if price.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative price: {}", price.gbp),
+                        message: format!("SELL with negative price: {}", price.amount),
                     });
                 }
 
                 // Check negative fees (GBP value)
-                if fees.gbp < Decimal::ZERO {
+                if fees.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative fees: {}", fees.gbp),
+                        message: format!("SELL with negative fees: {}", fees.amount),
                     });
                 }
 
@@ -309,12 +309,15 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
 
                 // Check negative total value (GBP value)
-                if total_value.gbp < Decimal::ZERO {
+                if total_value.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("DIVIDEND with negative total value: {}", total_value.gbp),
+                        message: format!(
+                            "DIVIDEND with negative total value: {}",
+                            total_value.amount
+                        ),
                     });
                 }
             }
@@ -345,25 +348,25 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
 
                 // Check negative total value (GBP value)
-                if total_value.gbp < Decimal::ZERO {
+                if total_value.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
                         message: format!(
                             "CAPRETURN with negative total value: {}",
-                            total_value.gbp
+                            total_value.amount
                         ),
                     });
                 }
 
                 // Check negative fees (GBP value)
-                if fees.gbp < Decimal::ZERO {
+                if fees.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
                         date: tx.date,
                         ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative fees: {}", fees.gbp),
+                        message: format!("CAPRETURN with negative fees: {}", fees.amount),
                     });
                 }
             }
@@ -377,6 +380,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
 mod tests {
     use super::*;
     use crate::models::CurrencyAmount;
+    use cgt_money::Currency;
 
     fn make_buy(date: &str, ticker: &str, amount: i64, price: i64, fees: i64) -> Transaction {
         Transaction {
@@ -384,8 +388,8 @@ mod tests {
             ticker: ticker.to_string(),
             operation: Operation::Buy {
                 amount: Decimal::from(amount),
-                price: CurrencyAmount::gbp(Decimal::from(price)),
-                fees: CurrencyAmount::gbp(Decimal::from(fees)),
+                price: CurrencyAmount::new(Decimal::from(price), Currency::GBP),
+                fees: CurrencyAmount::new(Decimal::from(fees), Currency::GBP),
             },
         }
     }
@@ -396,8 +400,8 @@ mod tests {
             ticker: ticker.to_string(),
             operation: Operation::Sell {
                 amount: Decimal::from(amount),
-                price: CurrencyAmount::gbp(Decimal::from(price)),
-                fees: CurrencyAmount::gbp(Decimal::from(fees)),
+                price: CurrencyAmount::new(Decimal::from(price), Currency::GBP),
+                fees: CurrencyAmount::new(Decimal::from(fees), Currency::GBP),
             },
         }
     }

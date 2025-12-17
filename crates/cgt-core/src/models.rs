@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::CgtError;
 
-// Re-export CurrencyAmount from cgt-money
-pub use cgt_money::CurrencyAmount;
+// Re-export Currency and CurrencyAmount from cgt-money
+pub use cgt_money::{Currency, CurrencyAmount};
 
 /// A validated UK tax year identifier (April 6 to April 5).
 ///

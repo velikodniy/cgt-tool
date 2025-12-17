@@ -113,8 +113,8 @@ fn test_data_driven_matching() {
                 );
             }
 
-            let actual_report =
-                calculate(transactions.clone(), expected_year_start).expect("Failed to calculate");
+            let actual_report = calculate(transactions.clone(), expected_year_start, None)
+                .expect("Failed to calculate");
 
             // Get the actual tax year summary
             let actual_tax_year = actual_report
@@ -168,7 +168,7 @@ fn test_high_precision_decimal_quantity_preserved() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     // Quantity should be exactly preserved
@@ -188,7 +188,7 @@ fn test_very_small_fractional_share_quantity() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -214,7 +214,7 @@ fn test_quantity_precision_through_section_104_pool() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     // Total bought: 100.000000 shares exactly
     // After selling 50, pool should have 50.000000
@@ -239,7 +239,7 @@ fn test_proceeds_deduct_selling_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -266,7 +266,7 @@ fn test_proceeds_with_zero_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -285,7 +285,7 @@ fn test_expenses_apportioned_in_partial_sale() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -309,7 +309,7 @@ fn test_expenses_apportioned_across_match_rules() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -355,7 +355,7 @@ fn test_large_quantity_with_precise_decimals() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -374,7 +374,7 @@ fn test_price_with_many_decimal_places() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -397,7 +397,7 @@ fn test_bed_and_breakfast_quantity_precision() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024).expect("Failed to calculate");
+    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(

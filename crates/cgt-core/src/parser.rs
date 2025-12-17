@@ -1,7 +1,7 @@
 use crate::error::{CgtError, ParseErrorContext, suggest_transaction_type};
 use crate::models::{CurrencyAmount, Operation, Transaction};
-use cgt_money::{Currency, FxCache};
-use chrono::{Datelike, NaiveDate};
+use cgt_money::Currency;
+use chrono::NaiveDate;
 use pest::Parser;
 use pest::error::LineColLocation;
 use pest_derive::Parser;
@@ -104,23 +104,16 @@ fn format_rule_name(rule: Rule) -> String {
     }
 }
 
-/// Parse a CGT file without FX conversion (all amounts must be GBP).
+/// Parse a CGT file. Amounts are parsed with their original currency; GBP conversion
+/// is deferred to calculation time.
 pub fn parse_file(input: &str) -> Result<Vec<Transaction>, CgtError> {
-    parse_file_with_fx(input, None)
-}
-
-/// Parse a CGT file with optional FX conversion.
-pub fn parse_file_with_fx(
-    input: &str,
-    fx_cache: Option<&FxCache>,
-) -> Result<Vec<Transaction>, CgtError> {
     let pairs = CgtParser::parse(Rule::transaction_list, input).map_err(|err| {
         let ctx = from_pest_error(&err, input);
         CgtError::ParseErrorContext(ctx)
     })?;
 
     let mut transactions = Vec::new();
-    let ctx = ParseContext { fx_cache };
+    let ctx = ParseContext {};
 
     for pair in pairs {
         for inner in pair.into_inner() {
@@ -133,9 +126,7 @@ pub fn parse_file_with_fx(
     Ok(transactions)
 }
 
-struct ParseContext<'a> {
-    fx_cache: Option<&'a FxCache>,
-}
+struct ParseContext {}
 
 fn parse_transaction(
     pair: pest::iterators::Pair<Rule>,
@@ -184,8 +175,8 @@ fn parse_decimal(s: &str) -> Result<Decimal, CgtError> {
 /// Parse a money rule (decimal with optional currency).
 fn parse_money(
     pair: pest::iterators::Pair<Rule>,
-    date: NaiveDate,
-    ctx: &ParseContext,
+    _date: NaiveDate,
+    _ctx: &ParseContext,
 ) -> Result<CurrencyAmount, CgtError> {
     let mut inner = pair.into_inner();
 
@@ -202,35 +193,11 @@ fn parse_money(
     let currency_code = inner.next().map(|p| p.as_str().to_uppercase());
 
     match currency_code {
-        None => {
-            // Default to GBP
-            Ok(CurrencyAmount::gbp(amount))
-        }
+        None => Ok(CurrencyAmount::new(amount, Currency::GBP)),
         Some(code) => {
             let currency = Currency::from_code(&code)
                 .ok_or(CgtError::InvalidCurrencyCode { code: code.clone() })?;
-
-            if currency == Currency::GBP {
-                Ok(CurrencyAmount::gbp(amount))
-            } else {
-                // Need FX conversion
-                let fx_cache = ctx.fx_cache.ok_or(CgtError::MissingFxRate {
-                    currency: code.clone(),
-                    year: date.year(),
-                    month: date.month(),
-                })?;
-
-                let rate_entry = fx_cache.get(&code, date.year(), date.month()).ok_or(
-                    CgtError::MissingFxRate {
-                        currency: code.clone(),
-                        year: date.year(),
-                        month: date.month(),
-                    },
-                )?;
-
-                let gbp = amount / rate_entry.rate_per_gbp;
-                Ok(CurrencyAmount::foreign(amount, currency, gbp))
-            }
+            Ok(CurrencyAmount::new(amount, currency))
         }
     }
 }
@@ -280,7 +247,7 @@ fn parse_buy_sell(
                 })?;
         parse_money(money_pair, date, ctx)?
     } else {
-        CurrencyAmount::gbp(Decimal::ZERO)
+        CurrencyAmount::new(Decimal::ZERO, Currency::GBP)
     };
 
     let operation = if is_buy {
