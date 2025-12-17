@@ -332,10 +332,19 @@ fn parse_capreturn(
     })?;
     let total_value = parse_money(total_value_pair)?;
 
-    let fees_pair = inner
-        .next()
-        .ok_or(CgtError::UnexpectedParserState { expected: "fees" })?;
-    let fees = parse_money(fees_pair)?;
+    // Optional fees clause
+    let fees = if let Some(fees_clause) = inner.next() {
+        let money_pair =
+            fees_clause
+                .into_inner()
+                .next()
+                .ok_or(CgtError::UnexpectedParserState {
+                    expected: "fees amount",
+                })?;
+        parse_money(money_pair)?
+    } else {
+        CurrencyAmount::new(Decimal::ZERO, Currency::GBP)
+    };
 
     Ok((
         ticker,

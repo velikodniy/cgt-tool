@@ -9,6 +9,142 @@ use crate::error::CgtError;
 // Re-export Currency and CurrencyAmount from cgt-money
 pub use cgt_money::{Currency, CurrencyAmount};
 
+/// Serialize a Decimal to at most 2 decimal places for monetary amounts.
+mod decimal_money {
+    use rust_decimal::Decimal;
+    use serde::{self, Serializer};
+
+    pub fn serialize<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Round to 2 decimal places for display
+        let rounded = value.round_dp(2);
+        serializer.serialize_str(&rounded.to_string())
+    }
+}
+
+/// Custom deserializer for Operation that handles case-insensitive action names.
+mod operation_serde {
+    use super::{CurrencyAmount, Operation};
+    use rust_decimal::Decimal;
+    use serde::Deserialize;
+
+    /// Helper struct for deserializing Operation with case-insensitive action.
+    #[derive(Deserialize)]
+    struct RawOperation {
+        action: String,
+        #[serde(default)]
+        amount: Option<Decimal>,
+        #[serde(default)]
+        price: Option<CurrencyAmount>,
+        #[serde(default)]
+        fees: Option<CurrencyAmount>,
+        #[serde(default)]
+        total_value: Option<CurrencyAmount>,
+        #[serde(default)]
+        tax_paid: Option<CurrencyAmount>,
+        #[serde(default)]
+        ratio: Option<Decimal>,
+    }
+
+    /// Validate that an amount is positive.
+    fn validate_positive(amount: Decimal, field: &str, action: &str) -> Result<Decimal, String> {
+        if amount <= Decimal::ZERO {
+            return Err(format!(
+                "{action} action: '{field}' must be positive (got {amount}). \
+                 Negative amounts are not supported."
+            ));
+        }
+        Ok(amount)
+    }
+
+    /// Validate that a ratio is positive.
+    fn validate_positive_ratio(ratio: Decimal, action: &str) -> Result<Decimal, String> {
+        if ratio <= Decimal::ZERO {
+            return Err(format!(
+                "{action} action: 'ratio' must be positive (got {ratio})"
+            ));
+        }
+        Ok(ratio)
+    }
+
+    pub fn deserialize(value: serde_json::Value) -> Result<Operation<CurrencyAmount>, String> {
+        let raw: RawOperation =
+            serde_json::from_value(value).map_err(|e| format!("invalid transaction: {e}"))?;
+        let action = raw.action.to_uppercase();
+
+        match action.as_str() {
+            "BUY" => {
+                let amount = raw.amount.ok_or("BUY action requires 'amount' field")?;
+                let amount = validate_positive(amount, "amount", "BUY")?;
+                let price = raw.price.ok_or("BUY action requires 'price' field")?;
+                Ok(Operation::Buy {
+                    amount,
+                    price,
+                    fees: raw.fees.unwrap_or_default(),
+                })
+            }
+            "SELL" => {
+                let amount = raw.amount.ok_or("SELL action requires 'amount' field")?;
+                let amount = validate_positive(amount, "amount", "SELL")?;
+                let price = raw.price.ok_or("SELL action requires 'price' field")?;
+                Ok(Operation::Sell {
+                    amount,
+                    price,
+                    fees: raw.fees.unwrap_or_default(),
+                })
+            }
+            "DIVIDEND" => {
+                let amount = raw
+                    .amount
+                    .ok_or("DIVIDEND action requires 'amount' field")?;
+                let amount = validate_positive(amount, "amount", "DIVIDEND")?;
+                let total_value = raw
+                    .total_value
+                    .ok_or("DIVIDEND action requires 'total_value' field")?;
+                Ok(Operation::Dividend {
+                    amount,
+                    total_value,
+                    tax_paid: raw.tax_paid.unwrap_or_default(),
+                })
+            }
+            "CAPRETURN" | "CAP_RETURN" => {
+                let amount = raw
+                    .amount
+                    .ok_or("CAPRETURN action requires 'amount' field")?;
+                let amount = validate_positive(amount, "amount", "CAPRETURN")?;
+                let total_value = raw
+                    .total_value
+                    .ok_or("CAPRETURN action requires 'total_value' field")?;
+                Ok(Operation::CapReturn {
+                    amount,
+                    total_value,
+                    fees: raw.fees.unwrap_or_default(),
+                })
+            }
+            "SPLIT" => {
+                let ratio = raw.ratio.ok_or("SPLIT action requires 'ratio' field")?;
+                let ratio = validate_positive_ratio(ratio, "SPLIT")?;
+                Ok(Operation::Split { ratio })
+            }
+            "UNSPLIT" => {
+                let ratio = raw.ratio.ok_or("UNSPLIT action requires 'ratio' field")?;
+                let ratio = validate_positive_ratio(ratio, "UNSPLIT")?;
+                Ok(Operation::Unsplit { ratio })
+            }
+            _ => {
+                let valid_actions = ["BUY", "SELL", "DIVIDEND", "CAPRETURN", "SPLIT", "UNSPLIT"];
+                Err(format!(
+                    "invalid action '{}'. Valid actions: {}",
+                    raw.action,
+                    valid_actions.join(", ")
+                ))
+            }
+        }
+    }
+}
+
 /// A validated UK tax year identifier (April 6 to April 5).
 ///
 /// Stores the start year internally and serializes to "YYYY/YY" format (e.g., "2023/24").
@@ -120,12 +256,37 @@ impl JsonSchema for TaxPeriod {
 
 /// A transaction with amounts in their original currency.
 /// Used for parsing and JSON I/O.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, JsonSchema)]
 pub struct Transaction {
     pub date: NaiveDate,
     pub ticker: String,
     #[serde(flatten)]
     pub operation: Operation<CurrencyAmount>,
+}
+
+impl<'de> Deserialize<'de> for Transaction {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct RawTransaction {
+            date: NaiveDate,
+            ticker: String,
+            #[serde(flatten)]
+            operation: serde_json::Value,
+        }
+
+        let raw = RawTransaction::deserialize(deserializer)?;
+        let operation: Operation<CurrencyAmount> =
+            operation_serde::deserialize(raw.operation).map_err(serde::de::Error::custom)?;
+
+        Ok(Transaction {
+            date: raw.date,
+            ticker: raw.ticker.to_uppercase(),
+            operation,
+        })
+    }
 }
 
 /// A transaction with all monetary amounts converted to GBP.
@@ -249,26 +410,30 @@ pub fn transactions_to_gbp(
 /// - `Operation<Decimal>`: amounts in GBP (for calculations)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action", rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Operation<M> {
+pub enum Operation<M: Default> {
     Buy {
         amount: Decimal,
         price: M,
+        #[serde(default)]
         fees: M,
     },
     Sell {
         amount: Decimal,
         price: M,
+        #[serde(default)]
         fees: M,
     },
     Dividend {
         amount: Decimal,
         total_value: M,
+        #[serde(default)]
         tax_paid: M,
     },
     #[serde(rename = "CAPRETURN")]
     CapReturn {
         amount: Decimal,
         total_value: M,
+        #[serde(default)]
         fees: M,
     },
     Split {
@@ -283,6 +448,7 @@ pub enum Operation<M> {
 pub struct Section104Holding {
     pub ticker: String,
     pub quantity: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub total_cost: Decimal,
 }
 
@@ -299,7 +465,9 @@ pub enum MatchRule {
 pub struct Match {
     pub rule: MatchRule,
     pub quantity: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub allowable_cost: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub gain_or_loss: Decimal,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub acquisition_date: Option<NaiveDate>,
@@ -311,6 +479,7 @@ pub struct Disposal {
     pub date: NaiveDate,
     pub ticker: String,
     pub quantity: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub proceeds: Decimal,
     pub matches: Vec<Match>,
 }
@@ -320,8 +489,11 @@ pub struct Disposal {
 pub struct TaxYearSummary {
     pub period: TaxPeriod,
     pub disposals: Vec<Disposal>,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub total_gain: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub total_loss: Decimal,
+    #[serde(serialize_with = "decimal_money::serialize")]
     pub net_gain: Decimal,
 }
 

@@ -15,6 +15,8 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Commands {
+    /// Start MCP (Model Context Protocol) server for AI assistant integration
+    Mcp,
     /// Parse transaction file(s) and output JSON
     Parse {
         /// Input file path(s)

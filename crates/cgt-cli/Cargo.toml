@@ -13,6 +13,8 @@ cgt-formatter-plain = { path = "../cgt-formatter-plain" }
 cgt-formatter-pdf = { path = "../cgt-formatter-pdf" }
 cgt-money = { path = "../cgt-money" }
 cgt-converter = { path = "../cgt-converter" }
+cgt-mcp = { path = "../cgt-mcp" }
+tokio = { version = "1", features = ["rt-multi-thread"] }
 clap = { version = "4.4", features = ["derive"] }
 anyhow = "1.0"
 serde_json = "1.0"

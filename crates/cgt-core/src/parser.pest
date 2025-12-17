@@ -13,36 +13,36 @@ command = {
     cmd_unsplit
 }
 
-cmd_buy = { "BUY" ~ buy_sell_args }
-cmd_sell = { "SELL" ~ buy_sell_args }
-cmd_dividend = { "DIVIDEND" ~ dividend_args }
-cmd_capreturn = { "CAPRETURN" ~ capreturn_args }
-cmd_split = { "SPLIT" ~ split_args }
-cmd_unsplit = { "UNSPLIT" ~ split_args }
+cmd_buy = { ^"BUY" ~ buy_sell_args }
+cmd_sell = { ^"SELL" ~ buy_sell_args }
+cmd_dividend = { ^"DIVIDEND" ~ dividend_args }
+cmd_capreturn = { ^"CAPRETURN" ~ capreturn_args }
+cmd_split = { ^"SPLIT" ~ split_args }
+cmd_unsplit = { ^"UNSPLIT" ~ split_args }
 
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
-// Amount with optional currency code (ISO 4217, 3 uppercase letters)
+// Amount with optional currency code (ISO 4217, 3 letters, case-insensitive)
 // Must not match keywords (TAX, FEES, TOTAL, RATIO, BUY, SELL)
 money = { decimal ~ currency_code? }
 currency_code = @{
-    !("TAX" | "BUY") ~
-    ASCII_ALPHA_UPPER{3} ~
+    !(^"TAX" | ^"BUY" | ^"FEES" | ^"TOTAL" | ^"RATIO" | ^"SELL") ~
+    ASCII_ALPHA{3} ~
     !(ASCII_ALPHANUMERIC | "-")
 }
 
 // BUY/SELL: ticker amount @ price [currency] [FEES fees [currency]]
 buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ fees_clause? }
-fees_clause = { "FEES" ~ money }
+fees_clause = { ^"FEES" ~ money }
 
 // DIVIDEND: ticker amount TOTAL value [currency] TAX tax [currency]
-dividend_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "TAX" ~ money }
+dividend_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ ^"TAX" ~ money }
 
-// CAPRETURN: ticker amount TOTAL value [currency] FEES fees [currency]
-capreturn_args = { ticker ~ quantity ~ "TOTAL" ~ money ~ "FEES" ~ money }
+// CAPRETURN: ticker amount TOTAL value [currency] [FEES fees [currency]]
+capreturn_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ fees_clause? }
 
 // SPLIT/UNSPLIT: ticker RATIO ratio
-split_args = { ticker ~ "RATIO" ~ ratio }
+split_args = { ticker ~ ^"RATIO" ~ ratio }
 
 ticker = @{ ASCII_ALPHANUMERIC+ }
 quantity = @{ decimal }

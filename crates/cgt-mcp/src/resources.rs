@@ -1,0 +1,289 @@
+//! MCP resource definitions.
+
+/// An MCP resource definition.
+pub struct Resource {
+    /// Unique URI identifier for the resource.
+    pub uri: &'static str,
+    /// Display name for the resource.
+    pub name: &'static str,
+    /// Content of the resource (static text).
+    pub content: &'static str,
+}
+
+/// DSL syntax documentation resource.
+pub static DSL_SYNTAX: Resource = Resource {
+    uri: "cgt://docs/dsl-syntax",
+    name: "CGT-Tool CLI DSL Syntax - text format for .cgt files used by cgt-tool CLI",
+    content: r#"# CGT DSL Syntax Reference
+
+This DSL is used by the cgt-tool CLI (https://github.com/velikodniy/cgt-tool) to define share transactions in `.cgt` text files.
+
+Use this syntax when generating transaction files for the CLI tool.
+
+## Syntax Conventions
+
+- **UPPERCASE** = keywords (type exactly as shown)
+- `<angle brackets>` = placeholders (replace with your values)
+- `[square brackets]` = optional parts
+- `|` = alternatives (choose one)
+
+## Date Format
+
+Dates must be in ISO format: `YYYY-MM-DD`
+
+Example: `2024-03-15`
+
+## Commands
+
+### BUY
+Acquire shares.
+
+```
+<date> BUY <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]
+```
+
+Examples:
+```
+2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD
+2024-01-15 BUY VWRL 50 @ 85.50 GBP FEES 5 GBP
+2024-01-15 BUY TSLA 10 @ 200  # No currency = GBP, no fees
+```
+
+### SELL
+Dispose of shares.
+
+```
+<date> SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]
+```
+
+Examples:
+```
+2024-06-20 SELL AAPL 50 @ 180 USD FEES 10 USD
+2024-06-20 SELL VWRL 25 @ 90 GBP
+```
+
+### DIVIDEND
+Record dividend payment (for accumulation funds that reinvest).
+
+```
+<date> DIVIDEND <ticker> <quantity> TOTAL <amount> [<currency>] TAX <amount> [<currency>]
+```
+
+Example:
+```
+2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 0 GBP
+```
+
+### CAPRETURN
+Record capital return (reduces cost basis).
+
+```
+<date> CAPRETURN <ticker> <quantity> TOTAL <amount> [<currency>] [FEES <amount> [<currency>]]
+```
+
+Example:
+```
+2024-04-01 CAPRETURN AAPL 100 TOTAL 200 USD FEES 0 USD
+```
+
+### SPLIT
+Stock split (increases quantity, same total cost).
+
+```
+<date> SPLIT <ticker> RATIO <ratio>
+```
+
+Example (2-for-1 split):
+```
+2024-02-01 SPLIT AAPL RATIO 2
+```
+
+### UNSPLIT
+Reverse stock split (decreases quantity, same total cost).
+
+```
+<date> UNSPLIT <ticker> RATIO <ratio>
+```
+
+Example (1-for-10 reverse split):
+```
+2024-02-01 UNSPLIT AAPL RATIO 10
+```
+
+## Currency Codes
+
+Common currency codes:
+- `GBP` - British Pound (default if omitted)
+- `USD` - US Dollar
+- `EUR` - Euro
+
+Foreign currencies are converted to GBP using HMRC monthly average rates.
+
+## Comments
+
+Lines starting with `#` are comments and ignored:
+
+```
+# This is a comment
+2024-01-15 BUY AAPL 100 @ 150 USD  # Inline comment
+```
+
+## Complete Example
+
+```
+# Portfolio transactions for 2024
+
+# Initial purchases
+2024-01-10 BUY VWRL 100 @ 85 GBP FEES 5 GBP
+2024-01-15 BUY AAPL 50 @ 150 USD FEES 10 USD
+
+# Dividend from accumulation fund
+2024-03-15 DIVIDEND VWRL 100 TOTAL 25 GBP TAX 0 GBP
+
+# Apple stock split
+2024-04-01 SPLIT AAPL RATIO 2
+
+# Partial sale
+2024-06-01 SELL AAPL 25 @ 180 USD FEES 10 USD
+
+# Year-end rebalance
+2024-12-15 SELL VWRL 50 @ 92 GBP FEES 5 GBP
+```
+"#,
+};
+
+/// HMRC tax rules documentation resource.
+pub static TAX_RULES: Resource = Resource {
+    uri: "cgt://docs/tax-rules",
+    name: "UK HMRC Share Matching Rules - Same Day, Bed & Breakfast, Section 104 Pool explained",
+    content: include_str!("../../../TAX_RULES.md"),
+};
+
+/// All available resources.
+pub static RESOURCES: &[&Resource] = &[&DSL_SYNTAX, &TAX_RULES];
+
+/// Server instructions shown on MCP initialization.
+pub const SERVER_INSTRUCTIONS: &str = r#"UK Capital Gains Tax calculator implementing HMRC share matching rules. All results are in GBP.
+
+## IMPORTANT: Currency Handling
+
+By default, all amounts are treated as GBP. For US stocks or other foreign stocks, you MUST specify the currency explicitly!
+
+Price format examples:
+  GBP (default): "price": "150"
+  USD explicit:  "price": {"amount": "150", "currency": "USD"}
+  EUR explicit:  "price": {"amount": "150", "currency": "EUR"}
+
+Common US stocks (AAPL, MSFT, GOOGL, AMZN, TSLA, META, NVDA) are priced in USD.
+
+Supported currencies: GBP, USD, EUR, JPY, CHF, AUD, CAD, CNY, and other ISO 4217 codes.
+Use get_fx_rate to check available rates for a currency/date.
+
+## Tax Year
+
+The year parameter is the START year. Use 2024 for any disposals between 6 April 2024 and 5 April 2025.
+
+## Transaction Actions (case-insensitive)
+
+- BUY/SELL: Acquire or dispose of shares (triggers CGT on SELL)
+- SPLIT: Stock split (e.g., 2-for-1). Use ratio: "2"
+- UNSPLIT: Reverse split (e.g., 1-for-10). Use ratio: "10"
+- DIVIDEND: For accumulation funds that reinvest dividends
+- CAPRETURN: Capital return (reduces cost basis)
+
+## Transaction Format
+
+Required: date, ticker, action, amount (quantity), price (per share)
+Optional: fees (defaults to 0)
+
+Tickers and actions are case-insensitive (aapl = AAPL, buy = BUY).
+Amounts must be positive numbers.
+
+## Examples
+
+US Stock buy (AAPL in USD):
+{"date":"2024-01-15","ticker":"AAPL","action":"BUY","amount":"100","price":{"amount":"185","currency":"USD"},"fees":{"amount":"10","currency":"USD"}}
+
+UK Stock buy (VOD in GBP):
+{"date":"2024-01-15","ticker":"VOD","action":"BUY","amount":"100","price":"120"}
+
+Stock split (2-for-1):
+{"date":"2024-06-01","ticker":"AAPL","action":"SPLIT","ratio":"2"}
+
+Stock unsplit/reverse split (1-for-10):
+{"date":"2024-06-01","ticker":"XYZ","action":"UNSPLIT","ratio":"10"}
+
+Dividend (accumulation fund):
+{"date":"2024-03-01","ticker":"VWRL","action":"DIVIDEND","amount":"100","total_value":"50"}
+
+## Matching Rules (in priority order)
+
+1. Same Day: Sells matched to same-day buys first
+2. Bed & Breakfast: Then to buys within 30 days AFTER the sale
+3. Section 104 Pool: Finally to the average cost pool
+
+## Available Tools
+
+- parse_transactions: Validate and parse transactions (see tool description for JSON schema)
+- calculate_report: Calculate CGT for a tax year
+- explain_matching: Explain how a sale was matched to acquisitions
+- get_fx_rate: Get HMRC monthly FX rates
+- convert_to_dsl: Convert JSON to DSL format for cgt-tool CLI
+
+## Resources (require manual addition in Claude Desktop)
+
+Resources must be explicitly added in Claude Desktop settings to be available.
+- cgt://docs/dsl-syntax - DSL syntax for .cgt files
+- cgt://docs/tax-rules - Detailed HMRC share matching rules"#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_all_resources_have_valid_uris() {
+        for resource in RESOURCES {
+            assert!(
+                resource.uri.contains("://"),
+                "Resource '{}' should have a valid URI scheme",
+                resource.name
+            );
+        }
+    }
+
+    #[test]
+    fn test_all_resources_have_unique_uris() {
+        let uris: Vec<_> = RESOURCES.iter().map(|r| r.uri).collect();
+        for (i, uri) in uris.iter().enumerate() {
+            for (j, other) in uris.iter().enumerate() {
+                if i != j {
+                    assert_ne!(uri, other, "Resource URIs must be unique");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_all_resources_have_content() {
+        for resource in RESOURCES {
+            assert!(
+                !resource.content.is_empty(),
+                "Resource '{}' should have content",
+                resource.name
+            );
+        }
+    }
+
+    #[test]
+    fn test_dsl_syntax_contains_commands() {
+        assert!(DSL_SYNTAX.content.contains("BUY"));
+        assert!(DSL_SYNTAX.content.contains("SELL"));
+    }
+
+    #[test]
+    fn test_tax_rules_contains_matching_rules() {
+        assert!(TAX_RULES.content.contains("Same Day"));
+        assert!(TAX_RULES.content.contains("Bed & Breakfast"));
+        assert!(TAX_RULES.content.contains("Section 104"));
+    }
+}

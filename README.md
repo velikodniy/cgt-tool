@@ -128,16 +128,23 @@ Output (JSON):
     "ticker": "AAPL",
     "action": "BUY",
     "amount": "100",
-    "price": {
-      "amount": "150.00",
-      "currency": "GBP",
-      "gbp": "150.00"
-    },
-    "expenses": {
-      "amount": "5.00",
-      "currency": "GBP",
-      "gbp": "5.00"
-    }
+    "price": "150.00",
+    "fees": "5.00"
+  }
+]
+```
+
+For foreign currency transactions:
+
+```json
+[
+  {
+    "date": "2025-04-01",
+    "ticker": "AAPL",
+    "action": "BUY",
+    "amount": "100",
+    "price": { "amount": "150.00", "currency": "USD" },
+    "fees": { "amount": "5.00", "currency": "USD" }
   }
 ]
 ```
@@ -204,7 +211,7 @@ AAPL: 100 units at £152.5 avg cost
 
 ## Input Format
 
-One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [CURRENCY] [FEES FEE_AMOUNT [CURRENCY]]`
+One transaction per line. Keywords are shown in uppercase, placeholders in `<angle brackets>`, optional parts in `[square brackets]`.
 
 ```text
 # This is a comment and will be ignored
@@ -213,10 +220,10 @@ One transaction per line. Format: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [CURR
 2025-05-01 SELL AAPL 50 @ 160.00 FEES 5.00
 ```
 
-- **BUY/SELL**: `YYYY-MM-DD ACTION TICKER AMOUNT @ PRICE [CURRENCY] [FEES FEE_AMOUNT [CURRENCY]]`
-- **DIVIDEND**: `YYYY-MM-DD DIVIDEND TICKER AMOUNT TOTAL VALUE [CURRENCY] TAX TAX_AMOUNT [CURRENCY]`
-- **CAPRETURN**: `YYYY-MM-DD CAPRETURN TICKER AMOUNT TOTAL VALUE [CURRENCY] FEES FEE_AMOUNT [CURRENCY]`
-- **SPLIT/UNSPLIT**: `YYYY-MM-DD SPLIT TICKER RATIO RATIO_VALUE`
+- **BUY/SELL**: `<date> BUY|SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]`
+- **DIVIDEND**: `<date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] TAX <amount> [<currency>]`
+- **CAPRETURN**: `<date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] FEES <amount> [<currency>]`
+- **SPLIT/UNSPLIT**: `<date> SPLIT|UNSPLIT <ticker> RATIO <ratio>`
 
 ## Multi-Currency Support
 
@@ -275,7 +282,7 @@ Files should be named `YYYY-MM.xml` (e.g., `2024-12.xml`); a `monthly_xml_YYYY-M
 
 - **Plain text**: Shows GBP values with original currency in parentheses when applicable
 - **PDF**: Shows currency symbols (e.g., $, €) for foreign amounts
-- **JSON**: Includes full `CurrencyAmount` objects with `amount`, `currency`, and `gbp` fields
+- **JSON**: Includes `CurrencyAmount` values - plain strings for GBP or objects with `amount` and `currency` for foreign currencies
 
 Example plain text output with foreign currency:
 
@@ -288,6 +295,103 @@ Example plain text output with foreign currency:
 ## Tax Rules Documentation
 
 For detailed information about UK CGT share matching rules, see [TAX_RULES.md](./TAX_RULES.md).
+
+## MCP Server (AI Assistant Integration)
+
+The tool includes an MCP (Model Context Protocol) server that enables AI assistants like Claude to perform CGT calculations directly.
+
+### Starting the Server
+
+```bash
+cgt-tool mcp
+```
+
+The server communicates over stdio using the MCP protocol.
+
+### Available Tools
+
+| Tool                 | Description                                                   |
+| -------------------- | ------------------------------------------------------------- |
+| `parse_transactions` | Parse CGT DSL or JSON transactions and return normalized JSON |
+| `calculate_report`   | Generate a CGT report for a specific UK tax year              |
+| `explain_matching`   | Explain how a disposal was matched using HMRC rules           |
+| `get_fx_rate`        | Get HMRC exchange rate for a currency and month               |
+| `convert_to_dsl`     | Convert JSON transactions to DSL format for CLI use           |
+
+### Available Resources
+
+| Resource   | URI                     | Description                             |
+| ---------- | ----------------------- | --------------------------------------- |
+| Tax Rules  | `cgt://docs/tax-rules`  | HMRC share matching rules documentation |
+| DSL Syntax | `cgt://docs/dsl-syntax` | CGT DSL transaction format reference    |
+
+### Claude Desktop Configuration
+
+Add the following to your Claude Desktop configuration file:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "cgt-tool": {
+      "command": "/path/to/cgt-tool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Replace `/path/to/cgt-tool` with the actual path to the `cgt-tool` binary.
+
+### Adding Resources in Claude Desktop
+
+**Note**: MCP resources must be manually added in Claude Desktop to be available. To add resources:
+
+1. Open Claude Desktop settings
+2. Navigate to the MCP server configuration
+3. Add the resource URIs you want to use:
+   - `cgt://docs/tax-rules` - HMRC share matching rules
+   - `cgt://docs/dsl-syntax` - DSL format reference
+
+Without adding resources manually, Claude will only have access to the tools (which include schema documentation in their descriptions).
+
+### Transaction JSON Format
+
+When using the MCP tools, transactions can be provided as JSON:
+
+```json
+[
+  {
+    "date": "2024-01-15",
+    "ticker": "AAPL",
+    "action": "BUY",
+    "amount": "100",
+    "price": {"amount": "185.50", "currency": "USD"},
+    "fees": {"amount": "10", "currency": "USD"}
+  },
+  {
+    "date": "2024-06-20",
+    "ticker": "AAPL",
+    "action": "SELL",
+    "amount": "50",
+    "price": {"amount": "200", "currency": "USD"}
+  }
+]
+```
+
+**Important**: For US stocks, always specify `"currency": "USD"`. Without currency, amounts are treated as GBP.
+
+### Example Prompts
+
+Once configured, you can ask Claude questions like:
+
+- "Parse this CGT file and show me the transactions"
+- "Calculate my capital gains for tax year 2024/25"
+- "Explain how this disposal was matched under HMRC rules"
+- "What's the USD to GBP exchange rate for January 2024?"
+- "Convert these JSON transactions to DSL format"
 
 ## Acknowledgments
 

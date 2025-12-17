@@ -172,7 +172,15 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
                 }
 
                 let amount = amount.ok_or_else(|| serde::de::Error::missing_field("amount"))?;
-                let currency_code = currency.unwrap_or_else(|| "GBP".to_string());
+
+                // Require explicit currency when using object format
+                let currency_code = currency.ok_or_else(|| {
+                    serde::de::Error::custom(
+                        "missing 'currency' field. When using object format {\"amount\": ...}, \
+                         you must specify the currency, e.g., {\"amount\": \"150\", \"currency\": \"USD\"}. \
+                         For GBP, use a plain string instead: \"150\""
+                    )
+                })?;
 
                 let currency = Currency::from_code(&currency_code).ok_or_else(|| {
                     serde::de::Error::custom(format!("invalid currency code: '{currency_code}'"))
@@ -196,7 +204,9 @@ impl JsonSchema for CurrencyAmount {
             InstanceType, Metadata, ObjectValidation, Schema, SchemaObject, SingleOrVec,
         };
 
-        // CurrencyAmount can be either a plain decimal (for GBP) or an object
+        // CurrencyAmount can be either:
+        // 1. A plain string/decimal for GBP (e.g., "150" or "150.00")
+        // 2. An object with amount AND currency for foreign currencies
         let decimal_schema = generator.subschema_for::<Decimal>();
 
         let obj_schema = SchemaObject {
@@ -208,12 +218,18 @@ impl JsonSchema for CurrencyAmount {
                 ]
                 .into_iter()
                 .collect(),
-                required: ["amount".to_string()].into_iter().collect(),
+                // Both amount AND currency are required when using object format
+                required: ["amount".to_string(), "currency".to_string()]
+                    .into_iter()
+                    .collect(),
                 ..Default::default()
             })),
             metadata: Some(Box::new(Metadata {
                 description: Some(
-                    "A monetary amount: plain number for GBP, or object with currency".to_owned(),
+                    "A monetary amount: plain string for GBP (e.g., \"150\"), \
+                     or object with amount AND currency for foreign currencies \
+                     (e.g., {\"amount\": \"150\", \"currency\": \"USD\"})"
+                        .to_owned(),
                 ),
                 ..Default::default()
             })),

@@ -120,6 +120,11 @@ fn main() -> Result<()> {
                 }
             }
         }
+        Commands::Mcp => {
+            // Run MCP server - this blocks until the server is shut down
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async { cgt_mcp::run_server().await })?;
+        }
         Commands::Convert { broker } => {
             match broker {
                 BrokerCommands::Schwab {
