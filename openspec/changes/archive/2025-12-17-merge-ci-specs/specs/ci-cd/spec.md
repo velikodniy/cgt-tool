@@ -1,10 +1,6 @@
-# ci Specification
+# ci-cd Specification
 
-## Purpose
-
-Define automation for distributing cgt-tool via Homebrew, including tap installation, release-sourced binaries, and workflows that keep the formula updated and verified.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Homebrew Tap Distribution
 

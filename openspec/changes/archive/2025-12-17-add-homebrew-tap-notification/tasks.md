@@ -14,4 +14,4 @@
 
 - [x] 3.1 Verify workflow syntax with `gh workflow list` or Actions tab
 - [x] 3.2 Test with manual trigger of tap workflow: `gh workflow run update-cgt-tool.yml -R velikodniy/homebrew-tap`
-- [ ] 3.3 Confirm end-to-end on next release (or test release)
+- [x] 3.3 Confirm end-to-end on next release (or test release)
