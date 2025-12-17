@@ -41,9 +41,12 @@ cargo fmt                  # Format
 crates/
 ├── cgt-core/              # Parsing, calculation, data model
 ├── cgt-cli/               # CLI binary
+├── cgt-mcp/               # MCP server for AI assistants
+├── cgt-money/             # Currency and FX conversion
 ├── cgt-formatter-plain/   # Plain text output
 ├── cgt-formatter-pdf/     # PDF output (Typst)
-└── cgt-fx/                # FX conversion
+├── cgt-format/            # Output format trait
+└── cgt-converter/         # Broker CSV converters
 tests/
 ├── inputs/                # .cgt test files
 ├── json/                  # Expected JSON
