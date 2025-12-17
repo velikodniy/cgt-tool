@@ -113,12 +113,11 @@ pub fn parse_file(input: &str) -> Result<Vec<Transaction>, CgtError> {
     })?;
 
     let mut transactions = Vec::new();
-    let ctx = ParseContext {};
 
     for pair in pairs {
         for inner in pair.into_inner() {
             if inner.as_rule() == Rule::transaction {
-                transactions.push(parse_transaction(inner, &ctx)?);
+                transactions.push(parse_transaction(inner)?);
             }
         }
     }
@@ -126,12 +125,7 @@ pub fn parse_file(input: &str) -> Result<Vec<Transaction>, CgtError> {
     Ok(transactions)
 }
 
-struct ParseContext {}
-
-fn parse_transaction(
-    pair: pest::iterators::Pair<Rule>,
-    ctx: &ParseContext,
-) -> Result<Transaction, CgtError> {
+fn parse_transaction(pair: pest::iterators::Pair<Rule>) -> Result<Transaction, CgtError> {
     let mut inner = pair.into_inner();
 
     let date_pair = inner
@@ -152,10 +146,10 @@ fn parse_transaction(
             })?;
 
     let (ticker, operation) = match command_inner.as_rule() {
-        Rule::cmd_buy => parse_buy_sell(command_inner, true, date, ctx)?,
-        Rule::cmd_sell => parse_buy_sell(command_inner, false, date, ctx)?,
-        Rule::cmd_dividend => parse_dividend(command_inner, date, ctx)?,
-        Rule::cmd_capreturn => parse_capreturn(command_inner, date, ctx)?,
+        Rule::cmd_buy => parse_buy_sell(command_inner, true)?,
+        Rule::cmd_sell => parse_buy_sell(command_inner, false)?,
+        Rule::cmd_dividend => parse_dividend(command_inner)?,
+        Rule::cmd_capreturn => parse_capreturn(command_inner)?,
         Rule::cmd_split => parse_split(command_inner, true)?,
         Rule::cmd_unsplit => parse_split(command_inner, false)?,
         _ => return Err(CgtError::InvalidTransaction("Unknown command".to_string())),
@@ -173,11 +167,7 @@ fn parse_decimal(s: &str) -> Result<Decimal, CgtError> {
 }
 
 /// Parse a money rule (decimal with optional currency).
-fn parse_money(
-    pair: pest::iterators::Pair<Rule>,
-    _date: NaiveDate,
-    _ctx: &ParseContext,
-) -> Result<CurrencyAmount, CgtError> {
+fn parse_money(pair: pest::iterators::Pair<Rule>) -> Result<CurrencyAmount, CgtError> {
     let mut inner = pair.into_inner();
 
     let amount = parse_decimal(
@@ -205,9 +195,7 @@ fn parse_money(
 fn parse_buy_sell(
     pair: pest::iterators::Pair<Rule>,
     is_buy: bool,
-    date: NaiveDate,
-    ctx: &ParseContext,
-) -> Result<(String, Operation), CgtError> {
+) -> Result<(String, Operation<CurrencyAmount>), CgtError> {
     let args = pair
         .into_inner()
         .next()
@@ -234,7 +222,7 @@ fn parse_buy_sell(
     let price_pair = inner
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "price" })?;
-    let price = parse_money(price_pair, date, ctx)?;
+    let price = parse_money(price_pair)?;
 
     // Optional fees clause
     let fees = if let Some(fees_clause) = inner.next() {
@@ -245,7 +233,7 @@ fn parse_buy_sell(
                 .ok_or(CgtError::UnexpectedParserState {
                     expected: "fees amount",
                 })?;
-        parse_money(money_pair, date, ctx)?
+        parse_money(money_pair)?
     } else {
         CurrencyAmount::new(Decimal::ZERO, Currency::GBP)
     };
@@ -269,9 +257,7 @@ fn parse_buy_sell(
 
 fn parse_dividend(
     pair: pest::iterators::Pair<Rule>,
-    date: NaiveDate,
-    ctx: &ParseContext,
-) -> Result<(String, Operation), CgtError> {
+) -> Result<(String, Operation<CurrencyAmount>), CgtError> {
     let args = pair
         .into_inner()
         .next()
@@ -298,12 +284,12 @@ fn parse_dividend(
     let total_value_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
         expected: "total value",
     })?;
-    let total_value = parse_money(total_value_pair, date, ctx)?;
+    let total_value = parse_money(total_value_pair)?;
 
     let tax_paid_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
         expected: "tax paid",
     })?;
-    let tax_paid = parse_money(tax_paid_pair, date, ctx)?;
+    let tax_paid = parse_money(tax_paid_pair)?;
 
     Ok((
         ticker,
@@ -317,9 +303,7 @@ fn parse_dividend(
 
 fn parse_capreturn(
     pair: pest::iterators::Pair<Rule>,
-    date: NaiveDate,
-    ctx: &ParseContext,
-) -> Result<(String, Operation), CgtError> {
+) -> Result<(String, Operation<CurrencyAmount>), CgtError> {
     let args = pair
         .into_inner()
         .next()
@@ -346,12 +330,12 @@ fn parse_capreturn(
     let total_value_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
         expected: "total value",
     })?;
-    let total_value = parse_money(total_value_pair, date, ctx)?;
+    let total_value = parse_money(total_value_pair)?;
 
     let fees_pair = inner
         .next()
         .ok_or(CgtError::UnexpectedParserState { expected: "fees" })?;
-    let fees = parse_money(fees_pair, date, ctx)?;
+    let fees = parse_money(fees_pair)?;
 
     Ok((
         ticker,
@@ -366,7 +350,7 @@ fn parse_capreturn(
 fn parse_split(
     pair: pest::iterators::Pair<Rule>,
     is_split: bool,
-) -> Result<(String, Operation), CgtError> {
+) -> Result<(String, Operation<CurrencyAmount>), CgtError> {
     let args = pair
         .into_inner()
         .next()

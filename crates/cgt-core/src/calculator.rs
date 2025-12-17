@@ -1,7 +1,7 @@
 use crate::error::CgtError;
 use crate::models::*;
-use cgt_money::{Currency, FxCache};
-use chrono::{Datelike, NaiveDate};
+use cgt_money::FxCache;
+use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
@@ -42,113 +42,13 @@ struct InternalMatch {
     acquisition_date: Option<NaiveDate>,
 }
 
-fn amount_to_gbp(
-    amount: &CurrencyAmount,
-    date: NaiveDate,
-    fx_cache: Option<&FxCache>,
-) -> Result<Decimal, CgtError> {
-    if amount.is_gbp() {
-        return Ok(amount.amount);
-    }
-
-    let code = amount.code().to_string();
-    let cache = fx_cache.ok_or(CgtError::MissingFxRate {
-        currency: code.clone(),
-        year: date.year(),
-        month: date.month(),
-    })?;
-
-    amount
-        .to_gbp(date, cache)
-        .map_err(|_| CgtError::MissingFxRate {
-            currency: code,
-            year: date.year(),
-            month: date.month(),
-        })
-}
-
-fn convert_transactions_to_gbp(
-    transactions: Vec<Transaction>,
-    fx_cache: Option<&FxCache>,
-) -> Result<Vec<Transaction>, CgtError> {
-    let mut converted = Vec::with_capacity(transactions.len());
-
-    for tx in transactions {
-        let date = tx.date;
-        let ticker = tx.ticker.clone();
-        let op = match tx.operation {
-            Operation::Buy {
-                amount,
-                price,
-                fees,
-            } => {
-                let price_gbp = amount_to_gbp(&price, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(&fees, date, fx_cache)?;
-                Operation::Buy {
-                    amount,
-                    price: CurrencyAmount::new(price_gbp, Currency::GBP),
-                    fees: CurrencyAmount::new(fees_gbp, Currency::GBP),
-                }
-            }
-            Operation::Sell {
-                amount,
-                price,
-                fees,
-            } => {
-                let price_gbp = amount_to_gbp(&price, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(&fees, date, fx_cache)?;
-                Operation::Sell {
-                    amount,
-                    price: CurrencyAmount::new(price_gbp, Currency::GBP),
-                    fees: CurrencyAmount::new(fees_gbp, Currency::GBP),
-                }
-            }
-            Operation::Dividend {
-                amount,
-                total_value,
-                tax_paid,
-            } => {
-                let total_value_gbp = amount_to_gbp(&total_value, date, fx_cache)?;
-                let tax_paid_gbp = amount_to_gbp(&tax_paid, date, fx_cache)?;
-                Operation::Dividend {
-                    amount,
-                    total_value: CurrencyAmount::new(total_value_gbp, Currency::GBP),
-                    tax_paid: CurrencyAmount::new(tax_paid_gbp, Currency::GBP),
-                }
-            }
-            Operation::CapReturn {
-                amount,
-                total_value,
-                fees,
-            } => {
-                let total_value_gbp = amount_to_gbp(&total_value, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(&fees, date, fx_cache)?;
-                Operation::CapReturn {
-                    amount,
-                    total_value: CurrencyAmount::new(total_value_gbp, Currency::GBP),
-                    fees: CurrencyAmount::new(fees_gbp, Currency::GBP),
-                }
-            }
-            Operation::Split { ratio } => Operation::Split { ratio },
-            Operation::Unsplit { ratio } => Operation::Unsplit { ratio },
-        };
-
-        converted.push(Transaction {
-            date,
-            ticker,
-            operation: op,
-        });
-    }
-
-    Ok(converted)
-}
-
 pub fn calculate(
     transactions: Vec<Transaction>,
     tax_year_start: i32,
     fx_cache: Option<&FxCache>,
 ) -> Result<TaxReport, CgtError> {
-    let mut transactions = convert_transactions_to_gbp(transactions, fx_cache)?;
+    // Convert all transactions to GBP-normalized form
+    let mut transactions = transactions_to_gbp(&transactions, fx_cache)?;
     transactions.sort_by(|a, b| a.date.cmp(&b.date));
 
     // Merge same-day same-ticker transactions
@@ -171,13 +71,12 @@ pub fn calculate(
                             fees: next_fees,
                         },
                     ) => {
-                        // Merge using GBP values
-                        let total_cost = (*current_amount * current_price.amount)
-                            + (next_amount * next_price.amount);
+                        // Merge using GBP values (now directly Decimal)
+                        let total_cost =
+                            (*current_amount * *current_price) + (next_amount * next_price);
                         *current_amount += next_amount;
-                        let new_price_gbp = total_cost / *current_amount;
-                        *current_price = CurrencyAmount::new(new_price_gbp, Currency::GBP);
-                        current_fees.amount += next_fees.amount;
+                        *current_price = total_cost / *current_amount;
+                        *current_fees += next_fees;
                     }
                     (
                         Operation::Sell {
@@ -191,17 +90,16 @@ pub fn calculate(
                             fees: next_fees,
                         },
                     ) => {
-                        // Merge using GBP values
-                        let total_proceeds = (*current_amount * current_price.amount)
-                            + (next_amount * next_price.amount);
+                        // Merge using GBP values (now directly Decimal)
+                        let total_proceeds =
+                            (*current_amount * *current_price) + (next_amount * next_price);
                         *current_amount += next_amount;
-                        let new_price_gbp = total_proceeds / *current_amount;
-                        *current_price = CurrencyAmount::new(new_price_gbp, Currency::GBP);
-                        current_fees.amount += next_fees.amount;
+                        *current_price = total_proceeds / *current_amount;
+                        *current_fees += next_fees;
                     }
                     (_, next_op) => {
                         merged.push(current);
-                        current = Transaction {
+                        current = GbpTransaction {
                             date: next.date,
                             ticker: next.ticker,
                             operation: next_op,
@@ -227,8 +125,8 @@ pub fn calculate(
                 fees,
             } => Some(AcquisitionTracker {
                 amount: *amount,
-                price: price.amount,
-                fees: fees.amount,
+                price: *price,
+                fees: *fees,
                 cost_offset: Decimal::ZERO,
             }),
             _ => None,
@@ -243,8 +141,6 @@ pub fn calculate(
             fees: event_fees,
         } = &tx.operation
         {
-            let total_value = total_value.amount;
-            let event_fees = event_fees.amount;
             // Track how much of each acquisition is left after sells before this event
             let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
                 .iter()
@@ -299,7 +195,6 @@ pub fn calculate(
             tax_paid: _,
         } = &tx.operation
         {
-            let total_value = total_value.amount;
             // Track how much of each acquisition is left after sells before this event
             let mut acquisition_amounts_left: Vec<Decimal> = acquisition_trackers
                 .iter()
@@ -328,7 +223,6 @@ pub fn calculate(
 
             // Apportion the dividend value to acquisitions based on amounts left
             // Note: For dividends, the value is after tax, so we don't adjust for tax_paid
-            let net_value = total_value;
             for (acq_idx, acq_opt) in acquisition_trackers.iter_mut().enumerate() {
                 if acq_idx >= event_idx {
                     break;
@@ -339,7 +233,7 @@ pub fn calculate(
                         && transactions[acq_idx].date < tx.date
                         && *event_amount != Decimal::ZERO
                     {
-                        let apportioned_value = net_value * (amount_left / event_amount);
+                        let apportioned_value = total_value * (amount_left / event_amount);
                         acq.cost_offset += apportioned_value; // Increase cost
                     }
                 }
@@ -714,16 +608,16 @@ fn group_matches_into_disposals(internal_matches: Vec<InternalMatch>) -> Vec<Dis
     disposals
 }
 
-fn get_proceeds(current_transaction: &Transaction, qty: Decimal) -> Decimal {
+fn get_proceeds(current_transaction: &GbpTransaction, qty: Decimal) -> Decimal {
     if let Operation::Sell {
         amount,
         price,
         fees,
     } = &current_transaction.operation
     {
-        let gross = qty * price.amount;
+        let gross = qty * price;
         let exp_portion = if *amount != Decimal::ZERO {
-            fees.amount * (qty / *amount)
+            fees * (qty / *amount)
         } else {
             Decimal::ZERO
         };

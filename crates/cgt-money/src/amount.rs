@@ -159,9 +159,11 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
                     match key.as_str() {
                         "amount" => amount = Some(map.next_value()?),
                         "currency" => currency = Some(map.next_value()?),
-                        // Accept legacy field but ignore it
                         "gbp" => {
-                            let _: serde::de::IgnoredAny = map.next_value()?;
+                            return Err(serde::de::Error::custom(
+                                "legacy 'gbp' field is no longer supported; \
+                                 provide only 'amount' and optional 'currency'",
+                            ));
                         }
                         _ => {
                             let _: serde::de::IgnoredAny = map.next_value()?;

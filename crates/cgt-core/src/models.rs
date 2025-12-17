@@ -1,3 +1,4 @@
+use cgt_money::FxCache;
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 use schemars::JsonSchema;
@@ -117,37 +118,158 @@ impl JsonSchema for TaxPeriod {
     }
 }
 
+/// A transaction with amounts in their original currency.
+/// Used for parsing and JSON I/O.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Transaction {
     pub date: NaiveDate,
     pub ticker: String,
     #[serde(flatten)]
-    pub operation: Operation,
+    pub operation: Operation<CurrencyAmount>,
 }
 
+/// A transaction with all monetary amounts converted to GBP.
+/// Used internally for CGT calculations.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GbpTransaction {
+    pub date: NaiveDate,
+    pub ticker: String,
+    pub operation: Operation<Decimal>,
+}
+
+impl Transaction {
+    /// Convert this transaction to a GBP-normalized transaction.
+    ///
+    /// All monetary amounts are converted to GBP using the FX rate for the transaction date.
+    /// If the transaction is already in GBP, no conversion is needed.
+    pub fn to_gbp(&self, fx_cache: Option<&FxCache>) -> Result<GbpTransaction, CgtError> {
+        let date = self.date;
+        let operation = match &self.operation {
+            Operation::Buy {
+                amount,
+                price,
+                fees,
+            } => {
+                let price_gbp = amount_to_gbp(price, date, fx_cache)?;
+                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
+                Operation::Buy {
+                    amount: *amount,
+                    price: price_gbp,
+                    fees: fees_gbp,
+                }
+            }
+            Operation::Sell {
+                amount,
+                price,
+                fees,
+            } => {
+                let price_gbp = amount_to_gbp(price, date, fx_cache)?;
+                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
+                Operation::Sell {
+                    amount: *amount,
+                    price: price_gbp,
+                    fees: fees_gbp,
+                }
+            }
+            Operation::Dividend {
+                amount,
+                total_value,
+                tax_paid,
+            } => {
+                let total_value_gbp = amount_to_gbp(total_value, date, fx_cache)?;
+                let tax_paid_gbp = amount_to_gbp(tax_paid, date, fx_cache)?;
+                Operation::Dividend {
+                    amount: *amount,
+                    total_value: total_value_gbp,
+                    tax_paid: tax_paid_gbp,
+                }
+            }
+            Operation::CapReturn {
+                amount,
+                total_value,
+                fees,
+            } => {
+                let total_value_gbp = amount_to_gbp(total_value, date, fx_cache)?;
+                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
+                Operation::CapReturn {
+                    amount: *amount,
+                    total_value: total_value_gbp,
+                    fees: fees_gbp,
+                }
+            }
+            Operation::Split { ratio } => Operation::Split { ratio: *ratio },
+            Operation::Unsplit { ratio } => Operation::Unsplit { ratio: *ratio },
+        };
+
+        Ok(GbpTransaction {
+            date: self.date,
+            ticker: self.ticker.clone(),
+            operation,
+        })
+    }
+}
+
+/// Convert a CurrencyAmount to GBP using the FX cache.
+fn amount_to_gbp(
+    amount: &CurrencyAmount,
+    date: NaiveDate,
+    fx_cache: Option<&FxCache>,
+) -> Result<Decimal, CgtError> {
+    if amount.is_gbp() {
+        return Ok(amount.amount);
+    }
+
+    let code = amount.code().to_string();
+    let cache = fx_cache.ok_or(CgtError::MissingFxRate {
+        currency: code.clone(),
+        year: date.year(),
+        month: date.month(),
+    })?;
+
+    amount
+        .to_gbp(date, cache)
+        .map_err(|_| CgtError::MissingFxRate {
+            currency: code,
+            year: date.year(),
+            month: date.month(),
+        })
+}
+
+/// Convert a slice of transactions to GBP-normalized transactions.
+pub fn transactions_to_gbp(
+    transactions: &[Transaction],
+    fx_cache: Option<&FxCache>,
+) -> Result<Vec<GbpTransaction>, CgtError> {
+    transactions.iter().map(|tx| tx.to_gbp(fx_cache)).collect()
+}
+
+/// A financial operation, generic over the monetary amount type.
+///
+/// - `Operation<CurrencyAmount>`: amounts in original currency (for I/O)
+/// - `Operation<Decimal>`: amounts in GBP (for calculations)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "action", rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Operation {
+pub enum Operation<M> {
     Buy {
         amount: Decimal,
-        price: CurrencyAmount,
-        fees: CurrencyAmount,
+        price: M,
+        fees: M,
     },
     Sell {
         amount: Decimal,
-        price: CurrencyAmount,
-        fees: CurrencyAmount,
+        price: M,
+        fees: M,
     },
     Dividend {
         amount: Decimal,
-        total_value: CurrencyAmount,
-        tax_paid: CurrencyAmount,
+        total_value: M,
+        tax_paid: M,
     },
     #[serde(rename = "CAPRETURN")]
     CapReturn {
         amount: Decimal,
-        total_value: CurrencyAmount,
-        fees: CurrencyAmount,
+        total_value: M,
+        fees: M,
     },
     Split {
         ratio: Decimal,
