@@ -10,6 +10,8 @@ Calculate UK Capital Gains Tax using HMRC share matching rules (CG51500-CG51600)
 
 The system SHALL match disposals with same-day acquisitions first.
 
+Implementation Note: Matching logic is now modularized in `matcher/same_day.rs`.
+
 #### Scenario: Same day match
 
 - **WHEN** shares are bought and sold on the same day
