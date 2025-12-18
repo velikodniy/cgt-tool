@@ -199,10 +199,13 @@ impl BrokerConverter for SchwabConverter {
 }
 
 /// Parse Schwab transactions CSV
+///
+/// Uses `flexible(true)` to tolerate extra columns with empty values that Schwab
+/// may add to exports over time. Unknown columns are silently ignored.
 fn parse_transactions_csv(csv_content: &str) -> Result<Vec<SchwabTransaction>, ConvertError> {
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(true)
-        .flexible(true) // Allow variable number of fields per record
+        .flexible(true) // Allow variable number of fields per record (tolerates extra columns)
         .from_reader(csv_content.as_bytes());
 
     let headers = reader.headers()?.clone();
@@ -584,5 +587,39 @@ mod tests {
     fn test_parse_amount_no_dollar() {
         let result = parse_amount("125.64").unwrap().unwrap();
         assert_eq!(result, dec!(125.64));
+    }
+
+    // ===========================================
+    // CSV Extra Column Tolerance
+    // ===========================================
+
+    #[test]
+    fn test_csv_extra_empty_columns_tolerated() {
+        // Schwab may add extra columns to CSV exports over time.
+        // The parser should tolerate extra columns with empty values.
+        let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount,ExtraCol1,ExtraCol2
+04/25/2023,Buy,AAPL,Apple Inc,100,$150.00,$10.00,-$15010.00,,
+"#;
+
+        let transactions = parse_transactions_csv(csv).unwrap();
+        assert_eq!(transactions.len(), 1);
+        assert_eq!(transactions[0].symbol, "AAPL");
+        assert_eq!(transactions[0].action, "Buy");
+        assert_eq!(transactions[0].quantity, Some(dec!(100)));
+        assert_eq!(transactions[0].price, Some(dec!(150.00)));
+    }
+
+    #[test]
+    fn test_csv_variable_extra_columns_per_row() {
+        // Different rows may have different numbers of extra columns
+        let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
+04/25/2023,Buy,AAPL,Apple Inc,100,$150.00,$10.00,-$15010.00,extra1,extra2,extra3
+04/26/2023,Sell,AAPL,Apple Inc,50,$160.00,$5.00,$7995.00
+"#;
+
+        let transactions = parse_transactions_csv(csv).unwrap();
+        assert_eq!(transactions.len(), 2);
+        assert_eq!(transactions[0].action, "Buy");
+        assert_eq!(transactions[1].action, "Sell");
     }
 }
