@@ -868,7 +868,7 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.err().unwrap();
-        assert!(err.message.contains("Parse error"));
+        assert!(err.message.contains("Parsing error"));
     }
 
     #[tokio::test]

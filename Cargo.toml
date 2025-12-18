@@ -12,3 +12,5 @@ expect_used = "deny"
 panic = "deny"
 todo = "deny"
 unimplemented = "deny"
+# Allow large error types (common with parser libraries like pest_consume)
+result_large_err = "allow"

@@ -1,5 +1,4 @@
 // CGT DSL Grammar
-// Each line is either a transaction, a comment, or blank
 transaction_list = { SOI ~ (line ~ NEWLINE)* ~ line? ~ EOI }
 line = _{ transaction | COMMENT | "" }
 transaction = { date ~ command }
@@ -13,44 +12,44 @@ command = {
     cmd_unsplit
 }
 
-cmd_buy = { ^"BUY" ~ buy_sell_args }
-cmd_sell = { ^"SELL" ~ buy_sell_args }
-cmd_dividend = { ^"DIVIDEND" ~ dividend_args }
-cmd_capreturn = { ^"CAPRETURN" ~ capreturn_args }
-cmd_split = { ^"SPLIT" ~ split_args }
-cmd_unsplit = { ^"UNSPLIT" ~ split_args }
+// Commands - semantic types include their markers/keywords
+// BUY/SELL: <date> BUY|SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]
+cmd_buy = { ^"BUY" ~ ticker ~ quantity ~ price ~ fees? }
+cmd_sell = { ^"SELL" ~ ticker ~ quantity ~ price ~ fees? }
 
-date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
+// DIVIDEND: <date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
+cmd_dividend = { ^"DIVIDEND" ~ ticker ~ quantity ~ total_value ~ tax? }
 
-// Amount with optional currency code (ISO 4217, 3 letters, case-insensitive)
-// Must not match keywords (TAX, FEES, TOTAL, RATIO, BUY, SELL)
+// CAPRETURN: <date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]
+cmd_capreturn = { ^"CAPRETURN" ~ ticker ~ quantity ~ total_value ~ fees? }
+
+// SPLIT/UNSPLIT: <date> SPLIT|UNSPLIT <ticker> RATIO <ratio>
+cmd_split = { ^"SPLIT" ~ ticker ~ ratio_value }
+cmd_unsplit = { ^"UNSPLIT" ~ ticker ~ ratio_value }
+
+// Semantic types
+price = { "@" ~ money }
+total_value = { ^"TOTAL" ~ money }
+fees = { ^"FEES" ~ money }
+tax = { ^"TAX" ~ money }
+ratio_value = { ^"RATIO" ~ ratio }
+
+// Base types
 money = { decimal ~ currency_code? }
+
+// Atomic tokens
+date = @{ ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
+ticker = @{ ASCII_ALPHANUMERIC+ }
+quantity = @{ decimal }
+ratio = @{ decimal }
+decimal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+
 currency_code = @{
     !(^"TAX" | ^"BUY" | ^"FEES" | ^"TOTAL" | ^"RATIO" | ^"SELL") ~
     ASCII_ALPHA{3} ~
     !(ASCII_ALPHANUMERIC | "-")
 }
 
-// BUY/SELL: ticker amount @ price [currency] [FEES fees [currency]]
-buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ fees_clause? }
-fees_clause = { ^"FEES" ~ money }
-
-// DIVIDEND: ticker amount TOTAL value [currency] [TAX tax [currency]]
-dividend_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ tax_clause? }
-tax_clause = { ^"TAX" ~ money }
-
-// CAPRETURN: ticker amount TOTAL value [currency] [FEES fees [currency]]
-capreturn_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ fees_clause? }
-
-// SPLIT/UNSPLIT: ticker RATIO ratio
-split_args = { ticker ~ ^"RATIO" ~ ratio }
-
-ticker = @{ ASCII_ALPHANUMERIC+ }
-quantity = @{ decimal }
-ratio = @{ decimal }
-decimal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
-
-// Whitespace between tokens (no newlines - transactions must be on separate lines)
 WHITESPACE = _{ " " | "\t" }
 COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 NEWLINE = _{ "\r\n" | "\n" | "\r" }
