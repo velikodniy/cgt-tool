@@ -82,8 +82,8 @@ pub struct ParseTransactionsRequest {
 pub struct CalculateReportRequest {
     /// Transactions as JSON array or CGT DSL text.
     pub transactions: String,
-    /// Tax year start (e.g., 2024 for tax year 2024/25).
-    pub year: i32,
+    /// Tax year start (e.g., 2024 for tax year 2024/25). If omitted, report includes all years.
+    pub year: Option<i32>,
 }
 
 /// Request parameters for explain_matching tool.
@@ -249,8 +249,8 @@ Price/fees can be:
         })
     }
 
-    /// Calculate report for a tax year.
-    fn do_calculate_report(&self, input: &str, year: i32) -> Result<TaxReport, McpError> {
+    /// Calculate report for a tax year (or all years if None).
+    fn do_calculate_report(&self, input: &str, year: Option<i32>) -> Result<TaxReport, McpError> {
         let transactions = self.parse_input(input)?;
 
         if transactions.is_empty() {
@@ -265,9 +265,8 @@ Price/fees can be:
     }
 
     /// Format a calculation error with helpful context.
-    fn format_calculation_error(e: cgt_core::CgtError, year: i32) -> McpError {
+    fn format_calculation_error(e: cgt_core::CgtError, year: Option<i32>) -> McpError {
         let error_str = e.to_string();
-        let year_end = (year + 1) % 100;
 
         let hint = if error_str.contains("Missing FX rate") {
             HINT_MISSING_FX_RATE
@@ -281,15 +280,27 @@ Price/fees can be:
             ""
         };
 
-        let msg = format!(
-            "Calculation Error for tax year {year}/{year_end:02}:\n\n\
-             {error_str}\n\n\
-             {hint}\n\n\
-             UK Tax Year {year}/{year_end:02} runs from 6 April {year} to 5 April {}.",
-            year + 1
-        );
+        let year_context = match year {
+            Some(y) => {
+                let year_end = (y + 1) % 100;
+                format!(
+                    "Calculation Error for tax year {y}/{year_end:02}:\n\n\
+                     {error_str}\n\n\
+                     {hint}\n\n\
+                     UK Tax Year {y}/{year_end:02} runs from 6 April {y} to 5 April {}.",
+                    y + 1
+                )
+            }
+            None => {
+                format!(
+                    "Calculation Error:\n\n\
+                     {error_str}\n\n\
+                     {hint}"
+                )
+            }
+        };
 
-        McpError::invalid_params(msg, None)
+        McpError::invalid_params(year_context, None)
     }
 
     /// Find a disposal by date and ticker.
@@ -381,7 +392,7 @@ impl CgtServer {
     }
 
     #[tool(
-        description = "Calculate UK Capital Gains Tax report for a specific tax year.\n\nApplies HMRC share matching rules (Same Day, Bed & Breakfast, Section 104) and returns gains/losses in GBP.\n\n### Parameters:\n- transactions: JSON array of transactions (see parse_transactions for schema)\n- year: Tax year START (e.g., 2024 for tax year 2024/25 running 6 April 2024 to 5 April 2025)\n\n### Currency:\n- All results converted to GBP using HMRC monthly average rates\n- For US stocks, specify USD: \"price\": {\"amount\": \"150\", \"currency\": \"USD\"}\n- Without currency specified, amounts are treated as GBP\n\n### Example:\n\nInput:\n[{\"date\":\"2024-01-15\",\"ticker\":\"AAPL\",\"action\":\"BUY\",\"amount\":\"100\",\"price\":{\"amount\":\"150\",\"currency\":\"USD\"}},\n {\"date\":\"2024-06-20\",\"ticker\":\"AAPL\",\"action\":\"SELL\",\"amount\":\"50\",\"price\":{\"amount\":\"180\",\"currency\":\"USD\"}}]\n\nWith year=2024 returns tax report for 2024/25."
+        description = "Calculate UK Capital Gains Tax report.\n\nApplies HMRC share matching rules (Same Day, Bed & Breakfast, Section 104) and returns gains/losses in GBP.\n\n### Parameters:\n- transactions: JSON array of transactions (see parse_transactions for schema)\n- year: (optional) Tax year START (e.g., 2024 for tax year 2024/25 running 6 April 2024 to 5 April 2025). If omitted, report includes all tax years with disposals.\n\n### Currency:\n- All results converted to GBP using HMRC monthly average rates\n- For US stocks, specify USD: \"price\": {\"amount\": \"150\", \"currency\": \"USD\"}\n- Without currency specified, amounts are treated as GBP\n\n### Example:\n\nInput:\n[{\"date\":\"2024-01-15\",\"ticker\":\"AAPL\",\"action\":\"BUY\",\"amount\":\"100\",\"price\":{\"amount\":\"150\",\"currency\":\"USD\"}},\n {\"date\":\"2024-06-20\",\"ticker\":\"AAPL\",\"action\":\"SELL\",\"amount\":\"50\",\"price\":{\"amount\":\"180\",\"currency\":\"USD\"}}]\n\nWith year=2024 returns tax report for 2024/25.\nWithout year, returns report for all years with disposals."
     )]
     async fn calculate_report(
         &self,
@@ -420,7 +431,7 @@ impl CgtServer {
             date.year()
         };
 
-        let report = self.do_calculate_report(&req.transactions, year)?;
+        let report = self.do_calculate_report(&req.transactions, Some(year))?;
         let disposal = self.find_disposal(&report, &req.disposal_date, &req.ticker)?;
 
         // Build explanation
@@ -879,7 +890,7 @@ mod tests {
         let result = server
             .calculate_report(Parameters(CalculateReportRequest {
                 transactions: SIMPLE_CGT.to_string(),
-                year: 2024,
+                year: Some(2024),
             }))
             .await;
 
@@ -899,7 +910,7 @@ mod tests {
         let result = server
             .calculate_report(Parameters(CalculateReportRequest {
                 transactions: "invalid content".to_string(),
-                year: 2024,
+                year: Some(2024),
             }))
             .await;
 
@@ -913,12 +924,40 @@ mod tests {
         let result = server
             .calculate_report(Parameters(CalculateReportRequest {
                 transactions: SIMPLE_CGT.to_string(),
-                year: 2023,
+                year: Some(2023),
             }))
             .await;
 
         // Should succeed but with empty disposals for that year
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_calculate_report_all_years() {
+        let server = test_server_without_fx();
+        // Multi-year transactions spanning 2023/24 and 2024/25
+        let multi_year_cgt = r#"
+2023-06-01 BUY AAPL 100 @ 150 GBP
+2023-12-15 SELL AAPL 50 @ 160 GBP
+2024-06-20 SELL AAPL 30 @ 170 GBP
+"#;
+        let result = server
+            .calculate_report(Parameters(CalculateReportRequest {
+                transactions: multi_year_cgt.to_string(),
+                year: None,
+            }))
+            .await;
+
+        assert!(result.is_ok());
+        let call_result = result.ok().unwrap();
+        assert!(!call_result.is_error.unwrap_or(false));
+
+        // Verify JSON contains multiple tax years
+        let text = extract_text(&call_result).expect("Expected text content");
+        assert!(text.contains("tax_years"));
+        // Should have both 2023/24 and 2024/25
+        assert!(text.contains("2023/24"));
+        assert!(text.contains("2024/25"));
     }
 
     #[tokio::test]
@@ -1244,7 +1283,7 @@ mod tests {
             {"date": "2023-12-31", "ticker": "VOD", "action": "SELL", "amount": "4", "price": "12"}
         ]"#;
 
-        let result = server.do_calculate_report(json_input, 2023);
+        let result = server.do_calculate_report(json_input, Some(2023));
         assert!(
             result.is_ok(),
             "Calculate report should work: {:?}",
@@ -1332,7 +1371,7 @@ mod tests {
             {"date": "2024-06-20", "ticker": "VOD", "action": "SELL", "amount": "50", "price": "130"}
         ]"#;
 
-        let result = server.do_calculate_report(json_input, 2024);
+        let result = server.do_calculate_report(json_input, Some(2024));
         assert!(result.is_ok(), "Should calculate: {:?}", result.err());
         let report = result.ok().unwrap();
 
@@ -1345,7 +1384,7 @@ mod tests {
     #[test]
     fn test_do_calculate_report_success() {
         let server = test_server_without_fx();
-        let result = server.do_calculate_report(SIMPLE_CGT, 2024);
+        let result = server.do_calculate_report(SIMPLE_CGT, Some(2024));
         assert!(result.is_ok());
         let report = result.ok().unwrap();
         assert!(!report.tax_years.is_empty());
@@ -1354,7 +1393,10 @@ mod tests {
     #[test]
     fn test_find_disposal_success() {
         let server = test_server_without_fx();
-        let report = server.do_calculate_report(SIMPLE_CGT, 2024).ok().unwrap();
+        let report = server
+            .do_calculate_report(SIMPLE_CGT, Some(2024))
+            .ok()
+            .unwrap();
         let result = server.find_disposal(&report, "2024-06-20", "AAPL");
         assert!(result.is_ok());
     }
@@ -1362,7 +1404,10 @@ mod tests {
     #[test]
     fn test_find_disposal_not_found() {
         let server = test_server_without_fx();
-        let report = server.do_calculate_report(SIMPLE_CGT, 2024).ok().unwrap();
+        let report = server
+            .do_calculate_report(SIMPLE_CGT, Some(2024))
+            .ok()
+            .unwrap();
         let result = server.find_disposal(&report, "2024-06-21", "AAPL");
         assert!(result.is_err());
     }

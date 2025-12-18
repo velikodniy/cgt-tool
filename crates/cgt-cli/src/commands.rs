@@ -33,9 +33,9 @@ pub enum Commands {
         #[arg(required = true)]
         files: Vec<PathBuf>,
 
-        /// Tax year start (e.g. 2018 for 2018/2019)
+        /// Tax year start (e.g. 2024 for 2024/25). If omitted, report includes all years.
         #[arg(long)]
-        year: i32,
+        year: Option<i32>,
 
         /// Output format (plain, json, or pdf)
         #[arg(long, short, value_enum, default_value_t = OutputFormat::Plain)]

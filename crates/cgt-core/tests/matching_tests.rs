@@ -113,7 +113,7 @@ fn test_data_driven_matching() {
                 );
             }
 
-            let actual_report = calculate(transactions.clone(), expected_year_start, None)
+            let actual_report = calculate(transactions.clone(), Some(expected_year_start), None)
                 .expect("Failed to calculate");
 
             // Get the actual tax year summary
@@ -168,7 +168,7 @@ fn test_high_precision_decimal_quantity_preserved() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     // Quantity should be exactly preserved
@@ -188,7 +188,7 @@ fn test_very_small_fractional_share_quantity() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -214,7 +214,7 @@ fn test_quantity_precision_through_section_104_pool() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     // Total bought: 100.000000 shares exactly
     // After selling 50, pool should have 50.000000
@@ -239,7 +239,7 @@ fn test_proceeds_deduct_selling_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -266,7 +266,7 @@ fn test_proceeds_with_zero_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -285,7 +285,7 @@ fn test_expenses_apportioned_in_partial_sale() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -309,7 +309,7 @@ fn test_expenses_apportioned_across_match_rules() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -355,7 +355,7 @@ fn test_large_quantity_with_precise_decimals() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -374,7 +374,7 @@ fn test_price_with_many_decimal_places() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -397,7 +397,7 @@ fn test_bed_and_breakfast_quantity_precision() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, 2024, None).expect("Failed to calculate");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -413,4 +413,100 @@ fn test_bed_and_breakfast_quantity_precision() {
         .find(|m| m.rule == MatchRule::BedAndBreakfast);
     assert!(bb_match.is_some(), "Should have B&B match");
     assert_eq!(bb_match.expect("B&B match").quantity, dec!(50.123456));
+}
+
+// All-years report generation tests
+
+#[test]
+fn test_all_years_report_generation() {
+    // Test that omitting year returns all tax years with disposals
+    let cgt_content = r#"
+2023-06-01 BUY ACME 100 @ 100.00 GBP
+2023-12-15 SELL ACME 50 @ 110.00 GBP
+2024-06-20 SELL ACME 30 @ 120.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, None, None).expect("Failed to calculate");
+
+    // Should have two tax years: 2023/24 (Dec 2023 sale) and 2024/25 (Jun 2024 sale)
+    assert_eq!(
+        report.tax_years.len(),
+        2,
+        "Should have 2 tax years with disposals"
+    );
+
+    // First year should be 2023/24
+    assert_eq!(report.tax_years[0].period.start_year(), 2023);
+    assert_eq!(report.tax_years[0].disposals.len(), 1);
+
+    // Second year should be 2024/25
+    assert_eq!(report.tax_years[1].period.start_year(), 2024);
+    assert_eq!(report.tax_years[1].disposals.len(), 1);
+}
+
+#[test]
+fn test_single_year_filter_still_works() {
+    // Test that specifying a year still filters to just that year
+    let cgt_content = r#"
+2023-06-01 BUY ACME 100 @ 100.00 GBP
+2023-12-15 SELL ACME 50 @ 110.00 GBP
+2024-06-20 SELL ACME 30 @ 120.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+
+    // Should only have 2024/25 tax year
+    assert_eq!(
+        report.tax_years.len(),
+        1,
+        "Should have only 1 tax year when filtered"
+    );
+    assert_eq!(report.tax_years[0].period.start_year(), 2024);
+    assert_eq!(report.tax_years[0].disposals.len(), 1);
+}
+
+#[test]
+fn test_all_years_sorted_chronologically() {
+    // Test that tax years are sorted chronologically
+    let cgt_content = r#"
+2020-06-01 BUY ACME 100 @ 100.00 GBP
+2022-06-20 SELL ACME 20 @ 110.00 GBP
+2021-06-20 SELL ACME 20 @ 105.00 GBP
+2023-06-20 SELL ACME 20 @ 115.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, None, None).expect("Failed to calculate");
+
+    // Should have 3 tax years
+    assert_eq!(report.tax_years.len(), 3);
+
+    // Should be sorted: 2021/22, 2022/23, 2023/24
+    assert_eq!(report.tax_years[0].period.start_year(), 2021);
+    assert_eq!(report.tax_years[1].period.start_year(), 2022);
+    assert_eq!(report.tax_years[2].period.start_year(), 2023);
+}
+
+#[test]
+fn test_all_years_no_disposals_returns_empty() {
+    // Test that transactions with no disposals returns empty tax_years
+    let cgt_content = r#"
+2024-06-01 BUY ACME 100 @ 100.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, None, None).expect("Failed to calculate");
+
+    // No disposals means no tax years in report
+    assert_eq!(
+        report.tax_years.len(),
+        0,
+        "No disposals should result in empty tax_years"
+    );
+
+    // But holdings should still be tracked
+    assert_eq!(report.holdings.len(), 1);
+    assert_eq!(report.holdings[0].ticker, "ACME");
 }
