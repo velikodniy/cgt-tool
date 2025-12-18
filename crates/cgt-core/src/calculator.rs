@@ -10,6 +10,23 @@ use std::collections::HashMap;
 ///
 /// If `tax_year_start` is `Some(year)`, only disposals in that tax year are included.
 /// If `tax_year_start` is `None`, all tax years with disposals are included.
+///
+/// # Validation
+///
+/// This function does not perform input validation. Callers should use
+/// [`crate::validation::validate()`] before calling this function to catch
+/// invalid inputs (zero quantities, negative prices, etc.) with helpful error
+/// messages. Invalid inputs may cause unexpected behavior or incorrect results.
+///
+/// ```ignore
+/// use cgt_core::{validation, calculator};
+///
+/// let result = validation::validate(&transactions);
+/// if !result.is_valid() {
+///     // Handle validation errors
+/// }
+/// let report = calculator::calculate(transactions, None, None)?;
+/// ```
 pub fn calculate(
     transactions: Vec<Transaction>,
     tax_year_start: Option<i32>,
