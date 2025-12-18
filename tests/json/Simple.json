@@ -7,27 +7,22 @@
           "date": "2018-08-28",
           "ticker": "GB00B41YBW71",
           "quantity": "10",
-          "proceeds": "34.2020",
+          "proceeds": "34.20",
           "matches": [
             {
               "rule": "SameDay",
               "quantity": "10",
-              "allowable_cost": "54.0650",
-              "gain_or_loss": "-19.8630"
+              "allowable_cost": "54.06",
+              "gain_or_loss": "-19.86",
+              "acquisition_date": "2018-08-28"
             }
           ]
         }
       ],
       "total_gain": "0",
-      "total_loss": "19.8630",
-      "net_gain": "-19.8630"
+      "total_loss": "19.86",
+      "net_gain": "-19.86"
     }
   ],
-  "holdings": [
-    {
-      "ticker": "GB00B41YBW71",
-      "quantity": "0",
-      "total_cost": "0"
-    }
-  ]
+  "holdings": []
 }

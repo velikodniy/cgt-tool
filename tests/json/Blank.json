@@ -1,12 +1,4 @@
 {
-  "tax_years": [
-    {
-      "period": "2018/19",
-      "disposals": [],
-      "total_gain": "0",
-      "total_loss": "0",
-      "net_gain": "0"
-    }
-  ],
+  "tax_years": [],
   "holdings": []
 }

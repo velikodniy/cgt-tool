@@ -12,8 +12,8 @@
             {
               "rule": "Section104",
               "quantity": "50",
-              "allowable_cost": "502.50",
-              "gain_or_loss": "92.50"
+              "allowable_cost": "515.00",
+              "gain_or_loss": "80.00"
             }
           ]
         },
@@ -26,14 +26,14 @@
             {
               "rule": "Section104",
               "quantity": "50",
-              "allowable_cost": "527.50",
-              "gain_or_loss": "17.50"
+              "allowable_cost": "515.00",
+              "gain_or_loss": "30.00"
             }
           ]
         }
       ],
       "total_gain": "110.00",
-      "total_loss": "0.00",
+      "total_loss": "0",
       "net_gain": "110.00"
     }
   ],
@@ -41,7 +41,7 @@
     {
       "ticker": "ACCFUND",
       "quantity": "0",
-      "total_cost": "0"
+      "total_cost": "0.00"
     }
   ]
 }

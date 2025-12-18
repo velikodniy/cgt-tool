@@ -13,7 +13,8 @@
               "rule": "SameDay",
               "quantity": "1",
               "allowable_cost": "1000",
-              "gain_or_loss": "-1000"
+              "gain_or_loss": "-1000",
+              "acquisition_date": "2018-01-01"
             }
           ]
         }
@@ -21,13 +22,53 @@
       "total_gain": "0",
       "total_loss": "1000",
       "net_gain": "-1000"
+    },
+    {
+      "period": "2018/19",
+      "disposals": [
+        {
+          "date": "2019-01-01",
+          "ticker": "GB00B41YBW71",
+          "quantity": "1",
+          "proceeds": "2000",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1",
+              "allowable_cost": "1000",
+              "gain_or_loss": "1000",
+              "acquisition_date": "2019-01-01"
+            }
+          ]
+        }
+      ],
+      "total_gain": "1000",
+      "total_loss": "0",
+      "net_gain": "1000"
+    },
+    {
+      "period": "2019/20",
+      "disposals": [
+        {
+          "date": "2020-01-01",
+          "ticker": "GB00B41YBW71",
+          "quantity": "1",
+          "proceeds": "20000",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "1",
+              "allowable_cost": "1000",
+              "gain_or_loss": "19000",
+              "acquisition_date": "2020-01-01"
+            }
+          ]
+        }
+      ],
+      "total_gain": "19000",
+      "total_loss": "0",
+      "net_gain": "19000"
     }
   ],
-  "holdings": [
-    {
-      "ticker": "GB00B41YBW71",
-      "quantity": "0",
-      "total_cost": "0"
-    }
-  ]
+  "holdings": []
 }

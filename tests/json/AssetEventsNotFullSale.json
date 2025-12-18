@@ -12,22 +12,44 @@
             {
               "rule": "Section104",
               "quantity": "5",
-              "allowable_cost": "496.66666666666666666666666665",
-              "gain_or_loss": "28.33333333333333333333333335"
+              "allowable_cost": "496.67",
+              "gain_or_loss": "28.33"
             }
           ]
         }
       ],
-      "total_gain": "28.33333333333333333333333335",
+      "total_gain": "28.33",
       "total_loss": "0",
-      "net_gain": "28.33333333333333333333333335"
+      "net_gain": "28.33"
+    },
+    {
+      "period": "2020/21",
+      "disposals": [
+        {
+          "date": "2020-07-01",
+          "ticker": "FOOBAR",
+          "quantity": "5",
+          "proceeds": "500",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "5",
+              "allowable_cost": "440.67",
+              "gain_or_loss": "59.33"
+            }
+          ]
+        }
+      ],
+      "total_gain": "59.33",
+      "total_loss": "0",
+      "net_gain": "59.33"
     }
   ],
   "holdings": [
     {
       "ticker": "FOOBAR",
       "quantity": "20",
-      "total_cost": "1762.6666666666666666666666667"
+      "total_cost": "1762.67"
     }
   ]
 }

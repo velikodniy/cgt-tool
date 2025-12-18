@@ -12,22 +12,22 @@
             {
               "rule": "Section104",
               "quantity": "20",
-              "allowable_cost": "164.33333333333333333333333335",
-              "gain_or_loss": "-18.83333333333333333333333335"
+              "allowable_cost": "164.33",
+              "gain_or_loss": "-18.83"
             }
           ]
         }
       ],
       "total_gain": "0",
-      "total_loss": "18.83333333333333333333333335",
-      "net_gain": "-18.83333333333333333333333335"
+      "total_loss": "18.83",
+      "net_gain": "-18.83"
     }
   ],
   "holdings": [
     {
       "ticker": "GB00B41YBW71",
       "quantity": "10",
-      "total_cost": "82.16666666666666666666666666"
+      "total_cost": "82.17"
     }
   ]
 }

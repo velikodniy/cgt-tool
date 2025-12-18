@@ -13,7 +13,8 @@
               "rule": "SameDay",
               "quantity": "5",
               "allowable_cost": "505",
-              "gain_or_loss": "40"
+              "gain_or_loss": "40",
+              "acquisition_date": "2023-07-15"
             }
           ]
         },
@@ -26,15 +27,16 @@
             {
               "rule": "SameDay",
               "quantity": "10",
-              "allowable_cost": "505",
-              "gain_or_loss": "-60"
+              "allowable_cost": "505.00",
+              "gain_or_loss": "-60.00",
+              "acquisition_date": "2023-07-15"
             }
           ]
         }
       ],
       "total_gain": "40",
-      "total_loss": "60",
-      "net_gain": "-20"
+      "total_loss": "60.00",
+      "net_gain": "-20.00"
     }
   ],
   "holdings": [
@@ -46,7 +48,7 @@
     {
       "ticker": "MSFT",
       "quantity": "10",
-      "total_cost": "505"
+      "total_cost": "505.00"
     }
   ]
 }

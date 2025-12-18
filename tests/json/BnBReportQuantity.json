@@ -7,7 +7,7 @@
           "date": "2023-06-15",
           "ticker": "PARTBNB",
           "quantity": "100",
-          "proceeds": "1490",
+          "proceeds": "1490.00",
           "matches": [
             {
               "rule": "BedAndBreakfast",
@@ -26,15 +26,15 @@
         }
       ],
       "total_gain": "418.00",
-      "total_loss": "0.00",
+      "total_loss": "0",
       "net_gain": "418.00"
     }
   ],
   "holdings": [
     {
       "ticker": "PARTBNB",
-      "quantity": "0",
-      "total_cost": "0"
+      "quantity": "30",
+      "total_cost": "303.00"
     }
   ]
 }

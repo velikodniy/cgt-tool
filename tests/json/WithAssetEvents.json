@@ -12,22 +12,22 @@
             {
               "rule": "Section104",
               "quantity": "40",
-              "allowable_cost": "7339.190000",
-              "gain_or_loss": "417.110000"
+              "allowable_cost": "7339.19",
+              "gain_or_loss": "417.11"
             }
           ]
         }
       ],
-      "total_gain": "417.110000",
+      "total_gain": "417.11",
       "total_loss": "0",
-      "net_gain": "417.110000"
+      "net_gain": "417.11"
     }
   ],
   "holdings": [
     {
       "ticker": "GB00B3TYHH97",
       "quantity": "0",
-      "total_cost": "0.000000"
+      "total_cost": "0.00"
     }
   ]
 }

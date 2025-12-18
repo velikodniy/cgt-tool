@@ -1,18 +1,18 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2023/24     £140   £1,195     £6,000      £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2023/24     £140.00     £1,195.00   £6,000.00     £0.00
 
 # TAX YEAR DETAILS
 
 ## 2023/24
 
-1) SELL 100 SPACEY on 01/12/2023 - GAIN £140
+1) SELL 100 SPACEY on 01/12/2023 - GAIN £140.00
    Section 104: 100 shares @ £10.55
-   Proceeds: 100 × £12 = £1,195
-   Cost: £1,055
-   Result: £140
+   Proceeds: 100 × £12 - £5.00 fees = £1,195.00
+   Cost: £1,055.00
+   Result: £140.00
 
 
 # HOLDINGS
@@ -22,5 +22,8 @@ NONE
 # TRANSACTIONS
 
 01/01/2023 BUY 100 SPACEY @ £10 (£5 fees)
-15/06/2023 DIVIDEND 100 SPACEY £50
 01/12/2023 SELL 100 SPACEY @ £12 (£5 fees)
+
+# ASSET EVENTS
+
+15/06/2023 DIVIDEND SPACEY 100 £50.00

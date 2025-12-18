@@ -5,43 +5,43 @@
       "disposals": [
         {
           "date": "2018-05-01",
-          "ticker": "Lobster",
+          "ticker": "LOBSTER",
           "quantity": "700",
           "proceeds": "3260.00",
           "matches": [
             {
               "rule": "Section104",
               "quantity": "700",
-              "allowable_cost": "2930.6666666666666666666666669",
-              "gain_or_loss": "329.3333333333333333333333331"
+              "allowable_cost": "2930.67",
+              "gain_or_loss": "329.33"
             }
           ]
         },
         {
           "date": "2019-02-01",
-          "ticker": "Lobster",
+          "ticker": "LOBSTER",
           "quantity": "400",
           "proceeds": "1975.00",
           "matches": [
             {
               "rule": "Section104",
               "quantity": "400",
-              "allowable_cost": "1674.6666666666666666666666666",
-              "gain_or_loss": "300.3333333333333333333333334"
+              "allowable_cost": "1674.67",
+              "gain_or_loss": "300.33"
             }
           ]
         }
       ],
-      "total_gain": "629.6666666666666666666666665",
+      "total_gain": "629.67",
       "total_loss": "0",
-      "net_gain": "629.6666666666666666666666665"
+      "net_gain": "629.67"
     }
   ],
   "holdings": [
     {
-      "ticker": "Lobster",
+      "ticker": "LOBSTER",
       "quantity": "400",
-      "total_cost": "1674.6666666666666666666666665"
+      "total_cost": "1674.67"
     }
   ]
 }

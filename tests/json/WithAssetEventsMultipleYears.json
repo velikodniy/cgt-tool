@@ -21,6 +21,28 @@
       "total_gain": "60.00",
       "total_loss": "0",
       "net_gain": "60.00"
+    },
+    {
+      "period": "2020/21",
+      "disposals": [
+        {
+          "date": "2020-06-01",
+          "ticker": "GB00B3TYHH97",
+          "quantity": "100",
+          "proceeds": "2500",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "1960.00",
+              "gain_or_loss": "540.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "540.00",
+      "total_loss": "0",
+      "net_gain": "540.00"
     }
   ],
   "holdings": [

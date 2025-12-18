@@ -1,18 +1,18 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2023/24     £968   £5,990     £6,000      £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2023/24     £968.02     £5,990.01   £6,000.00     £0.00
 
 # TAX YEAR DETAILS
 
 ## 2023/24
 
-1) SELL 150 PRECFUND on 20/11/2023 - GAIN £968
+1) SELL 150 PRECFUND on 20/11/2023 - GAIN £968.02
    Section 104: 150 shares @ £33.48
-   Proceeds: 150 × £40 = £5,990
-   Cost: £5,022
-   Result: £968
+   Proceeds: 150 × £40 - £9.99 fees = £5,990.01
+   Cost: £5,021.99
+   Result: £968.02
 
 
 # HOLDINGS

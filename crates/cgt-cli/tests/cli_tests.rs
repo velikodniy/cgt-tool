@@ -25,39 +25,46 @@ fn test_cli_parse_success() {
         .success();
 }
 
-/// Test cases: (name, year)
-const PLAIN_FORMAT_TESTS: &[(&str, u16)] = &[
-    ("CarryLoss", 2017),
-    ("Simple", 2018),
-    ("Blank", 2018),
-    ("HMRCExample1", 2018),
-    ("GainsAndLosses", 2018),
-    ("MultipleMatches", 2018),
-    ("SameDayMerge", 2018),
-    ("SameDayMergeInterleaved", 2018),
-    ("SimpleTwoSameDay", 2018),
-    ("WithAssetEventsSameDay", 2018),
-    ("WithSplitBB", 2018),
-    ("WithSplitS104", 2018),
-    ("WithUnsplitBB", 2018),
-    ("WithUnsplitS104", 2018),
-    ("BuySellAllBuyAgainCapitalReturn", 2018),
-    ("WithAssetEvents", 2019),
-    ("WithAssetEventsBB", 2019),
-    ("WithAssetEventsMultipleYears", 2019),
-    ("AssetEventsNotFullSale", 2019),
-    ("AssetEventsNotFullSale2", 2019),
-    ("UnsortedTransactions", 2022),
-    ("MultiTickerBasic", 2023),
-    ("MultiTickerSameDay", 2023),
-    ("MultiTickerBedAndBreakfast", 2023),
-    ("MultiTickerSplit", 2023),
-    ("2024_2025_SpecialYear", 2024),
+/// Test cases - run without year filter to get all tax years
+const PLAIN_FORMAT_TESTS: &[&str] = &[
+    "CarryLoss",
+    "Simple",
+    "Blank",
+    "HMRCExample1",
+    "GainsAndLosses",
+    "MultipleMatches",
+    "SameDayMerge",
+    "SameDayMergeInterleaved",
+    "SimpleTwoSameDay",
+    "WithAssetEventsSameDay",
+    "WithSplitBB",
+    "WithSplitS104",
+    "WithUnsplitBB",
+    "WithUnsplitS104",
+    "BuySellAllBuyAgainCapitalReturn",
+    "WithAssetEvents",
+    "WithAssetEventsBB",
+    "WithAssetEventsMultipleYears",
+    "AssetEventsNotFullSale",
+    "AssetEventsNotFullSale2",
+    "UnsortedTransactions",
+    "MultiTickerBasic",
+    "MultiTickerSameDay",
+    "MultiTickerBedAndBreakfast",
+    "MultiTickerSplit",
+    "2024_2025_SpecialYear",
+    "RateSplit2024",
+    "AccumulationDividend",
+    "BnBReportQuantity",
+    "CapReturnEqualisation",
+    "DividendAfterFullDisposal",
+    "ExpensesRounding",
+    "WhitespaceDividend",
 ];
 
 #[test]
 fn test_plain_format_outputs() {
-    for (name, year) in PLAIN_FORMAT_TESTS {
+    for name in PLAIN_FORMAT_TESTS {
         let input_path = format!("../../tests/inputs/{}.cgt", name);
         let expected_path = format!("../../tests/plain/{}.txt", name);
 
@@ -67,8 +74,6 @@ fn test_plain_format_outputs() {
         let mut cmd = cargo_bin_cmd!("cgt-tool");
         let output = cmd
             .arg("report")
-            .arg("--year")
-            .arg(year.to_string())
             .arg("--format")
             .arg("plain")
             .arg(&input_path)
@@ -95,7 +100,7 @@ fn test_plain_format_outputs() {
 fn test_pdf_format_generates_valid_pdfs() {
     let temp_dir = std::env::temp_dir();
 
-    for (name, year) in PLAIN_FORMAT_TESTS {
+    for name in PLAIN_FORMAT_TESTS {
         let input_path = format!("../../tests/inputs/{}.cgt", name);
         let output_path = temp_dir.join(format!("{}_test.pdf", name));
 
@@ -105,8 +110,6 @@ fn test_pdf_format_generates_valid_pdfs() {
         let mut cmd = cargo_bin_cmd!("cgt-tool");
         let output = cmd
             .arg("report")
-            .arg("--year")
-            .arg(year.to_string())
             .arg("--format")
             .arg("pdf")
             .arg("--output")

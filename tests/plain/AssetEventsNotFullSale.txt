@@ -3,6 +3,7 @@
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
 2019/20     £28.33      £525.00     £12,000.00    £0.00
+2020/21     £59.33      £500.00     £12,300.00    £0.00
 
 # TAX YEAR DETAILS
 
@@ -13,6 +14,15 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
    Proceeds: 5 × £105 = £525.00
    Cost: £496.67
    Result: £28.33
+
+
+## 2020/21
+
+1) SELL 5 FOOBAR on 01/07/2020 - GAIN £59.33
+   Section 104: 5 shares @ £88.13
+   Proceeds: 5 × £100 = £500.00
+   Cost: £440.67
+   Result: £59.33
 
 
 # HOLDINGS

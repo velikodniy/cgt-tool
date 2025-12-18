@@ -19,7 +19,7 @@
         }
       ],
       "total_gain": "90.00",
-      "total_loss": "0.00",
+      "total_loss": "0",
       "net_gain": "90.00"
     }
   ],
@@ -27,7 +27,7 @@
     {
       "ticker": "FUNDZERO",
       "quantity": "0",
-      "total_cost": "0"
+      "total_cost": "0.00"
     }
   ]
 }

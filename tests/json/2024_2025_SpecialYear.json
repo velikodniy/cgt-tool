@@ -13,7 +13,8 @@
               "rule": "SameDay",
               "quantity": "1000",
               "allowable_cost": "10010.00",
-              "gain_or_loss": "-1020.00"
+              "gain_or_loss": "-1020.00",
+              "acquisition_date": "2024-08-29"
             }
           ]
         },
@@ -27,7 +28,8 @@
               "rule": "SameDay",
               "quantity": "1000",
               "allowable_cost": "5010.00",
-              "gain_or_loss": "4980.00"
+              "gain_or_loss": "4980.00",
+              "acquisition_date": "2024-10-29"
             }
           ]
         },
@@ -41,7 +43,8 @@
               "rule": "SameDay",
               "quantity": "1000",
               "allowable_cost": "5010.00",
-              "gain_or_loss": "2980.00"
+              "gain_or_loss": "2980.00",
+              "acquisition_date": "2024-10-30"
             }
           ]
         },
@@ -55,7 +58,8 @@
               "rule": "SameDay",
               "quantity": "1000",
               "allowable_cost": "10010.00",
-              "gain_or_loss": "-1020.00"
+              "gain_or_loss": "-1020.00",
+              "acquisition_date": "2024-12-30"
             }
           ]
         }
@@ -65,11 +69,5 @@
       "net_gain": "5920.00"
     }
   ],
-  "holdings": [
-    {
-      "ticker": "STOCK",
-      "quantity": "0",
-      "total_cost": "0"
-    }
-  ]
+  "holdings": []
 }

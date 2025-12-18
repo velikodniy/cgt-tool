@@ -3,6 +3,8 @@
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
 2018/19     -£19.86     £34.20      £11,700.00    £0.00
+2019/20     -£19.86     £34.20      £12,000.00    £0.00
+2020/21     -£19.86     £34.20      £12,300.00    £0.00
 
 # TAX YEAR DETAILS
 
@@ -10,6 +12,24 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 10 GB00B41YBW71 on 28/08/2018 - LOSS £19.86
    Same Day: 10 shares
+   Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
+   Cost: £54.07
+   Result: -£19.86
+
+
+## 2019/20
+
+1) SELL 10 GB00B41YBW71 on 28/08/2019 - LOSS £19.86
+   B&B: 10 shares from 20/09/2019
+   Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
+   Cost: £54.07
+   Result: -£19.86
+
+
+## 2020/21
+
+1) SELL 10 GB00B41YBW71 on 28/10/2020 - LOSS £19.86
+   Section 104: 10 shares @ £5.41
    Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
    Cost: £54.07
    Result: -£19.86

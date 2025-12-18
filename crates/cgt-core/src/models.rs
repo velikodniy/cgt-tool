@@ -200,6 +200,13 @@ impl TaxPeriod {
     }
 }
 
+impl std::fmt::Display for TaxPeriod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let end_short = (self.0 + 1) % 100;
+        write!(f, "{}/{:02}", self.0, end_short)
+    }
+}
+
 impl Serialize for TaxPeriod {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

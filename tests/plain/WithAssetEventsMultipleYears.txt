@@ -3,6 +3,7 @@
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
 2019/20     £60.00      £480.00     £12,000.00    £0.00
+2020/21     £540.00     £2,500.00   £12,300.00    £0.00
 
 # TAX YEAR DETAILS
 
@@ -13,6 +14,15 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
    Proceeds: 40 × £12 = £480.00
    Cost: £420.00
    Result: £60.00
+
+
+## 2020/21
+
+1) SELL 100 GB00B3TYHH97 on 01/06/2020 - GAIN £540.00
+   Section 104: 100 shares @ £19.6
+   Proceeds: 100 × £25 = £2,500.00
+   Cost: £1,960.00
+   Result: £540.00
 
 
 # HOLDINGS

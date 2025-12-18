@@ -1,24 +1,24 @@
 # SUMMARY
 
-Tax year    Gain   Proceeds   Exemption   Taxable gain
-==========================================================
-2023/24     £110   £1,140     £6,000      £0
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2023/24     £110.00     £1,140.00   £6,000.00     £0.00
 
 # TAX YEAR DETAILS
 
 ## 2023/24
 
-1) SELL 50 ACCFUND on 01/06/2023 - GAIN £92.50
-   Section 104: 50 shares @ £10.05
-   Proceeds: 50 × £12 = £595
-   Cost: £502.50
-   Result: £92.50
+1) SELL 50 ACCFUND on 01/06/2023 - GAIN £80.00
+   Section 104: 50 shares @ £10.3
+   Proceeds: 50 × £12 - £5.00 fees = £595.00
+   Cost: £515.00
+   Result: £80.00
 
-2) SELL 50 ACCFUND on 01/12/2023 - GAIN £17.50
-   Section 104: 50 shares @ £10.55
-   Proceeds: 50 × £11 = £545
-   Cost: £527.50
-   Result: £17.50
+2) SELL 50 ACCFUND on 01/12/2023 - GAIN £30.00
+   Section 104: 50 shares @ £10.3
+   Proceeds: 50 × £11 - £5.00 fees = £545.00
+   Cost: £515.00
+   Result: £30.00
 
 
 # HOLDINGS
@@ -29,5 +29,8 @@ NONE
 
 01/01/2023 BUY 100 ACCFUND @ £10 (£5 fees)
 01/06/2023 SELL 50 ACCFUND @ £12 (£5 fees)
-15/07/2023 DIVIDEND 50 ACCFUND £25
 01/12/2023 SELL 50 ACCFUND @ £11 (£5 fees)
+
+# ASSET EVENTS
+
+15/07/2023 DIVIDEND ACCFUND 50 £25.00

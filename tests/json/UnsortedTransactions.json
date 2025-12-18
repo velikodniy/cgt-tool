@@ -12,22 +12,22 @@
             {
               "rule": "Section104",
               "quantity": "10",
-              "allowable_cost": "933.3333333333333333333333334",
-              "gain_or_loss": "166.6666666666666666666666666"
+              "allowable_cost": "933.33",
+              "gain_or_loss": "166.67"
             }
           ]
         }
       ],
-      "total_gain": "166.6666666666666666666666666",
+      "total_gain": "166.67",
       "total_loss": "0",
-      "net_gain": "166.6666666666666666666666666"
+      "net_gain": "166.67"
     }
   ],
   "holdings": [
     {
       "ticker": "AAPL",
       "quantity": "5",
-      "total_cost": "466.6666666666666666666666666"
+      "total_cost": "466.67"
     }
   ]
 }

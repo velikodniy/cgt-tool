@@ -19,7 +19,7 @@
         }
       ],
       "total_gain": "968.02",
-      "total_loss": "0.00",
+      "total_loss": "0",
       "net_gain": "968.02"
     }
   ],
@@ -27,7 +27,7 @@
     {
       "ticker": "PRECFUND",
       "quantity": "0",
-      "total_cost": "0"
+      "total_cost": "0.00"
     }
   ]
 }

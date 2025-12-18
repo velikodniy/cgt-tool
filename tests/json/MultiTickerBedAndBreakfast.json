@@ -42,13 +42,13 @@
   "holdings": [
     {
       "ticker": "AAPL",
-      "quantity": "5",
-      "total_cost": "500"
+      "quantity": "10",
+      "total_cost": "1000"
     },
     {
       "ticker": "MSFT",
-      "quantity": "10",
-      "total_cost": "500"
+      "quantity": "20",
+      "total_cost": "1000"
     }
   ]
 }
