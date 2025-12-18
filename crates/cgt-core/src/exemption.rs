@@ -47,59 +47,40 @@ pub fn get_exemption(year: u16) -> Result<Decimal, CgtError> {
 mod tests {
     use super::*;
 
+    /// Test all known exemption years in a single parameterized test.
+    /// The exemption values are from HMRC guidance.
     #[test]
-    fn test_exemption_2014() {
-        assert_eq!(get_exemption(2014).expect("2014"), Decimal::from(11000));
-    }
+    fn test_exemption_known_years() {
+        let cases: &[(u16, i64)] = &[
+            (2014, 11000),
+            (2015, 11100),
+            (2016, 11100),
+            (2017, 11300),
+            (2018, 11700),
+            (2019, 12000),
+            (2020, 12300),
+            (2021, 12300),
+            (2022, 12300),
+            (2023, 6000),
+            (2024, 3000),
+        ];
 
-    #[test]
-    fn test_exemption_2015() {
-        assert_eq!(get_exemption(2015).expect("2015"), Decimal::from(11100));
-    }
-
-    #[test]
-    fn test_exemption_2016() {
-        assert_eq!(get_exemption(2016).expect("2016"), Decimal::from(11100));
-    }
-
-    #[test]
-    fn test_exemption_2017() {
-        assert_eq!(get_exemption(2017).expect("2017"), Decimal::from(11300));
-    }
-
-    #[test]
-    fn test_exemption_2018() {
-        assert_eq!(get_exemption(2018).expect("2018"), Decimal::from(11700));
-    }
-
-    #[test]
-    fn test_exemption_2019() {
-        assert_eq!(get_exemption(2019).expect("2019"), Decimal::from(12000));
-    }
-
-    #[test]
-    fn test_exemption_2020() {
-        assert_eq!(get_exemption(2020).expect("2020"), Decimal::from(12300));
-    }
-
-    #[test]
-    fn test_exemption_2021() {
-        assert_eq!(get_exemption(2021).expect("2021"), Decimal::from(12300));
-    }
-
-    #[test]
-    fn test_exemption_2022() {
-        assert_eq!(get_exemption(2022).expect("2022"), Decimal::from(12300));
-    }
-
-    #[test]
-    fn test_exemption_2023() {
-        assert_eq!(get_exemption(2023).expect("2023"), Decimal::from(6000));
-    }
-
-    #[test]
-    fn test_exemption_2024() {
-        assert_eq!(get_exemption(2024).expect("2024"), Decimal::from(3000));
+        for &(year, expected) in cases {
+            let result = get_exemption(year);
+            assert!(
+                result.is_ok(),
+                "Year {} should have exemption but got error: {:?}",
+                year,
+                result.err()
+            );
+            assert_eq!(
+                result.unwrap(),
+                Decimal::from(expected),
+                "Year {} should have exemption {}",
+                year,
+                expected
+            );
+        }
     }
 
     #[test]
