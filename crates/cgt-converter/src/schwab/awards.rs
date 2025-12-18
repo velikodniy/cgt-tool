@@ -38,8 +38,11 @@ impl AwardsData {
     /// the query date due to T+2 settlement). The vest date should be used
     /// as the CGT acquisition date per HMRC guidance.
     pub fn get_fmv(&self, date: &NaiveDate, symbol: &str) -> Result<AwardLookup, ConvertError> {
+        // Normalize symbol to uppercase for case-insensitive lookup
+        let symbol_upper = symbol.to_uppercase();
+
         // Try exact match first
-        if let Some(fmv) = self.fmv_map.get(&(symbol.to_string(), *date)) {
+        if let Some(fmv) = self.fmv_map.get(&(symbol_upper.clone(), *date)) {
             return Ok(AwardLookup {
                 fmv: *fmv,
                 vest_date: *date,
@@ -49,7 +52,7 @@ impl AwardsData {
         // Try 7-day lookback (for awards that may have slightly different dates)
         for days_back in 1..=7 {
             if let Some(earlier_date) = date.checked_sub_signed(chrono::Duration::days(days_back))
-                && let Some(fmv) = self.fmv_map.get(&(symbol.to_string(), earlier_date))
+                && let Some(fmv) = self.fmv_map.get(&(symbol_upper.clone(), earlier_date))
             {
                 return Ok(AwardLookup {
                     fmv: *fmv,
@@ -107,7 +110,8 @@ fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError> {
             .parse::<Decimal>()
             .map_err(|_| ConvertError::InvalidAmount(award.fair_market_value_price.clone()))?;
 
-        fmv_map.insert((award.symbol, date), price);
+        // Normalize symbol to uppercase for case-insensitive matching
+        fmv_map.insert((award.symbol.to_uppercase(), date), price);
     }
 
     Ok(AwardsData { fmv_map })
@@ -146,9 +150,10 @@ fn parse_awards_csv(csv_content: &str) -> Result<AwardsData, ConvertError> {
 
         if !date_str.is_empty() && !symbol_str.is_empty() {
             // This is a transaction/lapse row - save the lapse date and symbol
+            // Normalize symbol to uppercase for case-insensitive matching
             let lapse_date = NaiveDate::parse_from_str(date_str, "%m/%d/%Y")
                 .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))?;
-            current_lapse = Some((symbol_str.to_string(), lapse_date));
+            current_lapse = Some((symbol_str.to_uppercase(), lapse_date));
         } else {
             // This is an award details row - extract FMV and associate with lapse date
             let fmv_str = record.get(fmv_idx).unwrap_or("").trim();
@@ -579,15 +584,18 @@ mod tests {
     }
 
     #[test]
-    fn test_fmv_case_sensitive_symbol() {
-        // Symbol matching should be case-sensitive
+    fn test_fmv_case_insensitive_symbol() {
+        // Symbol matching should be case-insensitive
         let json = r#"{"EquityAwards": [{"Symbol": "XYZZ", "EventDate": "04/25/2023", "FairMarketValuePrice": "125.00"}]}"#;
         let awards = parse_awards_json(json).unwrap();
 
         let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+        // All case variants should match
         assert_eq!(awards.get_fmv(&date, "XYZZ").unwrap().fmv, dec!(125.00));
-        assert!(awards.get_fmv(&date, "goog").is_err());
-        assert!(awards.get_fmv(&date, "Goog").is_err());
+        assert_eq!(awards.get_fmv(&date, "xyzz").unwrap().fmv, dec!(125.00));
+        assert_eq!(awards.get_fmv(&date, "Xyzz").unwrap().fmv, dec!(125.00));
+        // Unknown symbol should still fail
+        assert!(awards.get_fmv(&date, "UNKNOWN").is_err());
     }
 
     #[test]
