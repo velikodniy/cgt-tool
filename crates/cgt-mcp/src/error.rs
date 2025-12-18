@@ -20,16 +20,4 @@ pub enum McpServerError {
     /// MCP service error.
     #[error("MCP service error: {0}")]
     Service(String),
-
-    /// Invalid input parameter.
-    #[error("Invalid parameter: {0}")]
-    InvalidParameter(String),
-
-    /// Resource not found.
-    #[error("Resource not found: {0}")]
-    ResourceNotFound(String),
-
-    /// Disposal not found for explain_matching.
-    #[error("No disposal found for {ticker} on {date}")]
-    DisposalNotFound { ticker: String, date: String },
 }
