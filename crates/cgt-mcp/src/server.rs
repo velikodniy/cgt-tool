@@ -1,7 +1,11 @@
 //! MCP server implementation.
 
 use crate::McpServerError;
-use crate::resources::{RESOURCES, SERVER_INSTRUCTIONS};
+use crate::resources::{
+    DSL_SYNTAX_REFERENCE, EXAMPLE_TRANSACTION, HINT_DATE_FORMAT, HINT_FX_RATE_EXISTS,
+    HINT_FX_RATE_UNKNOWN, HINT_INVALID_CURRENCY, HINT_INVALID_TRANSACTION, HINT_MISSING_FX_RATE,
+    HINT_SELL_WITHOUT_BUY, HINT_UNKNOWN_ACTION, RESOURCES, SERVER_INSTRUCTIONS,
+};
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
 use cgt_core::{CurrencyAmount, Disposal, MatchRule, TaxReport, Transaction};
@@ -15,60 +19,6 @@ use rmcp::service::{RequestContext, RoleServer, ServiceExt};
 use rmcp::{ErrorData as McpError, ServerHandler, tool, tool_handler, tool_router};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-
-// Error message hints
-
-const HINT_UNKNOWN_ACTION: &str =
-    "HINT: Valid actions are: BUY, SELL, DIVIDEND, CAPRETURN, SPLIT, UNSPLIT";
-
-const HINT_INVALID_CURRENCY: &str = "HINT: Use ISO 4217 currency codes like GBP, USD, EUR.\nUse get_fx_rate tool to check available rates.";
-
-const HINT_MISSING_FX_RATE: &str = r#"HINT: This transaction uses a foreign currency but no exchange rate is available.
-Use the get_fx_rate tool to check available rates.
-Ensure the transaction date falls within a period with published HMRC rates."#;
-
-const HINT_SELL_WITHOUT_BUY: &str = r#"HINT: You're trying to sell shares you don't own.
-Check that:
-1. BUY transactions exist before the SELL
-2. The ticker symbols match exactly (case-insensitive)
-3. The sell quantity doesn't exceed owned shares"#;
-
-const HINT_INVALID_TRANSACTION: &str = r#"HINT: Check transaction data for:
-- Negative quantities or prices
-- Zero split ratios
-- Invalid dates"#;
-
-const HINT_DATE_FORMAT: &str = r#"Expected format: YYYY-MM-DD (e.g., 2024-06-15)
-
-Common mistakes:
-- DD/MM/YYYY → use YYYY-MM-DD
-- MM/DD/YYYY → use YYYY-MM-DD
-- Missing leading zeros → 2024-1-5 should be 2024-01-05"#;
-
-const HINT_FX_RATE_EXISTS: &str = r#"This currency exists but rate is not available for this period.
-
-HMRC rates are available from January 2015 onwards.
-Recent months may not yet have published rates."#;
-
-const HINT_FX_RATE_UNKNOWN: &str = r#"Currency may not be a valid ISO 4217 code.
-Common currency codes: USD, EUR, JPY, CHF, AUD, CAD, CNY
-
-Check https://en.wikipedia.org/wiki/ISO_4217 for valid codes."#;
-
-const DSL_SYNTAX_REFERENCE: &str = r#"DSL Syntax Reference:
-  BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
-  SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
-  DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [TAX AMOUNT]
-  SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE
-
-Example: 2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD
-
-Note: FEES and TAX clauses are optional (default to 0 when omitted).
-
-For JSON format, start input with '[' character."#;
-
-const EXAMPLE_TRANSACTION: &str =
-    r#"{"date":"2024-01-15","ticker":"AAPL","action":"BUY","amount":"100","price":"150"}"#;
 
 /// Request parameters for parse_transactions tool.
 #[derive(Debug, Deserialize, JsonSchema)]
