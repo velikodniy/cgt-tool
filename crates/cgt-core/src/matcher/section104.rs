@@ -62,6 +62,7 @@ pub fn match_section_104(
         disposal_date: sell_tx.date,
         disposal_ticker: sell_tx.ticker.clone(),
         quantity: matched_qty,
+        gross_proceeds: gross_portion,
         proceeds: net_proceeds,
         allowable_cost: cost,
         gain_or_loss,

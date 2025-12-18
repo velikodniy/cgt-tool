@@ -7,6 +7,7 @@
           "date": "2019-12-01",
           "ticker": "GB00B3TYHH97",
           "quantity": "40",
+          "gross_proceeds": "480",
           "proceeds": "480",
           "matches": [
             {
@@ -29,6 +30,7 @@
           "date": "2020-06-01",
           "ticker": "GB00B3TYHH97",
           "quantity": "100",
+          "gross_proceeds": "2500",
           "proceeds": "2500",
           "matches": [
             {

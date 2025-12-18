@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2023/24     £140.00     £1,195.00   £6,000.00     £0.00
+2023/24     £140.00     £1,200.00   £6,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,7 +12,8 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 100 SPACEY on 01/12/2023 - GAIN £140.00
    Section 104: 100 shares @ £10.55
-   Proceeds: 100 × £12 - £5.00 fees = £1,195.00
+   Gross Proceeds: 100 × £12 = £1,200.00
+   Net Proceeds: £1,200.00 - £5.00 fees = £1,195.00
    Cost: £1,055.00
    Result: £140.00
 

@@ -4,13 +4,15 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
 2018/19     £40.00      £240.00     £11,700.00    £0.00
 
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+
 # TAX YEAR DETAILS
 
 ## 2018/19
 
 1) SELL 40 FOO on 01/04/2019 - GAIN £40.00
    Section 104: 40 shares @ £5
-   Proceeds: 40 × £6 = £240.00
+   Gross Proceeds: 40 × £6 = £240.00
    Cost: £200.00
    Result: £40.00
 

@@ -7,6 +7,7 @@
           "date": "2018-05-01",
           "ticker": "LOBSTER",
           "quantity": "700",
+          "gross_proceeds": "3360.00",
           "proceeds": "3260.00",
           "matches": [
             {
@@ -21,6 +22,7 @@
           "date": "2019-02-01",
           "ticker": "LOBSTER",
           "quantity": "400",
+          "gross_proceeds": "2080.00",
           "proceeds": "1975.00",
           "matches": [
             {

@@ -7,6 +7,7 @@
           "date": "2018-08-28",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "2000",
           "proceeds": "1990",
           "matches": [
             {
@@ -22,6 +23,7 @@
           "date": "2018-10-28",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "4000",
           "proceeds": "3990",
           "matches": [
             {

@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2024/25     £5,920.00   £35,960.00  £3,000.00     £2,920.00
+2024/25     £5,920.00   £36,000.00  £3,000.00     £2,920.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,25 +12,29 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 1000 STOCK on 29/08/2024 - LOSS £1,020.00
    Same Day: 1000 shares
-   Proceeds: 1000 × £9 - £10.00 fees = £8,990.00
+   Gross Proceeds: 1000 × £9 = £9,000.00
+   Net Proceeds: £9,000.00 - £10.00 fees = £8,990.00
    Cost: £10,010.00
    Result: -£1,020.00
 
 2) SELL 1000 STOCK on 29/10/2024 - GAIN £4,980.00
    Same Day: 1000 shares
-   Proceeds: 1000 × £10 - £10.00 fees = £9,990.00
+   Gross Proceeds: 1000 × £10 = £10,000.00
+   Net Proceeds: £10,000.00 - £10.00 fees = £9,990.00
    Cost: £5,010.00
    Result: £4,980.00
 
 3) SELL 1000 STOCK on 30/10/2024 - GAIN £2,980.00
    Same Day: 1000 shares
-   Proceeds: 1000 × £8 - £10.00 fees = £7,990.00
+   Gross Proceeds: 1000 × £8 = £8,000.00
+   Net Proceeds: £8,000.00 - £10.00 fees = £7,990.00
    Cost: £5,010.00
    Result: £2,980.00
 
 4) SELL 1000 STOCK on 30/12/2024 - LOSS £1,020.00
    Same Day: 1000 shares
-   Proceeds: 1000 × £9 - £10.00 fees = £8,990.00
+   Gross Proceeds: 1000 × £9 = £9,000.00
+   Net Proceeds: £9,000.00 - £10.00 fees = £8,990.00
    Cost: £10,010.00
    Result: -£1,020.00
 

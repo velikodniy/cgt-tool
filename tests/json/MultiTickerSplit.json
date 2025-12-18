@@ -7,6 +7,7 @@
           "date": "2023-08-01",
           "ticker": "AAPL",
           "quantity": "10",
+          "gross_proceeds": "600",
           "proceeds": "600",
           "matches": [
             {
@@ -21,6 +22,7 @@
           "date": "2023-08-01",
           "ticker": "MSFT",
           "quantity": "10",
+          "gross_proceeds": "550",
           "proceeds": "550",
           "matches": [
             {

@@ -7,6 +7,7 @@
           "date": "2024-08-29",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "9000",
           "proceeds": "8990",
           "matches": [
             {
@@ -22,6 +23,7 @@
           "date": "2024-10-29",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "10000",
           "proceeds": "9990",
           "matches": [
             {
@@ -37,6 +39,7 @@
           "date": "2024-10-30",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "8000",
           "proceeds": "7990",
           "matches": [
             {
@@ -52,6 +55,7 @@
           "date": "2024-12-30",
           "ticker": "STOCK",
           "quantity": "1000",
+          "gross_proceeds": "9000",
           "proceeds": "8990",
           "matches": [
             {

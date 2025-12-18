@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2023/24     £580.00     £2,490.00   £6,000.00     £0.00
+2023/24     £580.00     £2,500.00   £6,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,7 +12,8 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 100 EQFUND on 01/12/2023 - GAIN £580.00
    Section 104: 100 shares @ £19.1
-   Proceeds: 100 × £25 - £10.00 fees = £2,490.00
+   Gross Proceeds: 100 × £25 = £2,500.00
+   Net Proceeds: £2,500.00 - £10.00 fees = £2,490.00
    Cost: £1,910.00
    Result: £580.00
 

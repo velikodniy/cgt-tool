@@ -7,6 +7,7 @@
           "date": "2023-01-03",
           "ticker": "AAPL",
           "quantity": "10",
+          "gross_proceeds": "1100.00",
           "proceeds": "1100.00",
           "matches": [
             {

@@ -7,6 +7,7 @@
           "date": "2019-04-01",
           "ticker": "FOO",
           "quantity": "40",
+          "gross_proceeds": "240",
           "proceeds": "240",
           "matches": [
             {

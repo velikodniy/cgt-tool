@@ -286,6 +286,50 @@ Losses can be carried forward indefinitely to offset against future gains. Impor
 
 ---
 
+## SA108 Tax Return Reporting
+
+**HMRC Reference:** SA108 (Capital Gains Tax Summary)
+
+When completing your Self Assessment tax return, you need to report capital gains using specific values in the SA108 supplementary pages.
+
+### Key Boxes
+
+- **Box 21 (Disposal proceeds)**: The **gross** amount received from selling the asset, before deducting any sale expenses. This is quantity × sale price.
+- **Box 22 (Allowable costs)**: All allowable costs including:
+  - Original purchase price
+  - Purchase fees (broker commission, stamp duty)
+  - Sale fees (broker commission)
+  - Any enhancement expenditure
+
+### Gross vs Net Proceeds
+
+It's important to understand the difference:
+
+- **Gross Proceeds** = Quantity × Sale Price (goes in SA108 Box 21)
+- **Net Proceeds** = Gross Proceeds - Sale Fees (used internally for gain calculation)
+- **Gain/Loss** = Net Proceeds - Allowable Cost
+
+**Example:**
+
+- Sell 100 shares at £10.00 each with £12.50 broker fee
+- Gross Proceeds: 100 × £10.00 = **£1,000.00** (Box 21)
+- Net Proceeds: £1,000.00 - £12.50 = £987.50
+- If cost basis was £800.00 with £10.00 purchase fees:
+  - Allowable Costs: £800.00 + £10.00 + £12.50 = **£822.50** (Box 22)
+  - Gain: £987.50 - £810.00 = £177.50 (or equivalently: £1,000.00 - £822.50)
+
+Note: The sale fee (£12.50) is included in Box 22 (Allowable costs), NOT deducted from Box 21 (Disposal proceeds).
+
+### This Tool's Output
+
+The cgt-tool reports show:
+
+- **Summary table**: Gross proceeds per tax year (for SA108 Box 21)
+- **Disposal details**: Both gross and net proceeds for transparency
+- **Cost**: The allowable cost used in gain calculation
+
+---
+
 ## Tax Year Boundaries
 
 The UK tax year runs from **6 April to 5 April**.
@@ -329,6 +373,6 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 
 ---
 
-**Document Version:** 1.1
-**Last Updated:** 2025-12-15
+**Document Version:** 1.2
+**Last Updated:** 2025-12-18
 **Source:** HMRC Capital Gains Manual (CG51500-CG51600), HMRC Employment-Related Securities Manual (ERSM20192)

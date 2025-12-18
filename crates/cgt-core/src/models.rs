@@ -486,6 +486,10 @@ pub struct Disposal {
     pub date: NaiveDate,
     pub ticker: String,
     pub quantity: Decimal,
+    /// Gross proceeds before sale fees (quantity × unit price). Used for SA108 Box 21.
+    #[serde(serialize_with = "decimal_money::serialize")]
+    pub gross_proceeds: Decimal,
+    /// Net proceeds after sale fees (gross_proceeds - fees). Used for gain calculation.
     #[serde(serialize_with = "decimal_money::serialize")]
     pub proceeds: Decimal,
     pub matches: Vec<Match>,

@@ -7,6 +7,7 @@
           "date": "2023-06-01",
           "ticker": "ACCFUND",
           "quantity": "50",
+          "gross_proceeds": "600",
           "proceeds": "595",
           "matches": [
             {
@@ -21,6 +22,7 @@
           "date": "2023-12-01",
           "ticker": "ACCFUND",
           "quantity": "50",
+          "gross_proceeds": "550",
           "proceeds": "545",
           "matches": [
             {

@@ -7,6 +7,7 @@
           "date": "2023-06-01",
           "ticker": "FUNDZERO",
           "quantity": "100",
+          "gross_proceeds": "1100",
           "proceeds": "1095",
           "matches": [
             {

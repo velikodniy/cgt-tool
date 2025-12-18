@@ -22,6 +22,9 @@ pub struct MatchResult {
     pub disposal_date: NaiveDate,
     pub disposal_ticker: String,
     pub quantity: Decimal,
+    /// Gross proceeds before sale fees (quantity × unit price).
+    pub gross_proceeds: Decimal,
+    /// Net proceeds after sale fees (gross_proceeds - fees).
     pub proceeds: Decimal,
     pub allowable_cost: Decimal,
     pub gain_or_loss: Decimal,

@@ -7,6 +7,7 @@
           "date": "2018-08-28",
           "ticker": "GB00B41YBW71",
           "quantity": "10",
+          "gross_proceeds": "46.70",
           "proceeds": "34.20",
           "matches": [
             {
@@ -30,6 +31,7 @@
           "date": "2019-08-28",
           "ticker": "GB00B41YBW71",
           "quantity": "10",
+          "gross_proceeds": "46.70",
           "proceeds": "34.20",
           "matches": [
             {
@@ -53,6 +55,7 @@
           "date": "2020-10-28",
           "ticker": "GB00B41YBW71",
           "quantity": "10",
+          "gross_proceeds": "46.70",
           "proceeds": "34.20",
           "matches": [
             {

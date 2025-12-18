@@ -47,6 +47,7 @@
   ),
   ..data.summary_rows.flatten()
 )
+#text(size: 7pt, fill: luma(100))[Note: Proceeds = SA108 Box 21 (gross, before sale fees)]
 
 // Disposal Details Section
 = Disposal Details
@@ -74,7 +75,10 @@
             #text(fill: luma(80))[•] #match.description #linebreak()
           ]
           #v(0.1em)
-          Proceeds: #disposal.proceeds_calc #linebreak()
+          Gross Proceeds: #disposal.gross_proceeds_calc #linebreak()
+          #if disposal.has_fees [
+            Net Proceeds: #disposal.net_proceeds_calc #linebreak()
+          ]
           Cost: #disposal.total_cost #linebreak()
           Result: #text(fill: result-color, weight: "bold")[#disposal.result]
         ]

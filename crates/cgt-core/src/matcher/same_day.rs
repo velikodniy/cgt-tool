@@ -54,6 +54,7 @@ pub fn match_same_day(
             disposal_date: sell_tx.date,
             disposal_ticker: sell_tx.ticker.clone(),
             quantity: matched_qty,
+            gross_proceeds,
             proceeds: net_proceeds,
             allowable_cost: cost,
             gain_or_loss,

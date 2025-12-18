@@ -108,6 +108,7 @@ pub fn match_bed_and_breakfast(
                     disposal_date: sell_tx.date,
                     disposal_ticker: sell_tx.ticker.clone(),
                     quantity: matched_qty_at_sell_time,
+                    gross_proceeds,
                     proceeds: net_proceeds,
                     allowable_cost: cost,
                     gain_or_loss,

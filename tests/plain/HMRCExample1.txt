@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2018/19     £629.67     £5,235.00   £11,700.00    £0.00
+2018/19     £629.67     £5,440.00   £11,700.00    £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,13 +12,15 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 700 LOBSTER on 01/05/2018 - GAIN £329.33
    Section 104: 700 shares @ £4.19
-   Proceeds: 700 × £4.8 - £100.00 fees = £3,260.00
+   Gross Proceeds: 700 × £4.8 = £3,360.00
+   Net Proceeds: £3,360.00 - £100.00 fees = £3,260.00
    Cost: £2,930.67
    Result: £329.33
 
 2) SELL 400 LOBSTER on 01/02/2019 - GAIN £300.33
    Section 104: 400 shares @ £4.19
-   Proceeds: 400 × £5.2 - £105.00 fees = £1,975.00
+   Gross Proceeds: 400 × £5.2 = £2,080.00
+   Net Proceeds: £2,080.00 - £105.00 fees = £1,975.00
    Cost: £1,674.67
    Result: £300.33
 

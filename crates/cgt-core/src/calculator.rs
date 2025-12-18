@@ -192,6 +192,11 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
         .into_iter()
         .map(|((date, ticker), matches)| {
             // Round to avoid tiny precision errors from proportional fee allocation
+            let total_gross_proceeds: Decimal = matches
+                .iter()
+                .map(|m| m.gross_proceeds)
+                .sum::<Decimal>()
+                .round_dp(10);
             let total_proceeds: Decimal = matches
                 .iter()
                 .map(|m| m.proceeds)
@@ -214,6 +219,7 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
                 date,
                 ticker,
                 quantity: total_quantity,
+                gross_proceeds: total_gross_proceeds,
                 proceeds: total_proceeds,
                 matches: converted_matches,
             }

@@ -50,7 +50,7 @@ fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Resu
     data.insert("summary_rows".into(), summary_rows.into_value());
 
     // Tax years with disposals
-    let tax_years = build_tax_years(report, transactions);
+    let tax_years = build_tax_years(report);
     data.insert("tax_years".into(), tax_years.into_value());
 
     // Holdings
@@ -75,13 +75,14 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
     let mut rows = Vec::new();
     for year in &report.tax_years {
         let exemption = get_exemption(year.period.start_year())?;
-        let proceeds: Decimal = year.disposals.iter().map(|d| d.proceeds).sum();
+        // Use gross proceeds for SA108 Box 21 compatibility
+        let gross_proceeds: Decimal = year.disposals.iter().map(|d| d.gross_proceeds).sum();
         let taxable = (year.net_gain - exemption).max(Decimal::ZERO);
 
         rows.extend([
             format_tax_year(year.period.start_year()).into_value(),
             format_gbp(year.net_gain).into_value(),
-            format_gbp(proceeds).into_value(),
+            format_gbp(gross_proceeds).into_value(),
             format_gbp(exemption).into_value(),
             format_gbp(taxable).into_value(),
         ]);
@@ -89,7 +90,7 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
     Ok(rows)
 }
 
-fn build_tax_years(report: &TaxReport, transactions: &[Transaction]) -> Vec<Value> {
+fn build_tax_years(report: &TaxReport) -> Vec<Value> {
     report
         .tax_years
         .iter()
@@ -105,10 +106,7 @@ fn build_tax_years(report: &TaxReport, transactions: &[Transaction]) -> Vec<Valu
 
             let disposals: Vec<Value> = sorted_disposals
                 .into_iter()
-                .map(|d| {
-                    let (sell_price, sell_fees) = find_sell_details(d, transactions);
-                    build_disposal_dict(d, sell_price, sell_fees).into_value()
-                })
+                .map(|d| build_disposal_dict(d).into_value())
                 .collect();
 
             year_dict.insert("disposals".into(), disposals.into_value());
@@ -230,28 +228,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
     (!rows.is_empty(), rows)
 }
 
-fn find_sell_details(disposal: &Disposal, transactions: &[Transaction]) -> (Decimal, Decimal) {
-    transactions
-        .iter()
-        .find_map(|t| {
-            if t.ticker == disposal.ticker
-                && t.date == disposal.date
-                && let Operation::Sell { price, fees, .. } = &t.operation
-            {
-                return Some((price.amount, fees.amount));
-            }
-            None
-        })
-        .unwrap_or_else(|| {
-            if disposal.quantity != Decimal::ZERO {
-                (disposal.proceeds / disposal.quantity, Decimal::ZERO)
-            } else {
-                (Decimal::ZERO, Decimal::ZERO)
-            }
-        })
-}
-
-fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_fees: Decimal) -> Dict {
+fn build_disposal_dict(disposal: &Disposal) -> Dict {
     let mut dict = Dict::new();
 
     let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
@@ -286,24 +263,41 @@ fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_fees: Deci
         .collect();
     dict.insert("matches".into(), matches.into_value());
 
-    // Proceeds calculation
-    let proceeds_calc = if sell_fees > Decimal::ZERO {
+    // Calculate unit price from gross proceeds (handles same-day merges correctly)
+    let unit_price = if disposal.quantity != Decimal::ZERO {
+        disposal.gross_proceeds / disposal.quantity
+    } else {
+        Decimal::ZERO
+    };
+
+    // Calculate fees from difference between gross and net
+    let sell_fees = disposal.gross_proceeds - disposal.proceeds;
+
+    // Gross proceeds calculation
+    let gross_proceeds_calc = format!(
+        "{} × {} = {}",
+        format_decimal_trimmed(disposal.quantity),
+        format_price(unit_price),
+        format_gbp(disposal.gross_proceeds)
+    );
+    dict.insert(
+        "gross_proceeds_calc".into(),
+        gross_proceeds_calc.into_value(),
+    );
+
+    // Net proceeds calculation (only if fees exist)
+    let net_proceeds_calc = if sell_fees > Decimal::ZERO {
         format!(
-            "{} × {} - {} fees = {}",
-            format_decimal_trimmed(disposal.quantity),
-            format_price(sell_price),
+            "{} - {} fees = {}",
+            format_gbp(disposal.gross_proceeds),
             format_gbp(sell_fees),
             format_gbp(disposal.proceeds)
         )
     } else {
-        format!(
-            "{} × {} = {}",
-            format_decimal_trimmed(disposal.quantity),
-            format_price(sell_price),
-            format_gbp(disposal.proceeds)
-        )
+        String::new()
     };
-    dict.insert("proceeds_calc".into(), proceeds_calc.into_value());
+    dict.insert("net_proceeds_calc".into(), net_proceeds_calc.into_value());
+    dict.insert("has_fees".into(), (sell_fees > Decimal::ZERO).into_value());
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
     dict.insert("total_cost".into(), format_gbp(total_cost).into_value());
@@ -396,7 +390,8 @@ mod tests {
             date,
             ticker: "GB00B41YBW71".to_string(),
             quantity: Decimal::from(10),
-            proceeds: Decimal::new(34202, 3),
+            gross_proceeds: Decimal::new(46702, 3), // 10 × 4.6702
+            proceeds: Decimal::new(34202, 3),       // gross - 12.50 fees
             matches: vec![Match {
                 rule: MatchRule::SameDay,
                 quantity: Decimal::from(10),
@@ -405,20 +400,28 @@ mod tests {
                 acquisition_date: None,
             }],
         };
-        let dict = build_disposal_dict(&disposal, Decimal::new(46702, 4), Decimal::new(125, 1));
+        let dict = build_disposal_dict(&disposal);
 
-        let proceeds_value = dict
-            .get("proceeds_calc")
-            .expect("proceeds calculation present");
+        let gross_proceeds_value = dict
+            .get("gross_proceeds_calc")
+            .expect("gross proceeds calculation present");
         assert!(
-            matches!(proceeds_value, Value::Str(_)),
-            "unexpected proceeds value: {proceeds_value:?}"
+            matches!(gross_proceeds_value, Value::Str(_)),
+            "unexpected gross proceeds value: {gross_proceeds_value:?}"
         );
-        let proceeds = match proceeds_value {
+        let gross_proceeds = match gross_proceeds_value {
             Value::Str(s) => s.as_str().to_string(),
             _ => String::new(),
         };
+        assert_eq!(gross_proceeds, "10 × £4.6702 = £46.70");
 
-        assert_eq!(proceeds, "10 × £4.6702 - £12.50 fees = £34.20");
+        let net_proceeds_value = dict
+            .get("net_proceeds_calc")
+            .expect("net proceeds calculation present");
+        let net_proceeds = match net_proceeds_value {
+            Value::Str(s) => s.as_str().to_string(),
+            _ => String::new(),
+        };
+        assert_eq!(net_proceeds, "£46.70 - £12.50 fees = £34.20");
     }
 }

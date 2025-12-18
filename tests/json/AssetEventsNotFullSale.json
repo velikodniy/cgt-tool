@@ -7,6 +7,7 @@
           "date": "2019-09-01",
           "ticker": "FOOBAR",
           "quantity": "5",
+          "gross_proceeds": "525",
           "proceeds": "525",
           "matches": [
             {
@@ -29,6 +30,7 @@
           "date": "2020-07-01",
           "ticker": "FOOBAR",
           "quantity": "5",
+          "gross_proceeds": "500",
           "proceeds": "500",
           "matches": [
             {

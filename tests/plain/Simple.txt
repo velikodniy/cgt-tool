@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2018/19     -£19.86     £34.20      £11,700.00    £0.00
+2018/19     -£19.86     £46.70      £11,700.00    £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,7 +12,8 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 10 GB00B41YBW71 on 28/08/2018 - LOSS £19.86
    Same Day: 10 shares
-   Proceeds: 10 × £4.6702 - £12.50 fees = £34.20
+   Gross Proceeds: 10 × £4.6702 = £46.70
+   Net Proceeds: £46.70 - £12.50 fees = £34.20
    Cost: £54.07
    Result: -£19.86
 

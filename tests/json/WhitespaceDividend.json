@@ -7,6 +7,7 @@
           "date": "2023-12-01",
           "ticker": "SPACEY",
           "quantity": "100",
+          "gross_proceeds": "1200",
           "proceeds": "1195",
           "matches": [
             {

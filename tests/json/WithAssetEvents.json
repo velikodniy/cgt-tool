@@ -7,6 +7,7 @@
           "date": "2019-12-05",
           "ticker": "GB00B3TYHH97",
           "quantity": "40",
+          "gross_proceeds": "7768.80",
           "proceeds": "7756.30",
           "matches": [
             {

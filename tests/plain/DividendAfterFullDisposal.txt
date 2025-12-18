@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2023/24     £90.00      £1,095.00   £6,000.00     £0.00
+2023/24     £90.00      £1,100.00   £6,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,7 +12,8 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 100 FUNDZERO on 01/06/2023 - GAIN £90.00
    Section 104: 100 shares @ £10.05
-   Proceeds: 100 × £11 - £5.00 fees = £1,095.00
+   Gross Proceeds: 100 × £11 = £1,100.00
+   Net Proceeds: £1,100.00 - £5.00 fees = £1,095.00
    Cost: £1,005.00
    Result: £90.00
 

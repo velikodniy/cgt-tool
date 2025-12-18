@@ -29,7 +29,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
     for year in &report.tax_years {
         let exemption = get_exemption(year.period.start_year())?;
-        let proceeds: Decimal = year.disposals.iter().map(|d| d.proceeds).sum();
+        // Use gross proceeds for SA108 Box 21 compatibility
+        let gross_proceeds: Decimal = year.disposals.iter().map(|d| d.gross_proceeds).sum();
         let taxable = (year.net_gain - exemption).max(Decimal::ZERO);
 
         let _ = writeln!(
@@ -37,9 +38,17 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             "{:<12}{:<12}{:<12}{:<14}{}",
             format_tax_year(year.period.start_year()),
             format_gbp(year.net_gain),
-            format_gbp(proceeds),
+            format_gbp(gross_proceeds),
             format_gbp(exemption),
             format_gbp(taxable)
+        );
+    }
+
+    // SA108 note
+    if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
+        let _ = writeln!(
+            out,
+            "\nNote: Proceeds = SA108 Box 21 (gross, before sale fees)"
         );
     }
 
@@ -54,7 +63,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         disposals.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
 
         for (i, disposal) in disposals.iter().enumerate() {
-            format_disposal(&mut out, i + 1, disposal, transactions);
+            format_disposal(&mut out, i + 1, disposal);
         }
     }
 
@@ -198,12 +207,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     Ok(out.trim_end().to_string() + "\n")
 }
 
-fn format_disposal(
-    out: &mut String,
-    index: usize,
-    disposal: &Disposal,
-    transactions: &[Transaction],
-) {
+fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
     let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
     let gain_type = if total_gain >= Decimal::ZERO {
         "GAIN"
@@ -257,43 +261,32 @@ fn format_disposal(
         }
     }
 
-    // Calculation
-    let (sell_price, sell_fees) = transactions
-        .iter()
-        .find_map(|t| {
-            if t.ticker == disposal.ticker && t.date == disposal.date {
-                if let Operation::Sell { price, fees, .. } = &t.operation {
-                    Some((price.amount, fees.amount))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| {
-            if disposal.quantity != Decimal::ZERO {
-                (disposal.proceeds / disposal.quantity, Decimal::ZERO)
-            } else {
-                (Decimal::ZERO, Decimal::ZERO)
-            }
-        });
+    // Calculate unit price from gross proceeds (handles same-day merges correctly)
+    let unit_price = if disposal.quantity != Decimal::ZERO {
+        disposal.gross_proceeds / disposal.quantity
+    } else {
+        Decimal::ZERO
+    };
 
+    // Calculate fees from difference between gross and net
+    let sell_fees = disposal.gross_proceeds - disposal.proceeds;
+
+    // Show gross proceeds calculation
+    let _ = writeln!(
+        out,
+        "   Gross Proceeds: {} × £{} = {}",
+        format_decimal_trimmed(disposal.quantity),
+        format_decimal_trimmed(unit_price),
+        format_gbp(disposal.gross_proceeds)
+    );
+
+    // Show net proceeds if fees exist
     if sell_fees > Decimal::ZERO {
         let _ = writeln!(
             out,
-            "   Proceeds: {} × £{} - {} fees = {}",
-            format_decimal_trimmed(disposal.quantity),
-            format_decimal_trimmed(sell_price),
+            "   Net Proceeds: {} - {} fees = {}",
+            format_gbp(disposal.gross_proceeds),
             format_gbp(sell_fees),
-            format_gbp(disposal.proceeds)
-        );
-    } else {
-        let _ = writeln!(
-            out,
-            "   Proceeds: {} × £{} = {}",
-            format_decimal_trimmed(disposal.quantity),
-            format_decimal_trimmed(sell_price),
             format_gbp(disposal.proceeds)
         );
     }
@@ -333,7 +326,8 @@ mod tests {
             date,
             ticker: ticker.clone(),
             quantity: Decimal::from(10),
-            proceeds: Decimal::new(34202, 3),
+            gross_proceeds: Decimal::new(46702, 3), // 10 × 4.6702
+            proceeds: Decimal::new(34202, 3),       // gross - 12.50 fees
             matches: vec![Match {
                 rule: MatchRule::SameDay,
                 quantity: Decimal::from(10),
@@ -365,7 +359,8 @@ mod tests {
         }];
 
         let output = format(&report, &transactions).expect("format should succeed");
-        assert!(output.contains("Proceeds: 10 × £4.6702 - £12.50 fees = £34.20"));
+        assert!(output.contains("Gross Proceeds: 10 × £4.6702 = £46.70"));
+        assert!(output.contains("Net Proceeds: £46.70 - £12.50 fees = £34.20"));
     }
 
     #[test]

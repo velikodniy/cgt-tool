@@ -2,7 +2,9 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
-2023/24     £110.00     £1,140.00   £6,000.00     £0.00
+2023/24     £110.00     £1,150.00   £6,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
@@ -10,13 +12,15 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 
 1) SELL 50 ACCFUND on 01/06/2023 - GAIN £80.00
    Section 104: 50 shares @ £10.3
-   Proceeds: 50 × £12 - £5.00 fees = £595.00
+   Gross Proceeds: 50 × £12 = £600.00
+   Net Proceeds: £600.00 - £5.00 fees = £595.00
    Cost: £515.00
    Result: £80.00
 
 2) SELL 50 ACCFUND on 01/12/2023 - GAIN £30.00
    Section 104: 50 shares @ £10.3
-   Proceeds: 50 × £11 - £5.00 fees = £545.00
+   Gross Proceeds: 50 × £11 = £550.00
+   Net Proceeds: £550.00 - £5.00 fees = £545.00
    Cost: £515.00
    Result: £30.00
 
