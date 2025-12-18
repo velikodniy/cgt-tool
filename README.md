@@ -157,6 +157,14 @@ Calculate gains and losses for a specific tax year:
 cgt-tool report transactions.cgt --year 2024
 ```
 
+Or generate a report for **all tax years** with disposals:
+
+```bash
+cgt-tool report transactions.cgt
+```
+
+When `--year` is omitted, the report includes all tax years that contain disposals, sorted chronologically. This is useful for reviewing multi-year transaction history or comparing with other CGT tools.
+
 You can combine multiple input files (e.g., separate files per broker or year):
 
 ```bash
