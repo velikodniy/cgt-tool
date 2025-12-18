@@ -286,10 +286,18 @@ fn parse_dividend(
     })?;
     let total_value = parse_money(total_value_pair)?;
 
-    let tax_paid_pair = inner.next().ok_or(CgtError::UnexpectedParserState {
-        expected: "tax paid",
-    })?;
-    let tax_paid = parse_money(tax_paid_pair)?;
+    // Optional tax clause (defaults to 0 GBP when omitted)
+    let tax_paid = if let Some(tax_clause) = inner.next() {
+        let money_pair = tax_clause
+            .into_inner()
+            .next()
+            .ok_or(CgtError::UnexpectedParserState {
+                expected: "tax amount",
+            })?;
+        parse_money(money_pair)?
+    } else {
+        CurrencyAmount::new(Decimal::ZERO, Currency::GBP)
+    };
 
     Ok((
         ticker,

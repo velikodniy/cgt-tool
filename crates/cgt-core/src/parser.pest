@@ -35,8 +35,9 @@ currency_code = @{
 buy_sell_args = { ticker ~ quantity ~ "@" ~ money ~ fees_clause? }
 fees_clause = { ^"FEES" ~ money }
 
-// DIVIDEND: ticker amount TOTAL value [currency] TAX tax [currency]
-dividend_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ ^"TAX" ~ money }
+// DIVIDEND: ticker amount TOTAL value [currency] [TAX tax [currency]]
+dividend_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ tax_clause? }
+tax_clause = { ^"TAX" ~ money }
 
 // CAPRETURN: ticker amount TOTAL value [currency] [FEES fees [currency]]
 capreturn_args = { ticker ~ quantity ~ ^"TOTAL" ~ money ~ fees_clause? }

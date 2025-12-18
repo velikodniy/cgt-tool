@@ -66,12 +66,13 @@ Examples:
 Record dividend payment (for accumulation funds that reinvest).
 
 ```
-<date> DIVIDEND <ticker> <quantity> TOTAL <amount> [<currency>] TAX <amount> [<currency>]
+<date> DIVIDEND <ticker> <quantity> TOTAL <amount> [<currency>] [TAX <amount> [<currency>]]
 ```
 
-Example:
+Examples:
 ```
-2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 0 GBP
+2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP           # TAX defaults to 0
+2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP # With tax withheld
 ```
 
 ### CAPRETURN
@@ -137,8 +138,8 @@ Lines starting with `#` are comments and ignored:
 2024-01-10 BUY VWRL 100 @ 85 GBP FEES 5 GBP
 2024-01-15 BUY AAPL 50 @ 150 USD FEES 10 USD
 
-# Dividend from accumulation fund
-2024-03-15 DIVIDEND VWRL 100 TOTAL 25 GBP TAX 0 GBP
+# Dividend from accumulation fund (TAX clause optional, defaults to 0)
+2024-03-15 DIVIDEND VWRL 100 TOTAL 25 GBP
 
 # Apple stock split
 2024-04-01 SPLIT AAPL RATIO 2

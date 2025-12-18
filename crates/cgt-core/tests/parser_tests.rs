@@ -218,3 +218,90 @@ fn test_parse_fees_keyword_not_confused_with_currency() {
         panic!("Expected Buy operation");
     }
 }
+
+// --- Optional clause tests ---
+
+#[test]
+fn test_parse_dividend_without_tax_clause() {
+    // TAX clause should be optional, defaulting to 0 GBP
+    let input = "2024-03-15 DIVIDEND VWRL 100 TOTAL 50.00";
+    let transactions = parse_file(input).expect("Failed to parse DIVIDEND without TAX clause");
+    assert_eq!(transactions.len(), 1);
+    let tx = &transactions[0];
+    assert_eq!(
+        tx.date,
+        NaiveDate::from_ymd_opt(2024, 3, 15).expect("valid test date")
+    );
+    assert_eq!(tx.ticker, "VWRL");
+    if let Operation::Dividend {
+        amount,
+        total_value,
+        tax_paid,
+    } = &tx.operation
+    {
+        assert_eq!(*amount, Decimal::from(100));
+        assert_eq!(
+            total_value.amount,
+            Decimal::from_str("50.00").expect("valid decimal")
+        );
+        assert!(total_value.is_gbp());
+        // TAX defaults to 0 GBP when omitted
+        assert_eq!(tax_paid.amount, Decimal::from(0));
+        assert!(tax_paid.is_gbp());
+    } else {
+        panic!("Expected Dividend operation");
+    }
+}
+
+#[test]
+fn test_parse_dividend_without_tax_clause_with_currency() {
+    // TAX clause should be optional even when total_value has a currency
+    let input = "2024-03-15 DIVIDEND VWRL 100 TOTAL 50.00 USD";
+    let transactions =
+        parse_file(input).expect("Failed to parse DIVIDEND without TAX clause (with currency)");
+    assert_eq!(transactions.len(), 1);
+    if let Operation::Dividend {
+        total_value,
+        tax_paid,
+        ..
+    } = &transactions[0].operation
+    {
+        assert!(!total_value.is_gbp(), "total_value should be USD");
+        // TAX defaults to 0 GBP when omitted
+        assert_eq!(tax_paid.amount, Decimal::from(0));
+        assert!(tax_paid.is_gbp());
+    } else {
+        panic!("Expected Dividend operation");
+    }
+}
+
+#[test]
+fn test_parse_sell_without_fees_clause() {
+    // FEES clause should be optional for SELL, defaulting to 0 GBP
+    let input = "2024-06-20 SELL AAPL 50 @ 180.00";
+    let transactions = parse_file(input).expect("Failed to parse SELL without FEES clause");
+    assert_eq!(transactions.len(), 1);
+    if let Operation::Sell { amount, fees, .. } = &transactions[0].operation {
+        assert_eq!(*amount, Decimal::from(50));
+        // FEES defaults to 0 GBP when omitted
+        assert_eq!(fees.amount, Decimal::from(0));
+        assert!(fees.is_gbp());
+    } else {
+        panic!("Expected Sell operation");
+    }
+}
+
+#[test]
+fn test_parse_capreturn_without_fees_clause() {
+    // FEES clause should be optional for CAPRETURN, defaulting to 0 GBP
+    let input = "2024-04-01 CAPRETURN FUND 100 TOTAL 200.00";
+    let transactions = parse_file(input).expect("Failed to parse CAPRETURN without FEES clause");
+    assert_eq!(transactions.len(), 1);
+    if let Operation::CapReturn { fees, .. } = &transactions[0].operation {
+        // FEES defaults to 0 GBP when omitted
+        assert_eq!(fees.amount, Decimal::from(0));
+        assert!(fees.is_gbp());
+    } else {
+        panic!("Expected CapReturn operation");
+    }
+}

@@ -58,10 +58,12 @@ Check https://en.wikipedia.org/wiki/ISO_4217 for valid codes."#;
 const DSL_SYNTAX_REFERENCE: &str = r#"DSL Syntax Reference:
   BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
   SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
-  DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE TAX AMOUNT
+  DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [TAX AMOUNT]
   SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE
 
 Example: 2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD
+
+Note: FEES and TAX clauses are optional (default to 0 when omitted).
 
 For JSON format, start input with '[' character."#;
 
@@ -545,7 +547,7 @@ impl CgtServer {
     }
 
     #[tool(
-        description = "Convert JSON transactions to CGT DSL format for use with the cgt-tool CLI.\n\nThe DSL format is a text-based format that can be saved as .cgt files and processed by the cgt-tool command-line interface.\n\n### DSL Syntax:\n- BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [CURRENCY] TAX AMOUNT [CURRENCY]\n- SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE\n- UNSPLIT:  YYYY-MM-DD UNSPLIT TICKER RATIO VALUE\n\n### Example output:\n2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD\n2024-06-20 SELL AAPL 50 @ 180 USD FEES 5 USD"
+        description = "Convert JSON transactions to CGT DSL format for use with the cgt-tool CLI.\n\nThe DSL format is a text-based format that can be saved as .cgt files and processed by the cgt-tool command-line interface.\n\n### DSL Syntax:\n- BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]\n- SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE\n- UNSPLIT:  YYYY-MM-DD UNSPLIT TICKER RATIO VALUE\n\nNote: FEES and TAX clauses are optional (default to 0 when omitted).\n\n### Example output:\n2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD\n2024-06-20 SELL AAPL 50 @ 180 USD FEES 5 USD"
     )]
     async fn convert_to_dsl(
         &self,
@@ -616,14 +618,16 @@ impl CgtServer {
                 total_value,
                 tax_paid,
             } => {
-                let line = format!(
-                    "{} DIVIDEND {} {} TOTAL {} TAX {}",
+                let mut line = format!(
+                    "{} DIVIDEND {} {} TOTAL {}",
                     date,
                     tx.ticker,
                     amount,
-                    Self::format_currency_amount(total_value),
-                    Self::format_currency_amount(tax_paid)
+                    Self::format_currency_amount(total_value)
                 );
+                if !tax_paid.amount.is_zero() {
+                    line.push_str(&format!(" TAX {}", Self::format_currency_amount(tax_paid)));
+                }
                 Ok(line)
             }
             Operation::CapReturn {
@@ -1637,6 +1641,27 @@ mod tests {
             .expect("should convert");
 
         assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP"));
+    }
+
+    #[test]
+    fn test_convert_to_dsl_dividend_zero_tax_omitted() {
+        let server = test_server_without_fx();
+        // tax_paid is 0 (or omitted), so TAX clause should not appear in output
+        let json_input = r#"[
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "amount": "100", "total_value": "50", "tax_paid": "0"}
+        ]"#;
+
+        let transactions = server.parse_input(json_input).expect("should parse");
+        let dsl = server
+            .transactions_to_dsl(&transactions)
+            .expect("should convert");
+
+        // TAX 0 should be omitted from output
+        assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP"));
+        assert!(
+            !dsl.contains("TAX"),
+            "TAX clause should be omitted when tax is 0: {dsl}"
+        );
     }
 
     #[tokio::test]

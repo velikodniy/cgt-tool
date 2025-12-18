@@ -59,6 +59,16 @@ tests/
 - `pest` grammar for DSL parsing (`cgt-core/src/parser.pest`)
 - Unix newlines, standard Rust naming
 
+## DSL Syntax Changes
+
+When modifying DSL grammar or transaction formats:
+
+- Update `crates/cgt-core/src/parser.pest` (grammar)
+- Update `crates/cgt-core/src/parser.rs` (parsing logic)
+- Update MCP tool descriptions in `crates/cgt-mcp/src/server.rs`
+- Update DSL resources in `crates/cgt-mcp/src/resources.rs`
+- Update `README.md` syntax documentation
+
 ## Never
 
 - Remove or modify tests without proving incorrectness

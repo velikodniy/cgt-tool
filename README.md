@@ -221,8 +221,8 @@ One transaction per line. Keywords are shown in uppercase, placeholders in `<ang
 ```
 
 - **BUY/SELL**: `<date> BUY|SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]`
-- **DIVIDEND**: `<date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] TAX <amount> [<currency>]`
-- **CAPRETURN**: `<date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] FEES <amount> [<currency>]`
+- **DIVIDEND**: `<date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]`
+- **CAPRETURN**: `<date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]`
 - **SPLIT/UNSPLIT**: `<date> SPLIT|UNSPLIT <ticker> RATIO <ratio>`
 
 ## Multi-Currency Support
@@ -237,7 +237,7 @@ Add a 3-letter ISO 4217 currency code after any monetary amount:
 # Buy US shares in USD
 2024-06-15 BUY AAPL 100 @ 150.00 USD FEES 10.00 USD
 
-# Receive dividend in EUR
+# Receive dividend in EUR (TAX clause is optional, defaults to 0)
 2024-09-01 DIVIDEND MSFT 50 TOTAL 125.00 EUR TAX 18.75 EUR
 
 # Mix currencies (price in USD, expenses in GBP)
