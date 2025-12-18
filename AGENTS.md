@@ -58,6 +58,7 @@ tests/
 - Rust 2024 edition, `rust_decimal` for money, `chrono` for dates
 - `pest` grammar for DSL parsing (`cgt-core/src/parser.pest`)
 - Unix newlines, standard Rust naming
+- No long separator lines in comments (e.g., `// ====...` or `// ----...`)
 
 ## DSL Syntax Changes
 
