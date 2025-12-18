@@ -22,12 +22,16 @@ pub fn match_section_104(
         return Ok(None);
     }
 
-    let pool = match matcher.get_pool_mut(&sell_tx.ticker) {
-        Some(p) => p,
-        None => return Ok(None),
+    let Some(pool) = matcher.get_pool_mut(&sell_tx.ticker) else {
+        return Ok(None);
     };
 
     if pool.quantity == Decimal::ZERO {
+        return Ok(None);
+    }
+
+    // Guard against division by zero (edge case: zero sell amount)
+    if total_sell_amount == Decimal::ZERO {
         return Ok(None);
     }
 

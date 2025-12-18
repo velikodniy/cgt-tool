@@ -27,14 +27,18 @@ pub fn match_same_day(
         return Ok(results);
     };
 
-    let ledger = match matcher.get_ledger_mut(&sell_tx.ticker) {
-        Some(l) => l,
-        None => return Ok(results),
+    let Some(ledger) = matcher.get_ledger_mut(&sell_tx.ticker) else {
+        return Ok(results);
     };
 
     // Check for same-day acquisitions
     let available = ledger.remaining_for_date(sell_tx.date);
     if available > Decimal::ZERO && *remaining > Decimal::ZERO {
+        // Guard against division by zero (edge case: zero sell amount)
+        if *sell_amount == Decimal::ZERO {
+            return Ok(results);
+        }
+
         let matched_qty = (*remaining).min(available);
         let cost = ledger.consume_shares_on_date(sell_tx.date, matched_qty);
 

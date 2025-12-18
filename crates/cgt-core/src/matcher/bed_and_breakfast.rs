@@ -33,6 +33,11 @@ pub fn match_bed_and_breakfast(
         return Ok(results);
     };
 
+    // Guard against division by zero (edge case: zero sell amount)
+    if *sell_amount == Decimal::ZERO {
+        return Ok(results);
+    }
+
     // Track cumulative ratio effect from splits/unsplits between sell and potential buys
     let mut cumulative_ratio_effect = Decimal::ONE;
 
@@ -69,9 +74,8 @@ pub fn match_bed_and_breakfast(
                 }
             }
             Operation::Buy { .. } => {
-                let ledger = match matcher.get_ledger_mut(&sell_tx.ticker) {
-                    Some(l) => l,
-                    None => continue,
+                let Some(ledger) = matcher.get_ledger_mut(&sell_tx.ticker) else {
+                    continue;
                 };
 
                 // Get available shares at buy time (not yet consumed by same-day or earlier B&B)
