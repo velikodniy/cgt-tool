@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-mcp-server. Update Purpose after archive.
+Provide an MCP (Model Context Protocol) server that enables AI assistants to calculate UK Capital Gains Tax, parse transactions, explain matching rules, and access HMRC exchange rates.
 
 ## Requirements
 

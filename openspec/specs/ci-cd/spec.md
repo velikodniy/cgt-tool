@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-github-actions-ci. Update Purpose after archive.
+Automate code quality checks, multi-platform binary releases, HMRC exchange rate updates, and Homebrew tap distribution for the cgt-tool project.
 
 ## Requirements
 
