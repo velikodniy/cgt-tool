@@ -18,14 +18,27 @@ use std::collections::HashMap;
 /// invalid inputs (zero quantities, negative prices, etc.) with helpful error
 /// messages. Invalid inputs may cause unexpected behavior or incorrect results.
 ///
-/// ```ignore
-/// use cgt_core::{validation, calculator};
+/// ```
+/// use cgt_core::{validation, calculator, Transaction, Operation, CurrencyAmount, Currency};
+/// use chrono::NaiveDate;
+/// use rust_decimal_macros::dec;
+///
+/// let transactions = vec![
+///     Transaction {
+///         date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+///         ticker: "AAPL".to_string(),
+///         operation: Operation::Buy {
+///             amount: dec!(100),
+///             price: CurrencyAmount::new(dec!(150), Currency::GBP),
+///             fees: CurrencyAmount::new(dec!(10), Currency::GBP),
+///         },
+///     },
+/// ];
 ///
 /// let result = validation::validate(&transactions);
-/// if !result.is_valid() {
-///     // Handle validation errors
-/// }
-/// let report = calculator::calculate(transactions, None, None)?;
+/// assert!(result.is_valid());
+///
+/// let report = calculator::calculate(transactions, None, None).unwrap();
 /// ```
 pub fn calculate(
     transactions: Vec<Transaction>,
