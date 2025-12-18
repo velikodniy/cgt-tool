@@ -5,7 +5,7 @@
 
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
 use cgt_format::{
-    CurrencyFormatter, format_currency, format_date, format_decimal, format_tax_year,
+    format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_tax_year,
 };
 use chrono::{Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -19,13 +19,8 @@ static TEMPLATE: &str = include_str!("templates/report.typ");
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
-/// Shared formatter instance for currency formatting.
-fn formatter() -> CurrencyFormatter {
-    CurrencyFormatter::uk()
-}
-
 fn format_price(value: Decimal) -> String {
-    format!("£{}", format_decimal(value))
+    format!("£{}", format_decimal_trimmed(value))
 }
 
 /// Sort transactions by date, then by ticker for deterministic output.
@@ -85,10 +80,10 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
 
         rows.extend([
             format_tax_year(year.period.start_year()).into_value(),
-            format_currency(year.net_gain).into_value(),
-            format_currency(proceeds).into_value(),
-            format_currency(exemption).into_value(),
-            format_currency(taxable).into_value(),
+            format_gbp(year.net_gain).into_value(),
+            format_gbp(proceeds).into_value(),
+            format_gbp(exemption).into_value(),
+            format_gbp(taxable).into_value(),
         ]);
     }
     Ok(rows)
@@ -136,7 +131,7 @@ fn build_holdings_rows(report: &TaxReport) -> (bool, Vec<Value>) {
             let cost_basis = (h.total_cost / h.quantity).round_dp(2);
             [
                 h.ticker.clone().into_value(),
-                format_decimal(h.quantity).into_value(),
+                format_decimal_trimmed(h.quantity).into_value(),
                 format_price(cost_basis).into_value(),
             ]
         })
@@ -172,9 +167,9 @@ fn build_transaction_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                 format_date(date).into_value(),
                 op_type.into_value(),
                 ticker.clone().into_value(),
-                format_decimal(amount).into_value(),
-                formatter().format_amount(price).into_value(),
-                formatter().format_amount(fees).into_value(),
+                format_decimal_trimmed(amount).into_value(),
+                format_currency_amount(price).into_value(),
+                format_currency_amount(fees).into_value(),
             ]
         })
         .collect();
@@ -193,8 +188,8 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                     ..
                 } => (
                     "DIVIDEND",
-                    format_decimal(*amount),
-                    formatter().format_amount(total_value),
+                    format_decimal_trimmed(*amount),
+                    format_currency_amount(total_value),
                 ),
                 Operation::CapReturn {
                     amount,
@@ -202,12 +197,14 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> (bool, Vec<Value>) {
                     ..
                 } => (
                     "CAPRETURN",
-                    format_decimal(*amount),
-                    formatter().format_amount(total_value),
+                    format_decimal_trimmed(*amount),
+                    format_currency_amount(total_value),
                 ),
-                Operation::Split { ratio } => ("SPLIT", format_decimal(*ratio), "-".to_string()),
+                Operation::Split { ratio } => {
+                    ("SPLIT", format_decimal_trimmed(*ratio), "-".to_string())
+                }
                 Operation::Unsplit { ratio } => {
-                    ("UNSPLIT", format_decimal(*ratio), "-".to_string())
+                    ("UNSPLIT", format_decimal_trimmed(*ratio), "-".to_string())
                 }
                 _ => return None,
             };
@@ -268,12 +265,12 @@ fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_fees: Deci
     dict.insert("date".into(), format_date(disposal.date).into_value());
     dict.insert(
         "quantity".into(),
-        format_decimal(disposal.quantity).into_value(),
+        format_decimal_trimmed(disposal.quantity).into_value(),
     );
     dict.insert("gain_type".into(), gain_type.into_value());
     dict.insert(
         "gain_amount".into(),
-        format_currency(total_gain.abs()).into_value(),
+        format_gbp(total_gain.abs()).into_value(),
     );
 
     // Match descriptions
@@ -293,36 +290,33 @@ fn build_disposal_dict(disposal: &Disposal, sell_price: Decimal, sell_fees: Deci
     let proceeds_calc = if sell_fees > Decimal::ZERO {
         format!(
             "{} × {} - {} fees = {}",
-            format_decimal(disposal.quantity),
+            format_decimal_trimmed(disposal.quantity),
             format_price(sell_price),
-            format_currency(sell_fees),
-            format_currency(disposal.proceeds)
+            format_gbp(sell_fees),
+            format_gbp(disposal.proceeds)
         )
     } else {
         format!(
             "{} × {} = {}",
-            format_decimal(disposal.quantity),
+            format_decimal_trimmed(disposal.quantity),
             format_price(sell_price),
-            format_currency(disposal.proceeds)
+            format_gbp(disposal.proceeds)
         )
     };
     dict.insert("proceeds_calc".into(), proceeds_calc.into_value());
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
-    dict.insert(
-        "total_cost".into(),
-        format_currency(total_cost).into_value(),
-    );
-    dict.insert("result".into(), format_currency(total_gain).into_value());
+    dict.insert("total_cost".into(), format_gbp(total_cost).into_value());
+    dict.insert("result".into(), format_gbp(total_gain).into_value());
 
     dict
 }
 
 fn format_match_description(m: &cgt_core::Match) -> String {
     match m.rule {
-        MatchRule::SameDay => format!("Same Day: {} shares", format_decimal(m.quantity)),
+        MatchRule::SameDay => format!("Same Day: {} shares", format_decimal_trimmed(m.quantity)),
         MatchRule::BedAndBreakfast => {
-            let qty = format_decimal(m.quantity);
+            let qty = format_decimal_trimmed(m.quantity);
             match m.acquisition_date {
                 Some(date) => format!("B&B: {qty} shares from {}", format_date(date)),
                 None => format!("B&B: {qty} shares"),
@@ -336,7 +330,7 @@ fn format_match_description(m: &cgt_core::Match) -> String {
             };
             format!(
                 "Section 104: {} shares @ {}",
-                format_decimal(m.quantity),
+                format_decimal_trimmed(m.quantity),
                 format_price(cost_per_share)
             )
         }
@@ -382,11 +376,11 @@ mod tests {
     use typst::foundations::Value;
 
     #[test]
-    fn test_format_currency() {
-        assert_eq!(format_currency(Decimal::from(100)), "£100.00");
-        assert_eq!(format_currency(Decimal::from(-20)), "-£20.00");
-        assert_eq!(format_currency(Decimal::from(1234)), "£1,234.00");
-        assert_eq!(format_currency(Decimal::from(1000000)), "£1,000,000.00");
+    fn test_format_gbp() {
+        assert_eq!(format_gbp(Decimal::from(100)), "£100.00");
+        assert_eq!(format_gbp(Decimal::from(-20)), "-£20.00");
+        assert_eq!(format_gbp(Decimal::from(1234)), "£1,234.00");
+        assert_eq!(format_gbp(Decimal::from(1000000)), "£1,000,000.00");
     }
 
     #[test]

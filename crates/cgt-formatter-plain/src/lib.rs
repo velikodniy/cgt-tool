@@ -2,15 +2,11 @@
 
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
 use cgt_format::{
-    CurrencyFormatter, format_currency, format_date, format_decimal, format_tax_year,
+    format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
+    format_tax_year,
 };
 use rust_decimal::Decimal;
 use std::fmt::Write;
-
-/// Shared formatter instance for currency formatting.
-fn formatter() -> CurrencyFormatter {
-    CurrencyFormatter::uk()
-}
 
 /// Format a tax report as plain text.
 ///
@@ -40,10 +36,10 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             out,
             "{:<12}{:<12}{:<12}{:<14}{}",
             format_tax_year(year.period.start_year()),
-            format_currency(year.net_gain),
-            format_currency(proceeds),
-            format_currency(exemption),
-            format_currency(taxable)
+            format_gbp(year.net_gain),
+            format_gbp(proceeds),
+            format_gbp(exemption),
+            format_gbp(taxable)
         );
     }
 
@@ -79,8 +75,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                 out,
                 "{}: {} units at £{} avg cost",
                 h.ticker,
-                format_decimal(h.quantity),
-                format_decimal(cost_basis.round_dp(2))
+                format_decimal_trimmed(h.quantity),
+                format_decimal_trimmed(cost_basis.round_dp(2))
             );
         }
     }
@@ -104,10 +100,10 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     out,
                     "{} BUY {} {} @ {} ({} fees)",
                     format_date(t.date),
-                    format_decimal(*amount),
+                    format_decimal_trimmed(*amount),
                     t.ticker,
-                    formatter().format_unit(price),
-                    formatter().format_unit(fees)
+                    format_price(price),
+                    format_price(fees)
                 );
             }
             Operation::Sell {
@@ -119,10 +115,10 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                     out,
                     "{} SELL {} {} @ {} ({} fees)",
                     format_date(t.date),
-                    format_decimal(*amount),
+                    format_decimal_trimmed(*amount),
                     t.ticker,
-                    formatter().format_unit(price),
-                    formatter().format_unit(fees)
+                    format_price(price),
+                    format_price(fees)
                 );
             }
             _ => {}
@@ -158,8 +154,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         "{} DIVIDEND {} {} {}",
                         format_date(t.date),
                         t.ticker,
-                        format_decimal(*amount),
-                        formatter().format_amount(total_value)
+                        format_decimal_trimmed(*amount),
+                        format_currency_amount(total_value)
                     );
                 }
                 Operation::CapReturn {
@@ -172,8 +168,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         "{} CAPRETURN {} {} {}",
                         format_date(t.date),
                         t.ticker,
-                        format_decimal(*amount),
-                        formatter().format_amount(total_value)
+                        format_decimal_trimmed(*amount),
+                        format_currency_amount(total_value)
                     );
                 }
                 Operation::Split { ratio } => {
@@ -182,7 +178,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         "{} SPLIT {} {}",
                         format_date(t.date),
                         t.ticker,
-                        format_decimal(*ratio)
+                        format_decimal_trimmed(*ratio)
                     );
                 }
                 Operation::Unsplit { ratio } => {
@@ -191,7 +187,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                         "{} UNSPLIT {} {}",
                         format_date(t.date),
                         t.ticker,
-                        format_decimal(*ratio)
+                        format_decimal_trimmed(*ratio)
                     );
                 }
                 _ => {}
@@ -219,24 +215,28 @@ fn format_disposal(
         out,
         "{}) SELL {} {} on {} - {} {}",
         index,
-        format_decimal(disposal.quantity),
+        format_decimal_trimmed(disposal.quantity),
         disposal.ticker,
         format_date(disposal.date),
         gain_type,
-        format_currency(total_gain.abs())
+        format_gbp(total_gain.abs())
     );
 
     for m in &disposal.matches {
         match m.rule {
             MatchRule::SameDay => {
-                let _ = writeln!(out, "   Same Day: {} shares", format_decimal(m.quantity));
+                let _ = writeln!(
+                    out,
+                    "   Same Day: {} shares",
+                    format_decimal_trimmed(m.quantity)
+                );
             }
             MatchRule::BedAndBreakfast => {
                 if let Some(date) = m.acquisition_date {
                     let _ = writeln!(
                         out,
                         "   B&B: {} shares from {}",
-                        format_decimal(m.quantity),
+                        format_decimal_trimmed(m.quantity),
                         format_date(date)
                     );
                 }
@@ -250,8 +250,8 @@ fn format_disposal(
                 let _ = writeln!(
                     out,
                     "   Section 104: {} shares @ £{}",
-                    format_decimal(m.quantity),
-                    format_decimal(cost_per_share.round_dp(2))
+                    format_decimal_trimmed(m.quantity),
+                    format_decimal_trimmed(cost_per_share.round_dp(2))
                 );
             }
         }
@@ -283,24 +283,24 @@ fn format_disposal(
         let _ = writeln!(
             out,
             "   Proceeds: {} × £{} - {} fees = {}",
-            format_decimal(disposal.quantity),
-            format_decimal(sell_price),
-            format_currency(sell_fees),
-            format_currency(disposal.proceeds)
+            format_decimal_trimmed(disposal.quantity),
+            format_decimal_trimmed(sell_price),
+            format_gbp(sell_fees),
+            format_gbp(disposal.proceeds)
         );
     } else {
         let _ = writeln!(
             out,
             "   Proceeds: {} × £{} = {}",
-            format_decimal(disposal.quantity),
-            format_decimal(sell_price),
-            format_currency(disposal.proceeds)
+            format_decimal_trimmed(disposal.quantity),
+            format_decimal_trimmed(sell_price),
+            format_gbp(disposal.proceeds)
         );
     }
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
-    let _ = writeln!(out, "   Cost: {}", format_currency(total_cost));
-    let _ = writeln!(out, "   Result: {}\n", format_currency(total_gain));
+    let _ = writeln!(out, "   Cost: {}", format_gbp(total_cost));
+    let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
 }
 
 #[cfg(test)]
@@ -314,9 +314,9 @@ mod tests {
     use chrono::NaiveDate;
 
     #[test]
-    fn test_format_currency() {
-        assert_eq!(format_currency(Decimal::from(100)), "£100.00");
-        assert_eq!(format_currency(Decimal::new(-196, 1)), "-£19.60");
+    fn test_format_gbp() {
+        assert_eq!(format_gbp(Decimal::from(100)), "£100.00");
+        assert_eq!(format_gbp(Decimal::new(-196, 1)), "-£19.60");
     }
 
     #[test]
