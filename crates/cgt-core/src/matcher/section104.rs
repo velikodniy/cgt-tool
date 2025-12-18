@@ -4,7 +4,7 @@
 
 use super::{MatchResult, Matcher};
 use crate::error::CgtError;
-use crate::models::{MatchRule, Transaction};
+use crate::models::{GbpTransaction, MatchRule};
 use rust_decimal::Decimal;
 
 /// Match disposal against Section 104 pool.
@@ -12,7 +12,7 @@ use rust_decimal::Decimal;
 /// Returns a match result if there are shares in the pool.
 pub fn match_section_104(
     matcher: &mut Matcher,
-    sell_tx: &Transaction,
+    sell_tx: &GbpTransaction,
     remaining: Decimal,
     gross_proceeds: Decimal,
     total_fees: Decimal,
@@ -48,17 +48,18 @@ pub fn match_section_104(
 
     // Calculate proportional proceeds and fees
     let proportion = matched_qty / total_sell_amount;
-    let proceeds = gross_proceeds * proportion;
+    let gross_portion = gross_proceeds * proportion;
     let fees = total_fees * proportion;
+    let net_proceeds = gross_portion - fees;
 
-    let gain_or_loss = proceeds - cost - fees;
+    let gain_or_loss = net_proceeds - cost;
 
     Ok(Some(MatchResult {
         disposal_date: sell_tx.date,
         disposal_ticker: sell_tx.ticker.clone(),
         quantity: matched_qty,
-        proceeds,
-        allowable_cost: cost + fees,
+        proceeds: net_proceeds,
+        allowable_cost: cost,
         gain_or_loss,
         rule: MatchRule::Section104,
         acquisition_date: None,

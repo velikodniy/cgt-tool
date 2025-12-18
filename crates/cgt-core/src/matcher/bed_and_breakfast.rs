@@ -4,7 +4,7 @@
 
 use super::{MatchResult, Matcher};
 use crate::error::CgtError;
-use crate::models::{MatchRule, Operation, Transaction};
+use crate::models::{GbpTransaction, MatchRule, Operation};
 use rust_decimal::Decimal;
 
 /// Number of days for B&B matching window.
@@ -13,11 +13,14 @@ const BNB_WINDOW_DAYS: i64 = 30;
 /// Match disposal against acquisitions within 30 days (Bed & Breakfast rule).
 ///
 /// Returns match results for any B&B acquisitions found.
+///
+/// This function handles splits/unsplits that occur between the sell date
+/// and the B&B acquisition date by adjusting quantities accordingly.
 pub fn match_bed_and_breakfast(
     matcher: &mut Matcher,
-    sell_tx: &Transaction,
+    sell_tx: &GbpTransaction,
     remaining: &mut Decimal,
-    _all_transactions: &[Transaction],
+    all_transactions: &[GbpTransaction],
 ) -> Result<Vec<MatchResult>, CgtError> {
     let mut results = Vec::new();
 
@@ -30,39 +33,87 @@ pub fn match_bed_and_breakfast(
         return Ok(results);
     };
 
-    // Keep matching until we've matched all remaining shares or exhausted B&B opportunities
-    while *remaining > Decimal::ZERO {
-        let ledger = match matcher.get_ledger_mut(&sell_tx.ticker) {
-            Some(l) => l,
-            None => break,
-        };
+    // Track cumulative ratio effect from splits/unsplits between sell and potential buys
+    let mut cumulative_ratio_effect = Decimal::ONE;
 
-        let bnb_result =
-            ledger.consume_shares_after_date(sell_tx.date, *remaining, BNB_WINDOW_DAYS);
+    // Find transactions after sell date, within B&B window, for same ticker
+    for tx in all_transactions {
+        if *remaining <= Decimal::ZERO {
+            break;
+        }
 
-        match bnb_result {
-            Some((matched_qty, cost, acquisition_date)) => {
-                // Calculate proportional proceeds and fees (using GBP values)
-                let proportion = matched_qty / *sell_amount;
-                let proceeds = matched_qty * sell_price.amount;
-                let fees = sell_fees.amount * proportion;
+        // Must be same ticker
+        if tx.ticker != sell_tx.ticker {
+            continue;
+        }
 
-                let gain_or_loss = proceeds - cost - fees;
+        let days_diff = (tx.date - sell_tx.date).num_days();
+
+        // Must be after sell date
+        if days_diff <= 0 {
+            continue;
+        }
+
+        // Must be within B&B window
+        if days_diff > BNB_WINDOW_DAYS {
+            break;
+        }
+
+        match &tx.operation {
+            Operation::Split { ratio } => {
+                cumulative_ratio_effect *= *ratio;
+            }
+            Operation::Unsplit { ratio } => {
+                if *ratio != Decimal::ZERO {
+                    cumulative_ratio_effect /= *ratio;
+                }
+            }
+            Operation::Buy { .. } => {
+                let ledger = match matcher.get_ledger_mut(&sell_tx.ticker) {
+                    Some(l) => l,
+                    None => continue,
+                };
+
+                // Get available shares at buy time (not yet consumed by same-day or earlier B&B)
+                let available_at_buy_time = ledger.remaining_for_date(tx.date);
+                if available_at_buy_time <= Decimal::ZERO {
+                    continue;
+                }
+
+                // Convert to sell-time equivalent (accounting for splits between sell and buy)
+                let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
+
+                // Match quantity at sell time
+                let matched_qty_at_sell_time = (*remaining).min(available_at_sell_time);
+
+                // Convert back to buy-time quantity for cost calculation
+                let matched_qty_at_buy_time = matched_qty_at_sell_time * cumulative_ratio_effect;
+
+                // Get cost for the matched quantity
+                let cost = ledger.consume_shares_on_date(tx.date, matched_qty_at_buy_time);
+
+                // Calculate proportional proceeds and fees based on sell-time quantity
+                let proportion = matched_qty_at_sell_time / *sell_amount;
+                let gross_proceeds = matched_qty_at_sell_time * *sell_price;
+                let fees = *sell_fees * proportion;
+                let net_proceeds = gross_proceeds - fees;
+
+                let gain_or_loss = net_proceeds - cost;
 
                 results.push(MatchResult {
                     disposal_date: sell_tx.date,
                     disposal_ticker: sell_tx.ticker.clone(),
-                    quantity: matched_qty,
-                    proceeds,
-                    allowable_cost: cost + fees,
+                    quantity: matched_qty_at_sell_time,
+                    proceeds: net_proceeds,
+                    allowable_cost: cost,
                     gain_or_loss,
                     rule: MatchRule::BedAndBreakfast,
-                    acquisition_date: Some(acquisition_date),
+                    acquisition_date: Some(tx.date),
                 });
 
-                *remaining -= matched_qty;
+                *remaining -= matched_qty_at_sell_time;
             }
-            None => break,
+            _ => {}
         }
     }
 

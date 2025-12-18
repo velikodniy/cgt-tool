@@ -1,6 +1,6 @@
 //! Acquisition ledger for tracking share purchases and their costs.
 
-use crate::models::{Operation, Transaction};
+use crate::models::{GbpTransaction, Operation};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
@@ -157,7 +157,7 @@ impl AcquisitionLedger {
         event_date: NaiveDate,
         event_amount: Decimal,
         adjustment: Decimal,
-        transactions: &[Transaction],
+        transactions: &[GbpTransaction],
     ) {
         if event_amount == Decimal::ZERO {
             return;
@@ -186,37 +186,64 @@ impl AcquisitionLedger {
     }
 
     /// Calculate how much of a lot remains at the time of an event.
+    ///
+    /// This simulates FIFO matching for sells that occurred before the event
+    /// to determine how much of this lot would still be held at event time.
     fn calculate_remaining_at_event(
         &self,
         lot: &AcquisitionLot,
         event_idx: usize,
-        transactions: &[Transaction],
+        transactions: &[GbpTransaction],
     ) -> Decimal {
+        let event_date = transactions
+            .get(event_idx)
+            .map(|t| t.date)
+            .unwrap_or(lot.date);
+
         let mut remaining = lot.original_amount;
 
-        // Check all sells before this event that might have consumed from this lot
+        // Track amounts left in all lots (for FIFO simulation)
+        let mut lot_amounts: Vec<Decimal> = self.lots.iter().map(|l| l.original_amount).collect();
+
+        // Process sells chronologically that occurred BEFORE the event date
         for (idx, tx) in transactions.iter().enumerate() {
             if idx >= event_idx {
                 break;
             }
-            if let Operation::Sell { amount, .. } = &tx.operation
-                && tx.date > lot.date
-            {
-                // This sell could have consumed from this lot (FIFO)
-                // Simplified: just track proportional consumption
-                let total_available: Decimal = self
-                    .lots
-                    .iter()
-                    .filter(|l| l.date <= tx.date && l.transaction_idx < idx)
-                    .map(|l| l.original_amount)
-                    .sum();
+            // Only consider sells that happened BEFORE the event date (strictly less than)
+            if let Operation::Sell { amount, .. } = &tx.operation {
+                if tx.date >= event_date {
+                    continue;
+                }
 
-                if total_available > Decimal::ZERO {
-                    let proportion = lot.original_amount / total_available;
-                    let consumed = (*amount * proportion).min(remaining);
-                    remaining -= consumed;
+                // Match this sell against acquisitions in FIFO order
+                let mut sell_remaining = *amount;
+                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
+                    if sell_remaining <= Decimal::ZERO {
+                        break;
+                    }
+                    // Can only match against acquisitions that happened before this sell
+                    if lot_entry.transaction_idx >= idx {
+                        continue;
+                    }
+                    // Must be same ticker (already filtered by ledger per-ticker)
+                    let available = lot_amounts[lot_idx];
+                    if available > Decimal::ZERO {
+                        let matched = sell_remaining.min(available);
+                        lot_amounts[lot_idx] -= matched;
+                        sell_remaining -= matched;
+                    }
                 }
             }
+        }
+
+        // Find this lot's remaining amount
+        if let Some(lot_idx) = self
+            .lots
+            .iter()
+            .position(|l| l.transaction_idx == lot.transaction_idx)
+        {
+            remaining = lot_amounts[lot_idx];
         }
 
         remaining.max(Decimal::ZERO)
