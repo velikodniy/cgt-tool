@@ -30,7 +30,7 @@ The converter core SHALL operate without filesystem or network IO, accepting fil
 
 ### Requirement: Schwab Transactions CSV Parser
 
-The system SHALL parse Charles Schwab transaction CSV exports containing columns: Date, Action, Symbol, Description, Price, Quantity, Fees & Comm, Amount.
+The system SHALL parse Charles Schwab transaction CSV exports containing columns: Date, Action, Symbol, Description, Price, Quantity, Fees & Comm, Amount. Extra columns with empty values SHALL be tolerated.
 
 #### Scenario: Parse basic buy transaction
 
@@ -58,9 +58,16 @@ The system SHALL parse Charles Schwab transaction CSV exports containing columns
 - **THEN** skip these rows
 - **AND** include count of skipped transactions in header comment
 
+#### Scenario: Tolerate extra empty columns
+
+- **WHEN** CSV contains extra columns beyond the expected set
+- **AND** those extra columns have empty values
+- **THEN** ignore the extra columns
+- **AND** proceed with parsing without error
+
 ### Requirement: Schwab Awards Parser
 
-The system SHALL parse Schwab Equity Awards in both JSON and CSV formats to obtain Fair Market Value prices and vest dates for RSU vesting events, auto-detecting the format based on file extension.
+The system SHALL parse Schwab Equity Awards in both JSON and CSV formats to obtain Fair Market Value prices and vest dates for RSU vesting events, auto-detecting the format based on file extension. Symbol lookup SHALL be case-insensitive.
 
 #### Scenario: Parse JSON awards format
 
@@ -74,6 +81,13 @@ The system SHALL parse Schwab Equity Awards in both JSON and CSV formats to obta
 - **THEN** parse as CSV with paired-row structure
 - **AND** extract Symbol and Date (vest/lapse date) from transaction row
 - **AND** extract FairMarketValuePrice from following award details row
+
+#### Scenario: Case-insensitive symbol lookup
+
+- **WHEN** looking up FMV for symbol "aapl" (lowercase)
+- **AND** awards file contains "AAPL" (uppercase)
+- **THEN** lookup succeeds and returns the FMV for AAPL
+- **AND** symbol matching is case-insensitive
 
 #### Scenario: CSV paired-row structure
 

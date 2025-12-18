@@ -173,7 +173,7 @@ The system SHALL provide `dsl-syntax` resource with CGT DSL format documentation
 
 ### Requirement: Error Handling
 
-The system SHALL return structured errors compatible with MCP error protocol.
+The system SHALL return structured errors compatible with MCP error protocol. Error types SHALL only include variants that are actually used.
 
 #### Scenario: Tool execution error
 
@@ -193,6 +193,12 @@ The system SHALL return structured errors compatible with MCP error protocol.
 - **WHEN** price/fees is provided as object `{"amount": "X"}` without currency field
 - **THEN** return error explaining that object format requires explicit currency
 - **AND** suggest using plain string for GBP or adding currency field
+
+#### Scenario: Disposal not found in explain_matching
+
+- **WHEN** no disposal exists for given date and ticker in explain_matching tool
+- **THEN** return MCP invalid_params error with helpful message
+- **AND** list available disposals for that ticker if any exist
 
 ### Requirement: Currency Amount Format
 
@@ -234,3 +240,25 @@ The system SHALL handle shutdown signals properly to avoid orphan processes.
 - **WHEN** parent process (Claude Desktop) terminates
 - **THEN** server detects closure and exits
 - **AND** does not remain running as orphan process
+
+### Requirement: Resource Organization
+
+The system SHALL organize string constants and documentation in a dedicated resources module for maintainability.
+
+#### Scenario: Hint messages in resources
+
+- **WHEN** server needs to display hint messages for errors
+- **THEN** hint constants are defined in resources module
+- **AND** server imports hints from resources module
+
+#### Scenario: DSL syntax reference in resources
+
+- **WHEN** server needs to display DSL syntax help
+- **THEN** DSL syntax reference is defined in resources module
+- **AND** server imports DSL syntax from resources module
+
+#### Scenario: Example transactions in resources
+
+- **WHEN** server needs to display example transactions
+- **THEN** example transaction strings are defined in resources module
+- **AND** server imports examples from resources module
