@@ -206,10 +206,12 @@ def run_cgt_calc(cgt_file: Path) -> CalculatorResult:
 
 def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
     """Run mattjgalloway/cgtcalc and parse output."""
-    # Check if cgtcalc is available
+    # Check if cgtcalc is available (prefer local copy in scripts/)
+    script_dir = Path(__file__).parent
     cgtcalc_paths = [
-        Path.home() / "cgtcalc" / ".build" / "release" / "cgtcalc",
+        script_dir / "cgtcalc",
         Path("/tmp/cgtcalc/.build/release/cgtcalc"),
+        Path.home() / "cgtcalc" / ".build" / "release" / "cgtcalc",
     ]
 
     cgtcalc_bin = None
@@ -335,8 +337,12 @@ def compare_results(
     return discrepancies
 
 
-def validate_file(cgt_file: Path, verbose: bool = True) -> bool:
-    """Validate a single .cgt file against external calculators."""
+def validate_file(cgt_file: Path, verbose: bool = True) -> tuple[bool, str, str]:
+    """Validate a single .cgt file against external calculators.
+
+    Returns (all_passed, cgt_calc_status, cgtcalc_status) where status is
+    one of: "ok", "diff", "skip", "error".
+    """
     if verbose:
         print(f"\n{'=' * 60}")
         print(f"Validating: {cgt_file.name}")
@@ -346,7 +352,7 @@ def validate_file(cgt_file: Path, verbose: bool = True) -> bool:
     cgt_result = run_cgt_tool(cgt_file)
     if cgt_result.error:
         print(f"  ERROR (cgt-tool): {cgt_result.error}")
-        return False
+        return False, "error", "error"
 
     if verbose:
         print(f"  cgt-tool: {len(cgt_result.tax_years)} tax year(s)")
@@ -354,38 +360,53 @@ def validate_file(cgt_file: Path, verbose: bool = True) -> bool:
             print(f"    {ty.period}: gain=£{ty.gain}, loss=£{ty.loss}")
 
     all_passed = True
+    calc_status = "skip"
+    cgtcalc_status = "skip"
 
     # Run cgt-calc
     calc_result = run_cgt_calc(cgt_file)
     if calc_result.error:
+        calc_status = "skip" if calc_result.error.startswith("SKIP") else "error"
         if verbose:
             print(f"  SKIP (cgt-calc): {calc_result.error}")
     else:
         discrepancies = compare_results(cgt_result, calc_result)
         if discrepancies:
+            calc_status = "diff"
             all_passed = False
             print(f"  DISCREPANCY (cgt-calc):")
             for period, msg, diff in discrepancies:
                 print(f"    {period}: {msg} (diff: £{diff:.2f})")
-        elif verbose:
-            print(f"  OK (cgt-calc): matches cgt-tool")
+        else:
+            calc_status = "ok"
+            if verbose:
+                print(f"  OK (cgt-calc): matches cgt-tool")
 
     # Run cgtcalc
     cgtcalc_result = run_cgtcalc(cgt_file)
     if cgtcalc_result.error:
+        cgtcalc_status = (
+            "skip"
+            if cgtcalc_result.error.startswith("cgtcalc not found")
+            or "No transactions" in cgtcalc_result.error
+            else "error"
+        )
         if verbose:
             print(f"  SKIP (cgtcalc): {cgtcalc_result.error}")
     else:
         discrepancies = compare_results(cgt_result, cgtcalc_result)
         if discrepancies:
+            cgtcalc_status = "diff"
             all_passed = False
             print(f"  DISCREPANCY (cgtcalc):")
             for period, msg, diff in discrepancies:
                 print(f"    {period}: {msg} (diff: £{diff:.2f})")
-        elif verbose:
-            print(f"  OK (cgtcalc): matches cgt-tool")
+        else:
+            cgtcalc_status = "ok"
+            if verbose:
+                print(f"  OK (cgtcalc): matches cgt-tool")
 
-    return all_passed
+    return all_passed, calc_status, cgtcalc_status
 
 
 def main():
@@ -397,6 +418,10 @@ def main():
 
     files = [Path(f) for f in sys.argv[1:]]
     all_passed = True
+    summary = {
+        "cgt-calc": {"ok": 0, "diff": 0, "skip": 0, "error": 0},
+        "cgtcalc": {"ok": 0, "diff": 0, "skip": 0, "error": 0},
+    }
 
     for f in files:
         if not f.exists():
@@ -404,8 +429,10 @@ def main():
             all_passed = False
             continue
 
-        if not validate_file(f):
-            all_passed = False
+        passed, calc_status, cgtcalc_status = validate_file(f)
+        all_passed = all_passed and passed
+        summary["cgt-calc"][calc_status] += 1
+        summary["cgtcalc"][cgtcalc_status] += 1
 
     print("\n" + "=" * 60)
     if all_passed:
@@ -413,6 +440,13 @@ def main():
     else:
         print("RESULT: Some validations failed or had discrepancies")
     print("=" * 60)
+    print("Summary:")
+    print(
+        f"  cgt-calc   -> ok: {summary['cgt-calc']['ok']}, diff: {summary['cgt-calc']['diff']}, skip: {summary['cgt-calc']['skip']}, error: {summary['cgt-calc']['error']}"
+    )
+    print(
+        f"  cgtcalc    -> ok: {summary['cgtcalc']['ok']}, diff: {summary['cgtcalc']['diff']}, skip: {summary['cgtcalc']['skip']}, error: {summary['cgtcalc']['error']}"
+    )
 
     sys.exit(0 if all_passed else 1)
 
