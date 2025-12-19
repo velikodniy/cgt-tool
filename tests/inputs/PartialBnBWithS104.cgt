@@ -1,0 +1,38 @@
+# Test: PartialBnBWithS104
+# Purpose: Tests partial Bed & Breakfast match with Section 104 pool fallback
+# Rules Tested: Bed & Breakfast (30-day rule), Section 104 Pooling
+# Complexity: Medium
+# Key Features: Sale matches both B&B and S104 pool
+# Expected Outcome: Partial B&B match, remainder from S104
+#
+# Verification Status: Verified
+# Verified By: Manual calculation
+# Verification Notes:
+#   Timeline:
+#   1. 2024-01-15: BUY 100 shares @ £10 + £10 fees = £1,010 (enters S104 pool)
+#   2. 2024-06-01: SELL 100 shares @ £15 - £10 fees = £1,490 proceeds
+#   3. 2024-06-15: BUY 40 shares @ £14 + £5 fees = £565 (within 30 days of sale)
+#
+#   Matching (HMRC CG51560):
+#   - 40 shares match via B&B (bought on 2024-06-15)
+#   - 60 shares match via S104 pool
+#
+#   B&B match (40 shares):
+#     Proceeds: 40/100 × £1,490 = £596
+#     Cost: £565
+#     Gain: £31
+#
+#   S104 match (60 shares):
+#     Proceeds: 60/100 × £1,490 = £894
+#     Cost: 60/100 × £1,010 = £606
+#     Gain: £288
+#
+#   Total gain: £31 + £288 = £319
+#
+#   Pool after:
+#   - 100 - 60 = 40 shares remaining
+#   - Cost: £1,010 - £606 = £404
+
+2024-01-15 BUY ACME 100 @ 10.00 GBP FEES 10.00 GBP
+2024-06-01 SELL ACME 100 @ 15.00 GBP FEES 10.00 GBP
+2024-06-15 BUY ACME 40 @ 14.00 GBP FEES 5.00 GBP

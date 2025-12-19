@@ -1,0 +1,279 @@
+{
+  "tax_years": [
+    {
+      "period": "2022/23",
+      "disposals": [
+        {
+          "date": "2022-11-10",
+          "ticker": "AAPL",
+          "quantity": "30",
+          "gross_proceeds": "3677.06",
+          "proceeds": "3668.18",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "30",
+              "allowable_cost": "3407.55",
+              "gain_or_loss": "260.62"
+            }
+          ]
+        },
+        {
+          "date": "2022-12-01",
+          "ticker": "GOOGL",
+          "quantity": "15",
+          "gross_proceeds": "1181.10",
+          "proceeds": "1176.96",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "15",
+              "allowable_cost": "26002.86",
+              "gain_or_loss": "-24825.90"
+            }
+          ]
+        },
+        {
+          "date": "2023-02-10",
+          "ticker": "MSFT",
+          "quantity": "25",
+          "gross_proceeds": "5648.81",
+          "proceeds": "5640.74",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "25",
+              "allowable_cost": "5209.57",
+              "gain_or_loss": "431.17"
+            }
+          ]
+        }
+      ],
+      "total_gain": "691.79",
+      "total_loss": "24825.90",
+      "net_gain": "-24134.11"
+    },
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-05-01",
+          "ticker": "AAPL",
+          "quantity": "25",
+          "gross_proceeds": "3453.82",
+          "proceeds": "3445.78",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "25",
+              "allowable_cost": "2912.30",
+              "gain_or_loss": "533.48"
+            }
+          ]
+        },
+        {
+          "date": "2023-06-15",
+          "ticker": "GOOGL",
+          "quantity": "30",
+          "gross_proceeds": "3105.29",
+          "proceeds": "3101.25",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "30",
+              "allowable_cost": "3034.93",
+              "gain_or_loss": "66.31",
+              "acquisition_date": "2023-06-15"
+            }
+          ]
+        },
+        {
+          "date": "2023-07-10",
+          "ticker": "AAPL",
+          "quantity": "20",
+          "gross_proceeds": "2984.61",
+          "proceeds": "2976.75",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "20",
+              "allowable_cost": "3019.95",
+              "gain_or_loss": "-43.20",
+              "acquisition_date": "2023-07-25"
+            }
+          ]
+        },
+        {
+          "date": "2023-11-15",
+          "ticker": "GOOGL",
+          "quantity": "50",
+          "gross_proceeds": "5743.35",
+          "proceeds": "5735.15",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "13623.34",
+              "gain_or_loss": "-7888.19"
+            }
+          ]
+        },
+        {
+          "date": "2024-01-10",
+          "ticker": "MSFT",
+          "quantity": "30",
+          "gross_proceeds": "8892.58",
+          "proceeds": "8884.67",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "30",
+              "allowable_cost": "7391.25",
+              "gain_or_loss": "1493.42"
+            }
+          ]
+        },
+        {
+          "date": "2024-03-01",
+          "ticker": "AAPL",
+          "quantity": "15",
+          "gross_proceeds": "2081.02",
+          "proceeds": "2077.06",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "15",
+              "allowable_cost": "1925.31",
+              "gain_or_loss": "151.75"
+            }
+          ]
+        }
+      ],
+      "total_gain": "2244.96",
+      "total_loss": "7931.39",
+      "net_gain": "-5686.43"
+    },
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-05-01",
+          "ticker": "MSFT",
+          "quantity": "25",
+          "gross_proceeds": "8127.96",
+          "proceeds": "8119.93",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "25",
+              "allowable_cost": "6159.37",
+              "gain_or_loss": "1960.56"
+            }
+          ]
+        },
+        {
+          "date": "2024-06-10",
+          "ticker": "AAPL",
+          "quantity": "40",
+          "gross_proceeds": "6200.33",
+          "proceeds": "6192.46",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "40",
+              "allowable_cost": "6140.53",
+              "gain_or_loss": "51.93",
+              "acquisition_date": "2024-06-10"
+            }
+          ]
+        },
+        {
+          "date": "2024-08-01",
+          "ticker": "GOOGL",
+          "quantity": "60",
+          "gross_proceeds": "7826.29",
+          "proceeds": "7814.78",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "60",
+              "allowable_cost": "7603.78",
+              "gain_or_loss": "211.00",
+              "acquisition_date": "2024-08-20"
+            }
+          ]
+        },
+        {
+          "date": "2024-10-15",
+          "ticker": "AAPL",
+          "quantity": "50",
+          "gross_proceeds": "8515.63",
+          "proceeds": "8504.28",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "6768.45",
+              "gain_or_loss": "1735.83"
+            }
+          ]
+        },
+        {
+          "date": "2024-12-01",
+          "ticker": "GOOGL",
+          "quantity": "40",
+          "gross_proceeds": "5844.26",
+          "proceeds": "5836.36",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "40",
+              "allowable_cost": "8245.85",
+              "gain_or_loss": "-2409.49"
+            }
+          ]
+        },
+        {
+          "date": "2024-12-20",
+          "ticker": "GB00B41YBW71",
+          "quantity": "50",
+          "gross_proceeds": "650.00",
+          "proceeds": "645.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "630.00",
+              "gain_or_loss": "15.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "3974.32",
+      "total_loss": "2409.49",
+      "net_gain": "1564.83"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "AAPL",
+      "quantity": "75",
+      "total_cost": "10152.68"
+    },
+    {
+      "ticker": "GB00B41YBW71",
+      "quantity": "50",
+      "total_cost": "630.00"
+    },
+    {
+      "ticker": "GOOGL",
+      "quantity": "115",
+      "total_cost": "23706.81"
+    },
+    {
+      "ticker": "MSFT",
+      "quantity": "55",
+      "total_cost": "15112.47"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "tax_years": [
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-06-15",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "12000.00",
+          "proceeds": "12000.00",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "100",
+              "allowable_cost": "11802.66",
+              "gain_or_loss": "197.34",
+              "acquisition_date": "2024-06-15"
+            }
+          ]
+        }
+      ],
+      "total_gain": "197.34",
+      "total_loss": "0",
+      "net_gain": "197.34"
+    }
+  ],
+  "holdings": []
+}

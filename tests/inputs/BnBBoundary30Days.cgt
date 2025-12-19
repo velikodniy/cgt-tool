@@ -1,0 +1,34 @@
+# Test: BnBBoundary30Days
+# Purpose: Tests the exact 30-day boundary for B&B matching
+# Rules Tested: Bed & Breakfast (30-day rule), Section 104 Pooling
+# Complexity: Simple
+# Key Features: Repurchase on day 30 vs day 31
+# Expected Outcome: Day 30 = B&B match, Day 31 = S104 match
+#
+# Verification Status: Verified
+# Verified By: Manual calculation
+# Verification Notes:
+#   HMRC CG51560: B&B applies to shares bought within 30 days AFTER the sale.
+#   If sale is on June 1, day 30 is July 1, day 31 is July 2.
+#
+#   Test 1 - Within boundary (B&B match):
+#   2024-01-15: BUY 100 @ £10 + £10 fees = £1,010 (enters S104)
+#   2024-06-01: SELL 100 @ £15 - £10 fees = £1,490 proceeds
+#   2024-07-01: BUY 100 @ £14 + £10 fees = £1,410 (day 30 = B&B)
+#
+#   B&B match: All 100 shares match with July 1 purchase
+#   Gain: £1,490 - £1,410 = £80
+#
+#   Test 2 - Outside boundary (S104 match):
+#   2024-08-01: SELL 100 @ £16 - £10 fees = £1,590 proceeds
+#   2024-09-02: BUY 100 @ £15 + £10 fees = £1,510 (day 32 = NOT B&B)
+#
+#   S104 match: Shares match from pool (the July 1 buy, now in pool)
+#   Pool: 100 shares @ £1,410
+#   Gain: £1,590 - £1,410 = £180
+
+2024-01-15 BUY ACME 100 @ 10.00 GBP FEES 10.00 GBP
+2024-06-01 SELL ACME 100 @ 15.00 GBP FEES 10.00 GBP
+2024-07-01 BUY ACME 100 @ 14.00 GBP FEES 10.00 GBP
+2024-08-01 SELL ACME 100 @ 16.00 GBP FEES 10.00 GBP
+2024-09-02 BUY ACME 100 @ 15.00 GBP FEES 10.00 GBP

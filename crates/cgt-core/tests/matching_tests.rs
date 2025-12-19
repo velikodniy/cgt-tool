@@ -3,6 +3,7 @@
 use cgt_core::calculator::calculate;
 use cgt_core::models::*;
 use cgt_core::parser::parse_file;
+use cgt_money::{FxCache, load_default_cache};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use std::fs;
@@ -26,10 +27,16 @@ fn get_test_json_dir() -> PathBuf {
     d
 }
 
+/// Create an FxCache from bundled rates for testing.
+fn get_fx_cache() -> FxCache {
+    load_default_cache().expect("Failed to load bundled FX rates")
+}
+
 #[test]
 fn test_data_driven_matching() {
     let inputs_dir = get_test_inputs_dir();
     let json_dir = get_test_json_dir();
+    let fx_cache = get_fx_cache();
     let entries = fs::read_dir(&inputs_dir).expect("Failed to read test inputs dir");
 
     for entry in entries {
@@ -59,9 +66,9 @@ fn test_data_driven_matching() {
             let expected_report: TaxReport =
                 serde_json::from_str(&output_content).expect("Failed to parse expected output");
 
-            // Calculate without year filter to get all tax years
-            let actual_report =
-                calculate(transactions.clone(), None, None).expect("Failed to calculate");
+            // Calculate without year filter to get all tax years, with FX cache for multi-currency
+            let actual_report = calculate(transactions.clone(), None, Some(&fx_cache))
+                .expect("Failed to calculate");
 
             // Allow larger precision differences because reference data (cgtcalc output)
             // often rounds to nearest integer or uses 5dp, while we use exact decimal.

@@ -1,0 +1,50 @@
+{
+  "tax_years": [
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-06-01",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "1500.00",
+          "proceeds": "1490.00",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "100",
+              "allowable_cost": "1410.00",
+              "gain_or_loss": "80.00",
+              "acquisition_date": "2024-07-01"
+            }
+          ]
+        },
+        {
+          "date": "2024-08-01",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "1600.00",
+          "proceeds": "1590.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "1010.00",
+              "gain_or_loss": "580.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "660.00",
+      "total_loss": "0",
+      "net_gain": "660.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ACME",
+      "quantity": "100",
+      "total_cost": "1510.00"
+    }
+  ]
+}

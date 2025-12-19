@@ -1,0 +1,27 @@
+# SUMMARY
+
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2024/25     £197.34     £12,000.00  £3,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2024/25
+
+1) SELL 100 ACME on 15/06/2024 - GAIN £197.34
+   Same Day: 100 shares
+   Gross Proceeds: 100 × £120 = £12,000.00
+   Cost: £11,802.66
+   Result: £197.34
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+15/06/2024 BUY 100 ACME @ $150 (£0 fees)
+15/06/2024 SELL 100 ACME @ £120 (£0 fees)

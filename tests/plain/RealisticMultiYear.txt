@@ -1,0 +1,172 @@
+# SUMMARY
+
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2022/23     -£24,134.11 £10,506.97  £12,300.00    £0.00
+2023/24     -£5,686.43  £26,260.66  £6,000.00     £0.00
+2024/25     £1,564.83   £37,164.47  £3,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2022/23
+
+1) SELL 30 AAPL on 10/11/2022 - GAIN £260.62
+   Section 104: 30 shares @ £113.59
+   Gross Proceeds: 30 × £122.56861177724333333333333333 = £3,677.06
+   Net Proceeds: £3,677.06 - £8.88 fees = £3,668.18
+   Cost: £3,407.55
+   Result: £260.62
+
+2) SELL 15 GOOGL on 01/12/2022 - LOSS £24,825.90
+   Section 104: 15 shares @ £1733.52
+   Gross Proceeds: 15 × £78.740157480313333333333333333 = £1,181.10
+   Net Proceeds: £1,181.10 - £4.14 fees = £1,176.96
+   Cost: £26,002.86
+   Result: -£24,825.90
+
+3) SELL 25 MSFT on 10/02/2023 - GAIN £431.17
+   Section 104: 25 shares @ £208.38
+   Gross Proceeds: 25 × £225.952227243384 = £5,648.81
+   Net Proceeds: £5,648.81 - £8.07 fees = £5,640.74
+   Cost: £5,209.57
+   Result: £431.17
+
+
+## 2023/24
+
+1) SELL 25 AAPL on 01/05/2023 - GAIN £533.48
+   Section 104: 25 shares @ £116.49
+   Gross Proceeds: 25 × £138.152610441768 = £3,453.82
+   Net Proceeds: £3,453.82 - £8.03 fees = £3,445.78
+   Cost: £2,912.30
+   Result: £533.48
+
+2) SELL 30 GOOGL on 15/06/2023 - GAIN £66.31
+   Same Day: 30 shares
+   Gross Proceeds: 30 × £103.50962316027666666666666667 = £3,105.29
+   Net Proceeds: £3,105.29 - £4.04 fees = £3,101.25
+   Cost: £3,034.93
+   Result: £66.31
+
+3) SELL 20 AAPL on 10/07/2023 - LOSS £43.20
+   B&B: 20 shares from 25/07/2023
+   Gross Proceeds: 20 × £149.23028589381 = £2,984.61
+   Net Proceeds: £2,984.61 - £7.85 fees = £2,976.75
+   Cost: £3,019.95
+   Result: -£43.20
+
+4) SELL 50 GOOGL on 15/11/2023 - LOSS £7,888.19
+   Section 104: 50 shares @ £272.47
+   Gross Proceeds: 50 × £114.867082376108 = £5,743.35
+   Net Proceeds: £5,743.35 - £8.20 fees = £5,735.15
+   Cost: £13,623.34
+   Result: -£7,888.19
+
+5) SELL 30 MSFT on 10/01/2024 - GAIN £1,493.42
+   Section 104: 30 shares @ £246.37
+   Gross Proceeds: 30 × £296.41925539483 = £8,892.58
+   Net Proceeds: £8,892.58 - £7.90 fees = £8,884.67
+   Cost: £7,391.25
+   Result: £1,493.42
+
+6) SELL 15 AAPL on 01/03/2024 - GAIN £151.75
+   Section 104: 15 shares @ £128.35
+   Gross Proceeds: 15 × £138.73473917869333333333333333 = £2,081.02
+   Net Proceeds: £2,081.02 - £3.96 fees = £2,077.06
+   Cost: £1,925.31
+   Result: £151.75
+
+
+## 2024/25
+
+1) SELL 25 MSFT on 01/05/2024 - GAIN £1,960.56
+   Section 104: 25 shares @ £246.37
+   Gross Proceeds: 25 × £325.118407321184 = £8,127.96
+   Net Proceeds: £8,127.96 - £8.03 fees = £8,119.93
+   Cost: £6,159.37
+   Result: £1,960.56
+
+2) SELL 40 AAPL on 10/06/2024 - GAIN £51.93
+   Same Day: 40 shares
+   Gross Proceeds: 40 × £155.0082618616725 = £6,200.33
+   Net Proceeds: £6,200.33 - £7.87 fees = £6,192.46
+   Cost: £6,140.53
+   Result: £51.93
+
+3) SELL 60 GOOGL on 01/08/2024 - GAIN £211.00
+   B&B: 60 shares from 20/08/2024
+   Gross Proceeds: 60 × £130.43811862196 = £7,826.29
+   Net Proceeds: £7,826.29 - £11.51 fees = £7,814.78
+   Cost: £7,603.78
+   Result: £211.00
+
+4) SELL 50 AAPL on 15/10/2024 - GAIN £1,735.83
+   Section 104: 50 shares @ £135.37
+   Gross Proceeds: 50 × £170.312618272652 = £8,515.63
+   Net Proceeds: £8,515.63 - £11.35 fees = £8,504.28
+   Cost: £6,768.45
+   Result: £1,735.83
+
+5) SELL 40 GOOGL on 01/12/2024 - LOSS £2,409.49
+   Section 104: 40 shares @ £206.15
+   Gross Proceeds: 40 × £146.1064602748375 = £5,844.26
+   Net Proceeds: £5,844.26 - £7.90 fees = £5,836.36
+   Cost: £8,245.85
+   Result: -£2,409.49
+
+6) SELL 50 GB00B41YBW71 on 20/12/2024 - GAIN £15.00
+   Section 104: 50 shares @ £12.6
+   Gross Proceeds: 50 × £13 = £650.00
+   Net Proceeds: £650.00 - £5.00 fees = £645.00
+   Cost: £630.00
+   Result: £15.00
+
+
+# HOLDINGS
+
+AAPL: 75 units at £135.37 avg cost
+GB00B41YBW71: 50 units at £12.6 avg cost
+GOOGL: 115 units at £206.15 avg cost
+MSFT: 55 units at £274.77 avg cost
+
+# TRANSACTIONS
+
+10/05/2022 BUY 50 AAPL @ $142.5 ($10 fees)
+12/05/2022 BUY 20 GOOGL @ $2250 ($10 fees)
+15/05/2022 BUY 30 MSFT @ $265 ($10 fees)
+20/07/2022 BUY 25 AAPL @ $150 ($5 fees)
+15/08/2022 BUY 10 GOOGL @ $2100 ($5 fees)
+01/09/2022 BUY 20 MSFT @ $255 ($5 fees)
+10/11/2022 SELL 30 AAPL @ $138 ($10 fees)
+01/12/2022 SELL 15 GOOGL @ $95 ($5 fees)
+15/01/2023 BUY 20 AAPL @ $135 ($5 fees)
+10/02/2023 SELL 25 MSFT @ $280 ($10 fees)
+20/03/2023 BUY 100 GOOGL @ $105 ($10 fees)
+15/04/2023 BUY 15 AAPL @ $165 ($5 fees)
+01/05/2023 SELL 25 AAPL @ $172 ($10 fees)
+20/05/2023 BUY 40 MSFT @ $320 ($10 fees)
+15/06/2023 BUY 50 GOOGL @ $125 ($5 fees)
+15/06/2023 SELL 30 GOOGL @ $128 ($5 fees)
+10/07/2023 SELL 20 AAPL @ $190 ($10 fees)
+25/07/2023 BUY 20 AAPL @ $192 ($5 fees)
+01/10/2023 BUY 25 MSFT @ $330 ($5 fees)
+15/11/2023 SELL 50 GOOGL @ $140 ($10 fees)
+01/12/2023 BUY 30 AAPL @ $188 ($5 fees)
+10/01/2024 SELL 30 MSFT @ $375 ($10 fees)
+15/02/2024 BUY 40 GOOGL @ $145 ($5 fees)
+01/03/2024 SELL 15 AAPL @ $175 ($5 fees)
+15/04/2024 BUY 25 AAPL @ $168 ($5 fees)
+01/05/2024 SELL 25 MSFT @ $405 ($10 fees)
+20/05/2024 BUY 30 GOOGL @ $175 ($5 fees)
+10/06/2024 BUY 50 AAPL @ $195 ($5 fees)
+10/06/2024 SELL 40 AAPL @ $197 ($10 fees)
+10/06/2024 BUY 20 AAPL @ $196 ($5 fees)
+01/08/2024 SELL 60 GOOGL @ $170 ($15 fees)
+20/08/2024 BUY 60 GOOGL @ $165 ($10 fees)
+15/10/2024 SELL 50 AAPL @ $225 ($15 fees)
+01/11/2024 BUY 20 MSFT @ $420 ($5 fees)
+01/12/2024 SELL 40 GOOGL @ $185 ($10 fees)
+15/12/2024 BUY 100 GB00B41YBW71 @ £12.5 (£10 fees)
+20/12/2024 SELL 50 GB00B41YBW71 @ £13 (£5 fees)

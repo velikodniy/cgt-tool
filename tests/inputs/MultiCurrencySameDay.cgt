@@ -1,0 +1,27 @@
+# Test: MultiCurrencySameDay
+# Purpose: Tests same-day matching with multi-currency transactions
+# Rules Tested: Same Day matching, FX conversion
+# Complexity: Medium
+# Key Features: Buy in USD, sell in GBP on same day
+# Expected Outcome: Same-day match with FX conversion
+#
+# Verification Status: Pending
+# Verification Notes:
+#   This tests that when shares are bought in USD and sold in GBP on the
+#   same day, the same-day matching rule still applies. Both amounts are
+#   converted to GBP using that day's FX rate.
+#
+#   Transaction details:
+#   - 2024-06-15: BUY 100 shares @ $150.00 USD (need FX rate for June 2024)
+#   - 2024-06-15: SELL 100 shares @ £120.00 GBP
+#
+#   Same day rule applies: sale matches with same-day purchase.
+#   USD purchase needs FX conversion using June 2024 GBP/USD rate.
+#
+# Note: FX rates are bundled in cgt-money. June 2024 USD rate is ~1.27 GBP.
+# Buy cost in GBP: 100 × $150 / 1.27 ≈ £11,811.02
+# Sell proceeds: 100 × £120 = £12,000
+# Expected gain: ~£188.98
+
+2024-06-15 BUY ACME 100 @ 150.00 USD
+2024-06-15 SELL ACME 100 @ 120.00 GBP

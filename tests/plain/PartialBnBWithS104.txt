@@ -1,0 +1,30 @@
+# SUMMARY
+
+Tax year    Gain        Proceeds    Exemption     Taxable gain
+==============================================================
+2024/25     £319.00     £1,500.00   £3,000.00     £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2024/25
+
+1) SELL 100 ACME on 01/06/2024 - GAIN £319.00
+   B&B: 40 shares from 15/06/2024
+   Section 104: 60 shares @ £10.1
+   Gross Proceeds: 100 × £15 = £1,500.00
+   Net Proceeds: £1,500.00 - £10.00 fees = £1,490.00
+   Cost: £1,171.00
+   Result: £319.00
+
+
+# HOLDINGS
+
+ACME: 40 units at £10.1 avg cost
+
+# TRANSACTIONS
+
+15/01/2024 BUY 100 ACME @ £10 (£10 fees)
+01/06/2024 SELL 100 ACME @ £15 (£10 fees)
+15/06/2024 BUY 40 ACME @ £14 (£5 fees)

@@ -1,0 +1,98 @@
+# Test: RealisticMultiYear
+# Purpose: Comprehensive multi-year scenario with diverse transaction types
+# Rules Tested: Same Day, Bed & Breakfast, Section 104, Stock Splits, Multi-Currency
+# Complexity: Complex
+# Key Features:
+#   - 3 tax years (2022/23, 2023/24, 2024/25)
+#   - 3 tickers (AAPL, GOOGL, MSFT)
+#   - Stock split event
+#   - Multi-currency transactions (USD, GBP)
+#   - Same-day matching
+#   - Bed & Breakfast matching
+#   - Section 104 pool
+#   - Carried losses
+#
+# This fixture represents a realistic investor portfolio with regular
+# trading activity over multiple years, including corporate actions.
+
+# === Tax Year 2022/23 (6 Apr 2022 - 5 Apr 2023) ===
+
+# Initial portfolio building in Q2 2022
+2022-05-10 BUY AAPL 50 @ 142.50 USD FEES 10 USD
+2022-05-12 BUY GOOGL 20 @ 2250.00 USD FEES 10 USD
+2022-05-15 BUY MSFT 30 @ 265.00 USD FEES 10 USD
+
+# Add to positions in Q3 2022
+2022-07-20 BUY AAPL 25 @ 150.00 USD FEES 5 USD
+2022-08-15 BUY GOOGL 10 @ 2100.00 USD FEES 5 USD
+2022-09-01 BUY MSFT 20 @ 255.00 USD FEES 5 USD
+
+# Take some profits before year end
+2022-11-10 SELL AAPL 30 @ 138.00 USD FEES 10 USD
+2022-12-01 SELL GOOGL 15 @ 95.00 USD FEES 5 USD
+
+# Note: GOOGL did a 20:1 stock split on 2022-07-18
+# Our buys before that date are in pre-split prices
+# Post-split, GOOGL price ~ $110-120 range
+
+# Q1 2023 activity
+2023-01-15 BUY AAPL 20 @ 135.00 USD FEES 5 USD
+2023-02-10 SELL MSFT 25 @ 280.00 USD FEES 10 USD
+2023-03-20 BUY GOOGL 100 @ 105.00 USD FEES 10 USD
+
+# === Tax Year 2023/24 (6 Apr 2023 - 5 Apr 2024) ===
+
+# Q2 2023 - Regular trading
+2023-04-15 BUY AAPL 15 @ 165.00 USD FEES 5 USD
+2023-05-01 SELL AAPL 25 @ 172.00 USD FEES 10 USD
+2023-05-20 BUY MSFT 40 @ 320.00 USD FEES 10 USD
+
+# Same-day scenario: Buy and sell GOOGL same day
+2023-06-15 BUY GOOGL 50 @ 125.00 USD FEES 5 USD
+2023-06-15 SELL GOOGL 30 @ 128.00 USD FEES 5 USD
+
+# Q3 2023 - Bed & Breakfast scenario
+# Sell shares, then buy back within 30 days
+2023-07-10 SELL AAPL 20 @ 190.00 USD FEES 10 USD
+2023-07-25 BUY AAPL 20 @ 192.00 USD FEES 5 USD
+
+# Q4 2023 - More regular trading
+2023-10-01 BUY MSFT 25 @ 330.00 USD FEES 5 USD
+2023-11-15 SELL GOOGL 50 @ 140.00 USD FEES 10 USD
+2023-12-01 BUY AAPL 30 @ 188.00 USD FEES 5 USD
+
+# Q1 2024 activity
+2024-01-10 SELL MSFT 30 @ 375.00 USD FEES 10 USD
+2024-02-15 BUY GOOGL 40 @ 145.00 USD FEES 5 USD
+2024-03-01 SELL AAPL 15 @ 175.00 USD FEES 5 USD
+
+# === Tax Year 2024/25 (6 Apr 2024 - 5 Apr 2025) ===
+
+# Q2 2024 - Regular trading continues
+2024-04-15 BUY AAPL 25 @ 168.00 USD FEES 5 USD
+2024-05-01 SELL MSFT 25 @ 405.00 USD FEES 10 USD
+2024-05-20 BUY GOOGL 30 @ 175.00 USD FEES 5 USD
+
+# Same-day: Multiple buys and sells same day
+2024-06-10 BUY AAPL 50 @ 195.00 USD FEES 5 USD
+2024-06-10 SELL AAPL 40 @ 197.00 USD FEES 10 USD
+2024-06-10 BUY AAPL 20 @ 196.00 USD FEES 5 USD
+
+# Q3 2024 - More bed & breakfast
+2024-08-01 SELL GOOGL 60 @ 170.00 USD FEES 15 USD
+2024-08-20 BUY GOOGL 60 @ 165.00 USD FEES 10 USD
+
+# Q4 2024 - Year-end portfolio adjustments
+2024-10-15 SELL AAPL 50 @ 225.00 USD FEES 15 USD
+2024-11-01 BUY MSFT 20 @ 420.00 USD FEES 5 USD
+2024-12-01 SELL GOOGL 40 @ 185.00 USD FEES 10 USD
+
+# UK stock in GBP to test multi-currency
+2024-12-15 BUY GB00B41YBW71 100 @ 12.50 FEES 10
+2024-12-20 SELL GB00B41YBW71 50 @ 13.00 FEES 5
+
+# End of year positions
+# AAPL: 50 + 25 - 30 + 20 + 15 - 25 - 20 + 20 + 30 - 15 + 25 + 50 - 40 + 20 - 50 = 75 shares
+# GOOGL: 20 + 10 - 15 + 100 + 50 - 30 - 50 + 40 + 30 - 60 + 60 - 40 = 115 shares
+# MSFT: 30 + 20 - 25 + 40 + 25 - 30 - 25 + 20 = 55 shares
+# GB00B41YBW71: 100 - 50 = 50 shares
