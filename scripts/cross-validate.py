@@ -31,6 +31,26 @@ from pathlib import Path
 # Threshold for discrepancy reporting (£1)
 THRESHOLD = Decimal("1.00")
 
+# Operations not supported by cgt-calc (KapJI) that lead to false diffs
+# Note: our DSL uses SPLIT/UNSPLIT and CAPRETURN; ACCDIV is not present.
+UNSUPPORTED_OPS = {"SPLIT", "UNSPLIT", "CAPRETURN"}
+
+
+def has_unsupported_ops(cgt_file: Path) -> bool:
+    """Return True if the .cgt file contains ops cgt-calc cannot handle."""
+    try:
+        content = cgt_file.read_text()
+    except OSError:
+        return False
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if re.search(r"\b(" + "|".join(UNSUPPORTED_OPS) + r")\b", stripped):
+            return True
+    return False
+
 
 @dataclass
 class TaxYearResult:
@@ -84,6 +104,11 @@ def run_cgt_tool(cgt_file: Path) -> CalculatorResult:
 
 def run_cgt_calc(cgt_file: Path) -> CalculatorResult:
     """Run KapJI/capital-gains-calculator and parse output."""
+    if has_unsupported_ops(cgt_file):
+        return CalculatorResult(
+            "cgt-calc", [], error="SKIP: unsupported ops for cgt-calc"
+        )
+
     # Convert to RAW format
     script_dir = Path(__file__).parent
     convert_script = script_dir / "convert-to-raw.py"
@@ -111,7 +136,7 @@ def run_cgt_calc(cgt_file: Path) -> CalculatorResult:
             temp_path = f.name
 
         # Run cgt-calc for each tax year (we need to guess which years)
-        # Parse dates from CSV input to find tax years (format: YYYY-MM-DD,...)
+        # Parse dates from input to find tax years
         years = set()
         for line in raw_content.split("\n"):
             match = re.match(r"(\d{4})-(\d{2})-(\d{2}),", line)
