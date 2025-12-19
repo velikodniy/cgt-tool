@@ -95,3 +95,53 @@ Spec-driven development. See `openspec/AGENTS.md` for workflow.
 - `openspec/specs/` — Current truth (what IS built)
 - `openspec/changes/` — Proposals (what SHOULD change)
 - `openspec/project.md` — Project context
+
+## Release Procedure
+
+When releasing a new version:
+
+1. **Create semantic commits** — Group changes logically:
+
+   - `fix:` for bug fixes
+   - `feat:` for new features
+   - `test:` for test additions/updates
+   - `docs:` for documentation
+   - `chore:` for version bumps, CI changes
+
+2. **Bump version** — Update `version` in all `Cargo.toml` files:
+
+   ```bash
+   # Root and all crates must have matching versions
+   sed -i '' 's/^version = "X.Y.Z"/version = "X.Y.W"/' Cargo.toml crates/*/Cargo.toml
+   cargo check  # Verify Cargo.lock updates
+   git add Cargo.toml Cargo.lock crates/*/Cargo.toml
+   git commit -m "chore: bump version to X.Y.W"
+   ```
+
+3. **Push changes**:
+
+   ```bash
+   git push
+   ```
+
+4. **Create GitHub release** using `gh`:
+
+   ```bash
+   gh release create vX.Y.W --title "vX.Y.W - Brief Description" --notes "$(cat <<'EOF'
+   ## What's Changed
+
+   ### Bug Fixes
+   - Description of fix
+
+   ### Features
+   - Description of feature
+
+   ### Documentation
+   - Description of doc changes
+
+   **Full Changelog**: https://github.com/OWNER/REPO/compare/vPREV...vX.Y.W
+   EOF
+   )"
+   ```
+
+5. **Verify release** — Check the release page and ensure CI passes.
