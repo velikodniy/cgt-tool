@@ -5,22 +5,6 @@
       "disposals": [
         {
           "date": "2023-07-15",
-          "ticker": "AAPL",
-          "quantity": "5",
-          "gross_proceeds": "600",
-          "proceeds": "600",
-          "matches": [
-            {
-              "rule": "BedAndBreakfast",
-              "quantity": "5",
-              "allowable_cost": "575",
-              "gain_or_loss": "25",
-              "acquisition_date": "2023-07-20"
-            }
-          ]
-        },
-        {
-          "date": "2023-07-15",
           "ticker": "MSFT",
           "quantity": "10",
           "gross_proceeds": "400",
@@ -32,6 +16,22 @@
               "allowable_cost": "420",
               "gain_or_loss": "-20",
               "acquisition_date": "2023-08-01"
+            }
+          ]
+        },
+        {
+          "date": "2023-07-15",
+          "ticker": "AAPL",
+          "quantity": "5",
+          "gross_proceeds": "600",
+          "proceeds": "600",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "5",
+              "allowable_cost": "575",
+              "gain_or_loss": "25",
+              "acquisition_date": "2023-07-20"
             }
           ]
         }

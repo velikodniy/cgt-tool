@@ -5,7 +5,7 @@
       "disposals": [
         {
           "date": "2018-08-28",
-          "ticker": "FOO",
+          "ticker": "BAR",
           "quantity": "10",
           "gross_proceeds": "46.70",
           "proceeds": "34.20",
@@ -21,7 +21,7 @@
         },
         {
           "date": "2018-08-28",
-          "ticker": "BAR",
+          "ticker": "FOO",
           "quantity": "10",
           "gross_proceeds": "46.70",
           "proceeds": "34.20",

@@ -36,22 +36,22 @@
             {
               "rule": "Section104",
               "quantity": "5",
-              "allowable_cost": "440.67",
-              "gain_or_loss": "59.33"
+              "allowable_cost": "442.67",
+              "gain_or_loss": "57.33"
             }
           ]
         }
       ],
-      "total_gain": "59.33",
+      "total_gain": "57.33",
       "total_loss": "0",
-      "net_gain": "59.33"
+      "net_gain": "57.33"
     }
   ],
   "holdings": [
     {
       "ticker": "FOOBAR",
       "quantity": "20",
-      "total_cost": "1762.67"
+      "total_cost": "1770.67"
     }
   ]
 }

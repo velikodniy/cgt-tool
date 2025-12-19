@@ -3,7 +3,7 @@
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
 2019/20     £28.33      £525.00     £12,000.00    £0.00
-2020/21     £59.33      £500.00     £12,300.00    £0.00
+2020/21     £57.33      £500.00     £12,300.00    £0.00
 
 Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
@@ -20,16 +20,16 @@ Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 ## 2020/21
 
-1) SELL 5 FOOBAR on 01/07/2020 - GAIN £59.33
-   Section 104: 5 shares @ £88.13
+1) SELL 5 FOOBAR on 01/07/2020 - GAIN £57.33
+   Section 104: 5 shares @ £88.53
    Gross Proceeds: 5 × £100 = £500.00
-   Cost: £440.67
-   Result: £59.33
+   Cost: £442.67
+   Result: £57.33
 
 
 # HOLDINGS
 
-FOOBAR: 20 units at £88.13 avg cost
+FOOBAR: 20 units at £88.53 avg cost
 
 # TRANSACTIONS
 
