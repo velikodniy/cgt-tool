@@ -269,12 +269,48 @@ When a company returns capital to shareholders:
 
 - Reduces the cost base of your holding
 - May trigger a deemed disposal if return exceeds cost base
+- The reduction is apportioned across the Section 104 pool based on shares held
 
-**Example:** £2.00 per share capital return on 100 shares (pool cost £800):
+**Example 1: Simple Capital Return**
+
+£2.00 per share capital return on 100 shares (pool cost £800):
 
 - Return: 100 × £2.00 = £200
 - New pool cost: £800 - £200 = £600
 - If return exceeded £800, the excess would be a gain
+
+**Example 2: Capital Return with Multiple Lots**
+
+Shares acquired in two separate purchases, then capital return received:
+
+- Lot 1: 10 shares, cost £1,000
+- Lot 2: 10 shares, cost £900
+- Total: 20 shares, cost £1,900
+
+Capital return of £100 on 10 shares:
+
+- The £100 reduction applies to the pool proportionally
+- Lot 1 adjustment: £100 × (10/20) = £50 reduction
+- Lot 2 adjustment: £100 × (10/20) = £50 reduction
+- New pool cost: £1,900 - £100 = £1,800
+- Average cost: £1,800 / 20 = £90 per share
+
+Note: For Section 104 pooling, all shares are fungible. The capital return reduces the total pool cost regardless of which specific shares the return nominally applies to.
+
+### Accumulation Fund Dividends
+
+When an accumulation fund reinvests dividends:
+
+- The reinvested dividend increases the cost base of your holding
+- This is because the dividend is "notionally" reinvested, acquiring additional value
+- The increase is apportioned across lots based on shares held at dividend date
+
+**Example:**
+
+- 100 shares in accumulation fund, cost £5,000
+- Accumulation dividend of £50
+- New cost base: £5,000 + £50 = £5,050
+- Average cost per share: £50.50
 
 ### Carried Losses
 
@@ -373,6 +409,6 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 
 ---
 
-**Document Version:** 1.2
-**Last Updated:** 2025-12-18
+**Document Version:** 1.3
+**Last Updated:** 2025-12-19
 **Source:** HMRC Capital Gains Manual (CG51500-CG51600), HMRC Employment-Related Securities Manual (ERSM20192)
