@@ -151,18 +151,16 @@ impl AcquisitionLedger {
     /// Apply a cost adjustment (from CAPRETURN or DIVIDEND) to acquisition lots.
     ///
     /// The adjustment is apportioned based on remaining shares at the time of the event.
+    /// For S104 pooling, all shares are fungible, so we apportion based on each lot's
+    /// proportion of total holdings, not based on the event amount.
     pub fn apply_cost_adjustment(
         &mut self,
         event_idx: usize,
         event_date: NaiveDate,
-        event_amount: Decimal,
+        _event_amount: Decimal,
         adjustment: Decimal,
         transactions: &[GbpTransaction],
     ) {
-        if event_amount == Decimal::ZERO {
-            return;
-        }
-
         // Calculate how much of each lot is left after sells before this event
         let amounts_left: Vec<Decimal> = self
             .lots
@@ -175,11 +173,19 @@ impl AcquisitionLedger {
             })
             .collect();
 
-        // Apportion the adjustment to lots based on amounts left
+        // Total shares held at the time of the event
+        let total_held: Decimal = amounts_left.iter().sum();
+        if total_held == Decimal::ZERO {
+            return;
+        }
+
+        // Apportion the adjustment to lots based on their proportion of total holdings.
+        // For S104 pooling, all shares are fungible, so the adjustment is spread
+        // proportionally across all lots.
         for (i, lot) in self.lots.iter_mut().enumerate() {
             let amount_left = amounts_left[i];
             if amount_left > Decimal::ZERO && lot.date < event_date {
-                let apportioned = adjustment * (amount_left / event_amount);
+                let apportioned = adjustment * (amount_left / total_held);
                 lot.cost_offset += apportioned;
             }
         }
