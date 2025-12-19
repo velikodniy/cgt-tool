@@ -33,6 +33,13 @@ cargo build --release       # Release build
 cargo test                  # All tests
 cargo clippy               # Lint (strict: denies unwrap/expect/panic)
 cargo fmt                  # Format
+
+# Coverage (requires cargo-llvm-cov: cargo install cargo-llvm-cov)
+cargo llvm-cov             # Summary coverage report
+cargo llvm-cov --html      # HTML report in target/llvm-cov/html/
+
+# Cross-validation against external calculators
+python3 scripts/cross-validate.py tests/inputs/*.cgt
 ```
 
 ## Structure
