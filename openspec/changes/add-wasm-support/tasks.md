@@ -12,10 +12,11 @@
 ## 2. JavaScript API
 
 - [x] 2.1 Implement `parse_transactions(dsl: &str) -> Result<String, JsValue>` wrapper returning JSON
-- [x] 2.2 Implement `calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue>` wrapper returning JSON
-- [x] 2.3 Implement `validate_dsl(dsl: &str) -> Result<String, JsValue>` wrapper returning validation result as JSON
-- [x] 2.4 Add JSDoc comments for TypeScript definitions
-- [x] 2.5 Generate TypeScript type definitions with `wasm-bindgen`
+- [x] 2.2 Implement `calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue>` wrapper returning enhanced JSON
+- [x] 2.3 Add enhanced fields to JSON output: `exemption`, `total_proceeds`, `total_cost`, `taxable_gain`, `tax_liability`
+- [x] 2.4 Implement `validate_dsl(dsl: &str) -> Result<String, JsValue>` wrapper returning validation result as JSON
+- [x] 2.5 Add JSDoc comments for TypeScript definitions
+- [x] 2.6 Generate TypeScript type definitions with `wasm-bindgen`
 
 ## 3. FX Rate Embedding
 
@@ -48,6 +49,11 @@
 - [x] 6.6 Document that all FX rates are embedded (no external loading required)
 - [x] 6.7 Document distribution via GitHub Releases tarball (not npm registry)
 - [x] 6.8 Add installation and usage instructions to main `README.md`
+- [x] 6.9 Redesign UI with modern card-based layout
+- [x] 6.10 Add color-coded match badges (Same Day: blue, Bed & Breakfast: amber, Section 104: purple)
+- [x] 6.11 Convert holdings from cards to compact table format
+- [x] 6.12 Fix holdings zero values bug (use `total_cost` instead of `cost_basis`)
+- [x] 6.13 Reduce whitespace for denser layout (20-30% reduction)
 
 ## 7. CI/CD
 

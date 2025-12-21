@@ -62,14 +62,25 @@ The CGT tool is a Rust-based CLI that parses transaction DSL, applies HMRC tax r
 - Minimal bundled rates: Reduces functionality; users can't calculate older transactions
 - Compress rates: Good future optimization, but adds complexity initially
 
-### Decision: JSON output only (no formatters)
+### Decision: Enhanced JSON output with calculated fields
 
-**Rationale:** The goal is to expose the core calculation engine (`cgt-core`) which produces structured data (JSON). Formatting (plain text, PDF) is handled by separate crates (`cgt-formatter-plain`, `cgt-formatter-pdf`) and is not needed for browser use cases. JavaScript applications can consume JSON and implement their own UI/formatting.
+**Rationale:** The core calculation engine (`cgt-core`) produces structured data with disposals and totals, but lacks fields needed for web UIs like exemption amounts and taxable gains. The WASM layer adds a thin enhancement layer that:
+
+- Calculates exemption amounts using `cgt-core::get_exemption()`
+- Computes `total_proceeds` (sum of gross proceeds)
+- Computes `total_cost` (sum of allowable costs from matches)
+- Computes `taxable_gain` as `(net_gain - exemption).max(0)`
+- Uses `cgt-format::format_tax_year()` for period formatting
+
+This provides JavaScript applications with all necessary fields for rendering reports without requiring client-side calculations.
+
+**Dependencies:** Added `cgt-format` for formatting utilities (lightweight, no I/O dependencies).
 
 **Alternatives considered:**
 
-- Include plain text formatter: Adds unnecessary dependency; JSON is more flexible for web UIs
+- Include plain text formatter: Not needed; JavaScript can render HTML directly
 - Include PDF formatter: `typst-as-lib` dependencies incompatible with WASM; out of scope
+- Return raw core data only: Would require JavaScript to duplicate tax calculation logic
 
 ### Decision: Create separate `cgt-wasm` crate wrapping `cgt-core`
 
@@ -79,11 +90,10 @@ The CGT tool is a Rust-based CLI that parses transaction DSL, applies HMRC tax r
 
 ```
 crates/cgt-wasm/
-├── Cargo.toml           # cdylib, wasm-bindgen, cgt-core, cgt-money
+├── Cargo.toml           # cdylib, wasm-bindgen, cgt-core, cgt-money, cgt-format
 ├── src/
-│   ├── lib.rs           # wasm_bindgen exports
-│   ├── api.rs           # High-level API wrappers (parse, calculate, validate)
-│   └── utils.rs         # Error conversion helpers, JSON serialization
+│   ├── lib.rs           # wasm_bindgen exports, TaxYear/TaxReport structs
+│   └── utils.rs         # Error conversion helpers
 ├── tests/
 │   └── wasm.rs          # wasm-bindgen-test tests
 ├── package.json         # npm metadata
@@ -95,6 +105,25 @@ crates/cgt-wasm/
 - Add WASM exports to `cgt-core`: Pollutes core library with WASM-specific code
 - Use feature flags: Complicates crate type switching (`lib` vs `cdylib`)
 - Include formatters: Out of scope; JSON output is sufficient
+
+### Decision: Provide interactive web demo
+
+**Rationale:** Users need a reference implementation showing how to integrate WASM bindings. A single-file HTML demo (`examples/wasm-demo/index.html`) provides:
+
+- Working example of WASM initialization and API usage
+- Modern, responsive UI demonstrating report rendering
+- Visual reference for disposal cards, match badges, and summary tables
+- Testing playground for users before integration
+
+**Design principles:**
+
+- Single HTML file with embedded CSS/JavaScript for easy deployment
+- Modern card-based layout with compact spacing
+- Color-coded match badges (Same Day: blue, Bed & Breakfast: amber, Section 104: purple)
+- Responsive grid layouts for different screen sizes
+- Toast notifications for user feedback
+
+**Distribution:** Demo files symlink to WASM build output (`pkg/`) for local testing.
 
 ### Decision: Local/GitHub Releases distribution only (defer npm)
 
