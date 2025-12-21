@@ -1,6 +1,13 @@
-# Capital Gains Tax (CGT) CLI Tool
+# Capital Gains Tax (CGT) Tool
 
-A CLI tool to calculate Capital Gains Tax for UK assets using the "Same Day", "Bed & Breakfast", and "Section 104" matching rules.
+A CLI tool and WebAssembly library to calculate Capital Gains Tax for UK assets using the "Same Day", "Bed & Breakfast", and "Section 104" matching rules.
+
+## Features
+
+- **CLI**: Command-line interface for calculating tax reports (plain text, JSON, or PDF)
+- **WebAssembly**: Run calculations in your browser with complete privacy (no server-side processing)
+- **HMRC-compliant**: Implements official UK tax matching rules
+- **Multi-currency**: Automatic FX conversion using bundled HMRC rates (2015-2025)
 
 ## Installation
 
@@ -52,7 +59,34 @@ cargo build --release -p cgt-cli
 ./target/release/cgt-tool --help
 ```
 
-## Usage
+### WebAssembly (Browser/Node.js)
+
+For privacy-preserving client-side calculations in web browsers:
+
+```bash
+# Install from GitHub Releases
+npm install https://github.com/velikodniy/cgt-tool/releases/download/v0.7.0/cgt-tool-wasm-v0.7.0.tgz
+```
+
+**Browser usage:**
+
+```javascript
+import init, { calculate_tax } from 'cgt-tool-wasm';
+
+await init();
+
+const dsl = `
+  2024-01-15 BUY AAPL 100 @ 150.00 USD
+  2024-06-20 SELL AAPL 50 @ 180.00 USD
+`;
+
+const report = JSON.parse(calculate_tax(dsl, 2024));
+console.log('Total gain:', report.tax_years[0].total_gain);
+```
+
+See [crates/cgt-wasm/README.md](crates/cgt-wasm/README.md) for complete WebAssembly documentation and [examples/wasm-demo/](examples/wasm-demo/) for a live browser demo.
+
+## CLI Usage
 
 ### Convert Broker Exports
 

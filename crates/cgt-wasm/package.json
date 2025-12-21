@@ -1,0 +1,26 @@
+{
+  "name": "cgt-tool-wasm",
+  "version": "0.7.0",
+  "description": "WebAssembly bindings for UK Capital Gains Tax calculator",
+  "main": "cgt_wasm.js",
+  "types": "cgt_wasm.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/velikodniy/cgt-tool"
+  },
+  "keywords": [
+    "tax",
+    "capital-gains",
+    "uk",
+    "hmrc",
+    "wasm",
+    "webassembly"
+  ],
+  "author": "Vadim Velicodnii",
+  "license": "AGPL-3.0",
+  "files": [
+    "cgt_wasm_bg.wasm",
+    "cgt_wasm.js",
+    "cgt_wasm.d.ts"
+  ]
+}

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatter-pdf", "crates/cgt-cli", "crates/cgt-money", "crates/cgt-format", "crates/cgt-converter", "crates/cgt-mcp"]
+members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatter-pdf", "crates/cgt-cli", "crates/cgt-money", "crates/cgt-format", "crates/cgt-converter", "crates/cgt-mcp", "crates/cgt-wasm"]
 resolver = "2"
 
 [workspace.package]
