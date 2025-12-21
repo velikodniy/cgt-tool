@@ -110,53 +110,73 @@
 
         .tax-year-section {
             margin-bottom: 32px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
         }
 
         .tax-year-header {
-            background: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tax-year-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 16px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 600;
-            font-size: 18px;
+            letter-spacing: 0.3px;
+        }
+
+        .tax-year-title {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
         }
 
         .tax-year-body {
-            padding: 20px;
+            padding: 0;
         }
 
         .summary-grid {
+            background: #f9fafb;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-top: 16px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 24px;
         }
 
         .summary-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #f0f0f0;
+            align-items: baseline;
+            padding: 4px 0;
         }
 
         .summary-label {
-            color: #666;
+            color: #6b7280;
+            font-size: 13px;
             font-weight: 500;
         }
 
         .summary-value {
             font-weight: 600;
-            color: #333;
+            color: #111827;
+            font-size: 14px;
+            font-family: 'Monaco', 'Courier New', monospace;
         }
 
         .summary-value.positive {
-            color: #48bb78;
+            color: #059669;
         }
 
         .summary-value.negative {
-            color: #f56565;
+            color: #dc2626;
         }
 
         .tax-liability-box {
@@ -208,85 +228,126 @@
         }
 
         .holdings-header {
-            background: #48bb78;
-            color: white;
-            padding: 12px 16px;
-            font-weight: 600;
-            font-size: 18px;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .holdings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .holding-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            background: white;
-        }
-
-        .holding-ticker {
-            font-weight: 700;
-            font-size: 18px;
-            color: #667eea;
-            margin-bottom: 12px;
-        }
-
-        .holding-detail {
             display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 14px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e0e0e0;
         }
 
-        .holding-label {
-            color: #666;
-        }
-
-        .holding-value {
+        .holdings-badge {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .holdings-title {
             color: #333;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .holdings-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .holdings-table thead tr {
+            background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+        }
+
+        .holdings-table th {
+            color: #374151;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .holdings-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+        }
+
+        .holdings-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .holdings-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .holdings-table td strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .holdings-table .number {
+            text-align: right;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-weight: 600;
         }
 
         .summary-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin: 20px 0;
             background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .summary-table th {
-            background: #667eea;
-            color: white;
-            padding: 12px;
+            background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+            color: #374151;
+            padding: 10px 12px;
             text-align: left;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         .summary-table td {
             padding: 10px 12px;
-            border-bottom: 1px solid #e0e0e0;
-            font-size: 14px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
         }
 
-        .summary-table tr:hover {
-            background: #f8f9fa;
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-table tbody tr:hover {
+            background: #f9fafb;
         }
 
         .summary-table .number {
             text-align: right;
             font-family: 'Monaco', 'Courier New', monospace;
+            font-weight: 600;
         }
 
         .summary-table .total-row {
             font-weight: 700;
-            background: #f0f0f0;
+            background: #f9fafb;
         }
 
         .tax-note {
@@ -297,6 +358,218 @@
             border-radius: 4px;
             font-size: 13px;
             color: #666;
+        }
+
+        .info-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 12px;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-note strong {
+            font-weight: 600;
+        }
+
+        .disposal-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .disposal-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border-color: #d1d5db;
+        }
+
+        .disposal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: linear-gradient(to right, #f9fafb, #ffffff);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .disposal-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .disposal-number {
+            background: #667eea;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .disposal-action {
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .disposal-ticker {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .disposal-result {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .result-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .result-badge.gain {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .result-badge.loss {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .disposal-body {
+            padding: 14px 16px;
+        }
+
+        .match-section {
+            background: #f9fafb;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .match-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .match-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .match-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .match-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .match-badge.same-day {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .match-badge.bed-breakfast {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .match-badge.section-104 {
+            background: #e9d5ff;
+            color: #6b21a8;
+        }
+
+        .disposal-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .disposal-summary {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .disposal-summary-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .disposal-summary-value {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .subsection-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            margin: 20px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .controls {
@@ -735,7 +1008,7 @@
 
                     html += '</tbody></table>';
 
-                    html += '<p style="color: #666; font-size: 13px; margin-top: 8px;">Note: Proceeds = SA108 Box 21 (gross, before sale fees)</p>';
+                    html += '<div class="info-note">💡 <strong>Note:</strong> Proceeds = SA108 Box 21 (gross, before sale fees)</div>';
 
                     html += '<h3 style="margin: 30px 0 10px 0; color: #333;">Tax Year Details</h3>';
                 }
@@ -745,51 +1018,119 @@
                     data.tax_years.forEach((ty, idx) => {
                         const yearLabel = ty.period || 'Unknown';
                         html += '<div class="tax-year-section">';
-                        html += `<div class="tax-year-header">Tax Year: ${yearLabel}</div>`;
+                        html += '<div class="tax-year-header">';
+                        html += `<span class="tax-year-badge">${yearLabel}</span>`;
+                        html += '<span class="tax-year-title">Disposals & Summary</span>';
+                        html += '</div>';
                         html += '<div class="tax-year-body">';
 
                         // Show disposals
                         if (ty.disposals && ty.disposals.length > 0) {
-                            html += '<h4 style="margin-top: 0; margin-bottom: 12px; color: #333;">Disposals</h4>';
                             ty.disposals.forEach((disp, dispIdx) => {
                                 // Calculate total gain/loss from matches
                                 const gainLoss = disp.matches ?
                                     disp.matches.reduce((sum, m) => sum + parseFloat(m.gain_or_loss || 0), 0) : 0;
                                 const gainLossClass = gainLoss >= 0 ? 'positive' : 'negative';
                                 const gainLossLabel = gainLoss >= 0 ? 'GAIN' : 'LOSS';
+                                const resultBadgeClass = gainLoss >= 0 ? 'gain' : 'loss';
 
-                                html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 12px;">';
-                                html += `<strong>${dispIdx + 1}) SELL ${disp.quantity} ${disp.ticker} on ${disp.date} - ${gainLossLabel} <span class="${gainLossClass}">${formatCurrency(Math.abs(gainLoss))}</span></strong><br>`;
+                                html += '<div class="disposal-card">';
+
+                                // Header
+                                html += '<div class="disposal-header">';
+                                html += '<div class="disposal-title">';
+                                html += `<div class="disposal-number">${dispIdx + 1}</div>`;
+                                html += '<div>';
+                                html += `<div class="disposal-action">SELL ${disp.quantity} <span class="disposal-ticker">${disp.ticker}</span></div>`;
+                                html += `<div style="font-size: 13px; color: #6b7280; margin-top: 2px;">${disp.date}</div>`;
+                                html += '</div>';
+                                html += '</div>';
+                                html += '<div class="disposal-result">';
+                                html += `<span class="result-badge ${resultBadgeClass}">${gainLossLabel}</span>`;
+                                html += `<span class="${gainLossClass}">${formatCurrency(Math.abs(gainLoss))}</span>`;
+                                html += '</div>';
+                                html += '</div>';
+
+                                // Body
+                                html += '<div class="disposal-body">';
 
                                 // Show match details
                                 if (disp.matches && disp.matches.length > 0) {
-                                    html += `<div style="margin-left: 20px; margin-top: 6px; font-size: 13px; color: #666;">`;
+                                    html += '<div class="match-section">';
+                                    html += '<div class="match-title">Matching Rules Applied</div>';
                                     disp.matches.forEach((match, matchIdx) => {
                                         const ruleName = match.rule === 'SameDay' ? 'Same Day' :
                                                        match.rule === 'BedAndBreakfast' ? 'Bed & Breakfast' :
                                                        match.rule === 'Section104' ? 'Section 104' : match.rule;
-                                        html += `${ruleName}: ${match.quantity} shares @ ${formatCurrency(parseFloat(match.allowable_cost) / parseFloat(match.quantity))}<br>`;
+                                        const badgeClass = match.rule === 'SameDay' ? 'same-day' :
+                                                         match.rule === 'BedAndBreakfast' ? 'bed-breakfast' : 'section-104';
+                                        const costPerShare = parseFloat(match.allowable_cost) / parseFloat(match.quantity);
+
+                                        html += '<div class="match-item">';
+                                        html += `<span class="match-badge ${badgeClass}">${ruleName}</span>`;
+                                        html += `<span style="color: #374151;">${match.quantity} shares @ ${formatCurrency(costPerShare)}</span>`;
+                                        html += `<span style="margin-left: auto; font-weight: 600; color: #111827;">${formatCurrency(match.allowable_cost)}</span>`;
+                                        html += '</div>';
                                     });
-                                    html += `Gross Proceeds: ${formatCurrency(disp.gross_proceeds)}<br>`;
-                                    html += `Net Proceeds: ${formatCurrency(disp.proceeds)}<br>`;
+                                    html += '</div>';
+
+                                    // Metrics
                                     const totalCost = disp.matches.reduce((sum, m) => sum + parseFloat(m.allowable_cost || 0), 0);
-                                    html += `Cost: ${formatCurrency(totalCost)}<br>`;
-                                    html += `Result: <span class="${gainLossClass}">${formatCurrency(gainLoss)}</span>`;
-                                    html += `</div>`;
+                                    html += '<div class="disposal-metrics">';
+                                    html += '<div class="metric-item">';
+                                    html += '<span class="metric-label">Gross Proceeds</span>';
+                                    html += `<span class="metric-value">${formatCurrency(disp.gross_proceeds)}</span>`;
+                                    html += '</div>';
+                                    html += '<div class="metric-item">';
+                                    html += '<span class="metric-label">Net Proceeds</span>';
+                                    html += `<span class="metric-value">${formatCurrency(disp.proceeds)}</span>`;
+                                    html += '</div>';
+                                    html += '<div class="metric-item">';
+                                    html += '<span class="metric-label">Allowable Cost</span>';
+                                    html += `<span class="metric-value">${formatCurrency(totalCost)}</span>`;
+                                    html += '</div>';
+                                    html += '<div class="metric-item">';
+                                    html += '<span class="metric-label">Gain/Loss</span>';
+                                    html += `<span class="metric-value ${gainLossClass}">${formatCurrency(gainLoss)}</span>`;
+                                    html += '</div>';
+                                    html += '</div>';
                                 }
 
-                                html += '</div>';
+                                html += '</div>'; // disposal-body
+                                html += '</div>'; // disposal-card
                             });
                         }
 
+                        html += '<div class="subsection-title">Summary</div>';
                         html += '<div class="summary-grid">';
-                        html += `<div class="summary-item"><span class="summary-label">Total Proceeds</span><span class="summary-value">${formatCurrency(ty.total_proceeds)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Allowable Costs</span><span class="summary-value">${formatCurrency(ty.total_cost)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Total Gains</span><span class="summary-value positive">${formatCurrency(ty.total_gain)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Total Losses</span><span class="summary-value negative">${formatCurrency(ty.total_loss)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Net Gain/Loss</span><span class="summary-value">${formatCurrency(ty.net_gain)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Annual Exemption</span><span class="summary-value">${formatCurrency(ty.exemption)}</span></div>`;
-                        html += `<div class="summary-item"><span class="summary-label">Taxable Gain</span><span class="summary-value">${formatCurrency(ty.taxable_gain)}</span></div>`;
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Total Proceeds</span>';
+                        html += `<span class="summary-value">${formatCurrency(ty.total_proceeds)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Allowable Costs</span>';
+                        html += `<span class="summary-value">${formatCurrency(ty.total_cost)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Total Gains</span>';
+                        html += `<span class="summary-value positive">${formatCurrency(ty.total_gain)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Total Losses</span>';
+                        html += `<span class="summary-value negative">${formatCurrency(ty.total_loss)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Net Gain/Loss</span>';
+                        html += `<span class="summary-value">${formatCurrency(ty.net_gain)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Annual Exemption</span>';
+                        html += `<span class="summary-value">${formatCurrency(ty.exemption)}</span>`;
+                        html += '</div>';
+                        html += '<div class="summary-item">';
+                        html += '<span class="summary-label">Taxable Gain</span>';
+                        html += `<span class="summary-value">${formatCurrency(ty.taxable_gain)}</span>`;
+                        html += '</div>';
                         html += '</div>';
 
                         if (ty.tax_rates && ty.tax_rates.length > 0) {
@@ -827,20 +1168,33 @@
                 // Holdings
                 if (data.holdings && data.holdings.length > 0) {
                     html += '<div class="holdings-section">';
-                    html += '<div class="holdings-header">Current Holdings</div>';
-                    html += '<div class="holdings-grid">';
+                    html += '<div class="holdings-header">';
+                    html += '<span class="holdings-badge">Holdings</span>';
+                    html += '<span class="holdings-title">Current Positions</span>';
+                    html += '</div>';
+                    html += '<table class="holdings-table">';
+                    html += '<thead><tr>';
+                    html += '<th>Ticker</th>';
+                    html += '<th class="number">Quantity</th>';
+                    html += '<th class="number">Total Cost</th>';
+                    html += '<th class="number">Avg Cost/Unit</th>';
+                    html += '</tr></thead>';
+                    html += '<tbody>';
 
                     data.holdings.forEach(h => {
-                        const avgCost = parseFloat(h.cost_basis) / parseFloat(h.quantity);
-                        html += '<div class="holding-card">';
-                        html += `<div class="holding-ticker">${h.ticker}</div>`;
-                        html += `<div class="holding-detail"><span class="holding-label">Quantity</span><span class="holding-value">${h.quantity}</span></div>`;
-                        html += `<div class="holding-detail"><span class="holding-label">Cost Basis</span><span class="holding-value">${formatCurrency(h.cost_basis)}</span></div>`;
-                        html += `<div class="holding-detail"><span class="holding-label">Avg Cost/Unit</span><span class="holding-value">${formatCurrency(avgCost)}</span></div>`;
-                        html += '</div>';
+                        const totalCost = parseFloat(h.total_cost);
+                        const quantity = parseFloat(h.quantity);
+                        const avgCost = totalCost / quantity;
+                        html += '<tr>';
+                        html += `<td><strong>${h.ticker}</strong></td>`;
+                        html += `<td class="number">${h.quantity}</td>`;
+                        html += `<td class="number">${formatCurrency(totalCost)}</td>`;
+                        html += `<td class="number">${formatCurrency(avgCost)}</td>`;
+                        html += '</tr>';
                     });
 
-                    html += '</div></div>';
+                    html += '</tbody></table>';
+                    html += '</div>';
                 }
 
                 output.innerHTML = html;
