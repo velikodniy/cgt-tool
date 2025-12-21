@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGT Calculator - WASM Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            width: 100%;
+            padding: 40px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .output {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            min-height: 300px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output.html-mode {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            white-space: normal;
+            background: white;
+            padding: 24px;
+        }
+
+        .report-header {
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .report-header h2 {
+            color: #667eea;
+            font-size: 24px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .tax-year-section {
+            margin-bottom: 32px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tax-year-header {
+            background: #667eea;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .tax-year-body {
+            padding: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .summary-value.positive {
+            color: #48bb78;
+        }
+
+        .summary-value.negative {
+            color: #f56565;
+        }
+
+        .tax-liability-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .tax-liability-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .tax-liability-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .tax-breakdown {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+
+        .tax-breakdown h4 {
+            margin: 0 0 12px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .tax-rate-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tax-rate-item:last-child {
+            border-bottom: none;
+        }
+
+        .holdings-section {
+            margin-top: 32px;
+        }
+
+        .holdings-header {
+            background: #48bb78;
+            color: white;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 18px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .holdings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .holding-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            background: white;
+        }
+
+        .holding-ticker {
+            font-weight: 700;
+            font-size: 18px;
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .holding-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 14px;
+        }
+
+        .holding-label {
+            color: #666;
+        }
+
+        .holding-value {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+
+        .summary-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .summary-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .summary-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .summary-table .number {
+            text-align: right;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .summary-table .total-row {
+            font-weight: 700;
+            background: #f0f0f0;
+        }
+
+        .tax-note {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            margin: 16px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-tertiary {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-tertiary:hover {
+            background: #e53e3e;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .toast {
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            min-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.removing {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+
+        .toast.success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .toast.error {
+            background: #f56565;
+            color: white;
+        }
+
+        .toast.info {
+            background: #4299e1;
+            color: white;
+        }
+
+        .toast-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .year-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .year-input {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 120px;
+        }
+
+        .year-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .year-input:disabled {
+            background: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+        }
+
+        .example-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-left: 10px;
+            font-size: 13px;
+        }
+
+        .example-link:hover {
+            color: #5568d3;
+        }
+
+        .help-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .help-box.visible {
+            display: block;
+        }
+
+        .help-box h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #667eea;
+        }
+
+        .help-box code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            color: #e83e8c;
+        }
+
+        .help-box ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .help-box li {
+            margin: 4px 0;
+        }
+
+        .help-toggle {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 13px;
+        }
+
+        .help-toggle:hover {
+            color: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="container">
+        <h1>CGT Calculator</h1>
+        <p class="subtitle">
+            UK Capital Gains Tax calculator running in your browser. All calculations are performed client-side - your data never leaves your machine.
+            <span class="help-toggle" onclick="toggleHelp()">Show Syntax Help</span>
+        </p>
+
+        <div class="help-box" id="helpBox">
+            <h3>DSL Syntax Quick Reference</h3>
+            <p style="margin-bottom: 12px;">All transactions start with a date in <code>YYYY-MM-DD</code> format. Currency defaults to GBP if not specified.</p>
+
+            <strong>Buy/Sell:</strong>
+            <ul>
+                <li><code>YYYY-MM-DD BUY &lt;ticker&gt; &lt;qty&gt; @ &lt;price&gt; [&lt;currency&gt;] [FEES &lt;amount&gt; [&lt;currency&gt;]]</code></li>
+                <li><code>YYYY-MM-DD SELL &lt;ticker&gt; &lt;qty&gt; @ &lt;price&gt; [&lt;currency&gt;] [FEES &lt;amount&gt; [&lt;currency&gt;]]</code></li>
+            </ul>
+
+            <strong>Income Events:</strong>
+            <ul>
+                <li><code>YYYY-MM-DD DIVIDEND &lt;ticker&gt; &lt;shares&gt; TOTAL &lt;value&gt; [&lt;currency&gt;] [TAX &lt;amount&gt; [&lt;currency&gt;]]</code></li>
+                <li><code>YYYY-MM-DD CAPRETURN &lt;ticker&gt; &lt;shares&gt; TOTAL &lt;value&gt; [&lt;currency&gt;]</code> - Capital return (reduces cost base)</li>
+            </ul>
+
+            <strong>Corporate Actions:</strong>
+            <ul>
+                <li><code>YYYY-MM-DD SPLIT &lt;ticker&gt; RATIO &lt;multiplier&gt;</code> - Stock split (e.g., <code>RATIO 4</code> multiplies shares by 4)</li>
+                <li><code>YYYY-MM-DD UNSPLIT &lt;ticker&gt; RATIO &lt;divisor&gt;</code> - Reverse split (divides shares)</li>
+            </ul>
+
+            <strong>Examples:</strong>
+            <ul style="font-family: 'Monaco', 'Courier New', monospace; font-size: 12px;">
+                <li>2024-01-15 BUY AAPL 100 @ 150.00 USD FEES 10.00 USD</li>
+                <li>2024-06-20 SELL AAPL 50 @ 180.00 USD FEES 5.00 USD</li>
+                <li>2024-09-10 DIVIDEND AAPL 50 TOTAL 25.00 USD TAX 3.75 USD</li>
+                <li>2024-05-01 SPLIT AAPL RATIO 4</li>
+            </ul>
+
+            <p style="margin-top: 12px; color: #666;">💡 <strong>Tip:</strong> Lines starting with <code>#</code> are comments and will be ignored.</p>
+        </div>
+
+        <div class="controls">
+            <button onclick="generateReport()" class="btn-primary">Report</button>
+            <button onclick="calculateTax()" class="btn-secondary">Calculate Tax (JSON)</button>
+            <button onclick="parseTransactions()" class="btn-secondary">Parse Transactions</button>
+            <button onclick="validateDSL()" class="btn-tertiary">Validate DSL</button>
+
+            <div class="year-controls">
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="yearCheckbox" onchange="toggleYearInput()" checked>
+                    <span>Specific year:</span>
+                </label>
+                <input type="number" id="taxYear" class="year-input" placeholder="e.g., 2024" min="2015" max="2030" value="2024">
+            </div>
+
+            <span class="example-link" onclick="loadExample()">Load Example</span>
+        </div>
+
+        <div class="grid">
+            <div class="section">
+                <textarea id="input" placeholder="Enter your transactions here, e.g.:
+2024-01-15 BUY AAPL 10 @ 150.00 USD
+2024-06-20 SELL AAPL 5 @ 180.00 USD"></textarea>
+            </div>
+
+            <div class="section">
+                <div id="output" class="output"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { calculate_tax, parse_transactions, validate_dsl } from './pkg/cgt_wasm.js';
+
+        // Initialize WASM module
+        await init();
+
+        showStatus('WASM module loaded successfully!', 'success');
+
+        // Make functions available globally
+        window.wasmCalculateTax = calculate_tax;
+        window.wasmParseTransactions = parse_transactions;
+        window.wasmValidateDSL = validate_dsl;
+    </script>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            // Choose icon based on type
+            const icons = {
+                success: '✓',
+                error: '✕',
+                info: 'ℹ'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300); // Match animation duration
+            }, 3000);
+        }
+
+        function toggleHelp() {
+            const helpBox = document.getElementById('helpBox');
+            const toggle = document.querySelector('.help-toggle');
+
+            if (helpBox.classList.contains('visible')) {
+                helpBox.classList.remove('visible');
+                toggle.textContent = 'Show Syntax Help';
+            } else {
+                helpBox.classList.add('visible');
+                toggle.textContent = 'Hide Syntax Help';
+            }
+        }
+
+        function toggleYearInput() {
+            const checkbox = document.getElementById('yearCheckbox');
+            const yearInput = document.getElementById('taxYear');
+
+            yearInput.disabled = !checkbox.checked;
+            if (!checkbox.checked) {
+                yearInput.value = '';
+            } else {
+                yearInput.value = '2024';
+            }
+        }
+
+        function formatCurrency(amount) {
+            if (!amount) return '£0.00';
+            const num = parseFloat(amount);
+            return '£' + num.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function generateReport() {
+            const input = document.getElementById('input').value.trim();
+            const taxYear = document.getElementById('taxYear').value;
+            const yearCheckbox = document.getElementById('yearCheckbox');
+            const output = document.getElementById('output');
+
+            if (!input) {
+                showStatus('Please enter transaction DSL', 'error');
+                return;
+            }
+
+            try {
+                const year = (yearCheckbox.checked && taxYear) ? parseInt(taxYear) : null;
+                const result = window.wasmCalculateTax(input, year);
+                const data = JSON.parse(result);
+
+                let html = '<div class="report-header">';
+                html += '<h2>UK Capital Gains Tax Report</h2>';
+                html += '</div>';
+
+                // Summary table if multiple years
+                if (data.tax_years && data.tax_years.length > 1) {
+                    html += '<h3 style="margin: 20px 0 10px 0; color: #333;">Summary</h3>';
+                    html += '<table class="summary-table">';
+                    html += '<thead><tr>';
+                    html += '<th>Tax Year</th>';
+                    html += '<th class="number">Gain</th>';
+                    html += '<th class="number">Proceeds</th>';
+                    html += '<th class="number">Exemption</th>';
+                    html += '<th class="number">Taxable Gain</th>';
+                    html += '</tr></thead><tbody>';
+
+                    let totalGain = 0;
+                    let totalProceeds = 0;
+                    let totalExemption = 0;
+                    let totalTaxable = 0;
+
+                    data.tax_years.forEach(ty => {
+                        const yearLabel = ty.period || 'Unknown';
+
+                        html += '<tr>';
+                        html += `<td>${yearLabel}</td>`;
+                        html += `<td class="number">${formatCurrency(ty.net_gain)}</td>`;
+                        html += `<td class="number">${formatCurrency(ty.total_proceeds)}</td>`;
+                        html += `<td class="number">${formatCurrency(ty.exemption)}</td>`;
+                        html += `<td class="number">${formatCurrency(ty.taxable_gain)}</td>`;
+                        html += '</tr>';
+
+                        totalGain += parseFloat(ty.net_gain || 0);
+                        totalProceeds += parseFloat(ty.total_proceeds || 0);
+                        totalExemption += parseFloat(ty.exemption || 0);
+                        totalTaxable += parseFloat(ty.taxable_gain || 0);
+                    });
+
+                    html += '</tbody></table>';
+
+                    html += '<p style="color: #666; font-size: 13px; margin-top: 8px;">Note: Proceeds = SA108 Box 21 (gross, before sale fees)</p>';
+
+                    html += '<h3 style="margin: 30px 0 10px 0; color: #333;">Tax Year Details</h3>';
+                }
+
+                // Tax years
+                if (data.tax_years && data.tax_years.length > 0) {
+                    data.tax_years.forEach((ty, idx) => {
+                        const yearLabel = ty.period || 'Unknown';
+                        html += '<div class="tax-year-section">';
+                        html += `<div class="tax-year-header">Tax Year: ${yearLabel}</div>`;
+                        html += '<div class="tax-year-body">';
+
+                        // Show disposals
+                        if (ty.disposals && ty.disposals.length > 0) {
+                            html += '<h4 style="margin-top: 0; margin-bottom: 12px; color: #333;">Disposals</h4>';
+                            ty.disposals.forEach((disp, dispIdx) => {
+                                // Calculate total gain/loss from matches
+                                const gainLoss = disp.matches ?
+                                    disp.matches.reduce((sum, m) => sum + parseFloat(m.gain_or_loss || 0), 0) : 0;
+                                const gainLossClass = gainLoss >= 0 ? 'positive' : 'negative';
+                                const gainLossLabel = gainLoss >= 0 ? 'GAIN' : 'LOSS';
+
+                                html += '<div style="background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 12px;">';
+                                html += `<strong>${dispIdx + 1}) SELL ${disp.quantity} ${disp.ticker} on ${disp.date} - ${gainLossLabel} <span class="${gainLossClass}">${formatCurrency(Math.abs(gainLoss))}</span></strong><br>`;
+
+                                // Show match details
+                                if (disp.matches && disp.matches.length > 0) {
+                                    html += `<div style="margin-left: 20px; margin-top: 6px; font-size: 13px; color: #666;">`;
+                                    disp.matches.forEach((match, matchIdx) => {
+                                        const ruleName = match.rule === 'SameDay' ? 'Same Day' :
+                                                       match.rule === 'BedAndBreakfast' ? 'Bed & Breakfast' :
+                                                       match.rule === 'Section104' ? 'Section 104' : match.rule;
+                                        html += `${ruleName}: ${match.quantity} shares @ ${formatCurrency(parseFloat(match.allowable_cost) / parseFloat(match.quantity))}<br>`;
+                                    });
+                                    html += `Gross Proceeds: ${formatCurrency(disp.gross_proceeds)}<br>`;
+                                    html += `Net Proceeds: ${formatCurrency(disp.proceeds)}<br>`;
+                                    const totalCost = disp.matches.reduce((sum, m) => sum + parseFloat(m.allowable_cost || 0), 0);
+                                    html += `Cost: ${formatCurrency(totalCost)}<br>`;
+                                    html += `Result: <span class="${gainLossClass}">${formatCurrency(gainLoss)}</span>`;
+                                    html += `</div>`;
+                                }
+
+                                html += '</div>';
+                            });
+                        }
+
+                        html += '<div class="summary-grid">';
+                        html += `<div class="summary-item"><span class="summary-label">Total Proceeds</span><span class="summary-value">${formatCurrency(ty.total_proceeds)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Allowable Costs</span><span class="summary-value">${formatCurrency(ty.total_cost)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Total Gains</span><span class="summary-value positive">${formatCurrency(ty.total_gain)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Total Losses</span><span class="summary-value negative">${formatCurrency(ty.total_loss)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Net Gain/Loss</span><span class="summary-value">${formatCurrency(ty.net_gain)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Annual Exemption</span><span class="summary-value">${formatCurrency(ty.exemption)}</span></div>`;
+                        html += `<div class="summary-item"><span class="summary-label">Taxable Gain</span><span class="summary-value">${formatCurrency(ty.taxable_gain)}</span></div>`;
+                        html += '</div>';
+
+                        if (ty.tax_rates && ty.tax_rates.length > 0) {
+                            html += '<div class="tax-breakdown">';
+                            html += '<h4>Tax Breakdown</h4>';
+                            ty.tax_rates.forEach(rate => {
+                                html += '<div class="tax-rate-item">';
+                                html += `<span>${rate.rate_name}: ${formatCurrency(rate.taxable)} @ ${rate.rate}%</span>`;
+                                html += `<strong>${formatCurrency(rate.tax)}</strong>`;
+                                html += '</div>';
+                            });
+                            html += '</div>';
+                        }
+
+                        // Only show tax liability box if it's a single year report with tax calculations
+                        if (data.tax_years.length === 1 && ty.tax_liability !== undefined) {
+                            html += '<div class="tax-liability-box">';
+                            html += '<div class="tax-liability-label">Total Tax Liability</div>';
+                            html += `<div class="tax-liability-value">${formatCurrency(ty.tax_liability || '0')}</div>`;
+                            html += '</div>';
+
+                            if (parseFloat(ty.tax_liability || 0) === 0 && parseFloat(ty.taxable_gain || 0) === 0 && parseFloat(ty.net_gain || 0) > 0) {
+                                html += '<div class="tax-note" style="margin-top: 16px;">';
+                                html += '<strong>ℹ️ Why is tax liability £0.00?</strong><br>';
+                                html += `The net gain (${formatCurrency(ty.net_gain)}) is fully covered by the annual exemption (${formatCurrency(ty.exemption)}), `;
+                                html += 'so there is no taxable gain and therefore no tax to pay.';
+                                html += '</div>';
+                            }
+                        }
+
+                        html += '</div></div>';
+                    });
+                }
+
+                // Holdings
+                if (data.holdings && data.holdings.length > 0) {
+                    html += '<div class="holdings-section">';
+                    html += '<div class="holdings-header">Current Holdings</div>';
+                    html += '<div class="holdings-grid">';
+
+                    data.holdings.forEach(h => {
+                        const avgCost = parseFloat(h.cost_basis) / parseFloat(h.quantity);
+                        html += '<div class="holding-card">';
+                        html += `<div class="holding-ticker">${h.ticker}</div>`;
+                        html += `<div class="holding-detail"><span class="holding-label">Quantity</span><span class="holding-value">${h.quantity}</span></div>`;
+                        html += `<div class="holding-detail"><span class="holding-label">Cost Basis</span><span class="holding-value">${formatCurrency(h.cost_basis)}</span></div>`;
+                        html += `<div class="holding-detail"><span class="holding-label">Avg Cost/Unit</span><span class="holding-value">${formatCurrency(avgCost)}</span></div>`;
+                        html += '</div>';
+                    });
+
+                    html += '</div></div>';
+                }
+
+                output.innerHTML = html;
+                output.classList.add('html-mode');
+                showStatus('Report generated successfully!', 'success');
+            } catch (error) {
+                output.classList.remove('html-mode');
+                output.textContent = `Error: ${error}`;
+                showStatus(`Failed to generate report: ${error}`, 'error');
+            }
+        }
+
+        function calculateTax() {
+            const input = document.getElementById('input').value.trim();
+            const taxYear = document.getElementById('taxYear').value;
+            const yearCheckbox = document.getElementById('yearCheckbox');
+            const output = document.getElementById('output');
+
+            if (!input) {
+                showStatus('Please enter transaction DSL', 'error');
+                return;
+            }
+
+            try {
+                const year = (yearCheckbox.checked && taxYear) ? parseInt(taxYear) : null;
+                const result = window.wasmCalculateTax(input, year);
+                const parsed = JSON.parse(result);
+                output.classList.remove('html-mode');
+                output.textContent = JSON.stringify(parsed, null, 2);
+                showStatus('Tax calculated successfully!', 'success');
+            } catch (error) {
+                output.classList.remove('html-mode');
+                output.textContent = `Error: ${error}`;
+                showStatus(`Failed to calculate tax: ${error}`, 'error');
+            }
+        }
+
+        function parseTransactions() {
+            const input = document.getElementById('input').value.trim();
+            const output = document.getElementById('output');
+
+            if (!input) {
+                showStatus('Please enter transaction DSL', 'error');
+                return;
+            }
+
+            try {
+                const result = window.wasmParseTransactions(input);
+                const parsed = JSON.parse(result);
+                output.classList.remove('html-mode');
+                output.textContent = JSON.stringify(parsed, null, 2);
+                showStatus('Transactions parsed successfully!', 'success');
+            } catch (error) {
+                output.classList.remove('html-mode');
+                output.textContent = `Error: ${error}`;
+                showStatus(`Failed to parse: ${error}`, 'error');
+            }
+        }
+
+        function validateDSL() {
+            const input = document.getElementById('input').value.trim();
+            const output = document.getElementById('output');
+
+            if (!input) {
+                showStatus('Please enter transaction DSL', 'error');
+                return;
+            }
+
+            try {
+                const result = window.wasmValidateDSL(input);
+                const parsed = JSON.parse(result);
+                output.classList.remove('html-mode');
+                output.textContent = JSON.stringify(parsed, null, 2);
+
+                if (parsed.is_valid) {
+                    if (parsed.warnings.length > 0) {
+                        showStatus(`Valid with ${parsed.warnings.length} warning(s)`, 'info');
+                    } else {
+                        showStatus('Validation passed!', 'success');
+                    }
+                } else {
+                    showStatus(`Validation failed with ${parsed.errors.length} error(s)`, 'error');
+                }
+            } catch (error) {
+                output.classList.remove('html-mode');
+                output.textContent = `Error: ${error}`;
+                showStatus(`Failed to validate: ${error}`, 'error');
+            }
+        }
+
+        function loadExample() {
+            const example = `# Comprehensive CGT Example - Significant Gains Leading to Tax Liability
+# Demonstrates: Same Day, Bed & Breakfast, Section 104, FX conversion, TAX LIABILITY!
+
+# === 2023 Tax Year (6 Apr 2023 - 5 Apr 2024) ===
+
+# Initial US tech stock purchases (buying low)
+2023-04-15 BUY AAPL 100 @ 120.00 USD FEES 10.00 USD
+2023-05-20 BUY MSFT 50 @ 280.00 USD FEES 8.00 USD
+2023-06-10 BUY GOOGL 30 @ 105.00 USD FEES 7.50 USD
+
+# UK FTSE stock (using ISIN)
+2023-07-01 BUY GB0007980591 500 @ 4.20 FEES 12.50
+
+# Dividend income (no CGT impact)
+2023-08-15 DIVIDEND AAPL 100 TOTAL 45.00 USD TAX 6.75 USD
+2023-09-20 DIVIDEND MSFT 50 TOTAL 32.50 USD TAX 4.88 USD
+
+# Highly profitable sales - buying at 120, selling at 195! (big gain)
+2023-11-10 SELL AAPL 80 @ 195.00 USD FEES 10.00 USD
+
+# Same-day rule (no gain since bought same day at higher price)
+2023-12-15 SELL MSFT 20 @ 355.00 USD FEES 5.00 USD
+2023-12-15 BUY MSFT 20 @ 360.00 USD FEES 5.00 USD
+
+# === 2024 Tax Year (6 Apr 2024 - 5 Apr 2025) ===
+
+# Bed & Breakfast rule (bought at 105, selling at 155)
+2024-04-10 SELL GOOGL 15 @ 155.00 USD FEES 4.00 USD
+2024-04-25 BUY GOOGL 15 @ 158.00 USD FEES 4.00 USD
+
+# Stock split (4:1 split = multiply shares by 4, divide price by 4)
+2024-05-01 SPLIT AAPL RATIO 4
+
+# More purchases (post-split prices)
+2024-06-15 BUY AAPL 200 @ 42.00 USD FEES 12.00 USD
+2024-07-20 BUY GB0007980591 300 @ 4.80 FEES 10.00
+
+# Capital return (reduces cost base, good for future gains!)
+2024-08-10 CAPRETURN GB0007980591 800 TOTAL 160.00
+
+# Major profitable sales (prices increased significantly - BIG GAINS!)
+2024-09-05 SELL AAPL 200 @ 58.00 USD FEES 12.00 USD
+2024-10-12 SELL GB0007980591 400 @ 6.20 FEES 15.00
+2024-11-08 SELL GOOGL 25 @ 175.00 USD FEES 6.00 USD
+
+# More dividends
+2024-11-15 DIVIDEND AAPL 90 TOTAL 65.00 USD TAX 9.75 USD
+2024-12-01 DIVIDEND GB0007980591 500 TOTAL 85.00 TAX 0
+
+# Year-end position: Remaining holdings showing healthy unrealized gains!`;
+
+            document.getElementById('input').value = example;
+            document.getElementById('taxYear').value = '2024';
+            showStatus('Example loaded!', 'info');
+        }
+    </script>
+</body>
+</html>
