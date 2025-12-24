@@ -239,7 +239,10 @@ impl Matcher {
                         );
                     }
                 }
-                _ => {}
+                Operation::Buy { .. }
+                | Operation::Sell { .. }
+                | Operation::Split { .. }
+                | Operation::Unsplit { .. } => {}
             }
         }
         Ok(())
@@ -341,7 +344,10 @@ impl Matcher {
                     pool.quantity /= *ratio;
                 }
             }
-            _ => {}
+            Operation::Buy { .. }
+            | Operation::Sell { .. }
+            | Operation::Dividend { .. }
+            | Operation::CapReturn { .. } => {}
         }
         Ok(())
     }

@@ -208,8 +208,7 @@ impl CgtParser {
         for child in input.into_children() {
             match child.as_rule() {
                 Rule::transaction => transactions.push(Self::transaction(child)?),
-                Rule::COMMENT => {} // Skip comments
-                Rule::EOI => {}
+                Rule::COMMENT | Rule::EOI => {}
                 _ => {}
             }
         }
