@@ -29,6 +29,8 @@ pub enum FxParseError {
         #[source]
         error: rust_decimal::Error,
     },
+    #[error("Non-positive FX rate for {code}: {rate} (must be > 0 to avoid divide-by-zero)")]
+    NonPositiveRate { code: String, rate: Decimal },
 }
 
 /// Single-month format from trade-tariff.service.gov.uk
@@ -118,6 +120,13 @@ pub fn parse_monthly_rates(
                 source: rate.rate_new.clone(),
                 error,
             })?;
+
+        if rate_decimal <= Decimal::ZERO {
+            return Err(FxParseError::NonPositiveRate {
+                code: code_raw,
+                rate: rate_decimal,
+            });
+        }
 
         let key = RateKey::new(currency, year, month);
         let minor_units = currency_minor_units(currency);

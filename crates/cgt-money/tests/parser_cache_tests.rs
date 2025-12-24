@@ -82,3 +82,51 @@ fn cache_get_is_case_insensitive() {
     let cache = FxCache::new();
     assert!(cache.get("eur", 2025, 3).is_none());
 }
+
+#[test]
+fn zero_rate_is_rejected() {
+    let xml_with_zero_rate = r#"<?xml version="1.0" encoding="UTF-8"?>
+<exchangeRateMonthList Period="01/Mar/2025 to 31/Mar/2025">
+  <exchangeRate>
+    <currencyCode>EUR</currencyCode>
+    <rateNew>0</rateNew>
+  </exchangeRate>
+</exchangeRateMonthList>
+"#;
+
+    let err = parse_monthly_rates(
+        xml_with_zero_rate,
+        RateSource::Bundled { period: None },
+        Some((2025, 3)),
+    )
+    .unwrap_err();
+
+    assert!(
+        matches!(err, FxParseError::NonPositiveRate { .. }),
+        "Expected NonPositiveRate error for zero rate, got: {err:?}"
+    );
+}
+
+#[test]
+fn negative_rate_is_rejected() {
+    let xml_with_negative_rate = r#"<?xml version="1.0" encoding="UTF-8"?>
+<exchangeRateMonthList Period="01/Mar/2025 to 31/Mar/2025">
+  <exchangeRate>
+    <currencyCode>USD</currencyCode>
+    <rateNew>-1.5</rateNew>
+  </exchangeRate>
+</exchangeRateMonthList>
+"#;
+
+    let err = parse_monthly_rates(
+        xml_with_negative_rate,
+        RateSource::Bundled { period: None },
+        Some((2025, 3)),
+    )
+    .unwrap_err();
+
+    assert!(
+        matches!(err, FxParseError::NonPositiveRate { .. }),
+        "Expected NonPositiveRate error for negative rate, got: {err:?}"
+    );
+}
