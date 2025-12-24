@@ -152,11 +152,14 @@ pub fn format_decimal_trimmed(value: Decimal) -> String {
 ///
 /// # Examples
 /// ```
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use chrono::NaiveDate;
 /// use cgt_format::format_date;
 ///
-/// let date = NaiveDate::from_ymd_opt(2024, 3, 15).unwrap();
+/// let date = NaiveDate::from_ymd_opt(2024, 3, 15).ok_or("invalid date")?;
 /// assert_eq!(format_date(date), "15/03/2024");
+/// # Ok(())
+/// # }
 /// ```
 pub fn format_date(date: NaiveDate) -> String {
     date.format("%d/%m/%Y").to_string()

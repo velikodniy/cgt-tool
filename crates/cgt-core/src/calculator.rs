@@ -19,13 +19,14 @@ use std::collections::HashMap;
 /// messages. Invalid inputs may cause unexpected behavior or incorrect results.
 ///
 /// ```
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use cgt_core::{validation, calculator, Transaction, Operation, CurrencyAmount, Currency};
 /// use chrono::NaiveDate;
 /// use rust_decimal_macros::dec;
 ///
 /// let transactions = vec![
 ///     Transaction {
-///         date: NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
+///         date: NaiveDate::from_ymd_opt(2024, 1, 15).ok_or("invalid date")?,
 ///         ticker: "AAPL".to_string(),
 ///         operation: Operation::Buy {
 ///             amount: dec!(100),
@@ -38,7 +39,9 @@ use std::collections::HashMap;
 /// let result = validation::validate(&transactions);
 /// assert!(result.is_valid());
 ///
-/// let report = calculator::calculate(transactions, None, None).unwrap();
+/// let report = calculator::calculate(transactions, None, None)?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn calculate(
     transactions: Vec<Transaction>,

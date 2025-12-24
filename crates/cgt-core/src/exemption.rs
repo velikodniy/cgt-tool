@@ -34,10 +34,13 @@ fn get_config() -> &'static Config {
 ///
 /// # Examples
 /// ```
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// use cgt_core::get_exemption;
 ///
-/// let exemption = get_exemption(2023).unwrap();
+/// let exemption = get_exemption(2023)?;
 /// assert_eq!(exemption, rust_decimal::Decimal::from(6000));
+/// # Ok(())
+/// # }
 /// ```
 pub fn get_exemption(year: u16) -> Result<Decimal, CgtError> {
     get_config().get_exemption(year)
