@@ -3,7 +3,7 @@
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
 use cgt_format::{
     format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
-    format_tax_year,
+    format_tax_year, round_gbp,
 };
 use rust_decimal::Decimal;
 use std::fmt::Write;
@@ -85,7 +85,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
                 "{}: {} units at £{} avg cost",
                 h.ticker,
                 format_decimal_trimmed(h.quantity),
-                format_decimal_trimmed(cost_basis.round_dp(2))
+                format_decimal_trimmed(round_gbp(cost_basis))
             );
         }
     }
@@ -255,7 +255,7 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
                     out,
                     "   Section 104: {} shares @ £{}",
                     format_decimal_trimmed(m.quantity),
-                    format_decimal_trimmed(cost_per_share.round_dp(2))
+                    format_decimal_trimmed(round_gbp(cost_per_share))
                 );
             }
         }

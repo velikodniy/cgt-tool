@@ -111,6 +111,24 @@ pub fn format_decimal_with_precision(value: Decimal, precision: u32) -> String {
     format!("{rounded:.precision$}", precision = precision as usize)
 }
 
+/// Round a decimal value to 2 decimal places using GBP-consistent rounding.
+///
+/// Uses `MidpointAwayFromZero` strategy to match `format_gbp` behavior.
+/// Use this when you need a rounded value without formatting (e.g., for further calculations
+/// or when formatting without the £ symbol).
+///
+/// # Examples
+/// ```
+/// use rust_decimal::Decimal;
+/// use cgt_format::round_gbp;
+///
+/// assert_eq!(round_gbp(Decimal::new(1235, 2)), Decimal::new(1235, 2));
+/// assert_eq!(round_gbp(Decimal::new(12345, 3)), Decimal::new(1235, 2));
+/// ```
+pub fn round_gbp(value: Decimal) -> Decimal {
+    value.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)
+}
+
 /// Format a decimal value, removing trailing zeros and decimal point if unnecessary.
 ///
 /// # Examples

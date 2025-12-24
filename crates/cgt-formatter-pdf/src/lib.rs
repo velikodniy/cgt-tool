@@ -6,6 +6,7 @@
 use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
 use cgt_format::{
     format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_tax_year,
+    round_gbp,
 };
 use chrono::{Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -126,7 +127,7 @@ fn build_holdings_rows(report: &TaxReport) -> (bool, Vec<Value>) {
     let rows: Vec<Value> = active
         .iter()
         .flat_map(|h| {
-            let cost_basis = (h.total_cost / h.quantity).round_dp(2);
+            let cost_basis = round_gbp(h.total_cost / h.quantity);
             [
                 h.ticker.clone().into_value(),
                 format_decimal_trimmed(h.quantity).into_value(),
@@ -318,7 +319,7 @@ fn format_match_description(m: &cgt_core::Match) -> String {
         }
         MatchRule::Section104 => {
             let cost_per_share = if m.quantity != Decimal::ZERO {
-                (m.allowable_cost / m.quantity).round_dp(2)
+                round_gbp(m.allowable_cost / m.quantity)
             } else {
                 Decimal::ZERO
             };
