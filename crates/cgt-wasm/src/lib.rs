@@ -150,12 +150,12 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
         calculator::calculate(transactions, tax_year, Some(&fx_cache)).map_err(map_error)?;
 
     // Enhance with exemption and tax calculations
-    let tax_years: Vec<TaxYear> = report
+    let tax_years: Result<Vec<TaxYear>, JsValue> = report
         .tax_years
         .iter()
         .map(|ty| {
             let start_year = ty.period.start_year();
-            let exemption = get_exemption(start_year).unwrap_or(Decimal::ZERO);
+            let exemption = get_exemption(start_year).map_err(map_error)?;
             let gross_proceeds: Decimal = ty.disposals.iter().map(|d| d.gross_proceeds).sum();
             let total_cost: Decimal = ty
                 .disposals
@@ -168,7 +168,7 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
             // Tax liability calculation (simplified - set to zero for now)
             let tax_liability = Decimal::ZERO;
 
-            TaxYear {
+            Ok(TaxYear {
                 period: Some(cgt_format::format_tax_year(start_year)),
                 year: Some(start_year),
                 disposals: ty.disposals.clone(),
@@ -180,17 +180,21 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
                 exemption: exemption.to_string(),
                 taxable_gain: taxable.to_string(),
                 tax_liability: tax_liability.to_string(),
-            }
+            })
         })
+        .collect();
+
+    let tax_years = tax_years?;
+
+    let holdings: Result<Vec<serde_json::Value>, _> = report
+        .holdings
+        .iter()
+        .map(|h| serde_json::to_value(h).map_err(map_error))
         .collect();
 
     let tax_report = TaxReport {
         tax_years,
-        holdings: report
-            .holdings
-            .iter()
-            .map(|h| serde_json::to_value(h).unwrap_or(serde_json::Value::Null))
-            .collect(),
+        holdings: holdings?,
     };
 
     serde_json::to_string_pretty(&tax_report).map_err(map_error)

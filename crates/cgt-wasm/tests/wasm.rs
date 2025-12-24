@@ -176,3 +176,25 @@ fn test_calculate_includes_exemption_and_taxable_gain() {
         Err(e) => panic!("Failed to calculate: {:?}", e),
     }
 }
+
+#[wasm_bindgen_test]
+fn test_calculate_unsupported_exemption_year_returns_error() {
+    // Use a year far in the future that won't have exemption data
+    // This tests that unsupported years return proper errors instead of silent defaults
+    let dsl = r#"
+2050-01-15 BUY AAPL 10 @ 100.00
+2050-06-20 SELL AAPL 10 @ 150.00
+    "#;
+
+    let result = calculate_tax(dsl, Some(2050));
+    match result {
+        Ok(_) => panic!("Should return error for unsupported exemption year, not silent default"),
+        Err(error) => {
+            let error_str = error.as_string().unwrap_or_default();
+            assert!(
+                error_str.contains("2050") || error_str.contains("exemption"),
+                "Error should mention the unsupported year or exemption: {error_str}"
+            );
+        }
+    }
+}
