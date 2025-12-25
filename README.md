@@ -65,7 +65,7 @@ For privacy-preserving client-side calculations in web browsers:
 
 ```bash
 # Install from GitHub Releases
-npm install https://github.com/velikodniy/cgt-tool/releases/download/v0.7.0/cgt-tool-wasm-v0.7.0.tgz
+npm install https://github.com/velikodniy/cgt-tool/releases/download/v0.7.1/cgt-tool-wasm-v0.7.1.tgz
 ```
 
 **Browser usage:**

@@ -18,13 +18,13 @@ Download the tarball from the latest release:
 
 ```bash
 # npm
-npm install https://github.com/velikodniy/cgt-tool/releases/download/v0.7.0/cgt-tool-wasm-v0.7.0.tgz
+npm install https://github.com/velikodniy/cgt-tool/releases/download/v0.7.1/cgt-tool-wasm-v0.7.1.tgz
 
 # bun
-bun add https://github.com/velikodniy/cgt-tool/releases/download/v0.7.0/cgt-tool-wasm-v0.7.0.tgz
+bun add https://github.com/velikodniy/cgt-tool/releases/download/v0.7.1/cgt-tool-wasm-v0.7.1.tgz
 
 # yarn
-yarn add https://github.com/velikodniy/cgt-tool/releases/download/v0.7.0/cgt-tool-wasm-v0.7.0.tgz
+yarn add https://github.com/velikodniy/cgt-tool/releases/download/v0.7.1/cgt-tool-wasm-v0.7.1.tgz
 ```
 
 ### Local Build
