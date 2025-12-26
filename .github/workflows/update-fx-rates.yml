@@ -158,6 +158,8 @@ jobs:
     name: Trigger Release
     needs: update-rates
     if: needs.update-rates.outputs.new_version != ''
+    permissions:
+      contents: write
     uses: ./.github/workflows/release.yml
     with:
       tag: v${{ needs.update-rates.outputs.new_version }}
