@@ -44,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -90,51 +92,73 @@ jobs:
             echo "No new rates found"
           fi
 
-      - name: Bump versions
+      - name: Bump version
         if: steps.check_new.outputs.has_new == 'true'
         id: bump
         run: |
-          # Function to bump minor version
-          bump_minor() {
-            local file=$1
-            local current=$(grep -E '^version = "[0-9]+\.[0-9]+\.[0-9]+"' "$file" | head -1 | sed 's/version = "\([^"]*\)"/\1/')
-            local major=$(echo "$current" | cut -d. -f1)
-            local minor=$(echo "$current" | cut -d. -f2)
-            local patch=$(echo "$current" | cut -d. -f3)
-            local new_minor=$((minor + 1))
-            local new_version="${major}.${new_minor}.0"
+          # Extract current version from workspace.package.version in root Cargo.toml
+          # The version line appears after [workspace.package] section
+          current=$(sed -n '/\[workspace\.package\]/,/\[/p' Cargo.toml | grep -E '^version = ' | sed 's/version = "\([^"]*\)"/\1/')
 
-            sed -i "s/^version = \"$current\"/version = \"$new_version\"/" "$file"
-            echo "$new_version"
-          }
+          if [ -z "$current" ]; then
+            echo "::error::Failed to extract version from Cargo.toml"
+            exit 1
+          fi
 
-          # Bump cgt-money
-          money_version=$(bump_minor crates/cgt-money/Cargo.toml)
-          echo "Bumped cgt-money to $money_version"
+          echo "Current version: $current"
 
-          # Bump cgt-cli
-          cli_version=$(bump_minor crates/cgt-cli/Cargo.toml)
-          echo "Bumped cgt-cli to $cli_version"
+          # Parse version components
+          major=$(echo "$current" | cut -d. -f1)
+          minor=$(echo "$current" | cut -d. -f2)
+          patch=$(echo "$current" | cut -d. -f3)
 
-          echo "cli_version=$cli_version" >> $GITHUB_OUTPUT
+          # Bump patch version
+          new_patch=$((patch + 1))
+          new_version="${major}.${minor}.${new_patch}"
+
+          echo "New version: $new_version"
+
+          # Update workspace.package.version in root Cargo.toml
+          sed -i "s/^version = \"$current\"/version = \"$new_version\"/" Cargo.toml
+
+          # Verify the change
+          updated=$(sed -n '/\[workspace\.package\]/,/\[/p' Cargo.toml | grep -E '^version = ' | sed 's/version = "\([^"]*\)"/\1/')
+          if [ "$updated" != "$new_version" ]; then
+            echo "::error::Version update failed. Expected $new_version, got $updated"
+            exit 1
+          fi
+
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
 
       - name: Commit changes
         if: steps.check_new.outputs.has_new == 'true'
         run: |
           git add "$RATES_DIR"/*.xml
-          git add crates/cgt-money/Cargo.toml
-          git add crates/cgt-cli/Cargo.toml
+          git add Cargo.toml
+          git add Cargo.lock
 
           month=$(date +%B\ %Y)
           git commit -m "chore: update FX rates for $month
 
-          Downloaded ${{ steps.check_new.outputs.new_count }} new rate file(s) from HMRC."
+          Downloaded ${{ steps.check_new.outputs.new_count }} new rate file(s) from HMRC.
+          Bumped version to ${{ steps.bump.outputs.new_version }}."
 
       - name: Create and push tag
         if: steps.check_new.outputs.has_new == 'true'
+        id: tag
         run: |
-          version="v${{ steps.bump.outputs.cli_version }}"
+          version="v${{ steps.bump.outputs.new_version }}"
           git tag -a "$version" -m "Release $version - FX rate update"
           git push origin main
           git push origin "$version"
           echo "Created and pushed tag: $version"
+          echo "tag=$version" >> $GITHUB_OUTPUT
+
+  trigger-release:
+    name: Trigger Release
+    needs: update-rates
+    if: needs.update-rates.outputs.new_version != ''
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: v${{ needs.update-rates.outputs.new_version }}
+    secrets: inherit

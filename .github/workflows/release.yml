@@ -4,9 +4,17 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v0.7.2)'
+        required: true
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
+  # Use workflow_call input if available, otherwise use push tag
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   build:
@@ -44,6 +52,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -111,6 +121,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -144,7 +156,7 @@ jobs:
       - name: Create tarball
         run: |
           cd crates/cgt-wasm/pkg
-          VERSION=$(echo ${{ github.ref_name }} | sed 's/^v//')
+          VERSION=$(echo ${{ env.RELEASE_TAG }} | sed 's/^v//')
           tar -czf ../../../cgt-tool-wasm-v${VERSION}.tgz .
           cd ../../..
           ls -lh cgt-tool-wasm-*.tgz
@@ -168,6 +180,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -191,12 +205,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
           files: |
             release/cgt-tool-*
             release/checksums.txt
           generate_release_notes: true
           draft: false
-          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+          prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
 
   notify-tap:
     name: Notify Homebrew Tap
@@ -209,4 +224,4 @@ jobs:
           token: ${{ secrets.TAP_REPO_TOKEN }}
           repository: velikodniy/homebrew-tap
           event-type: cgt-tool-release
-          client-payload: '{"tag": "${{ github.ref_name }}"}'
+          client-payload: '{"tag": "${{ env.RELEASE_TAG }}"}'
