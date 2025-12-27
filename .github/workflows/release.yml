@@ -56,8 +56,6 @@ jobs:
         with:
           pattern: target/${{ matrix.target }}/release/cgt-tool
           suffix: sha256
-      - run: |
-          ls -al target/${{ matrix.target }}/release
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -116,6 +114,8 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: artifacts/
+      - run: |
+          ls -R artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
