@@ -52,13 +52,15 @@ jobs:
       - name: Generate SHA256 checksums
         uses: Solratic/checksum-action@v1
         with:
-          pattern: target/${{ matrix.target }}/release/*
+          pattern: target/${{ matrix.target }}/release/cgt-tool
           suffix: sha256
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
           name: binaries-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/*
+          path: |
+            target/${{ matrix.target }}/release/cgt-tool
+            target/${{ matrix.target }}/release/cgt-tool.sha256
   build-wasm:
     name: Build WASM
     runs-on: ubuntu-latest
