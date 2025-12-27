@@ -21,7 +21,7 @@ cgt-tool --version
 
 ### Pre-built Binaries (Recommended)
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/vadim-projects/cgt-tool/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/velikodniy/cgt-tool/releases):
 
 | Platform                   | Download                      |
 | -------------------------- | ----------------------------- |
