@@ -4,7 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+  # Make this workflow reusable
   workflow_call:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v0.7.2)'
+        required: true
+        type: string
+  # Manual trigger
+  workflow_dispatch:
     inputs:
       tag:
         description: 'Tag to release (e.g., v0.7.2)'
