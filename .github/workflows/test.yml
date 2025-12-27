@@ -19,6 +19,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
       - uses: j178/prek-action@v1
 
   clippy:
