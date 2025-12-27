@@ -9,6 +9,8 @@ on:
       - main
   # Make this workflow reusable
   workflow_call:
+  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   # Run pre-commit checks: formatting and linting (Clippy)
