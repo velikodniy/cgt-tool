@@ -31,7 +31,7 @@ jobs:
     name: Build Artifacts
     needs:
       - test
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
