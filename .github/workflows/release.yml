@@ -12,109 +12,39 @@ on:
         type: string
 
 env:
-  CARGO_TERM_COLOR: always
   # Use workflow_call input if available, otherwise use push tag
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
   build:
-    name: Build ${{ matrix.target }}
+    name: Build Artifacts
+    needs:
+      - test
     runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            artifact_name: cgt-tool
-            asset_name: cgt-tool-linux-x86_64
-
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            artifact_name: cgt-tool
-            asset_name: cgt-tool-linux-aarch64
-            use_cross: true
-
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            artifact_name: cgt-tool
-            asset_name: cgt-tool-macos-x86_64
-
-          - target: aarch64-apple-darwin
-            os: macos-14
-            artifact_name: cgt-tool
-            asset_name: cgt-tool-macos-aarch64
-
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            artifact_name: cgt-tool.exe
-            asset_name: cgt-tool-windows-x86_64.exe
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag || github.ref }}
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: zijiren233/cargo-cross@v1
         with:
-          targets: ${{ matrix.target }}
-
-      - name: Install cross
-        if: matrix.use_cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
+          targets: |
+            x86_64-unknown-linux-musl
+            aarch64-unknown-linux-musl
+            aarch64-apple-darwin
+            x86_64-apple-darwin
+            x86_64-pc-windows-gnu
+      - name: Generate SHA256 checksums
+        uses: Solratic/checksum-action@v1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-cargo-release-
-
-      - name: Build (cross)
-        if: matrix.use_cross
-        run: cross build --release --target ${{ matrix.target }} -p cgt-cli
-
-      - name: Build (native)
-        if: ${{ !matrix.use_cross }}
-        run: cargo build --release --target ${{ matrix.target }} -p cgt-cli
-
-      - name: Prepare artifact (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
-          chmod +x ${{ matrix.asset_name }}
-
-      - name: Prepare artifact (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          copy target\${{ matrix.target }}\release\${{ matrix.artifact_name }} ${{ matrix.asset_name }}
-
-      - name: Generate checksum (Linux)
-        if: runner.os == 'Linux'
-        run: sha256sum ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
-
-      - name: Generate checksum (macOS)
-        if: runner.os == 'macOS'
-        run: shasum -a 256 ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
-
-      - name: Generate checksum (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          $hash = (Get-FileHash -Algorithm SHA256 ${{ matrix.asset_name }}).Hash.ToLower()
-          "$hash  ${{ matrix.asset_name }}" | Out-File -Encoding ASCII ${{ matrix.asset_name }}.sha256
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+          pattern: target/*/release/*
+          suffix: sha256
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.asset_name }}
-          path: |
-            ${{ matrix.asset_name }}
-            ${{ matrix.asset_name }}.sha256
+          name: binaries-${{ matrix.os }}
+          path: target/*/release/*
 
   wasm:
     name: Build WASM
