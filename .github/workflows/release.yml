@@ -56,6 +56,8 @@ jobs:
         with:
           pattern: target/${{ matrix.target }}/release/cgt-tool
           suffix: sha256
+      - run: |
+          ls -al target/${{ matrix.target }}/release
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -105,42 +107,22 @@ jobs:
             cgt-tool-wasm-${{ env.RELEASE_TAG }}.sha256
 
   release:
-    name: Create Release
+    name: Create GitHub Release
     needs: [build, build-wasm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
-          path: artifacts
-
-      - name: Prepare release files
-        run: |
-          mkdir release
-          for dir in artifacts/*/; do
-            cp "$dir"* release/
-          done
-          ls -la release/
-
-      - name: Create checksums file
-        run: |
-          cd release
-          cat *.sha256 > checksums.txt
-          cat checksums.txt
-
+          path: artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           files: |
-            release/cgt-tool-*
-            release/checksums.txt
+            artifacts/*/release/cgt-tool*
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
