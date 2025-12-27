@@ -31,6 +31,14 @@ jobs:
     name: Build Artifacts
     needs:
       - test
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+          - x86_64-pc-windows-gnu
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -38,24 +46,19 @@ jobs:
           ref: ${{ inputs.tag || github.ref }}
       - uses: zijiren233/cargo-cross@v1
         with:
-          targets: |
-            x86_64-unknown-linux-musl
-            aarch64-unknown-linux-musl
-            aarch64-apple-darwin
-            x86_64-apple-darwin
-            x86_64-pc-windows-gnu
+          targets: ${{ matrix.target }}
           profile: release
           package: cgt-cli
       - name: Generate SHA256 checksums
         uses: Solratic/checksum-action@v1
         with:
-          pattern: target/*/release/*
+          pattern: target/${{ matrix.target }}/release/*
           suffix: sha256
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: binaries-${{ matrix.os }}
-          path: target/*/release/*
+          name: binaries-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/*
   build-wasm:
     name: Build WASM
     runs-on: ubuntu-latest
