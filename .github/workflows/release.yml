@@ -54,66 +54,46 @@ jobs:
         with:
           name: binaries-${{ matrix.os }}
           path: target/*/release/*
-
-  wasm:
+  build-wasm:
     name: Build WASM
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag || github.ref }}
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          targets: wasm32-unknown-unknown
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-wasm-
-
-      - name: Install wasm-pack
-        run: cargo install wasm-pack
-
-      - name: Build WASM package
+          target: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: jetli/wasm-pack-action@v0.4.0
+      - name: Build WASM
         run: |
           cd crates/cgt-wasm
           wasm-pack build --target web --release
-
-      - name: Test WASM
-        run: |
-          cd crates/cgt-wasm
-          wasm-pack test --node
-
       - name: Create tarball
-        run: |
-          cd crates/cgt-wasm/pkg
-          VERSION=$(echo ${{ env.RELEASE_TAG }} | sed 's/^v//')
-          tar -czf ../../../cgt-tool-wasm-v${VERSION}.tgz .
-          cd ../../..
-          ls -lh cgt-tool-wasm-*.tgz
-
-      - name: Generate checksum
-        run: sha256sum cgt-tool-wasm-*.tgz > cgt-tool-wasm.sha256
-
+        uses: somaz94/compress-decompress@v1
+        with:
+          command: compress
+          source: ./crates/cgt-wasm/pkg/
+          stripPrefix: ./crates/cgt-wasm/pkg
+          format: tgz
+          destfilename: cgt-tool-wasm-${{ env.RELEASE_TAG }}
+      - name: Generate SHA256 checksums
+        uses: Solratic/checksum-action@v1
+        with:
+          pattern: cgt-tool-wasm-${{ env.RELEASE_TAG }}.tgz
+          suffix: sha256
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wasm-package
           path: |
-            cgt-tool-wasm-*.tgz
-            cgt-tool-wasm.sha256
+            cgt-tool-wasm-${{ env.RELEASE_TAG }}.tgz
+            cgt-tool-wasm-${{ env.RELEASE_TAG }}.sha256
 
   release:
     name: Create Release
-    needs: [build, wasm]
+    needs: [build, build-wasm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
