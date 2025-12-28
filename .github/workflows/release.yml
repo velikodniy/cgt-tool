@@ -104,6 +104,7 @@ jobs:
           source: ./crates/cgt-wasm/pkg/
           stripPrefix: ./crates/cgt-wasm/pkg
           format: tgz
+          dest: .
           destfilename: cgt-tool-wasm-${{ env.RELEASE_TAG }}
       - name: Generate SHA256 checksums
         uses: Solratic/checksum-action@v1
