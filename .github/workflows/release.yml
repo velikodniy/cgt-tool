@@ -70,8 +70,6 @@ jobs:
         with:
           pattern: artifacts/${{ matrix.asset_name }}
           suffix: sha256
-      - run: |
-          ls -al artifacts/
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -132,8 +130,9 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: artifacts/
+          merge-multiple: true
       - run: |
-          ls -la artifacts/
+          ls -Rla artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
