@@ -4,97 +4,66 @@ on:
   # Run on the last Friday of each month at 10:00 UTC
   # HMRC publishes rates on the penultimate Thursday of each month
   schedule:
-    - cron: '0 10 25-31 * 5'  # Every Friday between 25th-31st
-  workflow_dispatch:  # Manual trigger
+    - cron: "0 10 25-31 * 5" # Every Friday between 25th-31st
+  # Make this workflow reusable
+  workflow_call:
+  # Manual trigger
+  workflow_dispatch:
 
 env:
   RATES_DIR: crates/cgt-money/resources/rates
 
 jobs:
-  check-schedule:
-    name: Check if Last Friday
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
-    steps:
-      - name: Check if last Friday of month
-        id: check
-        run: |
-          # For manual triggers, always run
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Check if this is the last Friday of the month
-          today=$(date +%d)
-          next_week=$(date -d "+7 days" +%d)
-
-          # If next Friday would be in the next month (smaller day number), this is the last Friday
-          if [ "$next_week" -lt "$today" ]; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-
   update-rates:
     name: Update FX Rates
-    needs: check-schedule
-    if: needs.check-schedule.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
-      new_version: ${{ steps.bump.outputs.new_version }}
+      new-version: ${{ steps.bump-version.outputs.new-version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Configure git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Count existing rates
-        id: before
+        id: rates-count-before
         run: |
           count=$(find "$RATES_DIR" -name '*.xml' | wc -l | tr -d ' ')
           echo "count=$count" >> $GITHUB_OUTPUT
           echo "Found $count existing rate files"
-
       - name: Download new rates
         run: |
           chmod +x scripts/download-fx-rates.sh
           ./scripts/download-fx-rates.sh "$RATES_DIR"
-
       - name: Count rates after download
-        id: after
+        id: rates-count-after
         run: |
           count=$(find "$RATES_DIR" -name '*.xml' | wc -l | tr -d ' ')
           echo "count=$count" >> $GITHUB_OUTPUT
           echo "Found $count rate files after download"
-
       - name: Check for new files
-        id: check_new
+        id: check-new-files
         run: |
-          before=${{ steps.before.outputs.count }}
-          after=${{ steps.after.outputs.count }}
-
+          before=${{ steps.rates-count-before.outputs.count }}
+          after=${{ steps.rates-count-after.outputs.count }}
           if [ "$after" -gt "$before" ]; then
             new_count=$((after - before))
-            echo "has_new=true" >> $GITHUB_OUTPUT
-            echo "new_count=$new_count" >> $GITHUB_OUTPUT
+            echo "has-new=true" >> $GITHUB_OUTPUT
+            echo "new-count=$new_count" >> $GITHUB_OUTPUT
             echo "Downloaded $new_count new rate file(s)"
           else
-            echo "has_new=false" >> $GITHUB_OUTPUT
+            echo "has-new=false" >> $GITHUB_OUTPUT
             echo "No new rates found"
           fi
-
       - name: Bump version
-        if: steps.check_new.outputs.has_new == 'true'
-        id: bump
+        if: steps.check-new-files.outputs.has-new == 'true'
+        id: bump-version
         run: |
           # Extract current version from workspace.package.version in root Cargo.toml
           # The version line appears after [workspace.package] section
@@ -128,10 +97,9 @@ jobs:
             exit 1
           fi
 
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
-
+          echo "new-version=$new_version" >> $GITHUB_OUTPUT
       - name: Commit changes
-        if: steps.check_new.outputs.has_new == 'true'
+        if: steps.check-new-files.outputs.has-new == 'true'
         run: |
           git add "$RATES_DIR"/*.xml
           git add Cargo.toml
@@ -140,27 +108,25 @@ jobs:
           month=$(date +%B\ %Y)
           git commit -m "chore: update FX rates for $month
 
-          Downloaded ${{ steps.check_new.outputs.new_count }} new rate file(s) from HMRC.
-          Bumped version to ${{ steps.bump.outputs.new_version }}."
-
+          Downloaded ${{ steps.check-new-files.outputs.new-count }} new rate file(s) from HMRC.
+          Bumped version to ${{ steps.bump-version.outputs.new-version }}."
       - name: Create and push tag
-        if: steps.check_new.outputs.has_new == 'true'
+        if: steps.check-new-files.outputs.has-new == 'true'
         id: tag
         run: |
-          version="v${{ steps.bump.outputs.new_version }}"
+          version="v${{ steps.bump-version.outputs.new-version }}"
           git tag -a "$version" -m "Release $version - FX rate update"
           git push origin main
           git push origin "$version"
           echo "Created and pushed tag: $version"
           echo "tag=$version" >> $GITHUB_OUTPUT
-
   trigger-release:
     name: Trigger Release
     needs: update-rates
-    if: needs.update-rates.outputs.new_version != ''
+    if: needs.update-rates.outputs.new-version != ''
     permissions:
       contents: write
     uses: ./.github/workflows/release.yml
     with:
-      tag: v${{ needs.update-rates.outputs.new_version }}
+      tag: v${{ needs.update-rates.outputs.new-version }}
     secrets: inherit
