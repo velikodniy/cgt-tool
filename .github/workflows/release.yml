@@ -111,8 +111,6 @@ jobs:
         with:
           pattern: cgt-tool-wasm-${{ env.RELEASE_TAG }}.tgz
           suffix: sha256
-      - run: |
-          ls -al
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
@@ -132,8 +130,6 @@ jobs:
         with:
           path: artifacts/
           merge-multiple: true
-      - run: |
-          ls -Rla artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
