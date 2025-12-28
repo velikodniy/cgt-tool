@@ -33,12 +33,22 @@ jobs:
       - test
     strategy:
       matrix:
-        target:
-          - x86_64-unknown-linux-musl
-          - aarch64-unknown-linux-musl
-          - aarch64-apple-darwin
-          - x86_64-apple-darwin
-          - x86_64-pc-windows-gnu
+        include:
+          - target: x86_64-unknown-linux-musl
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-linux-x86_64
+          - target: aarch64-unknown-linux-musl
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-linux-aarch64
+          - target: x86_64-apple-darwin
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-macos-x86_64
+          - target: aarch64-apple-darwin
+            artifact_name: cgt-tool
+            asset_name: cgt-tool-macos-aarch64
+          - target: x86_64-pc-windows-gnu
+            artifact_name: cgt-tool.exe
+            asset_name: cgt-tool-windows-x86_64.exe
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,18 +61,22 @@ jobs:
           targets: ${{ matrix.target }}
           profile: release
           package: cgt-cli
+      - name: Rename artifact
+        run: |
+          mkdir -p artifacts/
+          mv target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
       - name: Generate SHA256 checksums
         uses: Solratic/checksum-action@v1
         with:
-          pattern: target/${{ matrix.target }}/release/cgt-tool
+          pattern: artifacts/${{ matrix.asset_name }}
           suffix: sha256
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:
           name: binaries-${{ matrix.target }}
           path: |
-            target/${{ matrix.target }}/release/cgt-tool
-            target/${{ matrix.target }}/release/cgt-tool.sha256
+            artifacts/${{ matrix.asset_name }}
+            artifacts/${{ matrix.asset_name }}.sha256
   build-wasm:
     name: Build WASM
     runs-on: ubuntu-latest
@@ -114,14 +128,12 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           path: artifacts/
-      - run: |
-          ls -R artifacts/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           files: |
-            artifacts/*/release/cgt-tool*
+            artifacts/*
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
