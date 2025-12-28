@@ -15,7 +15,7 @@ fn build_disposal_dict(disposal: &Disposal) -> typst::foundations::Dict {
     use typst::foundations::{Dict, IntoValue};
 
     fn format_price(value: Decimal) -> String {
-        format!("£{}", format_decimal_trimmed(value))
+        format_gbp(value)
     }
 
     let mut dict = Dict::new();
@@ -126,7 +126,7 @@ fn test_proceeds_calc_with_fees() {
         Value::Str(s) => s.as_str().to_string(),
         _ => String::new(),
     };
-    assert_eq!(gross_proceeds, "10 × £4.6702 = £46.70");
+    assert_eq!(gross_proceeds, "10 × £4.67 = £46.70");
 
     let net_proceeds_value = dict
         .get("net_proceeds_calc")

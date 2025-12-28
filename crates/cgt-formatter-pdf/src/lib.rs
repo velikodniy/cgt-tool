@@ -21,7 +21,7 @@ static ROBOTO_REGULAR: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
 fn format_price(value: Decimal) -> String {
-    format!("£{}", format_decimal_trimmed(value))
+    format_gbp(value)
 }
 
 /// Sort transactions by date, then by ticker for deterministic output.
