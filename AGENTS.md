@@ -131,10 +131,11 @@ When releasing a new version:
    git push
    ```
 
-4. **Create GitHub release** using `gh`:
+4. **Create annotated tag** — The CI extracts release notes from the tag message:
 
    ```bash
-   gh release create vX.Y.W --title "vX.Y.W - Brief Description" --notes "$(cat <<'EOF'
+   git tag -a vX.Y.W -m "vX.Y.W - Brief Description
+
    ## What's Changed
 
    ### Bug Fixes
@@ -143,12 +144,16 @@ When releasing a new version:
    ### Features
    - Description of feature
 
-   ### Documentation
-   - Description of doc changes
-
-   **Full Changelog**: https://github.com/OWNER/REPO/compare/vPREV...vX.Y.W
-   EOF
-   )"
+   **Full Changelog**: https://github.com/OWNER/REPO/compare/vPREV...vX.Y.W"
    ```
 
-5. **Verify release** — Check the release page and ensure CI passes.
+   - First line becomes the release title
+   - Remaining lines become the release body
+
+5. **Push the tag** — This triggers the release workflow:
+
+   ```bash
+   git push origin vX.Y.W
+   ```
+
+6. **Verify release** — Check the release page and ensure CI passes.
