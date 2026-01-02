@@ -4,7 +4,7 @@ on:
   # Run on the last Friday of each month at 10:00 UTC
   # HMRC publishes rates on the penultimate Thursday of each month
   schedule:
-    - cron: "0 10 25-31 * 5" # Every Friday between 25th-31st
+    - cron: "0 10 * * *"
   # Make this workflow reusable
   workflow_call:
   # Manual trigger
@@ -28,6 +28,10 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install toml-cli
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: tomli
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
@@ -39,13 +43,12 @@ jobs:
         if: steps.download.outputs.has-new == 'true'
         id: bump-version
         run: |
-          current=$(awk -F'"' '/^version = /{print $2; exit}' Cargo.toml)
-          new_version="${current%.*}.$((${current##*.} + 1))"
-          sed -i "s/^version = \"$current\"/version = \"$new_version\"/" Cargo.toml
+          new_version=$(tomli query -f ./Cargo.toml .workspace.package.version | jq -r '(split(".") | .[2] = (.[2] | tonumber) + 1) | join(".")')
+          tomli set -i -f Cargo.toml workspace.package.version "$new_version"
           cargo update --workspace
           git add "$RATES_DIR"/*.xml Cargo.toml Cargo.lock
-          git commit -m "chore: bump version to $new_version"
-          git tag -a "v$new_version" -m "${{ steps.download.outputs.release-body }}"
+          git commit -m "chore: update fx rates and bump version to $new_version"
+          git tag -a "v$new_version" -m "v$new_version - Updated FX rates" -m "${{ steps.download.outputs.release-body }}"
           echo "new-version=$new_version" >> $GITHUB_OUTPUT
       - name: Push changes and tag
         if: steps.download.outputs.has-new == 'true'
