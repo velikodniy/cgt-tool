@@ -18,9 +18,12 @@ on:
         description: "Tag to release (e.g., v0.7.2)"
         required: true
         type: string
+      body:
+        description: "Release body (optional, uses tag annotation if empty)"
+        required: false
+        type: string
 
 env:
-  # Use workflow_call input if available, otherwise use push tag
   RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
@@ -125,12 +128,58 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+      - name: Extract tag message
+        id: tag-message
+        run: |
+          tag_message=$(git tag -l --format='%(contents)' "$RELEASE_TAG" 2>/dev/null || echo "")
+          if [ -n "$tag_message" ]; then
+            title=$(echo "$tag_message" | head -n 1)
+            body=$(echo "$tag_message" | tail -n +2 | sed '/^$/d' | head -n 20)
+            echo "title=$title" >> $GITHUB_OUTPUT
+            echo "has-annotation=true" >> $GITHUB_OUTPUT
+            {
+              echo "body<<EOF"
+              echo "$body"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          else
+            echo "has-annotation=false" >> $GITHUB_OUTPUT
+            echo "title=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          fi
       - name: Download all artifacts
         uses: actions/download-artifact@v7
         with:
           path: artifacts/
           merge-multiple: true
-      - name: Create GitHub Release
+      - name: Create GitHub Release (with annotation)
+        if: steps.tag-message.outputs.has-annotation == 'true' && inputs.body == ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ steps.tag-message.outputs.title }}
+          body: ${{ steps.tag-message.outputs.body }}
+          files: |
+            artifacts/*
+          draft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
+      - name: Create GitHub Release (with custom body)
+        if: inputs.body != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          body: ${{ inputs.body }}
+          files: |
+            artifacts/*
+          draft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
+      - name: Create GitHub Release (fallback)
+        if: steps.tag-message.outputs.has-annotation != 'true' && inputs.body == ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
