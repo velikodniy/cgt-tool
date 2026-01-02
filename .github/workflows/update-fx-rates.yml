@@ -20,6 +20,7 @@ jobs:
     permissions:
       contents: write
     outputs:
+      has-new: ${{ steps.download.outputs.has-new }}
       new-version: ${{ steps.bump-version.outputs.new-version }}
     steps:
       - name: Checkout
@@ -54,7 +55,7 @@ jobs:
   trigger-release:
     name: Trigger Release
     needs: update-rates
-    if: needs.update-rates.outputs.new-version != ''
+    if: needs.update-rates.outputs.has-new == 'true'
     permissions:
       contents: write
     uses: ./.github/workflows/release.yml
