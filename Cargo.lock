@@ -365,7 +365,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "cgt-cli"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -385,7 +385,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-converter"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "chrono",
  "csv",
@@ -398,7 +398,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-core"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-money",
  "chrono",
@@ -416,7 +416,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-format"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-money",
  "chrono",
@@ -425,7 +425,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-formatter-pdf"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-core",
  "cgt-format",
@@ -438,7 +438,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-formatter-plain"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-core",
  "cgt-format",
@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-mcp"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-core",
  "cgt-money",
@@ -464,7 +464,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-money"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "anyhow",
  "chrono",
@@ -481,7 +481,7 @@ dependencies = [
 
 [[package]]
 name = "cgt-wasm"
-version = "0.7.3"
+version = "0.7.4"
 dependencies = [
  "cgt-core",
  "cgt-format",
