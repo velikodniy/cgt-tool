@@ -34,19 +34,17 @@ jobs:
       - name: Download new rates
         id: download
         run: python3 scripts/download_fx_rates.py "$RATES_DIR" 2026 >> $GITHUB_OUTPUT
-      - name: Install cargo-release
-        if: steps.download.outputs.has-new == 'true'
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: cargo-release
       - name: Bump version and create tag
         if: steps.download.outputs.has-new == 'true'
         id: bump-version
         run: |
-          git add "$RATES_DIR"/*.xml
-          cargo release patch --execute --no-confirm \
-            --tag-message "${{ steps.download.outputs.release-body }}"
-          new_version=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[0].version')
+          current=$(awk -F'"' '/^version = /{print $2; exit}' Cargo.toml)
+          new_version="${current%.*}.$((${current##*.} + 1))"
+          sed -i "s/^version = \"$current\"/version = \"$new_version\"/" Cargo.toml
+          cargo update --workspace
+          git add "$RATES_DIR"/*.xml Cargo.toml Cargo.lock
+          git commit -m "chore: bump version to $new_version"
+          git tag -a "v$new_version" -m "${{ steps.download.outputs.release-body }}"
           echo "new-version=$new_version" >> $GITHUB_OUTPUT
       - name: Push changes and tag
         if: steps.download.outputs.has-new == 'true'
