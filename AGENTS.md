@@ -54,6 +54,7 @@ crates/
 ├── cgt-formatter-pdf/     # PDF output (Typst)
 ├── cgt-format/            # Output format trait
 └── cgt-converter/         # Broker CSV converters
+web/                       # WASM demo web interface
 tests/
 ├── inputs/                # .cgt test files
 ├── json/                  # Expected JSON

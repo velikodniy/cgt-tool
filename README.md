@@ -84,7 +84,7 @@ const report = JSON.parse(calculate_tax(dsl, 2024));
 console.log('Total gain:', report.tax_years[0].total_gain);
 ```
 
-See [crates/cgt-wasm/README.md](crates/cgt-wasm/README.md) for complete WebAssembly documentation and [examples/wasm-demo/](examples/wasm-demo/) for a live browser demo.
+See [crates/cgt-wasm/README.md](crates/cgt-wasm/README.md) for complete WebAssembly documentation and [web/](web/) for a live browser demo.
 
 ## CLI Usage
 

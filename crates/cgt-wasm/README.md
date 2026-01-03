@@ -242,7 +242,7 @@ Requires browsers with WebAssembly support:
 
 ## Examples
 
-See [examples/wasm-demo/](../../examples/wasm-demo/) for a complete browser-based calculator with UI.
+See [web/](../../web/) for a complete browser-based calculator with UI.
 
 ## License
 
