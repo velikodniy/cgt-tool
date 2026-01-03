@@ -5,11 +5,11 @@ Web interface for the UK Capital Gains Tax calculator, compiled to WebAssembly.
 ## File Structure
 
 ```
-wasm-demo/
+web/
 ├── index.html      # HTML structure
 ├── styles.css      # Styling
 ├── app.js          # Application logic
-└── pkg/            # WASM compiled files
+└── pkg/            # WASM compiled files (symlink to crates/cgt-wasm/pkg)
     ├── cgt_wasm.js
     └── cgt_wasm_bg.wasm
 ```
