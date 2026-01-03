@@ -174,7 +174,7 @@ The system SHALL provide clear documentation for JavaScript developers.
 
 #### Scenario: Example HTML page
 
-- **WHEN** developer views `examples/wasm-demo/index.html`
+- **WHEN** developer views `web/index.html`
 - **THEN** example demonstrates loading WASM module, parsing DSL, calculating tax, and displaying JSON results
 - **AND** includes multi-currency transactions to demonstrate embedded FX rates
 - **AND** shows how to render JSON output in browser UI
