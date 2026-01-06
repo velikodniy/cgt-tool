@@ -16,11 +16,11 @@ This hierarchy applies to disposals from 6 April 2008 onwards.
 
 ## Rule 1: Same Day Matching
 
-**HMRC Reference:** CG51560
+**HMRC Reference:** CG51560, TCGA92/S105(1)
 
 ### Definition
 
-If you buy and sell shares of the same class in the same company on the same day, the sale is matched first against shares bought on that day.
+If you buy and sell shares of the same class in the same company on the same day, the sale is matched first against shares bought on that day. This is mandated by TCGA92/S105(1)(a) which requires that disposals are identified with acquisitions on the same day before any other matching rules apply.
 
 ### Key Points
 
@@ -60,6 +60,29 @@ No shares enter the Section 104 pool.
 - **Gain: £120**
 
 Remaining 50 shares (cost £255) enter Section 104 pool.
+
+### Example 3: Same Day Match with Asset Events
+
+When a same-day buy and sell occurs with an existing pool holding, the Same Day rule matches the sale against the same-day acquisition first. This is important for calculating capital return apportionment on remaining holdings.
+
+**Starting Position:** Pool of 40 shares with total cost £7,338.70
+
+**Transactions:**
+
+- 31 May 2023: Capital return of £149.75 (reduces pool cost)
+- 5 November 2023: Buy 20 shares at £194.22 (cost £3,888.40)
+- 5 November 2023: Sell 40 shares at £194.22 (proceeds £7,768.80)
+
+**Matching:**
+
+1. **Same Day**: 20 shares matched against 5 November purchase (cost £3,888.40)
+2. **Section 104**: 20 shares matched from pool (cost £3,677.50 after capital return adjustment)
+
+**Result:**
+
+- Same Day match: Small loss (proceeds slightly less than cost after fees)
+- Section 104 match: Gain (original pool cost was lower)
+- 20 shares remain in pool
 
 ---
 
