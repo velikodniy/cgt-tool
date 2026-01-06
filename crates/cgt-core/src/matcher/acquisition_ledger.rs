@@ -193,8 +193,14 @@ impl AcquisitionLedger {
 
     /// Calculate how much of a lot remains at the time of an event.
     ///
-    /// This simulates FIFO matching for sells that occurred before the event
-    /// to determine how much of this lot would still be held at event time.
+    /// This simulates CGT matching rules (Same Day → B&B → S104) for sells
+    /// that occurred before the event to determine how much of this lot
+    /// would still be held at event time.
+    ///
+    /// Per TCGA92/S105(1) and CG51560, the matching order is:
+    /// 1. Same Day - match against acquisitions on the same day
+    /// 2. B&B (30 days) - match against acquisitions within 30 days after the sale
+    /// 3. S104 Pool - match against earlier acquisitions
     fn calculate_remaining_at_event(
         &self,
         lot: &AcquisitionLot,
@@ -208,7 +214,7 @@ impl AcquisitionLedger {
 
         let mut remaining = lot.original_amount;
 
-        // Track amounts left in all lots (for FIFO simulation)
+        // Track amounts left in all lots (for matching simulation)
         let mut lot_amounts: Vec<Decimal> = self.lots.iter().map(|l| l.original_amount).collect();
 
         // Process sells chronologically that occurred BEFORE the event date
@@ -222,8 +228,9 @@ impl AcquisitionLedger {
                     continue;
                 }
 
-                // Match this sell against acquisitions in FIFO order
                 let mut sell_remaining = *amount;
+
+                // 1. SAME DAY first (TCGA92/S105(1))
                 for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
                     if sell_remaining <= Decimal::ZERO {
                         break;
@@ -232,10 +239,41 @@ impl AcquisitionLedger {
                     if lot_entry.transaction_idx >= idx {
                         continue;
                     }
-                    // Must be same ticker (already filtered by ledger per-ticker)
-                    let available = lot_amounts[lot_idx];
-                    if available > Decimal::ZERO {
-                        let matched = sell_remaining.min(available);
+                    if lot_entry.date == tx.date && lot_amounts[lot_idx] > Decimal::ZERO {
+                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
+                        lot_amounts[lot_idx] -= matched;
+                        sell_remaining -= matched;
+                    }
+                }
+
+                // 2. B&B: acquisitions within 30 days AFTER sell (TCGA92/S106A)
+                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
+                    if sell_remaining <= Decimal::ZERO {
+                        break;
+                    }
+                    // Can only match against acquisitions that happened before this sell
+                    if lot_entry.transaction_idx >= idx {
+                        continue;
+                    }
+                    let days = (lot_entry.date - tx.date).num_days();
+                    if days > 0 && days <= 30 && lot_amounts[lot_idx] > Decimal::ZERO {
+                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
+                        lot_amounts[lot_idx] -= matched;
+                        sell_remaining -= matched;
+                    }
+                }
+
+                // 3. S104: earlier acquisitions (FIFO among earlier lots)
+                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
+                    if sell_remaining <= Decimal::ZERO {
+                        break;
+                    }
+                    // Can only match against acquisitions that happened before this sell
+                    if lot_entry.transaction_idx >= idx {
+                        continue;
+                    }
+                    if lot_entry.date < tx.date && lot_amounts[lot_idx] > Decimal::ZERO {
+                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
                         lot_amounts[lot_idx] -= matched;
                         sell_remaining -= matched;
                     }
