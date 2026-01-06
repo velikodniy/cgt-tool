@@ -1,6 +1,6 @@
 {
   "name": "cgt-tool-wasm",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "WebAssembly bindings for UK Capital Gains Tax calculator",
   "main": "cgt_wasm.js",
   "types": "cgt_wasm.d.ts",

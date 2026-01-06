@@ -3,7 +3,7 @@ members = ["crates/cgt-core", "crates/cgt-formatter-plain", "crates/cgt-formatte
 resolver = "2"
 
 [workspace.package]
-version = "0.7.4"
+version = "0.8.0"
 edition = "2024"
 
 [workspace.lints.clippy]
