@@ -2,11 +2,37 @@
 
 Tax year    Gain        Proceeds    Exemption     Taxable gain
 ==============================================================
+2019/20     £192.40     £7,768.80   £12,000.00    £0.00
+
+Note: Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 
+## 2019/20
+
+1) SELL 40 GB00B3TYHH97 on 05/11/2019 - GAIN £192.40
+   Same Day: 20 shares
+   Section 104: 20 shares @ £183.88
+   Gross Proceeds: 40 × £194.22 = £7,768.80
+   Net Proceeds: £7,768.80 - £12.50 fees = £7,756.30
+   Cost: £7,563.90
+   Result: £192.40
+
+
 # HOLDINGS
 
-NONE
+GB00B3TYHH97: 20 units at £183.88 avg cost
 
 # TRANSACTIONS
+
+29/08/2018 BUY 20 GB00B3TYHH97 @ £184.65 (£12.5 fees)
+15/03/2019 BUY 20 GB00B3TYHH97 @ £181.56 (£2 fees)
+05/11/2019 BUY 20 GB00B3TYHH97 @ £194.22 (£2 fees)
+05/11/2019 SELL 40 GB00B3TYHH97 @ £194.22 (£12.5 fees)
+
+# ASSET EVENTS
+
+31/05/2019 CAPRETURN GB00B3TYHH97 40 £149.75
+31/05/2019 DIVIDEND GB00B3TYHH97 40 £150.24
+30/11/2019 CAPRETURN GB00B3TYHH97 20 £95.12
+30/11/2019 DIVIDEND GB00B3TYHH97 20 £110.93

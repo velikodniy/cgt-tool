@@ -1,4 +1,41 @@
 {
-  "tax_years": [],
-  "holdings": []
+  "tax_years": [
+    {
+      "period": "2019/20",
+      "disposals": [
+        {
+          "date": "2019-11-05",
+          "ticker": "GB00B3TYHH97",
+          "quantity": "40",
+          "gross_proceeds": "7768.80",
+          "proceeds": "7756.30",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "20",
+              "allowable_cost": "3886.40",
+              "gain_or_loss": "-8.25",
+              "acquisition_date": "2019-11-05"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "20",
+              "allowable_cost": "3677.50",
+              "gain_or_loss": "200.65"
+            }
+          ]
+        }
+      ],
+      "total_gain": "200.65",
+      "total_loss": "8.25",
+      "net_gain": "192.40"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "GB00B3TYHH97",
+      "quantity": "20",
+      "total_cost": "3677.50"
+    }
+  ]
 }

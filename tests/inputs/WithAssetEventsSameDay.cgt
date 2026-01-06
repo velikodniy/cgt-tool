@@ -1,27 +1,41 @@
 # Test: WithAssetEventsSameDay
-# Purpose: Documents unsupported case - same day buy/sell with asset events
-# Rules Tested: N/A (Unsupported scenario)
-# Complexity: N/A
+# Purpose: Tests same-day buy+sell with asset events (CAPRETURN/DIVIDEND)
+# Rules Tested: Same Day Rule (TCGA92/S105(1)), Section 104 Pooling, Capital Returns
+# Complexity: High
 # Key Features: Same-day buy AND sell with capital returns - edge case
-# Expected Outcome: No test JSON - scenario not currently supported
+# Expected Outcome: Net Gain £192.40
 #
-# Verification Status: Not Applicable
-# Verified By: N/A
+# Verification Status: Verified
+# Verified By: Manual calculation 2026-01-06
 # Verification Notes:
-#   This test file documents a scenario that is not currently supported
-#   by the calculator. When both BUY and SELL occur on the same day,
-#   the calculator cannot determine if all shares are being sold.
+#   Buy 1: 2018-08-29, 20 @ £184.65 + £12.5 = £3,705.50
+#   Buy 2: 2019-03-15, 20 @ £181.56 + £2 = £3,633.20
+#   Pool before events: 40 shares, £7,338.70
 #
-#   Original cgtcalc format shown in comments for reference.
-#   No expected output JSON exists for this file.
+#   CAPRETURN 2019-05-31 (40 shares, £149.75): Apportioned across lots
+#   Buy 3: 2019-11-05, 20 @ £194.22 + £2 = £3,886.40 (not in pool yet)
 #
-# This doesn't currently work because the BUY and SELL on the same day trigger the calculator to believe that not all the shares are being sold. So this case is not currently supported.
+#   Sell 2019-11-05: 40 @ £194.22, £12.5 fees
+#   Gross proceeds: 40 × £194.22 = £7,768.80
+#   Net proceeds: £7,768.80 - £12.50 = £7,756.30
+#   Matching:
+#   - Same Day: 20 shares matched with Buy 3 (cost £3,886.40)
+#     Proceeds: £3,878.15, Loss: -£8.25
+#   - S104: 20 shares from pool (cost £3,677.50)
+#     Proceeds: £3,878.15, Gain: £200.65
+#   Total cost: £7,563.90
+#   Net Gain: £192.40 (£200.65 gain - £8.25 loss)
 #
-# DIVIDEND 30/11/2019 GB00B3TYHH97 20 110.93
-# CAPRETURN 30/11/2019 GB00B3TYHH97 20 95.12
-# BUY 05/11/2019 GB00B3TYHH97 20 194.22 2
-# SELL 05/11/2019 GB00B3TYHH97 40 194.22 12.5
-# DIVIDEND 31/05/2019 GB00B3TYHH97 40 150.24
-# CAPRETURN 31/05/2019 GB00B3TYHH97 40 149.75
-# BUY 15/03/2019 GB00B3TYHH97 20 181.56 2
-# BUY 29/08/2018 GB00B3TYHH97 20 184.65 12.5
+#   Holdings after: 20 shares @ £183.88 avg (£3,677.50 total)
+#
+#   CAPRETURN 2019-11-30 (20 shares, £95.12): Applied to remaining pool
+#   DIVIDEND 2019-11-30 (20 shares, £110.93): No CGT impact
+#
+2018-08-29 BUY GB00B3TYHH97 20 @ 184.65 FEES 12.5
+2019-03-15 BUY GB00B3TYHH97 20 @ 181.56 FEES 2
+2019-05-31 CAPRETURN GB00B3TYHH97 40 TOTAL 149.75 FEES 0
+2019-05-31 DIVIDEND GB00B3TYHH97 40 TOTAL 150.24 TAX 0
+2019-11-05 BUY GB00B3TYHH97 20 @ 194.22 FEES 2
+2019-11-05 SELL GB00B3TYHH97 40 @ 194.22 FEES 12.5
+2019-11-30 CAPRETURN GB00B3TYHH97 20 TOTAL 95.12 FEES 0
+2019-11-30 DIVIDEND GB00B3TYHH97 20 TOTAL 110.93 TAX 0
