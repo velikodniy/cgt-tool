@@ -23,7 +23,7 @@ Provide powerful functionality through simple interfaces. Hide implementation de
 
 ### Domain Mastery
 
-Verify implementations against HMRC guidance (`TAX_RULES.md`). Do not guess tax calculations.
+Verify implementations against HMRC guidance (`docs/tax-rules.md`). Do not guess tax calculations.
 
 ## Commands
 
@@ -82,7 +82,7 @@ When modifying DSL grammar or transaction formats:
 
 - Remove or modify tests without proving incorrectness
 - Commit code that fails `cargo clippy` or `cargo test`
-- Guess tax calculations—verify against `TAX_RULES.md`
+- Guess tax calculations—verify against `docs/tax-rules.md`
 
 ## Commits
 
@@ -94,7 +94,7 @@ Run `cargo fmt && cargo clippy` before committing.
 
 - **Matching order**: Same Day → Bed & Breakfast (30 days) → Section 104 Pool
 - **Tax year**: 6 April to 5 April (e.g., 2024/25 = 6 Apr 2024 – 5 Apr 2025)
-- **Reference**: `TAX_RULES.md`, HMRC CG51500-CG51600
+- **Reference**: `docs/tax-rules.md`, HMRC CG51500-CG51600
 
 ## OpenSpec
 

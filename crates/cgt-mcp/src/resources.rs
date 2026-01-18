@@ -223,7 +223,7 @@ Lines starting with `#` are comments and ignored:
 pub static TAX_RULES: Resource = Resource {
     uri: "cgt://docs/tax-rules",
     name: "UK HMRC Share Matching Rules - Same Day, Bed & Breakfast, Section 104 Pool explained",
-    content: include_str!("../../../TAX_RULES.md"),
+    content: include_str!("../../../docs/tax-rules.md"),
 };
 
 /// All available resources.

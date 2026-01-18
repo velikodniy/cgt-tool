@@ -96,13 +96,13 @@ Convert broker export files to CGT DSL format:
 
 ```bash
 # Basic conversion (transactions only)
-cgt-tool convert schwab transactions.csv
+cgt-tool convert schwab transactions.json
 
 # With RSU vesting data (requires equity awards file)
-cgt-tool convert schwab transactions.csv --awards awards.json
+cgt-tool convert schwab transactions.json --awards awards.json
 
 # Save to file instead of stdout
-cgt-tool convert schwab transactions.csv --output output.cgt
+cgt-tool convert schwab transactions.json --output output.cgt
 ```
 
 **Supported Schwab transaction types:**
@@ -125,14 +125,14 @@ cgt-tool convert schwab transactions.csv --output output.cgt
 1. Log in to Schwab.com
 2. Navigate to Accounts → History
 3. Select date range and account
-4. Export as CSV (for transactions)
+4. Export as JSON (for transactions)
 5. For RSUs: Navigate to Stock Plan → Award History → Export as JSON
 
 **Example output:**
 
 ```text
 # Converted from Charles Schwab export
-# Source files: transactions.csv
+# Source files: transactions.json
 # Converted: 2025-12-13T19:12:32.513258+00:00
 
 2023-04-25 BUY GOOG 10 @ 125.50 USD FEES 4.95 USD
@@ -336,7 +336,7 @@ Example plain text output with foreign currency:
 
 ## Tax Rules Documentation
 
-For detailed information about UK CGT share matching rules, see [TAX_RULES.md](./TAX_RULES.md).
+For detailed information about UK CGT share matching rules, see [docs/tax-rules.md](docs/tax-rules.md).
 
 ## MCP Server (AI Assistant Integration)
 
