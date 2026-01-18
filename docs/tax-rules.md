@@ -426,6 +426,10 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 - [HS284 - Shares and Capital Gains Tax](https://www.gov.uk/government/publications/shares-and-capital-gains-tax-hs284-self-assessment-helpsheet)
 - [HS285 - Share Reorganisations and CGT](https://www.gov.uk/government/publications/share-reorganisations-company-takeovers-and-capital-gains-tax-hs285-self-assessment-helpsheet)
 
+### Annual Exempt Amount
+
+- [Capital Gains Tax allowances](https://www.gov.uk/capital-gains-tax/allowances)
+
 ### Allowable Expenses
 
 - [CG15250 - Allowable Incidental Costs](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg15250)
