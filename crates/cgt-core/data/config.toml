@@ -1,10 +1,8 @@
 # CGT Tool Configuration
 # This file is embedded in the binary and provides default values.
-# To override, create a config.toml in:
-#   - Current directory: ./config.toml
-#   - User config: ~/.config/cgt-tool/config.toml
 
 # UK Capital Gains Tax Annual Exemption Amounts
+# Source: https://www.gov.uk/guidance/capital-gains-tax-rates-and-allowances
 # Key: Tax year start as string (e.g., "2023" = tax year 2023/24)
 # Value: Exemption amount in GBP
 [exemptions]
@@ -19,3 +17,4 @@
 "2022" = 12300
 "2023" = 6000
 "2024" = 3000
+"2025" = 3000

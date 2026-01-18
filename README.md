@@ -200,6 +200,9 @@ cgt-tool convert schwab transactions.json --output output.cgt
 
 ## Advanced
 
+Embedded defaults for CGT exemption amounts live in `crates/cgt-core/data/config.toml`.
+Override locations: `./config.toml` or `~/.config/cgt-tool/config.toml`.
+
 ### Parse subcommand (debugging / scripting)
 
 `parse` reads `.cgt` and prints normalized JSON. It is useful for sanity-checking your input and piping into tools like `jq`.
