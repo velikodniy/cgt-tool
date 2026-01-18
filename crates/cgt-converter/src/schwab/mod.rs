@@ -4,22 +4,20 @@ use crate::error::ConvertError;
 use crate::output;
 use crate::{BrokerConverter, ConvertOutput};
 use chrono::NaiveDate;
-use csv::StringRecord;
 use rust_decimal::Decimal;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-pub use awards::{AwardLookup, AwardsData, AwardsFormat};
+pub use awards::{AwardLookup, AwardsData};
 
 /// Input for Schwab converter
 #[derive(Debug, Clone)]
 pub struct SchwabInput {
-    /// Transactions CSV content
-    pub transactions_csv: String,
-    /// Optional equity awards content
-    pub awards_content: Option<String>,
-    /// Format of awards file (if provided)
-    pub awards_format: Option<awards::AwardsFormat>,
+    /// Transactions JSON content
+    pub transactions_json: String,
+    /// Optional equity awards JSON content
+    pub awards_json: Option<String>,
 }
 
 /// Schwab converter implementation
@@ -30,6 +28,32 @@ impl SchwabConverter {
     pub fn new() -> Self {
         Self
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct SchwabTransactionsJson {
+    #[serde(rename = "BrokerageTransactions")]
+    brokerage_transactions: Vec<SchwabTransactionJson>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct SchwabTransactionJson {
+    #[serde(rename = "Date")]
+    date: String,
+    #[serde(rename = "Action")]
+    action: String,
+    #[serde(rename = "Symbol")]
+    symbol: String,
+    #[serde(rename = "Description")]
+    description: String,
+    #[serde(rename = "Quantity")]
+    quantity: Option<String>,
+    #[serde(rename = "Price")]
+    price: Option<String>,
+    #[serde(rename = "Fees & Comm")]
+    fees_commissions: Option<String>,
+    #[serde(rename = "Amount")]
+    amount: Option<String>,
 }
 
 /// Internal representation of a Schwab transaction
@@ -79,19 +103,14 @@ impl BrokerConverter for SchwabConverter {
 
     fn convert(&self, input: &Self::Input) -> Result<ConvertOutput, ConvertError> {
         // Parse awards data if provided
-        let awards = if let Some(ref awards_content) = input.awards_content {
-            let format = input.awards_format.as_ref().ok_or_else(|| {
-                ConvertError::InvalidTransaction(
-                    "Awards content provided but format is missing".into(),
-                )
-            })?;
-            Some(awards::parse_awards(awards_content, *format)?)
+        let awards = if let Some(ref awards_json) = input.awards_json {
+            Some(awards::parse_awards_json(awards_json)?)
         } else {
             None
         };
 
-        // Parse transactions CSV
-        let transactions = parse_transactions_csv(&input.transactions_csv)?;
+        // Parse transactions JSON
+        let transactions = parse_transactions_json(&input.transactions_json)?;
 
         // Convert to CGT transactions
         let (cgt_transactions, skipped_warnings) =
@@ -111,15 +130,10 @@ impl BrokerConverter for SchwabConverter {
         let mut output_lines = Vec::new();
 
         // Add header
-        let source_files = if input.awards_content.is_some() {
-            let awards_filename = match input.awards_format {
-                Some(awards::AwardsFormat::Json) => "awards.json",
-                Some(awards::AwardsFormat::Csv) => "awards.csv",
-                None => "awards",
-            };
-            vec!["transactions.csv".to_string(), awards_filename.to_string()]
+        let source_files = if input.awards_json.is_some() {
+            vec!["transactions.json".to_string(), "awards.json".to_string()]
         } else {
-            vec!["transactions.csv".to_string()]
+            vec!["transactions.json".to_string()]
         };
         output_lines.push(output::generate_header(
             "Charles Schwab",
@@ -198,74 +212,49 @@ impl BrokerConverter for SchwabConverter {
     }
 }
 
-/// Parse Schwab transactions CSV
-///
-/// Uses `flexible(true)` to tolerate extra columns with empty values that Schwab
-/// may add to exports over time. Unknown columns are silently ignored.
-fn parse_transactions_csv(csv_content: &str) -> Result<Vec<SchwabTransaction>, ConvertError> {
-    let mut reader = csv::ReaderBuilder::new()
-        .has_headers(true)
-        .flexible(true) // Allow variable number of fields per record (tolerates extra columns)
-        .from_reader(csv_content.as_bytes());
-
-    let headers = reader.headers()?.clone();
-    let mut transactions = Vec::new();
-
-    for result in reader.records() {
-        let record = result?;
-        let txn = parse_transaction_row(&headers, &record)?;
-        transactions.push(txn);
-    }
-
-    Ok(transactions)
+/// Parse Schwab transactions JSON
+fn parse_transactions_json(json_content: &str) -> Result<Vec<SchwabTransaction>, ConvertError> {
+    let payload: SchwabTransactionsJson = serde_json::from_str(json_content)?;
+    payload
+        .brokerage_transactions
+        .into_iter()
+        .map(parse_transaction_entry)
+        .collect()
 }
 
-/// Parse a single transaction row
-fn parse_transaction_row(
-    headers: &StringRecord,
-    record: &StringRecord,
+/// Parse a single transaction entry
+fn parse_transaction_entry(
+    entry: SchwabTransactionJson,
 ) -> Result<SchwabTransaction, ConvertError> {
-    let get_field = |name: &str| -> Result<&str, ConvertError> {
-        headers
-            .iter()
-            .position(|h| h == name)
-            .and_then(|idx| record.get(idx))
-            .ok_or_else(|| ConvertError::MissingColumn(name.to_string()))
-    };
+    let date = parse_date(&entry.date)?;
+    let symbol = entry.symbol.trim().to_string();
 
-    let date_str = get_field("Date")?;
-    let date = parse_date(date_str)?;
-
-    let action = get_field("Action")?.to_string();
-    let symbol = get_field("Symbol")?.trim().to_string();
-    let description = get_field("Description")?.to_string();
-
-    // Optional numeric fields
-    let quantity = get_field("Quantity")
-        .ok()
+    let quantity = entry
+        .quantity
+        .as_deref()
         .and_then(|s| parse_amount(s).ok())
         .flatten();
-
-    let price = get_field("Price")
-        .ok()
+    let price = entry
+        .price
+        .as_deref()
         .and_then(|s| parse_amount(s).ok())
         .flatten();
-
-    let fees_commissions = get_field("Fees & Comm")
-        .ok()
+    let fees_commissions = entry
+        .fees_commissions
+        .as_deref()
         .and_then(|s| parse_amount(s).ok())
         .flatten();
-
-    let amount = get_field("Amount")
-        .ok()
+    let amount = entry
+        .amount
+        .as_deref()
         .and_then(|s| parse_amount(s).ok())
         .flatten();
 
     Ok(SchwabTransaction {
         date,
-        action,
+        action: entry.action,
         symbol,
-        description,
+        description: entry.description,
         quantity,
         price,
         fees_commissions,
@@ -316,6 +305,16 @@ fn process_transactions(
     let mut cgt_transactions = Vec::new();
     let mut warnings = Vec::new();
     let mut dividend_taxes: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
+
+    let has_stock_plan_activity = transactions
+        .iter()
+        .any(|txn| txn.action == "Stock Plan Activity");
+
+    if awards.is_none() && has_stock_plan_activity {
+        warnings.push(
+            "No awards file provided; RSU vesting entries require awards data for FMV.".to_string(),
+        );
+    }
 
     // First pass: collect tax withholdings
     for txn in &transactions {
@@ -418,6 +417,7 @@ fn process_transactions(
                     txn.symbol,
                     txn.date.format("%Y-%m-%d")
                 );
+                // We add it to cgt_transactions so it appears in the output, but it doesn't count as a "real" transaction logic-wise
                 cgt_transactions.push(CgtTransaction::Comment {
                     comment: comment.clone(),
                 });
@@ -587,39 +587,5 @@ mod tests {
     fn test_parse_amount_no_dollar() {
         let result = parse_amount("125.64").unwrap().unwrap();
         assert_eq!(result, dec!(125.64));
-    }
-
-    // ===========================================
-    // CSV Extra Column Tolerance
-    // ===========================================
-
-    #[test]
-    fn test_csv_extra_empty_columns_tolerated() {
-        // Schwab may add extra columns to CSV exports over time.
-        // The parser should tolerate extra columns with empty values.
-        let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount,ExtraCol1,ExtraCol2
-04/25/2023,Buy,AAPL,Apple Inc,100,$150.00,$10.00,-$15010.00,,
-"#;
-
-        let transactions = parse_transactions_csv(csv).unwrap();
-        assert_eq!(transactions.len(), 1);
-        assert_eq!(transactions[0].symbol, "AAPL");
-        assert_eq!(transactions[0].action, "Buy");
-        assert_eq!(transactions[0].quantity, Some(dec!(100)));
-        assert_eq!(transactions[0].price, Some(dec!(150.00)));
-    }
-
-    #[test]
-    fn test_csv_variable_extra_columns_per_row() {
-        // Different rows may have different numbers of extra columns
-        let csv = r#"Date,Action,Symbol,Description,Quantity,Price,Fees & Comm,Amount
-04/25/2023,Buy,AAPL,Apple Inc,100,$150.00,$10.00,-$15010.00,extra1,extra2,extra3
-04/26/2023,Sell,AAPL,Apple Inc,50,$160.00,$5.00,$7995.00
-"#;
-
-        let transactions = parse_transactions_csv(csv).unwrap();
-        assert_eq!(transactions.len(), 2);
-        assert_eq!(transactions[0].action, "Buy");
-        assert_eq!(transactions[1].action, "Sell");
     }
 }

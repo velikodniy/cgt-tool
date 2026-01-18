@@ -388,7 +388,6 @@ name = "cgt-converter"
 version = "0.8.0"
 dependencies = [
  "chrono",
- "csv",
  "rust_decimal",
  "rust_decimal_macros",
  "serde",

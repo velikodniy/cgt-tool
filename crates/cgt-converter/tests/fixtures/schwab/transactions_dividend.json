@@ -1,0 +1,24 @@
+{
+  "BrokerageTransactions": [
+    {
+      "Date": "07/15/2023",
+      "Action": "Cash Dividend",
+      "Symbol": "FOO",
+      "Description": "FOO INC DIVIDEND",
+      "Quantity": null,
+      "Price": null,
+      "Fees & Comm": null,
+      "Amount": "$50.00"
+    },
+    {
+      "Date": "07/15/2023",
+      "Action": "NRA Tax Adj",
+      "Symbol": "FOO",
+      "Description": "NRA WITHHOLDING",
+      "Quantity": null,
+      "Price": null,
+      "Fees & Comm": null,
+      "Amount": "-$7.50"
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 {
-  "EquityAwards": [
+  "Transactions": [
     {
+      "Date": "04/25/2023",
       "Symbol": "XYZZ",
-      "EventDate": "04/25/2023",
-      "FairMarketValuePrice": "$125.6445"
+      "TransactionDetails": [
+        {"Details": {"FairMarketValuePrice": "$125.6445"}}
+      ]
     }
   ]
 }

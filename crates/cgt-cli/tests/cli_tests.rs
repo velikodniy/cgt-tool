@@ -151,7 +151,7 @@ fn test_convert_schwab_basic() {
     let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
-        .arg("../cgt-converter/tests/fixtures/schwab/transactions_basic.csv")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_basic.json")
         .assert()
         .success()
         .stdout(predicates::str::contains("2023-04-25 BUY XYZZ"))
@@ -165,7 +165,7 @@ fn test_convert_schwab_with_awards() {
     let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
-        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.json")
         .arg("--awards")
         .arg("../cgt-converter/tests/fixtures/schwab/awards.json")
         .assert()
@@ -181,7 +181,7 @@ fn test_convert_schwab_rsu_without_awards_fails() {
     let mut cmd = cargo_bin_cmd!("cgt-tool");
     cmd.arg("convert")
         .arg("schwab")
-        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.csv")
+        .arg("../cgt-converter/tests/fixtures/schwab/transactions_rsu.json")
         .assert()
         .failure();
 }

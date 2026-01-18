@@ -128,35 +128,20 @@ fn main() -> Result<()> {
         Commands::Convert { broker } => {
             match broker {
                 BrokerCommands::Schwab {
-                    transactions,
-                    awards,
+                    transactions: transactions_path,
+                    awards: awards_path,
                     output,
                 } => {
                     use cgt_converter::BrokerConverter;
-                    use cgt_converter::schwab::{AwardsFormat, SchwabConverter, SchwabInput};
+                    use cgt_converter::schwab::{SchwabConverter, SchwabInput};
 
-                    // Read transactions CSV
-                    let transactions_csv = fs::read_to_string(transactions)?;
+                    let transactions_json = fs::read_to_string(transactions_path)?;
+                    let awards_json = awards_path.as_ref().map(fs::read_to_string).transpose()?;
 
-                    // Read awards file if provided and determine format
-                    let (awards_content, awards_format) = if let Some(awards_path) = awards {
-                        let content = fs::read_to_string(awards_path)?;
-                        let format = match awards_path.extension().and_then(|e| e.to_str()) {
-                            Some("json") => AwardsFormat::Json,
-                            Some("csv") => AwardsFormat::Csv,
-                            _ => bail!("Awards file must have .json or .csv extension"),
-                        };
-                        (Some(content), Some(format))
-                    } else {
-                        (None, None)
-                    };
-
-                    // Convert
                     let converter = SchwabConverter::new();
                     let input = SchwabInput {
-                        transactions_csv,
-                        awards_content,
-                        awards_format,
+                        transactions_json,
+                        awards_json,
                     };
 
                     let result = converter.convert(&input)?;

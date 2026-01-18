@@ -1,0 +1,24 @@
+{
+  "BrokerageTransactions": [
+    {
+      "Date": "04/25/2023",
+      "Action": "Buy",
+      "Symbol": "XYZZ",
+      "Description": "XYZZ CORP",
+      "Quantity": "10",
+      "Price": "$125.50",
+      "Fees & Comm": "$4.95",
+      "Amount": "-$1259.95"
+    },
+    {
+      "Date": "05/10/2023",
+      "Action": "Sell",
+      "Symbol": "XYZZ",
+      "Description": "XYZZ CORP",
+      "Quantity": "5",
+      "Price": "$130.00",
+      "Fees & Comm": "$2.50",
+      "Amount": "$647.50"
+    }
+  ]
+}

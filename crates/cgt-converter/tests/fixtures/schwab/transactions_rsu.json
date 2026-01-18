@@ -1,0 +1,24 @@
+{
+  "BrokerageTransactions": [
+    {
+      "Date": "04/25/2023",
+      "Action": "Stock Plan Activity",
+      "Symbol": "XYZZ",
+      "Description": "XYZZ CORP - RSU VEST",
+      "Quantity": "67.2",
+      "Price": null,
+      "Fees & Comm": null,
+      "Amount": "$8443.47"
+    },
+    {
+      "Date": "04/25/2023",
+      "Action": "Sell",
+      "Symbol": "XYZZ",
+      "Description": "XYZZ CORP",
+      "Quantity": "20.2",
+      "Price": "$125.6445",
+      "Fees & Comm": "$0.15",
+      "Amount": "$2538.83"
+    }
+  ]
+}

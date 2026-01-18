@@ -62,7 +62,7 @@ pub enum Commands {
 pub enum BrokerCommands {
     /// Convert Charles Schwab export files
     Schwab {
-        /// Path to Schwab transactions CSV file
+        /// Path to Schwab transactions JSON file
         transactions: PathBuf,
 
         /// Optional path to Schwab equity awards JSON file (required for RSU vesting)
