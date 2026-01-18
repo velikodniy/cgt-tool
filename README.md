@@ -2,7 +2,7 @@
 
 A CLI tool to calculate UK Capital Gains Tax for share disposals using HMRC Same Day, Bed & Breakfast, and Section 104 matching rules.
 
-The main idea is a small, line-based DSL that describes your transactions (buys, sells, dividends, splits) in a consistent format. You can write it by hand, or convert broker exports into this intermediate format and then generate CGT reports from it.
+The main idea is a small, line-based DSL that describes your transactions (buys, sells, dividends, splits) in a consistent format. You can write it by hand, or convert broker exports into this intermediate format and then generate CGT reports from it. Everything runs locally; your data is not uploaded anywhere.
 
 > [!WARNING]
 > I am not an accountant or tax lawyer, and I do not provide consultations. Use this tool at your own risk.
@@ -80,7 +80,7 @@ cgt-tool report part1.cgt part2.cgt --format pdf --output report.pdf
 ## What you need
 
 - Your transactions: broker exports (preferred) or a hand-written `.cgt` file
-- Enough history to cover buys before sells (especially for long-held positions)
+- Full history for each holding (you need the buys before the sells; partial exports can produce incorrect gains)
 - Fees/commissions where applicable (they affect the gain)
 - For foreign assets: currency codes (otherwise values are treated as GBP)
 
@@ -140,18 +140,28 @@ Download rates:
 
 ### Charles Schwab
 
-Export your data:
+Transactions export (JSON):
 
-1. Log in to Schwab.com
-2. Navigate to Accounts → History
-3. Select date range and account
-4. Export as JSON (transactions)
-5. For RSUs: Stock Plan → Award History → Export as JSON (awards / FMV)
+- Accounts -> Transaction History
+- Pick -> Brokerage Accounts in the main drop-down
+- Click the download icon (top right) -> choose JSON
+
+Awards export (for RSUs / FMV):
+
+- Follow the steps above, but in the main drop-down choose -> Equity Awards Center
 
 Convert to `.cgt`:
 
 ```bash
 cgt-tool convert schwab transactions.json --output transactions.cgt
+```
+
+Schwab limits downloads to 4 years. If you need 5+ years, export multiple chunks, convert each, and report them together. The chunks must not overlap (otherwise you will duplicate transactions).
+
+```bash
+cgt-tool convert schwab schwab_2019_2022.json --output schwab_2019_2022.cgt
+cgt-tool convert schwab schwab_2023_2026.json --output schwab_2023_2026.cgt
+cgt-tool report schwab_2019_2022.cgt schwab_2023_2026.cgt
 ```
 
 Supported transaction types:
