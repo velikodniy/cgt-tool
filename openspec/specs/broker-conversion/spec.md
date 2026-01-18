@@ -28,59 +28,51 @@ The converter core SHALL operate without filesystem or network IO, accepting fil
 - **AND** returns CGT DSL content as `String`
 - **AND** does not require filesystem access
 
-### Requirement: Schwab Transactions CSV Parser
+### Requirement: Schwab Transactions JSON Parser
 
-The system SHALL parse Charles Schwab transaction CSV exports containing columns: Date, Action, Symbol, Description, Price, Quantity, Fees & Comm, Amount. Extra columns with empty values SHALL be tolerated.
+The system SHALL parse Charles Schwab transaction JSON exports. The input is a JSON object with a `BrokerageTransactions` array containing transaction objects. Each transaction object MUST contain fields for Date, Action, Symbol, Description, Price, Quantity, Fees & Comm, and Amount.
 
 #### Scenario: Parse basic buy transaction
 
-- **WHEN** CSV contains row `07/02/2020,Buy,VUAG,VUAG INC,$30.2,30.5,$4,-$925.1`
-- **THEN** output `2020-07-02 BUY VUAG 30.5 @ 30.2 USD FEES 4 USD`
+- **WHEN** JSON contains a buy transaction
+- **THEN** output corresponding `BUY` transaction in CGT DSL format
 
 #### Scenario: Parse sell transaction
 
-- **WHEN** CSV contains row `06/06/2020,Sell,VUAG,VUAG INC,$33,90,$5,$2965`
-- **THEN** output `2020-06-06 SELL VUAG 90 @ 33 USD FEES 5 USD`
+- **WHEN** JSON contains a sell transaction
+- **THEN** output corresponding `SELL` transaction in CGT DSL format
 
 #### Scenario: Parse dividend
 
-- **WHEN** CSV contains row `03/04/2021,Cash Dividend,BNDX,VANGUARD...,,,,$3.65`
-- **THEN** output `2021-03-04 DIVIDEND BNDX 0 TOTAL 3.65 USD TAX 0 USD`
+- **WHEN** JSON contains a cash dividend transaction
+- **THEN** output `DIVIDEND` transaction
 
 #### Scenario: Parse dividend with tax withheld
 
-- **WHEN** CSV contains dividend row followed by NRA Withholding row on same date for same symbol
+- **WHEN** JSON contains dividend transaction followed by NRA Withholding transaction on same date for same symbol
 - **THEN** combine into single `DIVIDEND` with `TAX` amount from withholding
 
 #### Scenario: Skip non-CGT transactions
 
-- **WHEN** CSV contains Wire Sent, Wire Received, Credit Interest, or similar cash movements
-- **THEN** skip these rows
+- **WHEN** JSON contains Wire Sent, Wire Received, Credit Interest, or similar cash movements
+- **THEN** skip these transactions
 - **AND** include count of skipped transactions in header comment
 
-#### Scenario: Tolerate extra empty columns
+#### Scenario: Tolerate extra fields
 
-- **WHEN** CSV contains extra columns beyond the expected set
-- **AND** those extra columns have empty values
-- **THEN** ignore the extra columns
+- **WHEN** JSON objects contain extra fields beyond the expected set
+- **THEN** ignore the extra fields
 - **AND** proceed with parsing without error
 
 ### Requirement: Schwab Awards Parser
 
-The system SHALL parse Schwab Equity Awards in both JSON and CSV formats to obtain Fair Market Value prices and vest dates for RSU vesting events, auto-detecting the format based on file extension. Symbol lookup SHALL be case-insensitive.
+The system SHALL parse Schwab Equity Awards in JSON format to obtain Fair Market Value prices and vest dates for RSU vesting events. Symbol lookup SHALL be case-insensitive.
 
 #### Scenario: Parse JSON awards format
 
 - **WHEN** awards file has `.json` extension
-- **THEN** parse as JSON with structure: `{"EquityAwards": [{"Symbol": "...", "EventDate": "MM/DD/YYYY", "FairMarketValuePrice": "$..."}]}`
-- **AND** extract Symbol, EventDate (vest date), and FairMarketValuePrice from each award
-
-#### Scenario: Parse CSV awards format
-
-- **WHEN** awards file has `.csv` extension
-- **THEN** parse as CSV with paired-row structure
-- **AND** extract Symbol and Date (vest/lapse date) from transaction row
-- **AND** extract FairMarketValuePrice from following award details row
+- **THEN** parse as JSON with structure: `{"Transactions": [{"Date": "...", "Symbol": "...", "TransactionDetails": [{"Details": {"FairMarketValuePrice": "..."}}]}]}`
+- **AND** extract Symbol, Date (vest date), and FairMarketValuePrice from each award
 
 #### Scenario: Case-insensitive symbol lookup
 
@@ -89,22 +81,16 @@ The system SHALL parse Schwab Equity Awards in both JSON and CSV formats to obta
 - **THEN** lookup succeeds and returns the FMV for AAPL
 - **AND** symbol matching is case-insensitive
 
-#### Scenario: CSV paired-row structure
-
-- **WHEN** CSV contains transaction row with Action="Lapse" and Date filled
-- **AND** next row has empty Date/Symbol but filled FairMarketValuePrice
-- **THEN** key the FMV and vest date by (Symbol, Date) from the transaction row
-
 #### Scenario: RSU vesting with awards file
 
-- **WHEN** transactions CSV contains `Stock Plan Activity` for symbol on settlement date
+- **WHEN** transactions JSON contains `Stock Plan Activity` for symbol on settlement date
 - **AND** awards file contains FMV price for that symbol within 7-day lookback
 - **THEN** output `BUY` transaction using the **vest date from awards file** as the transaction date
 - **AND** use the FMV price from awards file as the purchase price
 
 #### Scenario: RSU vesting without awards file
 
-- **WHEN** transactions CSV contains `Stock Plan Activity`
+- **WHEN** transactions JSON contains `Stock Plan Activity`
 - **AND** no awards file is provided
 - **THEN** return error indicating awards file is required for Stock Plan Activity
 
@@ -127,7 +113,7 @@ The system SHALL parse Schwab date formats including "as of" notation.
 
 #### Scenario: Standard date format
 
-- **WHEN** date is `02/09/2021`
+- **WHEN** date is `02/09/2021` or `2021-02-09`
 - **THEN** parse as 2021-02-09
 
 #### Scenario: "As of" date format (prefix)
@@ -164,7 +150,7 @@ The system SHALL output transactions in chronological order (oldest first).
 
 #### Scenario: Reorder reversed input
 
-- **WHEN** Schwab CSV is in reverse chronological order (newest first)
+- **WHEN** Schwab JSON transactions are in reverse chronological order (newest first)
 - **THEN** output transactions oldest-to-newest
 
 ### Requirement: CLI Convert Subcommand
@@ -173,25 +159,24 @@ The CLI SHALL provide a `convert` subcommand with broker-specific subcommands, e
 
 #### Scenario: Convert Schwab with positional transactions file
 
-- **WHEN** user runs `cgt convert schwab transactions.csv`
-- **THEN** convert transactions CSV and output CGT DSL to stdout
+- **WHEN** user runs `cgt convert schwab transactions.json`
+- **THEN** convert transactions JSON and output CGT DSL to stdout
 
 #### Scenario: Convert Schwab with awards file
 
-- **WHEN** user runs `cgt convert schwab transactions.csv --awards awards.json` or `--awards awards.csv`
-- **THEN** convert transactions CSV using FMV prices from awards file
-- **AND** auto-detect format based on file extension (.json or .csv)
+- **WHEN** user runs `cgt convert schwab transactions.json --awards awards.json`
+- **THEN** convert transactions JSON using FMV prices from awards file
 - **AND** output CGT DSL to stdout
 
 #### Scenario: Convert without awards file when RSUs present
 
-- **WHEN** user runs `cgt convert schwab transactions.csv` (no awards)
+- **WHEN** user runs `cgt convert schwab transactions.json` (no awards)
 - **AND** transactions contain Stock Plan Activity
 - **THEN** exit with error explaining awards file is required
 
 #### Scenario: Write to file
 
-- **WHEN** user runs `cgt convert schwab transactions.csv -o output.cgt`
+- **WHEN** user runs `cgt convert schwab transactions.json -o output.cgt`
 - **THEN** write CGT DSL to specified file
 
 #### Scenario: Show broker-specific help
@@ -203,15 +188,20 @@ The CLI SHALL provide a `convert` subcommand with broker-specific subcommands, e
 
 The system SHALL provide clear error messages for conversion failures.
 
-#### Scenario: Invalid CSV format
+#### Scenario: Invalid JSON format
 
-- **WHEN** CSV is missing required columns
-- **THEN** error message lists missing columns
+- **WHEN** input is not valid JSON
+- **THEN** error message indicates JSON parse failure
+
+#### Scenario: Missing required fields
+
+- **WHEN** transaction object is missing required fields (Date, Action, etc.)
+- **THEN** error message identifies missing data
 
 #### Scenario: Unparseable date
 
 - **WHEN** date cannot be parsed
-- **THEN** error message includes line number and invalid date value
+- **THEN** error message includes invalid date value
 
 #### Scenario: Unknown action type
 
