@@ -1,0 +1,58 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2024-02-01",
+          "ticker": "ABC",
+          "quantity": "5",
+          "gross_proceeds": "550.00",
+          "proceeds": "550.00",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "5",
+              "allowable_cost": "450.00",
+              "gain_or_loss": "100.00",
+              "acquisition_date": "2024-02-10"
+            }
+          ]
+        }
+      ],
+      "total_gain": "100.00",
+      "total_loss": "0",
+      "net_gain": "100.00"
+    },
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-06-01",
+          "ticker": "ABC",
+          "quantity": "10",
+          "gross_proceeds": "1200.00",
+          "proceeds": "1200.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "10",
+              "allowable_cost": "1000.00",
+              "gain_or_loss": "200.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "200.00",
+      "total_loss": "0",
+      "net_gain": "200.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ABC",
+      "quantity": "0",
+      "total_cost": "0.00"
+    }
+  ]
+}

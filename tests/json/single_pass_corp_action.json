@@ -1,0 +1,34 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2024-03-01",
+          "ticker": "ABC",
+          "quantity": "10",
+          "gross_proceeds": "1100.00",
+          "proceeds": "1100.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "10",
+              "allowable_cost": "1050.00",
+              "gain_or_loss": "50.00"
+            }
+          ]
+        }
+      ],
+      "total_gain": "50.00",
+      "total_loss": "0",
+      "net_gain": "50.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ABC",
+      "quantity": "0",
+      "total_cost": "0.00"
+    }
+  ]
+}
