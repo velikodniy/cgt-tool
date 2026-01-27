@@ -1,0 +1,57 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2024-02-01",
+          "ticker": "SNAP",
+          "quantity": "100",
+          "gross_proceeds": "1200.00",
+          "proceeds": "1200.00",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "30",
+              "allowable_cost": "330.00",
+              "gain_or_loss": "30.00",
+              "acquisition_date": "2024-02-02"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "70",
+              "allowable_cost": "700.00",
+              "gain_or_loss": "140.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-02-02",
+          "ticker": "SNAP",
+          "quantity": "50",
+          "gross_proceeds": "575.00",
+          "proceeds": "575.00",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "50",
+              "allowable_cost": "550.00",
+              "gain_or_loss": "25.00",
+              "acquisition_date": "2024-02-02"
+            }
+          ]
+        }
+      ],
+      "total_gain": "195.00",
+      "total_loss": "0",
+      "net_gain": "195.00"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "SNAP",
+      "quantity": "130",
+      "total_cost": "1300.00"
+    }
+  ]
+}

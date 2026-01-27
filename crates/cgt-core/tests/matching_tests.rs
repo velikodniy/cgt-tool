@@ -768,3 +768,95 @@ fn test_capreturn_does_not_affect_later_acquisitions() {
         "CAPRETURN should not affect acquisitions made after the event"
     );
 }
+
+// Same Day reservation priority over B&B
+// Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1))
+
+#[test]
+fn test_same_day_reservation_priority_over_bnb() {
+    // Test that Same Day matching has priority over B&B from earlier disposals.
+    // Per TCGA92/S106A(9): B&B rules are "subject to" the Same Day rule in S105(1).
+    //
+    // Scenario:
+    // - Jan 1: Buy 200 shares @ £10 (initial pool)
+    // - Feb 1: Sell 100 shares @ £12 (could B&B to Feb 2)
+    // - Feb 2: Buy 80 shares @ £11, Sell 50 shares @ £11.50 (Same Day)
+    //
+    // Without reservation (WRONG): Feb 1 B&B takes all 80 from Feb 2, Feb 2 Same Day gets 0
+    // With reservation (CORRECT): Feb 2 Same Day reserves 50, Feb 1 B&B gets only 30
+    let cgt_content = r#"
+2024-01-01 BUY SNAP 200 @ 10.00 GBP
+2024-02-01 SELL SNAP 100 @ 12.00 GBP
+2024-02-02 BUY SNAP 80 @ 11.00 GBP
+2024-02-02 SELL SNAP 50 @ 11.50 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+
+    let year = report.tax_years.first().expect("Expected a tax year");
+
+    // Find the Feb 1 disposal
+    let feb1_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.date.to_string() == "2024-02-01")
+        .expect("Missing Feb 1 disposal");
+
+    // Find the Feb 2 disposal
+    let feb2_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.date.to_string() == "2024-02-02")
+        .expect("Missing Feb 2 disposal");
+
+    // Feb 1 should have B&B match for 30 shares (not 80!) and S104 match for 70 shares
+    assert_eq!(
+        feb1_disposal.matches.len(),
+        2,
+        "Feb 1 should have 2 matches"
+    );
+
+    let feb1_bnb = feb1_disposal
+        .matches
+        .iter()
+        .find(|m| m.rule == MatchRule::BedAndBreakfast)
+        .expect("Feb 1 should have B&B match");
+    assert_eq!(
+        feb1_bnb.quantity,
+        dec!(30),
+        "Feb 1 B&B should only get 30 shares (80 - 50 reserved for Same Day)"
+    );
+
+    let feb1_s104 = feb1_disposal
+        .matches
+        .iter()
+        .find(|m| m.rule == MatchRule::Section104)
+        .expect("Feb 1 should have S104 match");
+    assert_eq!(
+        feb1_s104.quantity,
+        dec!(70),
+        "Feb 1 S104 should get remaining 70 shares"
+    );
+
+    // Feb 2 should have Same Day match for all 50 shares
+    assert_eq!(feb2_disposal.matches.len(), 1, "Feb 2 should have 1 match");
+    let feb2_same_day = &feb2_disposal.matches[0];
+    assert_eq!(
+        feb2_same_day.rule,
+        MatchRule::SameDay,
+        "Feb 2 should be Same Day match"
+    );
+    assert_eq!(
+        feb2_same_day.quantity,
+        dec!(50),
+        "Feb 2 Same Day should get all 50 shares"
+    );
+
+    // Verify gains
+    // Feb 1 B&B: 30 × (£12 - £11) = £30
+    // Feb 1 S104: 70 × (£12 - £10) = £140
+    // Feb 2 Same Day: 50 × (£11.50 - £11) = £25
+    // Total: £195
+    assert_eq!(year.total_gain, dec!(195), "Total gain should be £195");
+}

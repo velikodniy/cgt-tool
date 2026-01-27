@@ -1,14 +1,36 @@
 //! Bed and Breakfast (30-day) matching rule for CGT calculations.
 //!
 //! Matches disposals with acquisitions within 30 days after the disposal.
+//! Per TCGA92/S106A(9), B&B matching is subject to the Same Day rule in S105(1),
+//! meaning Same Day matching has priority when both rules compete for the same acquisition.
 
 use super::{MatchResult, Matcher};
 use crate::error::CgtError;
 use crate::models::{GbpTransaction, MatchRule, Operation};
+use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
 /// Number of days for B&B matching window.
 const BNB_WINDOW_DAYS: i64 = 30;
+
+/// Calculate the total same-day disposal quantity for a given date and ticker.
+///
+/// This is used to reserve shares for Same Day matching before B&B can consume them.
+/// Per TCGA92/S106A(9), B&B is "subject to" Same Day rule, meaning Same Day has priority.
+fn same_day_disposal_quantity(
+    date: NaiveDate,
+    ticker: &str,
+    all_transactions: &[GbpTransaction],
+) -> Decimal {
+    all_transactions
+        .iter()
+        .filter(|tx| tx.date == date && tx.ticker == ticker)
+        .filter_map(|tx| match &tx.operation {
+            Operation::Sell { amount, .. } => Some(*amount),
+            _ => None,
+        })
+        .sum()
+}
 
 /// Match disposal against acquisitions within 30 days (Bed & Breakfast rule).
 ///
@@ -73,7 +95,7 @@ pub fn match_bed_and_breakfast(
                     cumulative_ratio_effect /= *ratio;
                 }
             }
-            Operation::Buy { .. } => {
+            Operation::Buy { amount, .. } => {
                 let Some(ledger) = matcher.get_ledger_mut(&sell_tx.ticker) else {
                     continue;
                 };
@@ -83,6 +105,19 @@ pub fn match_bed_and_breakfast(
                 if available_at_buy_time <= Decimal::ZERO {
                     continue;
                 }
+
+                // Reserve shares for Same Day matching on this acquisition date.
+                // Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1)).
+                // Cap reservation at acquisition quantity to handle edge case where
+                // same-day sells exceed buys.
+                let same_day_sells =
+                    same_day_disposal_quantity(tx.date, &tx.ticker, all_transactions);
+                let reservation = same_day_sells.min(*amount);
+                let available_after_reservation = available_at_buy_time - reservation;
+                if available_after_reservation <= Decimal::ZERO {
+                    continue;
+                }
+                let available_at_buy_time = available_after_reservation;
 
                 // Convert to sell-time equivalent (accounting for splits between sell and buy)
                 let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;

@@ -1,0 +1,53 @@
+# Test: SameDayReservation
+# Purpose: Tests Same Day reservation priority over B&B per TCGA92/S106A(9)
+# Rules Tested: Same Day, Bed & Breakfast, Section 104 Pooling
+# Complexity: Medium
+# Key Features: B&B from earlier disposal competes with Same Day match
+# Expected Outcome: Same Day fully satisfied before B&B consumes shares
+#
+# Verification Status: Verified
+# Verified By: Cross-reference with cgt-calc behavior and TCGA92/S106A(9)
+# Verification Notes:
+#   Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1))
+#
+#   Scenario:
+#   - Day 1 (Feb 1): SELL 100 shares (could B&B to Day 2)
+#   - Day 2 (Feb 2): BUY 80 shares, SELL 50 shares (Same Day match)
+#
+#   Without reservation (WRONG):
+#     Feb 1 B&B takes all 80 from Feb 2, Feb 2 Same Day gets 0
+#
+#   With reservation (CORRECT):
+#     Feb 2 Same Day reserves 50 from the 80 bought
+#     Feb 1 B&B can only take 30 (80 - 50 reserved)
+#     Feb 1 remaining 70 matches from S104 pool
+#
+#   Calculations:
+#     Initial pool: 200 @ £10 + £0 = £2000, avg £10/share
+#
+#     Feb 1 SELL 100 @ £12:
+#       - 30 shares B&B to Feb 2 @ £11 = £330 cost
+#         Proceeds: 30 × £12 = £360, Gain: £30
+#       - 70 shares from S104 @ £10 = £700 cost
+#         Proceeds: 70 × £12 = £840, Gain: £140
+#       Pool after: 130 shares, £1300 cost
+#
+#     Feb 2 SELL 50 @ £11.50:
+#       - 50 shares Same Day to Feb 2 @ £11 = £550 cost
+#         Proceeds: 50 × £11.50 = £575, Gain: £25
+#       Pool after: 160 shares (130 + 80 - 50 = 160), £1850 cost (£1300 + £880 - £550)
+#       Wait, that's not right. Let me recalculate:
+#       Feb 2 BUY adds 80 @ £11 = £880 to pool AFTER same-day/B&B matching
+#       Remaining from Feb 2 buy after Same Day (50) and B&B (30): 0 shares to pool
+#       Pool stays: 130 shares, £1300 cost
+
+2024-01-01 BUY SNAP 200 @ 10.00 GBP
+
+# Day 1: Sell 100 shares - should match:
+# - 30 via B&B to Feb 2 (80 bought - 50 reserved for Same Day = 30 available)
+# - 70 via S104 pool
+2024-02-01 SELL SNAP 100 @ 12.00 GBP
+
+# Day 2: Buy 80, Sell 50 - Same Day should match all 50
+2024-02-02 BUY SNAP 80 @ 11.00 GBP
+2024-02-02 SELL SNAP 50 @ 11.50 GBP

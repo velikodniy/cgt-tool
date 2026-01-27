@@ -102,6 +102,25 @@ If you sell shares and buy the same type of shares within the following 30 days,
 - Takes priority over Section 104 pool, but not over Same Day rule
 - Non-UK residents at time of purchase may be excluded
 
+### Same Day Priority Over B&B
+
+**HMRC Reference:** TCGA92/S106A(9), S105(1)
+
+When multiple disposals compete for the same acquisition, Same Day matching has absolute priority over B&B matching from earlier disposals. Per TCGA92/S106A(9), the B&B identification rules are "subject to subsection (1) of section 105" (the Same Day rule).
+
+**Example: Competing Claims**
+
+- 1 February: Sell 100 shares (disposal D1, could B&B to 2 February)
+- 2 February: Buy 80 shares, Sell 50 shares (disposal D2, Same Day match)
+
+Without priority rules, D1 could consume all 80 shares via B&B, leaving D2 with nothing for Same Day.
+
+**Correct Treatment:**
+
+D2's Same Day claim (50 shares) is reserved first. D1's B&B can only use the remaining 30 shares (80 - 50). D1's remaining 70 shares match against the Section 104 pool.
+
+This ensures Same Day matching is always fully satisfied before B&B from earlier disposals can consume shares.
+
 ### Example 1: Basic Bed & Breakfast
 
 **Transactions:**
