@@ -24,125 +24,62 @@ mod decimal_money {
     }
 }
 
-/// Custom deserializer for Operation that handles case-insensitive action names.
-mod operation_serde {
-    use super::{CurrencyAmount, Operation};
-    use rust_decimal::Decimal;
-    use serde::Deserialize;
+/// Deserialize Operation with case-insensitive action names.
+fn deserialize_operation_value(
+    mut value: serde_json::Value,
+) -> Result<Operation<CurrencyAmount>, String> {
+    normalize_operation_action(&mut value)?;
+    let operation: Operation<CurrencyAmount> =
+        serde_json::from_value(value).map_err(|e| format!("invalid transaction: {e}"))?;
+    validate_operation(&operation)?;
+    Ok(operation)
+}
 
-    /// Helper struct for deserializing Operation with case-insensitive action.
-    #[derive(Deserialize)]
-    struct RawOperation {
-        action: String,
-        #[serde(default)]
-        amount: Option<Decimal>,
-        #[serde(default)]
-        price: Option<CurrencyAmount>,
-        #[serde(default)]
-        fees: Option<CurrencyAmount>,
-        #[serde(default)]
-        total_value: Option<CurrencyAmount>,
-        #[serde(default)]
-        tax_paid: Option<CurrencyAmount>,
-        #[serde(default)]
-        ratio: Option<Decimal>,
+fn normalize_operation_action(value: &mut serde_json::Value) -> Result<(), String> {
+    let Some(action) = value.get_mut("action") else {
+        return Err("invalid transaction: missing 'action' field".to_string());
+    };
+    let Some(action_str) = action.as_str() else {
+        return Err("invalid transaction: 'action' must be a string".to_string());
+    };
+    let normalized = match action_str.to_uppercase().as_str() {
+        "CAP_RETURN" => "CAPRETURN".to_string(),
+        other => other.to_string(),
+    };
+    *action = serde_json::Value::String(normalized);
+    Ok(())
+}
+
+fn validate_operation(operation: &Operation<CurrencyAmount>) -> Result<(), String> {
+    match operation {
+        Operation::Buy { amount, .. } => validate_positive(*amount, "amount", "BUY"),
+        Operation::Sell { amount, .. } => validate_positive(*amount, "amount", "SELL"),
+        Operation::Dividend { amount, .. } => validate_positive(*amount, "amount", "DIVIDEND"),
+        Operation::CapReturn { amount, .. } => validate_positive(*amount, "amount", "CAPRETURN"),
+        Operation::Split { ratio } => validate_positive_ratio(*ratio, "SPLIT"),
+        Operation::Unsplit { ratio } => validate_positive_ratio(*ratio, "UNSPLIT"),
     }
+}
 
-    /// Validate that an amount is positive.
-    fn validate_positive(amount: Decimal, field: &str, action: &str) -> Result<Decimal, String> {
-        if amount <= Decimal::ZERO {
-            return Err(format!(
-                "{action} action: '{field}' must be positive (got {amount}). \
-                 Negative amounts are not supported."
-            ));
-        }
-        Ok(amount)
+/// Validate that an amount is positive.
+fn validate_positive(amount: Decimal, field: &str, action: &str) -> Result<(), String> {
+    if amount <= Decimal::ZERO {
+        return Err(format!(
+            "{action} action: '{field}' must be positive (got {amount}). \
+             Negative amounts are not supported."
+        ));
     }
+    Ok(())
+}
 
-    /// Validate that a ratio is positive.
-    fn validate_positive_ratio(ratio: Decimal, action: &str) -> Result<Decimal, String> {
-        if ratio <= Decimal::ZERO {
-            return Err(format!(
-                "{action} action: 'ratio' must be positive (got {ratio})"
-            ));
-        }
-        Ok(ratio)
+/// Validate that a ratio is positive.
+fn validate_positive_ratio(ratio: Decimal, action: &str) -> Result<(), String> {
+    if ratio <= Decimal::ZERO {
+        return Err(format!(
+            "{action} action: 'ratio' must be positive (got {ratio})"
+        ));
     }
-
-    pub fn deserialize(value: serde_json::Value) -> Result<Operation<CurrencyAmount>, String> {
-        let raw: RawOperation =
-            serde_json::from_value(value).map_err(|e| format!("invalid transaction: {e}"))?;
-        let action = raw.action.to_uppercase();
-
-        match action.as_str() {
-            "BUY" => {
-                let amount = raw.amount.ok_or("BUY action requires 'amount' field")?;
-                let amount = validate_positive(amount, "amount", "BUY")?;
-                let price = raw.price.ok_or("BUY action requires 'price' field")?;
-                Ok(Operation::Buy {
-                    amount,
-                    price,
-                    fees: raw.fees.unwrap_or_default(),
-                })
-            }
-            "SELL" => {
-                let amount = raw.amount.ok_or("SELL action requires 'amount' field")?;
-                let amount = validate_positive(amount, "amount", "SELL")?;
-                let price = raw.price.ok_or("SELL action requires 'price' field")?;
-                Ok(Operation::Sell {
-                    amount,
-                    price,
-                    fees: raw.fees.unwrap_or_default(),
-                })
-            }
-            "DIVIDEND" => {
-                let amount = raw
-                    .amount
-                    .ok_or("DIVIDEND action requires 'amount' field")?;
-                let amount = validate_positive(amount, "amount", "DIVIDEND")?;
-                let total_value = raw
-                    .total_value
-                    .ok_or("DIVIDEND action requires 'total_value' field")?;
-                Ok(Operation::Dividend {
-                    amount,
-                    total_value,
-                    tax_paid: raw.tax_paid.unwrap_or_default(),
-                })
-            }
-            "CAPRETURN" | "CAP_RETURN" => {
-                let amount = raw
-                    .amount
-                    .ok_or("CAPRETURN action requires 'amount' field")?;
-                let amount = validate_positive(amount, "amount", "CAPRETURN")?;
-                let total_value = raw
-                    .total_value
-                    .ok_or("CAPRETURN action requires 'total_value' field")?;
-                Ok(Operation::CapReturn {
-                    amount,
-                    total_value,
-                    fees: raw.fees.unwrap_or_default(),
-                })
-            }
-            "SPLIT" => {
-                let ratio = raw.ratio.ok_or("SPLIT action requires 'ratio' field")?;
-                let ratio = validate_positive_ratio(ratio, "SPLIT")?;
-                Ok(Operation::Split { ratio })
-            }
-            "UNSPLIT" => {
-                let ratio = raw.ratio.ok_or("UNSPLIT action requires 'ratio' field")?;
-                let ratio = validate_positive_ratio(ratio, "UNSPLIT")?;
-                Ok(Operation::Unsplit { ratio })
-            }
-            _ => {
-                let valid_actions = ["BUY", "SELL", "DIVIDEND", "CAPRETURN", "SPLIT", "UNSPLIT"];
-                Err(format!(
-                    "invalid action '{}'. Valid actions: {}",
-                    raw.action,
-                    valid_actions.join(", ")
-                ))
-            }
-        }
-    }
+    Ok(())
 }
 
 /// A validated UK tax year identifier (April 6 to April 5).
@@ -151,13 +88,16 @@ mod operation_serde {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TaxPeriod(u16);
 
+const MIN_TAX_YEAR: u16 = 1900;
+const MAX_TAX_YEAR: u16 = 2100;
+
 impl TaxPeriod {
     /// Create a new TaxPeriod from a start year.
     ///
     /// # Errors
-    /// Returns `CgtError::InvalidTaxYear` if the year is outside the range 1900-2100.
+    /// Returns `CgtError::InvalidTaxYear` if the year is outside the valid range.
     pub fn new(start_year: u16) -> Result<Self, CgtError> {
-        if !(1900..=2100).contains(&start_year) {
+        if !(MIN_TAX_YEAR..=MAX_TAX_YEAR).contains(&start_year) {
             return Err(CgtError::InvalidTaxYear(start_year));
         }
         Ok(Self(start_year))
@@ -286,7 +226,7 @@ impl<'de> Deserialize<'de> for Transaction {
 
         let raw = RawTransaction::deserialize(deserializer)?;
         let operation: Operation<CurrencyAmount> =
-            operation_serde::deserialize(raw.operation).map_err(serde::de::Error::custom)?;
+            deserialize_operation_value(raw.operation).map_err(serde::de::Error::custom)?;
 
         Ok(Transaction {
             date: raw.date,
