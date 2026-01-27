@@ -35,10 +35,7 @@
 #     Feb 2 SELL 50 @ £11.50:
 #       - 50 shares Same Day to Feb 2 @ £11 = £550 cost
 #         Proceeds: 50 × £11.50 = £575, Gain: £25
-#       Pool after: 160 shares (130 + 80 - 50 = 160), £1850 cost (£1300 + £880 - £550)
-#       Wait, that's not right. Let me recalculate:
-#       Feb 2 BUY adds 80 @ £11 = £880 to pool AFTER same-day/B&B matching
-#       Remaining from Feb 2 buy after Same Day (50) and B&B (30): 0 shares to pool
+#       Feb 2 BUY is fully matched (50 Same Day + 30 B&B), so it adds 0 shares to the S104 pool
 #       Pool stays: 130 shares, £1300 cost
 
 2024-01-01 BUY SNAP 200 @ 10.00 GBP

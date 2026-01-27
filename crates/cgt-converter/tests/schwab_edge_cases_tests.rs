@@ -351,13 +351,8 @@ fn test_unsupported_transaction_as_comment() {
     // Should have comments for skipped transactions
     assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
     assert!(result.cgt_content.contains("# SKIPPED: Credit Interest"));
-    // JSON parsing returns 3 transactions, but convert skips 2
-    // Wait, the logic in schab/mod.rs says:
-    // for txn in transactions { match txn.action ... }
-    // If it's a Buy, it pushes to cgt_transactions (no warning)
-    // If it's skipped, it pushes Comment AND warning.
-    // So skipped_count = warnings.len() = 2.
-    // No warning for missing awards file when no RSUs are present.
+    // skipped_count equals the number of warnings for skipped transactions.
+    // Buys do not produce warnings, and missing awards is not warned when no RSUs are present.
     assert_eq!(result.skipped_count, 2);
 }
 

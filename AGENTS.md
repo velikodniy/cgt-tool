@@ -91,6 +91,7 @@ When modifying DSL grammar or transaction formats:
 - Remove or modify tests without proving incorrectness
 - Commit code that fails `cargo clippy` or `cargo test`
 - Guess tax calculations—verify against `docs/tax-rules.md`
+- Include internal monologue or self-dialogue in comments; comments must state facts, constraints, or rationale
 
 ## Commits
 

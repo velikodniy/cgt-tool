@@ -692,7 +692,7 @@ pub async fn run_server() -> Result<(), McpServerError> {
         .await
         .map_err(|e| McpServerError::Service(e.to_string()))?;
 
-    // Wait for either the service to complete or a shutdown signal
+    // Block until the service completes or a shutdown signal is received.
     tokio::select! {
         result = service.waiting() => {
             // Service ended (stdin closed, error, etc.)
@@ -718,7 +718,7 @@ pub async fn run_server() -> Result<(), McpServerError> {
     Ok(())
 }
 
-/// Wait for a shutdown signal (SIGTERM, SIGINT on Unix; Ctrl+C on Windows).
+/// Block until a shutdown signal is received (SIGTERM, SIGINT on Unix; Ctrl+C on Windows).
 async fn shutdown_signal() {
     #[cfg(unix)]
     {

@@ -361,9 +361,8 @@ mod tests {
         let lookup = awards.get_fmv(&vest_date, "XYZZ").unwrap();
         assert_eq!(lookup.fmv, dec!(125.50));
 
-        // Parent date query should fail (no 7-day lookback covers 04/28 -> 04/25)
-        // Actually 04/28 is only 3 days after 04/25, so lookback would find it
-        // Use a date outside lookback range to verify storage
+        // A query by the parent date (04/28) can still resolve via the 7-day lookback.
+        // Use a date outside the lookback range to verify vest-date keyed storage.
         let outside_lookback = NaiveDate::from_ymd_opt(2023, 5, 5).unwrap();
         assert!(awards.get_fmv(&outside_lookback, "XYZZ").is_err());
 

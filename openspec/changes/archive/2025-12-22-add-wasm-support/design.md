@@ -211,7 +211,7 @@ Not applicable—this is a new capability, no migration needed.
 
 3. **Future FX rate optimization:** When should we optimize rate loading (compression, lazy-load, binary format)?
 
-   - **Answer (to be decided):** Wait for actual binary size measurement and user feedback; create separate change proposal if needed.
+   - **Answer (to be decided):** Defer until we have binary size measurements and user feedback; create a separate change proposal if needed.
 
 4. **Future npm publishing:** Under what conditions should we publish to npm?
 
