@@ -1,25 +1,3 @@
-<!-- OPENSPEC:START -->
-
-# OpenSpec Instructions
-
-These instructions are for AI assistants working in this project.
-
-Always open `@/openspec/AGENTS.md` when the request:
-
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
-
-Use `@/openspec/AGENTS.md` to learn:
-
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
-
-Keep this managed block so 'openspec update' can refresh the instructions.
-
-<!-- OPENSPEC:END -->
-
 # CGT Tool - Agent Instructions
 
 Capital Gains Tax calculator for UK assets implementing HMRC share matching rules.
@@ -62,6 +40,9 @@ cargo llvm-cov --html      # HTML report in target/llvm-cov/html/
 
 # Cross-validation against external calculators
 python3 scripts/cross-validate.py tests/inputs/*.cgt
+
+# Download HMRC FX rates
+./scripts/download-fx-rates.sh
 ```
 
 ## Structure
@@ -78,15 +59,20 @@ crates/
 └── cgt-converter/         # Broker CSV converters
 web/                       # WASM demo web interface
 tests/
-├── inputs/                # .cgt test files
-├── json/                  # Expected JSON
-└── plain/                 # Expected plain text
+├── inputs/                # .cgt test files (fixtures)
+├── json/                  # Expected JSON (golden files)
+└── plain/                 # Expected plain text (golden files)
+scripts/
+└── download-fx-rates.sh   # Download HMRC exchange rates
 ```
 
 ## Rules
 
 - Rust 2024 edition, `rust_decimal` for money, `chrono` for dates
 - `pest` grammar for DSL parsing (`cgt-core/src/parser.pest`)
+- Key deps: `thiserror` (lib errors), `anyhow` (CLI errors), `serde` (serialization)
+- IO-free core: calculation logic has no IO, is WASM-friendly
+- Bundled FX rates: HMRC rates embedded at compile time; runtime override via `--fx-folder`
 - Unix newlines, standard Rust naming
 - No long separator lines in comments (e.g., `// ====...` or `// ----...`)
 
