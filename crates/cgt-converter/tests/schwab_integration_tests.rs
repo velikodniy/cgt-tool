@@ -65,6 +65,39 @@ fn test_rsu_vesting_with_awards() {
 }
 
 #[test]
+fn test_rsu_vesting_uses_vest_fields() {
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "04/28/2023",
+                "Action": "Stock Plan Activity",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "10",
+                "Price": null,
+                "Fees & Comm": null,
+                "Amount": null
+            }
+        ]
+    }"#;
+    let awards = include_str!("fixtures/schwab/awards_vest.json");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: Some(awards.to_string()),
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert!(
+        result
+            .cgt_content
+            .contains("2023-04-25 BUY XYZZ 10 @ 125.50 USD")
+    );
+}
+
+#[test]
 fn test_rsu_vesting_without_awards_fails() {
     let json = include_str!("fixtures/schwab/transactions_rsu.json");
 

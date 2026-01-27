@@ -241,6 +241,10 @@ For CGT purposes, the **vest date** is the acquisition date, not the settlement 
 - **CG14250**: "If the contract is conditional the date of disposal is the date all of the conditions are satisfied"
 - **ERSM20192**: "An RSU award will vest when all the conditions laid down to be satisfied before the stock or shares may be issued have been met"
 
+For RSU acquisitions, the allowable cost is the **market value at vest** (the value used for income tax at vest). The awards data should therefore supply the vest-date FMV (e.g., `VestFairMarketValue`) rather than a settlement-date value.
+
+Awards exports may also include non-vesting cash actions (e.g., wire transfers or tax withholdings) that do not provide FMV details. These entries do not affect CGT calculations and are ignored for vesting FMV lookups.
+
 This distinction matters for share matching rules:
 
 - **Same Day Rule**: Uses the vest date for matching

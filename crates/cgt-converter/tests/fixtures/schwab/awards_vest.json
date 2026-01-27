@@ -1,0 +1,11 @@
+{
+  "Transactions": [
+    {
+      "Date": "04/28/2023",
+      "Symbol": "XYZZ",
+      "TransactionDetails": [
+        {"Details": {"VestDate": "04/25/2023", "VestFairMarketValue": "$125.50"}}
+      ]
+    }
+  ]
+}

@@ -69,6 +69,8 @@ struct AwardsJson {
 struct AwardTransaction {
     #[serde(rename = "Date")]
     date: String,
+    #[serde(rename = "Action")]
+    action: Option<String>,
     #[serde(rename = "Symbol")]
     symbol: String,
     #[serde(rename = "TransactionDetails")]
@@ -84,7 +86,72 @@ struct AwardTransactionDetails {
 #[derive(Debug, Deserialize)]
 struct AwardDetails {
     #[serde(rename = "FairMarketValuePrice")]
-    fair_market_value_price: String,
+    fair_market_value_price: Option<String>,
+    #[serde(rename = "VestDate")]
+    vest_date: Option<String>,
+    #[serde(rename = "VestFairMarketValue")]
+    vest_fair_market_value: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AwardAction {
+    Vesting,
+    NonVesting,
+    Unknown,
+}
+
+fn classify_award_action(action: Option<&str>) -> AwardAction {
+    match action.map(str::trim) {
+        Some("Deposit") | Some("Lapse") | Some("Sale") | Some("Forced Quick Sell") => {
+            AwardAction::Vesting
+        }
+        Some("Wire Transfer")
+        | Some("Tax Withholding")
+        | Some("Tax Reversal")
+        | Some("Forced Disbursement") => AwardAction::NonVesting,
+        Some(_) | None => AwardAction::Unknown,
+    }
+}
+
+fn parse_award_date(date_str: &str) -> Result<NaiveDate, ConvertError> {
+    NaiveDate::parse_from_str(date_str, "%m/%d/%Y")
+        .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))
+}
+
+fn parse_optional_price(price_str: &str) -> Result<Option<Decimal>, ConvertError> {
+    let trimmed = price_str.trim();
+    if trimmed.is_empty() || trimmed == "--" {
+        return Ok(None);
+    }
+
+    let cleaned = trimmed.replace(['$', ','], "");
+    cleaned
+        .parse::<Decimal>()
+        .map(Some)
+        .map_err(|_| ConvertError::InvalidAmount(price_str.to_string()))
+}
+
+fn extract_award_fmv(
+    details: &AwardDetails,
+    parent_date: NaiveDate,
+) -> Result<(Option<NaiveDate>, Option<Decimal>, bool), ConvertError> {
+    if let Some(vest_fmv_str) = details.vest_fair_market_value.as_deref() {
+        let vest_date = details
+            .vest_date
+            .as_deref()
+            .map(parse_award_date)
+            .transpose()?
+            .unwrap_or(parent_date);
+        let fmv = parse_optional_price(vest_fmv_str)?;
+        return Ok((Some(vest_date), fmv, true));
+    }
+
+    if let Some(fmv_str) = details.fair_market_value_price.as_deref() {
+        let fmv = parse_optional_price(fmv_str)?;
+        return Ok((Some(parent_date), fmv, false));
+    }
+
+    Ok((None, None, false))
 }
 
 /// Parse Schwab equity awards JSON
@@ -94,26 +161,47 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
     let mut fmv_map = HashMap::new();
 
     for award in awards_json.transactions {
-        let date = NaiveDate::parse_from_str(&award.date, "%m/%d/%Y")
-            .map_err(|_| ConvertError::InvalidDate(award.date.clone()))?;
+        let parent_date = parse_award_date(&award.date)?;
+        let action_kind = classify_award_action(award.action.as_deref());
 
-        let details = award.transaction_details.first().ok_or_else(|| {
-            ConvertError::InvalidTransaction(format!(
-                "Award entry missing TransactionDetails for {} on {}",
-                award.symbol, award.date
-            ))
-        })?;
+        if award.transaction_details.is_empty() {
+            if action_kind == AwardAction::NonVesting {
+                continue;
+            }
 
-        let price_str = details
-            .details
-            .fair_market_value_price
-            .trim()
-            .replace(['$', ','], "");
-        let price = price_str.parse::<Decimal>().map_err(|_| {
-            ConvertError::InvalidAmount(details.details.fair_market_value_price.clone())
-        })?;
+            let action_label = award
+                .action
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .unwrap_or("Unknown");
+            return Err(ConvertError::InvalidTransaction(format!(
+                "Award entry missing TransactionDetails for {} on {} (action: {})",
+                award.symbol, award.date, action_label
+            )));
+        }
+        let symbol_upper = award.symbol.to_uppercase();
+        let mut fallback: Option<(NaiveDate, Decimal)> = None;
+        let mut inserted = false;
 
-        fmv_map.insert((award.symbol.to_uppercase(), date), price);
+        for detail in &award.transaction_details {
+            let (date, fmv, is_vest) = extract_award_fmv(&detail.details, parent_date)?;
+            if let (Some(date), Some(fmv)) = (date, fmv) {
+                if is_vest {
+                    // Insert all vest FMVs found (multiple grants may vest on different dates)
+                    fmv_map.insert((symbol_upper.clone(), date), fmv);
+                    inserted = true;
+                }
+
+                if fallback.is_none() {
+                    fallback = Some((date, fmv));
+                }
+            }
+        }
+
+        if !inserted && let Some((date, fmv)) = fallback {
+            fmv_map.insert((symbol_upper, date), fmv);
+        }
     }
 
     Ok(AwardsData { fmv_map })
@@ -186,17 +274,29 @@ mod tests {
     }
 
     #[test]
-    fn test_json_missing_transaction_details() {
+    fn test_wire_transfer_with_empty_details_accepted() {
         let json = r#"{"Transactions": [
-            {"Date": "04/25/2023", "Symbol": "XYZZ", "TransactionDetails": []}
+            {"Date": "04/25/2023", "Action": "Wire Transfer", "Symbol": "XYZZ", "TransactionDetails": []}
+        ]}"#;
+
+        let awards = parse_awards_json(json).unwrap();
+        let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+        let result = awards.get_fmv(&date, "XYZZ");
+
+        assert!(matches!(
+            result,
+            Err(ConvertError::MissingFairMarketValue { .. })
+        ));
+    }
+
+    #[test]
+    fn test_unknown_action_missing_transaction_details_fails() {
+        let json = r#"{"Transactions": [
+            {"Date": "04/25/2023", "Action": "Mystery Action", "Symbol": "XYZZ", "TransactionDetails": []}
         ]}"#;
 
         let result = parse_awards_json(json);
-        assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ConvertError::InvalidTransaction(_)
-        ));
+        assert!(matches!(result, Err(ConvertError::InvalidTransaction(_))));
     }
 
     #[test]
@@ -215,6 +315,116 @@ mod tests {
         assert_eq!(awards.get_fmv(&date, "B").unwrap().fmv, dec!(125.00));
         assert_eq!(awards.get_fmv(&date, "C").unwrap().fmv, dec!(125.6445));
         assert_eq!(awards.get_fmv(&date, "D").unwrap().fmv, dec!(0.50));
+    }
+
+    #[test]
+    fn test_parse_awards_json_with_vest_fields() {
+        let json = r#"{
+            "Transactions": [
+                {
+                    "Date": "04/28/2023",
+                    "Symbol": "XYZZ",
+                    "TransactionDetails": [
+                        {"Details": {"VestDate": "04/25/2023", "VestFairMarketValue": "$125.50"}}
+                    ]
+                }
+            ]
+        }"#;
+
+        let awards = parse_awards_json(json).unwrap();
+        let vest_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+
+        // Query directly by vest date (not settlement date) to verify vest field extraction
+        let lookup = awards.get_fmv(&vest_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.50));
+        assert_eq!(lookup.vest_date, vest_date);
+    }
+
+    #[test]
+    fn test_vest_fields_stored_by_vest_date_not_parent_date() {
+        let json = r#"{
+            "Transactions": [
+                {
+                    "Date": "04/28/2023",
+                    "Symbol": "XYZZ",
+                    "TransactionDetails": [
+                        {"Details": {"VestDate": "04/25/2023", "VestFairMarketValue": "$125.50"}}
+                    ]
+                }
+            ]
+        }"#;
+
+        let awards = parse_awards_json(json).unwrap();
+        let vest_date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+
+        // FMV is stored under vest date, not parent date (04/28)
+        let lookup = awards.get_fmv(&vest_date, "XYZZ").unwrap();
+        assert_eq!(lookup.fmv, dec!(125.50));
+
+        // Parent date query should fail (no 7-day lookback covers 04/28 -> 04/25)
+        // Actually 04/28 is only 3 days after 04/25, so lookback would find it
+        // Use a date outside lookback range to verify storage
+        let outside_lookback = NaiveDate::from_ymd_opt(2023, 5, 5).unwrap();
+        assert!(awards.get_fmv(&outside_lookback, "XYZZ").is_err());
+
+        // But within lookback from vest date should work
+        let within_lookback = NaiveDate::from_ymd_opt(2023, 5, 1).unwrap();
+        let lookup2 = awards.get_fmv(&within_lookback, "XYZZ").unwrap();
+        assert_eq!(lookup2.vest_date, vest_date);
+    }
+
+    #[test]
+    fn test_missing_fmv_in_details_returns_missing_error() {
+        let json = r#"{
+            "Transactions": [
+                {
+                    "Date": "04/25/2023",
+                    "Symbol": "XYZZ",
+                    "TransactionDetails": [
+                        {"Details": {}}
+                    ]
+                }
+            ]
+        }"#;
+
+        let awards = parse_awards_json(json).unwrap();
+        let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+        let result = awards.get_fmv(&date, "XYZZ");
+
+        assert!(matches!(
+            result,
+            Err(ConvertError::MissingFairMarketValue { .. })
+        ));
+    }
+
+    #[test]
+    fn test_multiple_vest_entries_all_inserted() {
+        // Multiple TransactionDetails with different vest dates should all be inserted
+        let json = r#"{
+            "Transactions": [
+                {
+                    "Date": "04/28/2023",
+                    "Symbol": "XYZZ",
+                    "TransactionDetails": [
+                        {"Details": {"VestDate": "04/20/2023", "VestFairMarketValue": "$100.00"}},
+                        {"Details": {"VestDate": "04/25/2023", "VestFairMarketValue": "$125.50"}}
+                    ]
+                }
+            ]
+        }"#;
+
+        let awards = parse_awards_json(json).unwrap();
+        let date1 = NaiveDate::from_ymd_opt(2023, 4, 20).unwrap();
+        let date2 = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+
+        // Both vest entries should be accessible
+        let lookup1 = awards.get_fmv(&date1, "XYZZ").unwrap();
+        assert_eq!(lookup1.fmv, dec!(100.00));
+        assert_eq!(lookup1.vest_date, date1);
+
+        let lookup2 = awards.get_fmv(&date2, "XYZZ").unwrap();
+        assert_eq!(lookup2.fmv, dec!(125.50));
+        assert_eq!(lookup2.vest_date, date2);
     }
 
     #[test]
