@@ -87,10 +87,20 @@ fn main() -> Result<()> {
 
             match format {
                 OutputFormat::Plain => {
-                    print!("{}", cgt_formatter_plain::format(&report, &transactions)?);
+                    let content = cgt_formatter_plain::format(&report, &transactions)?;
+                    if let Some(path) = output {
+                        fs::write(path, content)?;
+                    } else {
+                        print!("{}", content);
+                    }
                 }
                 OutputFormat::Json => {
-                    println!("{}", serde_json::to_string_pretty(&report)?);
+                    let content = serde_json::to_string_pretty(&report)?;
+                    if let Some(path) = output {
+                        fs::write(path, content)?;
+                    } else {
+                        println!("{}", content);
+                    }
                 }
                 OutputFormat::Pdf => {
                     let pdf_bytes = cgt_formatter_pdf::format(&report, &transactions)?;
