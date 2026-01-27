@@ -1,20 +1,20 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  UK Capital Gains Tax calculator for share disposals, implementing HMRC's three-tier matching rules (Same Day, Bed & Breakfast, Section 104 pooling).
+  Built in Rust 2024 with strict no-panic policy, rust_decimal for precision, and a modular crate architecture (cgt-core, cgt-cli, cgt-mcp, cgt-money, formatters, converters).
+  The codebase prioritizes mathematical correctness over convenience—every calculation must be verifiable against HMRC guidance in docs/tax-rules.md, and test cases use golden-file comparisons against a reference calculator.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Reference specific HMRC manual sections (e.g., CG51560) when proposing tax logic changes
+    - Include a "Verification" section explaining how correctness will be validated
+    - Consider impact on all three matching rules, not just the one being changed
+  specs:
+    - Define acceptance criteria as data-driven test cases (.cgt input → expected .json output)
+    - Specify error handling explicitly—no implicit panics or unwraps
+    - Include currency and FX rate considerations for multi-currency scenarios
+  tasks:
+    - Each task must pass `cargo fmt && cargo clippy && cargo test` independently
+    - Tax calculation tasks require adding or updating golden-file test cases
+    - Mark tasks that touch matcher logic as requiring cross-verification with cgtcalc
