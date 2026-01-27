@@ -4,11 +4,12 @@
 //! Per TCGA92/S106A(9), B&B matching is subject to the Same Day rule in S105(1),
 //! meaning Same Day matching has priority when both rules compete for the same acquisition.
 
-use super::{MatchResult, Matcher};
+use super::MatchResult;
 use crate::error::CgtError;
 use crate::models::{GbpTransaction, MatchRule, Operation};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
+use std::collections::HashMap;
 
 /// Number of days for B&B matching window.
 const BNB_WINDOW_DAYS: i64 = 30;
@@ -39,10 +40,12 @@ fn same_day_disposal_quantity(
 /// This function handles splits/unsplits that occur between the sell date
 /// and the B&B acquisition date by adjusting quantities accordingly.
 pub fn match_bed_and_breakfast(
-    matcher: &mut Matcher,
     sell_tx: &GbpTransaction,
+    sell_idx: usize,
     remaining: &mut Decimal,
     all_transactions: &[GbpTransaction],
+    cost_offsets: &[Decimal],
+    future_consumption: &mut HashMap<usize, Decimal>,
 ) -> Result<Vec<MatchResult>, CgtError> {
     let mut results = Vec::new();
 
@@ -64,7 +67,7 @@ pub fn match_bed_and_breakfast(
     let mut cumulative_ratio_effect = Decimal::ONE;
 
     // Find transactions after sell date, within B&B window, for same ticker
-    for tx in all_transactions {
+    for (idx, tx) in all_transactions.iter().enumerate().skip(sell_idx + 1) {
         if *remaining <= Decimal::ZERO {
             break;
         }
@@ -95,29 +98,26 @@ pub fn match_bed_and_breakfast(
                     cumulative_ratio_effect /= *ratio;
                 }
             }
-            Operation::Buy { amount, .. } => {
-                let Some(ledger) = matcher.get_ledger_mut(&sell_tx.ticker) else {
-                    continue;
-                };
-
-                // Get available shares at buy time (not yet consumed by same-day or earlier B&B)
-                let available_at_buy_time = ledger.remaining_for_date(tx.date);
-                if available_at_buy_time <= Decimal::ZERO {
-                    continue;
-                }
-
+            Operation::Buy {
+                amount,
+                price,
+                fees,
+            } => {
                 // Reserve shares for Same Day matching on this acquisition date.
                 // Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1)).
                 // Cap reservation at acquisition quantity to handle edge case where
                 // same-day sells exceed buys.
                 let same_day_sells =
                     same_day_disposal_quantity(tx.date, &tx.ticker, all_transactions);
-                let reservation = same_day_sells.min(*amount);
-                let available_after_reservation = available_at_buy_time - reservation;
-                if available_after_reservation <= Decimal::ZERO {
+                let reserved_for_same_day = same_day_sells.min(*amount);
+                let already_reserved = future_consumption
+                    .get(&idx)
+                    .copied()
+                    .unwrap_or(Decimal::ZERO);
+                let available_at_buy_time = *amount - reserved_for_same_day - already_reserved;
+                if available_at_buy_time <= Decimal::ZERO {
                     continue;
                 }
-                let available_at_buy_time = available_after_reservation;
 
                 // Convert to sell-time equivalent (accounting for splits between sell and buy)
                 let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
@@ -129,7 +129,15 @@ pub fn match_bed_and_breakfast(
                 let matched_qty_at_buy_time = matched_qty_at_sell_time * cumulative_ratio_effect;
 
                 // Get cost for the matched quantity
-                let cost = ledger.consume_shares_on_date(tx.date, matched_qty_at_buy_time);
+                let total_cost = (*amount * *price)
+                    + *fees
+                    + cost_offsets.get(idx).copied().unwrap_or(Decimal::ZERO);
+                let unit_cost = if *amount != Decimal::ZERO {
+                    total_cost / *amount
+                } else {
+                    Decimal::ZERO
+                };
+                let cost = matched_qty_at_buy_time * unit_cost;
 
                 // Calculate proportional proceeds and fees based on sell-time quantity
                 let proportion = matched_qty_at_sell_time / *sell_amount;
@@ -152,6 +160,8 @@ pub fn match_bed_and_breakfast(
                 });
 
                 *remaining -= matched_qty_at_sell_time;
+                let reserved_entry = future_consumption.entry(idx).or_insert(Decimal::ZERO);
+                *reserved_entry += matched_qty_at_buy_time;
             }
             _ => {}
         }

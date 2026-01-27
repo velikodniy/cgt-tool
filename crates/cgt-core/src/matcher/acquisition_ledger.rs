@@ -1,6 +1,5 @@
 //! Acquisition ledger for tracking share purchases and their costs.
 
-use crate::models::{GbpTransaction, Operation};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
@@ -23,8 +22,25 @@ pub struct AcquisitionLot {
     pub cost_offset: Decimal,
     /// Amount consumed by Same Day / B&B matching
     pub consumed: Decimal,
+    /// Amount reserved for future B&B matches
+    pub reserved: Decimal,
     /// Amount moved to Section 104 pool
     pub in_pool: Decimal,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct AcquisitionExtras {
+    pub cost_offset: Decimal,
+    pub reserved: Decimal,
+}
+
+impl AcquisitionExtras {
+    pub fn new(cost_offset: Decimal, reserved: Decimal) -> Self {
+        Self {
+            cost_offset,
+            reserved,
+        }
+    }
 }
 
 impl AcquisitionLot {
@@ -35,6 +51,8 @@ impl AcquisitionLot {
         amount: Decimal,
         price: Decimal,
         expenses: Decimal,
+        cost_offset: Decimal,
+        reserved: Decimal,
     ) -> Self {
         Self {
             transaction_idx,
@@ -43,8 +61,9 @@ impl AcquisitionLot {
             remaining_amount: amount,
             price,
             expenses,
-            cost_offset: Decimal::ZERO,
+            cost_offset,
             consumed: Decimal::ZERO,
+            reserved,
             in_pool: Decimal::ZERO,
         }
     }
@@ -70,7 +89,12 @@ impl AcquisitionLot {
 
     /// Get available amount (not consumed by matching).
     pub fn available(&self) -> Decimal {
-        self.remaining_amount - self.consumed - self.in_pool
+        self.remaining_amount - self.consumed - self.reserved - self.in_pool
+    }
+
+    /// Get the amount held for corporate action adjustments.
+    pub fn held_for_adjustment(&self) -> Decimal {
+        self.remaining_amount - self.consumed
     }
 
     /// Consume shares for matching (Same Day or B&B).
@@ -105,6 +129,7 @@ impl AcquisitionLedger {
         amount: Decimal,
         price: Decimal,
         expenses: Decimal,
+        extras: AcquisitionExtras,
     ) {
         self.lots.push(AcquisitionLot::new(
             transaction_idx,
@@ -112,6 +137,8 @@ impl AcquisitionLedger {
             amount,
             price,
             expenses,
+            extras.cost_offset,
+            extras.reserved,
         ));
     }
 
@@ -153,144 +180,19 @@ impl AcquisitionLedger {
     /// The adjustment is apportioned based on remaining shares at the time of the event.
     /// For S104 pooling, all shares are fungible, so we apportion based on each lot's
     /// proportion of total holdings, not based on the event amount.
-    pub fn apply_cost_adjustment(
-        &mut self,
-        event_idx: usize,
-        event_date: NaiveDate,
-        _event_amount: Decimal,
-        adjustment: Decimal,
-        transactions: &[GbpTransaction],
-    ) {
-        // Calculate how much of each lot is left after sells before this event
-        let amounts_left: Vec<Decimal> = self
-            .lots
-            .iter()
-            .map(|lot| {
-                if lot.date >= event_date {
-                    return Decimal::ZERO;
-                }
-                self.calculate_remaining_at_event(lot, event_idx, transactions)
-            })
-            .collect();
-
-        // Total shares held at the time of the event
-        let total_held: Decimal = amounts_left.iter().sum();
+    pub fn apply_cost_adjustment(&mut self, adjustment: Decimal) {
+        let total_held: Decimal = self.lots.iter().map(|lot| lot.held_for_adjustment()).sum();
         if total_held == Decimal::ZERO {
             return;
         }
 
-        // Apportion the adjustment to lots based on their proportion of total holdings.
-        // For S104 pooling, all shares are fungible, so the adjustment is spread
-        // proportionally across all lots.
-        for (i, lot) in self.lots.iter_mut().enumerate() {
-            let amount_left = amounts_left[i];
-            if amount_left > Decimal::ZERO && lot.date < event_date {
-                let apportioned = adjustment * (amount_left / total_held);
+        for lot in &mut self.lots {
+            let held = lot.held_for_adjustment();
+            if held > Decimal::ZERO {
+                let apportioned = adjustment * (held / total_held);
                 lot.cost_offset += apportioned;
             }
         }
-    }
-
-    /// Calculate how much of a lot remains at the time of an event.
-    ///
-    /// This simulates CGT matching rules (Same Day → B&B → S104) for sells
-    /// that occurred before the event to determine how much of this lot
-    /// would still be held at event time.
-    ///
-    /// Per TCGA92/S105(1) and CG51560, the matching order is:
-    /// 1. Same Day - match against acquisitions on the same day
-    /// 2. B&B (30 days) - match against acquisitions within 30 days after the sale
-    /// 3. S104 Pool - match against earlier acquisitions
-    fn calculate_remaining_at_event(
-        &self,
-        lot: &AcquisitionLot,
-        event_idx: usize,
-        transactions: &[GbpTransaction],
-    ) -> Decimal {
-        let event_date = transactions
-            .get(event_idx)
-            .map(|t| t.date)
-            .unwrap_or(lot.date);
-
-        let mut remaining = lot.original_amount;
-
-        // Track amounts left in all lots (for matching simulation)
-        let mut lot_amounts: Vec<Decimal> = self.lots.iter().map(|l| l.original_amount).collect();
-
-        // Process sells chronologically that occurred BEFORE the event date
-        for (idx, tx) in transactions.iter().enumerate() {
-            if idx >= event_idx {
-                break;
-            }
-            // Only consider sells that happened BEFORE the event date (strictly less than)
-            if let Operation::Sell { amount, .. } = &tx.operation {
-                if tx.date >= event_date {
-                    continue;
-                }
-
-                let mut sell_remaining = *amount;
-
-                // 1. SAME DAY first (TCGA92/S105(1))
-                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
-                    if sell_remaining <= Decimal::ZERO {
-                        break;
-                    }
-                    // Can only match against acquisitions that happened before this sell
-                    if lot_entry.transaction_idx >= idx {
-                        continue;
-                    }
-                    if lot_entry.date == tx.date && lot_amounts[lot_idx] > Decimal::ZERO {
-                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
-                        lot_amounts[lot_idx] -= matched;
-                        sell_remaining -= matched;
-                    }
-                }
-
-                // 2. B&B: acquisitions within 30 days AFTER sell (TCGA92/S106A)
-                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
-                    if sell_remaining <= Decimal::ZERO {
-                        break;
-                    }
-                    // Can only match against acquisitions that happened before this sell
-                    if lot_entry.transaction_idx >= idx {
-                        continue;
-                    }
-                    let days = (lot_entry.date - tx.date).num_days();
-                    if days > 0 && days <= 30 && lot_amounts[lot_idx] > Decimal::ZERO {
-                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
-                        lot_amounts[lot_idx] -= matched;
-                        sell_remaining -= matched;
-                    }
-                }
-
-                // 3. S104: earlier acquisitions (FIFO among earlier lots)
-                for (lot_idx, lot_entry) in self.lots.iter().enumerate() {
-                    if sell_remaining <= Decimal::ZERO {
-                        break;
-                    }
-                    // Can only match against acquisitions that happened before this sell
-                    if lot_entry.transaction_idx >= idx {
-                        continue;
-                    }
-                    if lot_entry.date < tx.date && lot_amounts[lot_idx] > Decimal::ZERO {
-                        let matched = sell_remaining.min(lot_amounts[lot_idx]);
-                        lot_amounts[lot_idx] -= matched;
-                        sell_remaining -= matched;
-                    }
-                }
-            }
-        }
-
-        // Find this lot's remaining amount
-        if let Some(lot_idx) = self
-            .lots
-            .iter()
-            .position(|l| l.transaction_idx == lot.transaction_idx)
-        {
-            remaining = lot_amounts[lot_idx];
-        }
-
-        remaining.max(Decimal::ZERO)
     }
 
     /// Consume shares from lots on a specific date (for Same Day matching).
@@ -313,33 +215,20 @@ impl AcquisitionLedger {
         total_cost
     }
 
-    /// Consume shares from lots after a date (for B&B matching).
-    ///
-    /// Returns (consumed_amount, total_cost, acquisition_date).
-    pub fn consume_shares_after_date(
-        &mut self,
-        sell_date: NaiveDate,
-        amount: Decimal,
-        max_days: i64,
-    ) -> Option<(Decimal, Decimal, NaiveDate)> {
+    /// Consume shares from lots before a date (for cost-basis tracking).
+    pub fn consume_shares_before_date(&mut self, date: NaiveDate, amount: Decimal) {
         let mut remaining = amount;
 
         for lot in &mut self.lots {
-            let days_diff = (lot.date - sell_date).num_days();
-            if days_diff > 0 && days_diff <= max_days && remaining > Decimal::ZERO {
+            if lot.date < date && remaining > Decimal::ZERO {
                 let available = lot.available();
                 if available > Decimal::ZERO {
                     let to_consume = remaining.min(available);
-                    let cost = to_consume * lot.adjusted_unit_cost();
                     lot.consume(to_consume);
                     remaining -= to_consume;
-
-                    return Some((to_consume, cost, lot.date));
                 }
             }
         }
-
-        None
     }
 
     /// Move shares to Section 104 pool for a specific date.

@@ -8,7 +8,7 @@ mod bed_and_breakfast;
 mod same_day;
 mod section104;
 
-pub use acquisition_ledger::{AcquisitionLedger, AcquisitionLot};
+pub use acquisition_ledger::{AcquisitionExtras, AcquisitionLedger, AcquisitionLot};
 
 use crate::error::CgtError;
 use crate::models::{GbpTransaction, MatchRule, Operation, Section104Holding};
@@ -65,11 +65,11 @@ impl Matcher {
         // Preprocess: sort and merge same-day transactions
         let transactions = self.preprocess(transactions);
 
-        // Build acquisition ledgers with cost adjustments from corporate actions
-        self.build_ledgers(&transactions)?;
+        let cost_offsets = self.compute_cost_offsets(&transactions);
+        let mut future_consumption: HashMap<usize, Decimal> = HashMap::new();
 
         // Process transactions in order, grouped by date
-        // This ensures same-day matching happens before shares are moved to S104 pool
+        // Buys are added before same-day sells for matching; cost offsets already applied.
         let mut i = 0;
         while i < transactions.len() {
             let current_date = transactions[i].date;
@@ -80,14 +80,50 @@ impl Matcher {
                 day_end += 1;
             }
 
-            // Process all sells first (for same-day and B&B matching)
-            for tx in &transactions[i..day_end] {
-                if matches!(tx.operation, Operation::Sell { .. }) {
-                    self.process_sell(tx, &transactions)?;
+            // Add buys for the day (apply cost offsets and future reservations)
+            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
+                if let Operation::Buy {
+                    amount,
+                    price,
+                    fees,
+                } = &tx.operation
+                {
+                    let idx = i + offset;
+                    let reserved = future_consumption.remove(&idx).unwrap_or(Decimal::ZERO);
+                    if reserved > *amount {
+                        return Err(CgtError::InvalidTransaction(format!(
+                            "B&B reservation exceeds buy amount for {} on {}",
+                            tx.ticker, tx.date
+                        )));
+                    }
+                    let cost_offset = cost_offsets.get(idx).copied().unwrap_or(Decimal::ZERO);
+                    let ledger = self.ledgers.entry(tx.ticker.clone()).or_default();
+                    ledger.add_acquisition(
+                        idx,
+                        tx.date,
+                        *amount,
+                        *price,
+                        *fees,
+                        AcquisitionExtras::new(cost_offset, reserved),
+                    );
                 }
             }
 
-            // Then move remaining buys to S104 pool
+            // Process all sells (same-day, B&B, then S104)
+            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
+                if matches!(tx.operation, Operation::Sell { .. }) {
+                    let idx = i + offset;
+                    self.process_sell(
+                        tx,
+                        idx,
+                        &transactions,
+                        &cost_offsets,
+                        &mut future_consumption,
+                    )?;
+                }
+            }
+
+            // Move remaining buys to S104 pool
             for tx in &transactions[i..day_end] {
                 if matches!(tx.operation, Operation::Buy { .. }) {
                     self.move_buy_to_pool(tx)?;
@@ -183,76 +219,98 @@ impl Matcher {
         merged
     }
 
-    /// Build acquisition ledgers from transactions.
-    fn build_ledgers(&mut self, transactions: &[GbpTransaction]) -> Result<(), CgtError> {
-        // First pass: create lots for all BUY transactions
-        for (idx, tx) in transactions.iter().enumerate() {
-            if let Operation::Buy {
-                amount,
-                price,
-                fees,
-            } = &tx.operation
-            {
-                let ledger = self.ledgers.entry(tx.ticker.clone()).or_default();
-                ledger.add_acquisition(idx, tx.date, *amount, *price, *fees);
+    fn compute_cost_offsets(&self, transactions: &[GbpTransaction]) -> Vec<Decimal> {
+        let mut ledgers: HashMap<String, AcquisitionLedger> = HashMap::new();
+        let mut i = 0;
+
+        while i < transactions.len() {
+            let current_date = transactions[i].date;
+            let mut day_end = i;
+            while day_end < transactions.len() && transactions[day_end].date == current_date {
+                day_end += 1;
+            }
+
+            // Apply corporate actions for the day (before same-day buys)
+            for tx in &transactions[i..day_end] {
+                match &tx.operation {
+                    Operation::CapReturn {
+                        total_value, fees, ..
+                    } => {
+                        if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
+                            let net_value = *total_value - *fees;
+                            ledger.apply_cost_adjustment(-net_value);
+                        }
+                    }
+                    Operation::Dividend { total_value, .. } => {
+                        if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
+                            ledger.apply_cost_adjustment(*total_value);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            // Add buys for the day
+            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
+                if let Operation::Buy {
+                    amount,
+                    price,
+                    fees,
+                } = &tx.operation
+                {
+                    let idx = i + offset;
+                    let ledger = ledgers.entry(tx.ticker.clone()).or_default();
+                    ledger.add_acquisition(
+                        idx,
+                        tx.date,
+                        *amount,
+                        *price,
+                        *fees,
+                        AcquisitionExtras::new(Decimal::ZERO, Decimal::ZERO),
+                    );
+                }
+            }
+
+            // Process sells for the day using Same Day then S104 (no B&B)
+            for tx in &transactions[i..day_end] {
+                if let Operation::Sell { amount, .. } = &tx.operation
+                    && let Some(ledger) = ledgers.get_mut(&tx.ticker)
+                {
+                    let available_same_day = ledger.remaining_for_date(tx.date);
+                    if available_same_day > Decimal::ZERO {
+                        let matched = (*amount).min(available_same_day);
+                        ledger.consume_shares_on_date(tx.date, matched);
+                        let remaining = *amount - matched;
+                        if remaining > Decimal::ZERO {
+                            ledger.consume_shares_before_date(tx.date, remaining);
+                        }
+                    } else {
+                        ledger.consume_shares_before_date(tx.date, *amount);
+                    }
+                }
+            }
+
+            i = day_end;
+        }
+
+        let mut offsets = vec![Decimal::ZERO; transactions.len()];
+        for ledger in ledgers.values() {
+            for lot in ledger.lots() {
+                offsets[lot.transaction_idx] = lot.cost_offset;
             }
         }
 
-        // Second pass: apply corporate actions (CAPRETURN reduces cost, DIVIDEND increases cost)
-        self.apply_corporate_actions(transactions)?;
-
-        Ok(())
-    }
-
-    /// Apply CAPRETURN and DIVIDEND events to acquisition costs.
-    fn apply_corporate_actions(&mut self, transactions: &[GbpTransaction]) -> Result<(), CgtError> {
-        for (event_idx, tx) in transactions.iter().enumerate() {
-            match &tx.operation {
-                Operation::CapReturn {
-                    amount: event_amount,
-                    total_value,
-                    fees: event_fees,
-                } => {
-                    if let Some(ledger) = self.ledgers.get_mut(&tx.ticker) {
-                        let net_value = *total_value - *event_fees;
-                        ledger.apply_cost_adjustment(
-                            event_idx,
-                            tx.date,
-                            *event_amount,
-                            -net_value, // Negative = reduce cost
-                            transactions,
-                        );
-                    }
-                }
-                Operation::Dividend {
-                    amount: event_amount,
-                    total_value,
-                    ..
-                } => {
-                    if let Some(ledger) = self.ledgers.get_mut(&tx.ticker) {
-                        ledger.apply_cost_adjustment(
-                            event_idx,
-                            tx.date,
-                            *event_amount,
-                            *total_value, // Positive = increase cost
-                            transactions,
-                        );
-                    }
-                }
-                Operation::Buy { .. }
-                | Operation::Sell { .. }
-                | Operation::Split { .. }
-                | Operation::Unsplit { .. } => {}
-            }
-        }
-        Ok(())
+        offsets
     }
 
     /// Process a sell transaction.
     fn process_sell(
         &mut self,
         tx: &GbpTransaction,
+        sell_idx: usize,
         all_transactions: &[GbpTransaction],
+        cost_offsets: &[Decimal],
+        future_consumption: &mut HashMap<usize, Decimal>,
     ) -> Result<(), CgtError> {
         let Operation::Sell {
             amount,
@@ -275,8 +333,14 @@ impl Matcher {
         }
 
         // 2. Bed & Breakfast matching (30-day rule)
-        let bnb_matched =
-            bed_and_breakfast::match_bed_and_breakfast(self, tx, &mut remaining, all_transactions)?;
+        let bnb_matched = bed_and_breakfast::match_bed_and_breakfast(
+            tx,
+            sell_idx,
+            &mut remaining,
+            all_transactions,
+            cost_offsets,
+            future_consumption,
+        )?;
         for m in bnb_matched {
             self.matches.push(m);
         }
