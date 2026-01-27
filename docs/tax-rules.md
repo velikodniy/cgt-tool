@@ -390,6 +390,7 @@ The cgt-tool reports show:
 - **Summary table**: Gross proceeds per tax year (for SA108 Box 21)
 - **Disposal details**: Both gross and net proceeds for transparency
 - **Cost**: The allowable cost used in gain calculation
+- **Gains/Losses**: Totals are net per disposal after applying matching rules (CG51560) and allowable costs per TCGA92/S38 (CG15150, CG15250). A disposal can include multiple match legs, but it contributes a single net result to total gain or total loss.
 
 ---
 

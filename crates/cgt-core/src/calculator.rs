@@ -153,29 +153,18 @@ fn build_all_tax_year_summaries(
 
 /// Calculate total gains and losses from disposals.
 fn calculate_totals(disposals: &[Disposal]) -> (Decimal, Decimal) {
-    let total_gain: Decimal = disposals
-        .iter()
-        .flat_map(|d| &d.matches)
-        .map(|m| {
-            if m.gain_or_loss > Decimal::ZERO {
-                m.gain_or_loss
-            } else {
-                Decimal::ZERO
-            }
-        })
-        .sum();
+    let mut total_gain = Decimal::ZERO;
+    let mut total_loss = Decimal::ZERO;
 
-    let total_loss: Decimal = disposals
-        .iter()
-        .flat_map(|d| &d.matches)
-        .map(|m| {
-            if m.gain_or_loss < Decimal::ZERO {
-                m.gain_or_loss.abs()
-            } else {
-                Decimal::ZERO
-            }
-        })
-        .sum();
+    for disposal in disposals {
+        let net: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
+
+        if net > Decimal::ZERO {
+            total_gain += net;
+        } else if net < Decimal::ZERO {
+            total_loss += net.abs();
+        }
+    }
 
     (total_gain, total_loss)
 }

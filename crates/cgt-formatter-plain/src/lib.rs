@@ -48,7 +48,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
-            "\nNote: Proceeds = SA108 Box 21 (gross, before sale fees)"
+            "\nNote: Proceeds = SA108 Box 21 (gross, before sale fees)\nNote: Gains/Losses are net per disposal after matching rules (CG51560)"
         );
     }
 

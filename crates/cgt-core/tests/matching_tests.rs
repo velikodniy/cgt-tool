@@ -130,6 +130,45 @@ fn test_data_driven_matching() {
     }
 }
 
+#[test]
+fn test_tax_year_totals_use_net_disposals() {
+    let inputs_dir = get_test_inputs_dir();
+    let input_path = inputs_dir.join("NetDisposalTotalsMixed.cgt");
+    let input_content = fs::read_to_string(&input_path).expect("Failed to read input");
+    let transactions = parse_file(&input_content).expect("Failed to parse input");
+
+    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let year = report.tax_years.first().expect("Expected a tax year");
+
+    let mix_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.ticker == "MIX")
+        .expect("Missing MIX disposal");
+    let zero_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.ticker == "ZERO")
+        .expect("Missing ZERO disposal");
+    let pool_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.ticker == "POOL")
+        .expect("Missing POOL disposal");
+
+    let mix_net: Decimal = mix_disposal.matches.iter().map(|m| m.gain_or_loss).sum();
+    let zero_net: Decimal = zero_disposal.matches.iter().map(|m| m.gain_or_loss).sum();
+    let pool_net: Decimal = pool_disposal.matches.iter().map(|m| m.gain_or_loss).sum();
+
+    assert_eq!(mix_net, dec!(80));
+    assert_eq!(zero_net, Decimal::ZERO);
+    assert_eq!(pool_net, dec!(10));
+
+    assert_eq!(year.total_gain, dec!(90));
+    assert_eq!(year.total_loss, Decimal::ZERO);
+    assert_eq!(year.net_gain, dec!(90));
+}
+
 // Share quantity precision tests
 // Verify that decimal quantities are preserved exactly without floating-point rounding errors
 

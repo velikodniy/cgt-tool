@@ -6,6 +6,7 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 2020/21     £57.33      £500.00     £12,300.00    £0.00
 
 Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+Note: Gains/Losses are net per disposal after matching rules (CG51560)
 
 # TAX YEAR DETAILS
 

@@ -5,6 +5,7 @@ Tax year    Gain        Proceeds    Exemption     Taxable gain
 2024/25     £660.00     £3,100.00   £3,000.00     £0.00
 
 Note: Proceeds = SA108 Box 21 (gross, before sale fees)
+Note: Gains/Losses are net per disposal after matching rules (CG51560)
 
 # TAX YEAR DETAILS
 

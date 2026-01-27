@@ -1,0 +1,97 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2024-01-10",
+          "ticker": "MIX",
+          "quantity": "100",
+          "gross_proceeds": "1000",
+          "proceeds": "1000",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "40",
+              "allowable_cost": "440",
+              "gain_or_loss": "-40",
+              "acquisition_date": "2024-01-10"
+            },
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "60",
+              "allowable_cost": "480",
+              "gain_or_loss": "120",
+              "acquisition_date": "2024-01-20"
+            }
+          ]
+        },
+        {
+          "date": "2024-02-10",
+          "ticker": "ZERO",
+          "quantity": "100",
+          "gross_proceeds": "1000",
+          "proceeds": "1000",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "50",
+              "allowable_cost": "600",
+              "gain_or_loss": "-100",
+              "acquisition_date": "2024-02-10"
+            },
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "50",
+              "allowable_cost": "400",
+              "gain_or_loss": "100",
+              "acquisition_date": "2024-02-20"
+            }
+          ]
+        },
+        {
+          "date": "2024-03-01",
+          "ticker": "POOL",
+          "quantity": "50",
+          "gross_proceeds": "300",
+          "proceeds": "300",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "20",
+              "allowable_cost": "140",
+              "gain_or_loss": "-20",
+              "acquisition_date": "2024-03-01"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "30",
+              "allowable_cost": "150",
+              "gain_or_loss": "30"
+            }
+          ]
+        }
+      ],
+      "total_gain": "90",
+      "total_loss": "0",
+      "net_gain": "90"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "MIX",
+      "quantity": "100",
+      "total_cost": "900"
+    },
+    {
+      "ticker": "POOL",
+      "quantity": "70",
+      "total_cost": "350"
+    },
+    {
+      "ticker": "ZERO",
+      "quantity": "100",
+      "total_cost": "1000"
+    }
+  ]
+}
