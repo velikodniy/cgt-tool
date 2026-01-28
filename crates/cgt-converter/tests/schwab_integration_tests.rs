@@ -263,15 +263,9 @@ fn test_skipped_transactions() {
 
     let result = converter.convert(&input).unwrap();
 
-    // Should have warnings for skipped transactions (no warning for missing awards when no RSUs)
+    // Skipped transactions are recorded as comments (no warnings when no RSUs)
     assert_eq!(result.skipped_count, 2);
-    assert!(result.warnings.iter().any(|w| w.contains("Wire Sent")));
-    assert!(
-        result
-            .warnings
-            .iter()
-            .any(|w| w.contains("Credit Interest"))
-    );
+    assert!(result.warnings.is_empty());
 
     // Output should contain the Buy and comments for skipped transactions
     assert!(result.cgt_content.contains("BUY XYZZ"));
@@ -905,13 +899,7 @@ fn test_typical_monthly_activity() {
     assert!(result.cgt_content.contains("SELL FOO 5 @ 170.00 USD"));
 
     // Check non-CGT transactions are skipped
-    assert!(
-        result
-            .warnings
-            .iter()
-            .any(|w| w.contains("Credit Interest"))
-    );
-    assert!(result.warnings.iter().any(|w| w.contains("Wire Sent")));
+    assert!(result.warnings.is_empty());
     assert_eq!(result.skipped_count, 2);
 
     // Verify chronological order

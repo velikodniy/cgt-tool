@@ -351,7 +351,7 @@ fn test_unsupported_transaction_as_comment() {
     // Should have comments for skipped transactions
     assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
     assert!(result.cgt_content.contains("# SKIPPED: Credit Interest"));
-    // skipped_count equals the number of warnings for skipped transactions.
+    // skipped_count equals the number of skipped transactions added as comments.
     // Buys do not produce warnings, and missing awards is not warned when no RSUs are present.
     assert_eq!(result.skipped_count, 2);
 }

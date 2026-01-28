@@ -1,15 +1,18 @@
 mod awards;
+mod transactions;
 
 use crate::error::ConvertError;
 use crate::output;
 use crate::{BrokerConverter, ConvertOutput};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
-use serde::Deserialize;
 use std::collections::HashMap;
-use std::str::FromStr;
 
 pub use awards::{AwardLookup, AwardsData};
+use transactions::{
+    SchwabDividend, SchwabStockPlanActivity, SchwabStockSplit, SchwabTrade, SchwabTransaction,
+    SchwabTransactionsItem, format_unknown_comment, parse_transactions_json,
+};
 
 /// Input for Schwab converter
 #[derive(Debug, Clone)]
@@ -28,45 +31,6 @@ impl SchwabConverter {
     pub fn new() -> Self {
         Self
     }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct SchwabTransactionsJson {
-    #[serde(rename = "BrokerageTransactions")]
-    brokerage_transactions: Vec<SchwabTransactionJson>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-struct SchwabTransactionJson {
-    #[serde(rename = "Date")]
-    date: String,
-    #[serde(rename = "Action")]
-    action: String,
-    #[serde(rename = "Symbol")]
-    symbol: String,
-    #[serde(rename = "Description")]
-    description: String,
-    #[serde(rename = "Quantity")]
-    quantity: Option<String>,
-    #[serde(rename = "Price")]
-    price: Option<String>,
-    #[serde(rename = "Fees & Comm")]
-    fees_commissions: Option<String>,
-    #[serde(rename = "Amount")]
-    amount: Option<String>,
-}
-
-/// Internal representation of a Schwab transaction
-#[derive(Debug, Clone)]
-struct SchwabTransaction {
-    date: NaiveDate,
-    action: String,
-    symbol: String,
-    description: String,
-    quantity: Option<Decimal>,
-    price: Option<Decimal>,
-    fees_commissions: Option<Decimal>,
-    amount: Option<Decimal>,
 }
 
 /// CGT-relevant transaction after processing
@@ -113,7 +77,7 @@ impl BrokerConverter for SchwabConverter {
         let transactions = parse_transactions_json(&input.transactions_json)?;
 
         // Convert to CGT transactions
-        let (cgt_transactions, skipped_warnings) =
+        let (cgt_transactions, warnings, skipped_count) =
             process_transactions(transactions, awards.as_ref())?;
 
         // Sort chronologically (oldest first)
@@ -138,7 +102,7 @@ impl BrokerConverter for SchwabConverter {
         output_lines.push(output::generate_header(
             "Charles Schwab",
             &source_files,
-            &skipped_warnings,
+            skipped_count,
         ));
 
         // Add transactions
@@ -202,8 +166,8 @@ impl BrokerConverter for SchwabConverter {
 
         Ok(ConvertOutput {
             cgt_content: output_lines.join("\n"),
-            warnings: skipped_warnings.clone(),
-            skipped_count: skipped_warnings.len(),
+            warnings,
+            skipped_count,
         })
     }
 
@@ -212,103 +176,22 @@ impl BrokerConverter for SchwabConverter {
     }
 }
 
-/// Parse Schwab transactions JSON
-fn parse_transactions_json(json_content: &str) -> Result<Vec<SchwabTransaction>, ConvertError> {
-    let payload: SchwabTransactionsJson = serde_json::from_str(json_content)?;
-    payload
-        .brokerage_transactions
-        .into_iter()
-        .map(parse_transaction_entry)
-        .collect()
-}
-
-/// Parse a single transaction entry
-fn parse_transaction_entry(
-    entry: SchwabTransactionJson,
-) -> Result<SchwabTransaction, ConvertError> {
-    let date = parse_date(&entry.date)?;
-    let symbol = entry.symbol.trim().to_string();
-
-    let quantity = entry
-        .quantity
-        .as_deref()
-        .and_then(|s| parse_amount(s).ok())
-        .flatten();
-    let price = entry
-        .price
-        .as_deref()
-        .and_then(|s| parse_amount(s).ok())
-        .flatten();
-    let fees_commissions = entry
-        .fees_commissions
-        .as_deref()
-        .and_then(|s| parse_amount(s).ok())
-        .flatten();
-    let amount = entry
-        .amount
-        .as_deref()
-        .and_then(|s| parse_amount(s).ok())
-        .flatten();
-
-    Ok(SchwabTransaction {
-        date,
-        action: entry.action,
-        symbol,
-        description: entry.description,
-        quantity,
-        price,
-        fees_commissions,
-        amount,
-    })
-}
-
-/// Parse a Schwab date (MM/DD/YYYY format, with "as of" handling)
-fn parse_date(date_str: &str) -> Result<NaiveDate, ConvertError> {
-    let clean_date = date_str.trim();
-
-    // Handle "MM/DD/YYYY as of MM/DD/YYYY" format - use the second (actual) date
-    if let Some(as_of_pos) = clean_date.find(" as of ") {
-        let actual_date = &clean_date[as_of_pos + 7..]; // Skip " as of " (7 chars)
-        NaiveDate::parse_from_str(actual_date.trim(), "%m/%d/%Y")
-            .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))
-    } else if let Some(date_part) = clean_date.strip_prefix("as of ") {
-        // Handle "as of MM/DD/YYYY" format (prefix)
-        NaiveDate::parse_from_str(date_part, "%m/%d/%Y")
-            .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))
-    } else {
-        // Parse MM/DD/YYYY format
-        NaiveDate::parse_from_str(clean_date, "%m/%d/%Y")
-            .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))
-    }
-}
-
-/// Parse a Schwab amount (handles $-prefix, commas, empty strings)
-fn parse_amount(amount_str: &str) -> Result<Option<Decimal>, ConvertError> {
-    let trimmed = amount_str.trim();
-    if trimmed.is_empty() || trimmed == "--" {
-        return Ok(None);
-    }
-
-    // Remove $ prefix and commas
-    let cleaned = trimmed.replace(['$', ','], "");
-
-    Decimal::from_str(&cleaned)
-        .map(Some)
-        .map_err(|_| ConvertError::InvalidAmount(amount_str.to_string()))
-}
-
 /// Process Schwab transactions into CGT transactions
 fn process_transactions(
-    transactions: Vec<SchwabTransaction>,
+    transactions: Vec<SchwabTransactionsItem>,
     awards: Option<&AwardsData>,
-) -> Result<(Vec<CgtTransaction>, Vec<String>), ConvertError> {
+) -> Result<(Vec<CgtTransaction>, Vec<String>, usize), ConvertError> {
     let mut cgt_transactions = Vec::new();
     let mut warnings = Vec::new();
+    let mut skipped_count = 0;
     let mut dividend_taxes: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
 
-    let has_stock_plan_activity = transactions
-        .iter()
-        .any(|txn| txn.action == "Stock Plan Activity");
+    let has_stock_plan_activity = transactions.iter().any(|txn| {
+        matches!(
+            txn,
+            SchwabTransactionsItem::Known(SchwabTransaction::StockPlanActivity(_))
+        )
+    });
 
     if awards.is_none() && has_stock_plan_activity {
         warnings.push(
@@ -318,274 +201,162 @@ fn process_transactions(
 
     // First pass: collect tax withholdings
     for txn in &transactions {
-        if (txn.action == "NRA Tax Adj" || txn.action == "NRA Withholding")
-            && let Some(amount) = txn.amount
-        {
-            let tax_amount = amount.abs();
-            let key = (txn.date, txn.symbol.clone());
-            *dividend_taxes.entry(key).or_insert(Decimal::ZERO) += tax_amount;
+        match txn {
+            SchwabTransactionsItem::Known(SchwabTransaction::NraTaxAdj(tax))
+            | SchwabTransactionsItem::Known(SchwabTransaction::NraWithholding(tax)) => {
+                if let (Some(symbol), Some(tax_amount)) = (tax.symbol.as_ref(), tax.amount) {
+                    let key = (tax.date, symbol.clone());
+                    *dividend_taxes.entry(key).or_insert(Decimal::ZERO) += tax_amount.abs();
+                }
+            }
+            _ => {}
         }
     }
 
     // Second pass: convert transactions
-    for txn in transactions {
-        match txn.action.as_str() {
-            "Buy" => {
-                let quantity = txn.quantity.ok_or_else(|| {
-                    ConvertError::InvalidTransaction("Buy missing quantity".into())
-                })?;
-                let price = txn
-                    .price
-                    .ok_or_else(|| ConvertError::InvalidTransaction("Buy missing price".into()))?;
-                let expenses = txn.fees_commissions.unwrap_or(Decimal::ZERO);
-
-                cgt_transactions.push(CgtTransaction::Buy {
-                    date: txn.date,
-                    symbol: txn.symbol,
-                    quantity,
-                    price,
-                    expenses,
-                    comment: None,
-                });
-            }
-            "Sell" => {
-                let quantity = txn.quantity.ok_or_else(|| {
-                    ConvertError::InvalidTransaction("Sell missing quantity".into())
-                })?;
-                let price = txn
-                    .price
-                    .ok_or_else(|| ConvertError::InvalidTransaction("Sell missing price".into()))?;
-                let expenses = txn.fees_commissions.unwrap_or(Decimal::ZERO);
-
-                cgt_transactions.push(CgtTransaction::Sell {
-                    date: txn.date,
-                    symbol: txn.symbol,
-                    quantity,
-                    price,
-                    expenses,
-                });
-            }
-            "Stock Plan Activity" => {
-                // RSU vesting - need FMV and vest date from awards file
-                // Per HMRC guidance (CG14250, ERSM20192), acquisition date is the vest date
-                // (when conditions are satisfied), not the settlement date from transactions
-                let quantity = txn.quantity.ok_or_else(|| {
-                    ConvertError::InvalidTransaction("Stock Plan Activity missing quantity".into())
-                })?;
-
-                let award_lookup = if let Some(awards_data) = awards {
-                    awards_data.get_fmv(&txn.date, &txn.symbol)?
-                } else {
-                    return Err(ConvertError::MissingFairMarketValue {
-                        date: txn.date.to_string(),
-                        symbol: txn.symbol.clone(),
-                    });
-                };
-
-                cgt_transactions.push(CgtTransaction::Buy {
-                    // Use vest date from awards file as CGT acquisition date
-                    date: award_lookup.vest_date,
-                    symbol: txn.symbol,
-                    quantity,
-                    price: award_lookup.fmv,
-                    expenses: Decimal::ZERO,
-                    comment: Some("RSU Vesting - FMV from awards file".to_string()),
-                });
-            }
-            "Cash Dividend"
-            | "Qualified Dividend"
-            | "Short Term Cap Gain"
-            | "Long Term Cap Gain" => {
-                if let Some(amount) = txn.amount {
-                    let amount_value = amount.abs();
-                    let key = (txn.date, txn.symbol.clone());
-                    let tax = dividend_taxes.remove(&key).unwrap_or(Decimal::ZERO);
-
-                    cgt_transactions.push(CgtTransaction::Dividend {
-                        date: txn.date,
-                        symbol: txn.symbol,
-                        amount: amount_value,
-                        tax,
+    for record in transactions {
+        match record {
+            SchwabTransactionsItem::Known(txn) => match txn {
+                SchwabTransaction::Buy(trade) => {
+                    let SchwabTrade {
+                        common,
+                        quantity,
+                        price,
+                        fees_commissions,
+                    } = trade;
+                    cgt_transactions.push(CgtTransaction::Buy {
+                        date: common.date,
+                        symbol: common.symbol,
+                        quantity,
+                        price,
+                        expenses: fees_commissions.unwrap_or(Decimal::ZERO),
+                        comment: None,
                     });
                 }
-            }
-            "Stock Split" => {
-                // Note: Schwab doesn't provide split ratio directly
-                // Add as comment for user to fill in manually
-                let comment = format!(
-                    "UNSUPPORTED: Stock split for {} on {} - please add SPLIT transaction manually with correct ratio",
-                    txn.symbol,
-                    txn.date.format("%Y-%m-%d")
-                );
-                // We add it to cgt_transactions so it appears in the output, but it doesn't count as a "real" transaction logic-wise
+                SchwabTransaction::Sell(trade) => {
+                    let SchwabTrade {
+                        common,
+                        quantity,
+                        price,
+                        fees_commissions,
+                    } = trade;
+                    cgt_transactions.push(CgtTransaction::Sell {
+                        date: common.date,
+                        symbol: common.symbol,
+                        quantity,
+                        price,
+                        expenses: fees_commissions.unwrap_or(Decimal::ZERO),
+                    });
+                }
+                SchwabTransaction::StockPlanActivity(activity) => {
+                    let SchwabStockPlanActivity { common, quantity } = activity;
+                    // RSU vesting - need FMV and vest date from awards file
+                    // Per HMRC guidance (CG14250, ERSM20192), acquisition date is the vest date
+                    // (when conditions are satisfied), not the settlement date from transactions
+                    let award_lookup = if let Some(awards_data) = awards {
+                        awards_data.get_fmv(&common.date, &common.symbol)?
+                    } else {
+                        return Err(ConvertError::MissingFairMarketValue {
+                            date: common.date.to_string(),
+                            symbol: common.symbol.clone(),
+                        });
+                    };
+
+                    cgt_transactions.push(CgtTransaction::Buy {
+                        // Use vest date from awards file as CGT acquisition date
+                        date: award_lookup.vest_date,
+                        symbol: common.symbol,
+                        quantity,
+                        price: award_lookup.fmv,
+                        expenses: Decimal::ZERO,
+                        comment: Some("RSU Vesting - FMV from awards file".to_string()),
+                    });
+                }
+                SchwabTransaction::CashDividend(dividend)
+                | SchwabTransaction::QualifiedDividend(dividend)
+                | SchwabTransaction::ShortTermCapGain(dividend)
+                | SchwabTransaction::LongTermCapGain(dividend) => {
+                    let SchwabDividend { common, amount } = dividend;
+                    if let Some(amount) = amount {
+                        let amount_value = amount.abs();
+                        let key = (common.date, common.symbol.clone());
+                        let tax = dividend_taxes.remove(&key).unwrap_or(Decimal::ZERO);
+
+                        cgt_transactions.push(CgtTransaction::Dividend {
+                            date: common.date,
+                            symbol: common.symbol,
+                            amount: amount_value,
+                            tax,
+                        });
+                    }
+                }
+                SchwabTransaction::StockSplit(split) => {
+                    let SchwabStockSplit { common } = split;
+                    // Note: Schwab doesn't provide split ratio directly
+                    // Add as comment for user to fill in manually
+                    let comment = format!(
+                        "UNSUPPORTED: Stock split for {} on {} - please add SPLIT transaction manually with correct ratio",
+                        common.symbol,
+                        common.date.format("%Y-%m-%d")
+                    );
+                    // We add it to cgt_transactions so it appears in the output, but it doesn't count as a "real" transaction logic-wise
+                    cgt_transactions.push(CgtTransaction::Comment {
+                        comment: comment.clone(),
+                    });
+                    skipped_count += 1;
+                }
+                SchwabTransaction::NraTaxAdj(_) | SchwabTransaction::NraWithholding(_) => {
+                    // Already processed in first pass
+                }
+            },
+            SchwabTransactionsItem::Unknown(raw) => {
+                let comment = format_unknown_comment(&raw);
                 cgt_transactions.push(CgtTransaction::Comment {
                     comment: comment.clone(),
                 });
-                warnings.push(comment);
-            }
-            "NRA Tax Adj" | "NRA Withholding" => {
-                // Already processed in first pass
-            }
-            _ => {
-                // Add unsupported transaction as comment in the output
-                let comment = format!(
-                    "SKIPPED: {} - {} on {} ({})",
-                    txn.action,
-                    txn.symbol,
-                    txn.date.format("%Y-%m-%d"),
-                    txn.description
-                );
-                cgt_transactions.push(CgtTransaction::Comment {
-                    comment: comment.clone(),
-                });
-                warnings.push(comment);
+                skipped_count += 1;
             }
         }
     }
 
-    Ok((cgt_transactions, warnings))
+    Ok((cgt_transactions, warnings, skipped_count))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
-
     #[test]
-    fn test_parse_date_standard() {
-        let result = parse_date("04/25/2023").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 4, 25).unwrap());
-    }
+    fn test_unknown_transaction_produces_comment() {
+        // Confirms unknown transactions become comments and are recorded as skipped
+        let json = r#"{
+            "BrokerageTransactions": [
+                {
+                    "Date": "04/22/2021",
+                    "Action": "UnknownAction",
+                    "Symbol": "XYZ",
+                    "Description": "Unknown transaction",
+                    "Quantity": "",
+                    "Price": "",
+                    "Fees & Comm": "",
+                    "Amount": "-$43,640.34"
+                }
+            ]
+        }"#;
 
-    #[test]
-    fn test_parse_date_as_of() {
-        let result = parse_date("as of 04/25/2023").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 4, 25).unwrap());
-    }
+        let input = SchwabInput {
+            transactions_json: json.to_string(),
+            awards_json: None,
+        };
 
-    #[test]
-    fn test_parse_date_with_as_of_suffix() {
-        let result = parse_date("03/20/2024 as of 03/19/2024").unwrap();
-        // Should use the actual date (after "as of")
-        assert_eq!(result, NaiveDate::from_ymd_opt(2024, 3, 19).unwrap());
-    }
+        let converter = SchwabConverter::new();
+        let result = converter.convert(&input).unwrap();
 
-    #[test]
-    fn test_parse_amount_with_dollar() {
-        let result = parse_amount("$125.64").unwrap().unwrap();
-        assert_eq!(result, dec!(125.64));
-    }
-
-    #[test]
-    fn test_parse_amount_with_commas() {
-        let result = parse_amount("$1,234.56").unwrap().unwrap();
-        assert_eq!(result, dec!(1234.56));
-    }
-
-    #[test]
-    fn test_parse_amount_empty() {
-        let result = parse_amount("").unwrap();
-        assert_eq!(result, None);
-    }
-
-    #[test]
-    fn test_parse_amount_dashes() {
-        let result = parse_amount("--").unwrap();
-        assert_eq!(result, None);
-    }
-
-    // ===========================================
-    // Date Format Edge Cases
-    // ===========================================
-
-    #[test]
-    fn test_parse_date_with_as_of_single_digit_month() {
-        // Single-digit month in "as of" format (e.g., 1/17/2023 instead of 01/17/2023)
-        let result = parse_date("1/18/2023 as of 1/17/2023").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 1, 17).unwrap());
-    }
-
-    #[test]
-    fn test_parse_date_with_as_of_single_digit_day() {
-        // Single-digit day
-        let result = parse_date("10/5/2023 as of 10/4/2023").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 10, 4).unwrap());
-    }
-
-    #[test]
-    fn test_parse_date_with_whitespace() {
-        let result = parse_date("  04/25/2023  ").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 4, 25).unwrap());
-    }
-
-    #[test]
-    fn test_parse_date_cross_year_as_of() {
-        // Date in January "as of" December previous year
-        let result = parse_date("01/02/2024 as of 12/31/2023").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2023, 12, 31).unwrap());
-    }
-
-    #[test]
-    fn test_parse_date_leap_year() {
-        let result = parse_date("02/29/2024").unwrap();
-        assert_eq!(result, NaiveDate::from_ymd_opt(2024, 2, 29).unwrap());
-    }
-
-    #[test]
-    fn test_parse_date_invalid_format_returns_error() {
-        // ISO format should fail
-        assert!(parse_date("2023-04-25").is_err());
-        // European format should fail
-        assert!(parse_date("25/04/2023").is_err());
-        // Invalid date
-        assert!(parse_date("13/45/2023").is_err());
-        // Empty string
-        assert!(parse_date("").is_err());
-    }
-
-    // ===========================================
-    // Amount Parsing Edge Cases
-    // ===========================================
-
-    #[test]
-    fn test_parse_amount_negative() {
-        let result = parse_amount("-$125.64").unwrap().unwrap();
-        assert_eq!(result, dec!(-125.64));
-    }
-
-    #[test]
-    fn test_parse_amount_large_number() {
-        let result = parse_amount("$1,234,567.89").unwrap().unwrap();
-        assert_eq!(result, dec!(1234567.89));
-    }
-
-    #[test]
-    fn test_parse_amount_zero() {
-        let result = parse_amount("$0.00").unwrap().unwrap();
-        assert_eq!(result, dec!(0.00));
-    }
-
-    #[test]
-    fn test_parse_amount_small_decimal() {
-        let result = parse_amount("$0.01").unwrap().unwrap();
-        assert_eq!(result, dec!(0.01));
-    }
-
-    #[test]
-    fn test_parse_amount_many_decimals() {
-        let result = parse_amount("$125.6445").unwrap().unwrap();
-        assert_eq!(result, dec!(125.6445));
-    }
-
-    #[test]
-    fn test_parse_amount_whitespace() {
-        let result = parse_amount("  $125.64  ").unwrap().unwrap();
-        assert_eq!(result, dec!(125.64));
-    }
-
-    #[test]
-    fn test_parse_amount_no_dollar() {
-        let result = parse_amount("125.64").unwrap().unwrap();
-        assert_eq!(result, dec!(125.64));
+        assert_eq!(result.skipped_count, 1);
+        assert!(result.warnings.is_empty());
+        assert!(
+            result
+                .cgt_content
+                .contains("# SKIPPED: UnknownAction - XYZ on 2021-04-22 (Unknown transaction)")
+        );
     }
 }

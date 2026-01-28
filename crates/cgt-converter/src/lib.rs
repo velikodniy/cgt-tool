@@ -1,4 +1,7 @@
 pub mod error;
+#[macro_use]
+mod string_enum;
+
 pub mod output;
 pub mod schwab;
 

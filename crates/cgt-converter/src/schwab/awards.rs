@@ -74,6 +74,7 @@ struct AwardTransaction {
     #[serde(rename = "Symbol")]
     symbol: String,
     #[serde(rename = "TransactionDetails")]
+    #[serde(default)]
     transaction_details: Vec<AwardTransactionDetails>,
 }
 
@@ -165,7 +166,7 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
         let action_kind = classify_award_action(award.action.as_deref());
 
         if award.transaction_details.is_empty() {
-            if action_kind == AwardAction::NonVesting {
+            if action_kind != AwardAction::Vesting {
                 continue;
             }
 
@@ -290,13 +291,19 @@ mod tests {
     }
 
     #[test]
-    fn test_unknown_action_missing_transaction_details_fails() {
+    fn test_unknown_action_missing_transaction_details_is_ignored() {
         let json = r#"{"Transactions": [
             {"Date": "04/25/2023", "Action": "Mystery Action", "Symbol": "XYZZ", "TransactionDetails": []}
         ]}"#;
 
-        let result = parse_awards_json(json);
-        assert!(matches!(result, Err(ConvertError::InvalidTransaction(_))));
+        let awards = parse_awards_json(json).unwrap();
+        let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
+        let result = awards.get_fmv(&date, "XYZZ");
+
+        assert!(matches!(
+            result,
+            Err(ConvertError::MissingFairMarketValue { .. })
+        ));
     }
 
     #[test]

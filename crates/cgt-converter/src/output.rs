@@ -101,17 +101,17 @@ pub fn format_comment(text: &str) -> String {
 }
 
 /// Generate header comments for a converted file
-pub fn generate_header(broker: &str, source_files: &[String], warnings: &[String]) -> String {
+pub fn generate_header(broker: &str, source_files: &[String], skipped_count: usize) -> String {
     let mut lines = vec![
         format_comment(&format!("Converted from {} export", broker)),
         format_comment(&format!("Source files: {}", source_files.join(", "))),
         format_comment(&format!("Converted: {}", chrono::Utc::now().to_rfc3339())),
     ];
 
-    if !warnings.is_empty() {
+    if skipped_count > 0 {
         lines.push(format_comment(&format!(
-            "WARNING: {} transactions skipped (not CGT-relevant)",
-            warnings.len()
+            "SKIPPED: {} transactions not CGT-relevant",
+            skipped_count
         )));
     }
 
