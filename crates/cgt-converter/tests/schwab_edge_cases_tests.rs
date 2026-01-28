@@ -451,6 +451,46 @@ fn test_multiple_dividends_same_day() {
 }
 
 #[test]
+fn test_nra_tax_missing_symbol_is_ignored() {
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "07/15/2023",
+                "Action": "Cash Dividend",
+                "Symbol": "FOO",
+                "Description": "DIVIDEND",
+                "Quantity": null,
+                "Price": null,
+                "Fees & Comm": null,
+                "Amount": "$50.00"
+            },
+            {
+                "Date": "07/15/2023",
+                "Action": "NRA Tax Adj",
+                "Symbol": "",
+                "Description": "TAX",
+                "Quantity": null,
+                "Price": null,
+                "Fees & Comm": null,
+                "Amount": "-$5.00"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert!(result.cgt_content.contains("DIVIDEND FOO 50.00 USD"));
+    assert!(!result.cgt_content.contains("TAX"));
+    assert_eq!(result.skipped_count, 0);
+}
+
+#[test]
 fn test_large_numbers_with_commas() {
     let json = r#"{
         "BrokerageTransactions": [
