@@ -1,0 +1,685 @@
+{
+  "tax_years": [
+    {
+      "period": "2020/21",
+      "disposals": [
+        {
+          "date": "2020-05-15",
+          "ticker": "ACME",
+          "quantity": "235",
+          "gross_proceeds": "4727.83",
+          "proceeds": "4727.75",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "235",
+              "allowable_cost": "4700.41",
+              "gain_or_loss": "27.35",
+              "acquisition_date": "2020-05-15"
+            }
+          ]
+        },
+        {
+          "date": "2020-08-15",
+          "ticker": "ACME",
+          "quantity": "235",
+          "gross_proceeds": "5149.62",
+          "proceeds": "5149.54",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "235",
+              "allowable_cost": "5102.53",
+              "gain_or_loss": "47.02",
+              "acquisition_date": "2020-08-15"
+            }
+          ]
+        },
+        {
+          "date": "2020-11-15",
+          "ticker": "ACME",
+          "quantity": "235",
+          "gross_proceeds": "5686.20",
+          "proceeds": "5686.13",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "235",
+              "allowable_cost": "5647.43",
+              "gain_or_loss": "38.70",
+              "acquisition_date": "2020-11-15"
+            }
+          ]
+        },
+        {
+          "date": "2021-02-15",
+          "ticker": "ACME",
+          "quantity": "235",
+          "gross_proceeds": "6016.36",
+          "proceeds": "6016.29",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "235",
+              "allowable_cost": "5968.04",
+              "gain_or_loss": "48.24",
+              "acquisition_date": "2021-02-15"
+            }
+          ]
+        }
+      ],
+      "total_gain": "161.30",
+      "total_loss": "0",
+      "net_gain": "161.30"
+    },
+    {
+      "period": "2021/22",
+      "disposals": [
+        {
+          "date": "2021-05-15",
+          "ticker": "ACME",
+          "quantity": "282",
+          "gross_proceeds": "8077.39",
+          "proceeds": "8077.30",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "282",
+              "allowable_cost": "8018.97",
+              "gain_or_loss": "58.33",
+              "acquisition_date": "2021-05-15"
+            }
+          ]
+        },
+        {
+          "date": "2021-06-10",
+          "ticker": "BETA",
+          "quantity": "100",
+          "gross_proceeds": "4382.86",
+          "proceeds": "4379.33",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "100",
+              "allowable_cost": "4243.84",
+              "gain_or_loss": "135.49",
+              "acquisition_date": "2021-06-10"
+            }
+          ]
+        },
+        {
+          "date": "2021-07-15",
+          "ticker": "GAMA",
+          "quantity": "300",
+          "gross_proceeds": "1800.00",
+          "proceeds": "1795.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "300",
+              "allowable_cost": "1553.00",
+              "gain_or_loss": "242.00"
+            }
+          ]
+        },
+        {
+          "date": "2021-08-15",
+          "ticker": "ACME",
+          "quantity": "282",
+          "gross_proceeds": "9249.45",
+          "proceeds": "9249.36",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "282",
+              "allowable_cost": "9201.72",
+              "gain_or_loss": "47.64",
+              "acquisition_date": "2021-08-15"
+            }
+          ]
+        },
+        {
+          "date": "2021-11-15",
+          "ticker": "ACME",
+          "quantity": "494",
+          "gross_proceeds": "17843.36",
+          "proceeds": "17843.21",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "494",
+              "allowable_cost": "17741.44",
+              "gain_or_loss": "101.78",
+              "acquisition_date": "2021-11-15"
+            }
+          ]
+        },
+        {
+          "date": "2022-02-15",
+          "ticker": "ACME",
+          "quantity": "329",
+          "gross_proceeds": "11562.92",
+          "proceeds": "11562.81",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "329",
+              "allowable_cost": "11495.28",
+              "gain_or_loss": "67.53",
+              "acquisition_date": "2022-02-15"
+            }
+          ]
+        },
+        {
+          "date": "2022-04-05",
+          "ticker": "BETA",
+          "quantity": "100",
+          "gross_proceeds": "2649.11",
+          "proceeds": "2645.32",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "100",
+              "allowable_cost": "2575.94",
+              "gain_or_loss": "69.38",
+              "acquisition_date": "2022-04-06"
+            }
+          ]
+        }
+      ],
+      "total_gain": "722.16",
+      "total_loss": "0",
+      "net_gain": "722.16"
+    },
+    {
+      "period": "2022/23",
+      "disposals": [
+        {
+          "date": "2022-05-15",
+          "ticker": "ACME",
+          "quantity": "376",
+          "gross_proceeds": "12074.19",
+          "proceeds": "12074.06",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "376",
+              "allowable_cost": "11998.12",
+              "gain_or_loss": "75.95",
+              "acquisition_date": "2022-05-15"
+            }
+          ]
+        },
+        {
+          "date": "2022-07-01",
+          "ticker": "BETA",
+          "quantity": "200",
+          "gross_proceeds": "6499.31",
+          "proceeds": "6491.19",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "200",
+              "allowable_cost": "6178.41",
+              "gain_or_loss": "312.78",
+              "acquisition_date": "2022-07-20"
+            }
+          ]
+        },
+        {
+          "date": "2022-08-15",
+          "ticker": "ACME",
+          "quantity": "376",
+          "gross_proceeds": "11879.29",
+          "proceeds": "11879.16",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "376",
+              "allowable_cost": "11910.64",
+              "gain_or_loss": "-31.48",
+              "acquisition_date": "2022-08-15"
+            }
+          ]
+        },
+        {
+          "date": "2022-10-01",
+          "ticker": "BETA",
+          "quantity": "150",
+          "gross_proceeds": "5559.97",
+          "proceeds": "5552.91",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "80",
+              "allowable_cost": "2827.64",
+              "gain_or_loss": "133.91",
+              "acquisition_date": "2022-10-25"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "70",
+              "allowable_cost": "1469.01",
+              "gain_or_loss": "1122.34"
+            }
+          ]
+        },
+        {
+          "date": "2022-11-15",
+          "ticker": "ACME",
+          "quantity": "423",
+          "gross_proceeds": "13111.91",
+          "proceeds": "13111.75",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "423",
+              "allowable_cost": "13149.48",
+              "gain_or_loss": "-37.73",
+              "acquisition_date": "2022-11-15"
+            }
+          ]
+        },
+        {
+          "date": "2023-01-15",
+          "ticker": "GAMA",
+          "quantity": "500",
+          "gross_proceeds": "3400.00",
+          "proceeds": "3390.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "500",
+              "allowable_cost": "2739.72",
+              "gain_or_loss": "650.28"
+            }
+          ]
+        },
+        {
+          "date": "2023-02-15",
+          "ticker": "ACME",
+          "quantity": "423",
+          "gross_proceeds": "10206.34",
+          "proceeds": "10206.20",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "423",
+              "allowable_cost": "10240.48",
+              "gain_or_loss": "-34.28",
+              "acquisition_date": "2023-02-15"
+            }
+          ]
+        }
+      ],
+      "total_gain": "2295.26",
+      "total_loss": "103.49",
+      "net_gain": "2191.77"
+    },
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-05-15",
+          "ticker": "ACME",
+          "quantity": "470",
+          "gross_proceeds": "10532.53",
+          "proceeds": "10532.37",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "470",
+              "allowable_cost": "10570.28",
+              "gain_or_loss": "-37.91",
+              "acquisition_date": "2023-05-15"
+            }
+          ]
+        },
+        {
+          "date": "2023-06-20",
+          "ticker": "BETA",
+          "quantity": "150",
+          "gross_proceeds": "5579.82",
+          "proceeds": "5573.35",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "150",
+              "allowable_cost": "5484.80",
+              "gain_or_loss": "88.55",
+              "acquisition_date": "2023-06-20"
+            }
+          ]
+        },
+        {
+          "date": "2023-08-15",
+          "ticker": "ACME",
+          "quantity": "470",
+          "gross_proceeds": "11635.11",
+          "proceeds": "11634.95",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "470",
+              "allowable_cost": "11671.58",
+              "gain_or_loss": "-36.63",
+              "acquisition_date": "2023-08-15"
+            }
+          ]
+        },
+        {
+          "date": "2023-09-01",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "2612.62",
+          "proceeds": "2608.66",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "2824.44",
+              "gain_or_loss": "-215.78"
+            }
+          ]
+        },
+        {
+          "date": "2023-09-02",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "2628.45",
+          "proceeds": "2624.50",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "2824.44",
+              "gain_or_loss": "-199.95"
+            }
+          ]
+        },
+        {
+          "date": "2023-09-03",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "2596.79",
+          "proceeds": "2592.83",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "2824.44",
+              "gain_or_loss": "-231.62"
+            }
+          ]
+        },
+        {
+          "date": "2023-09-04",
+          "ticker": "ACME",
+          "quantity": "100",
+          "gross_proceeds": "2652.20",
+          "proceeds": "2648.25",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "2824.44",
+              "gain_or_loss": "-176.20"
+            }
+          ]
+        },
+        {
+          "date": "2023-10-15",
+          "ticker": "BETA",
+          "quantity": "185",
+          "gross_proceeds": "7201.02",
+          "proceeds": "7192.93",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "185",
+              "allowable_cost": "4006.28",
+              "gain_or_loss": "3186.65"
+            }
+          ]
+        },
+        {
+          "date": "2023-11-15",
+          "ticker": "ACME",
+          "quantity": "517",
+          "gross_proceeds": "15228.34",
+          "proceeds": "15228.16",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "517",
+              "allowable_cost": "15270.76",
+              "gain_or_loss": "-42.60",
+              "acquisition_date": "2023-11-15"
+            }
+          ]
+        },
+        {
+          "date": "2023-12-01",
+          "ticker": "GAMA",
+          "quantity": "400",
+          "gross_proceeds": "3000.00",
+          "proceeds": "2992.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "400",
+              "allowable_cost": "2307.32",
+              "gain_or_loss": "684.68"
+            }
+          ]
+        },
+        {
+          "date": "2024-01-10",
+          "ticker": "BETA",
+          "quantity": "100",
+          "gross_proceeds": "3952.26",
+          "proceeds": "3948.30",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "100",
+              "allowable_cost": "3865.25",
+              "gain_or_loss": "83.06",
+              "acquisition_date": "2024-02-09"
+            }
+          ]
+        },
+        {
+          "date": "2024-02-15",
+          "ticker": "ACME",
+          "quantity": "517",
+          "gross_proceeds": "16255.56",
+          "proceeds": "16255.38",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "517",
+              "allowable_cost": "16296.30",
+              "gain_or_loss": "-40.91",
+              "acquisition_date": "2024-02-15"
+            }
+          ]
+        }
+      ],
+      "total_gain": "4042.93",
+      "total_loss": "981.60",
+      "net_gain": "3061.34"
+    },
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-04-15",
+          "ticker": "BETA",
+          "quantity": "100",
+          "gross_proceeds": "4096.75",
+          "proceeds": "4092.81",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "2165.56",
+              "gain_or_loss": "1927.25"
+            }
+          ]
+        },
+        {
+          "date": "2024-05-15",
+          "ticker": "ACME",
+          "quantity": "564",
+          "gross_proceeds": "19876.05",
+          "proceeds": "19875.86",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "564",
+              "allowable_cost": "19921.33",
+              "gain_or_loss": "-45.47",
+              "acquisition_date": "2024-05-15"
+            }
+          ]
+        },
+        {
+          "date": "2024-06-01",
+          "ticker": "GAMA",
+          "quantity": "300",
+          "gross_proceeds": "2400.00",
+          "proceeds": "2394.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "300",
+              "allowable_cost": "1730.49",
+              "gain_or_loss": "663.51"
+            }
+          ]
+        },
+        {
+          "date": "2024-08-15",
+          "ticker": "ACME",
+          "quantity": "564",
+          "gross_proceeds": "20728.61",
+          "proceeds": "20728.43",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "564",
+              "allowable_cost": "20771.89",
+              "gain_or_loss": "-43.46",
+              "acquisition_date": "2024-08-15"
+            }
+          ]
+        },
+        {
+          "date": "2024-09-01",
+          "ticker": "BETA",
+          "quantity": "200",
+          "gross_proceeds": "8440.76",
+          "proceeds": "8433.09",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "200",
+              "allowable_cost": "5067.32",
+              "gain_or_loss": "3365.76"
+            }
+          ]
+        },
+        {
+          "date": "2024-10-15",
+          "ticker": "BETA",
+          "quantity": "150",
+          "gross_proceeds": "6358.34",
+          "proceeds": "6352.28",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "150",
+              "allowable_cost": "3800.49",
+              "gain_or_loss": "2551.79"
+            }
+          ]
+        },
+        {
+          "date": "2024-11-01",
+          "ticker": "GAMA",
+          "quantity": "400",
+          "gross_proceeds": "3400.00",
+          "proceeds": "3392.00",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "400",
+              "allowable_cost": "2456.53",
+              "gain_or_loss": "935.47"
+            }
+          ]
+        },
+        {
+          "date": "2024-11-15",
+          "ticker": "ACME",
+          "quantity": "611",
+          "gross_proceeds": "24483.40",
+          "proceeds": "24483.20",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "611",
+              "allowable_cost": "24530.57",
+              "gain_or_loss": "-47.37",
+              "acquisition_date": "2024-11-15"
+            }
+          ]
+        },
+        {
+          "date": "2024-12-10",
+          "ticker": "ACME",
+          "quantity": "550",
+          "gross_proceeds": "24048.33",
+          "proceeds": "24048.12",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "300",
+              "allowable_cost": "13031.12",
+              "gain_or_loss": "118.35",
+              "acquisition_date": "2024-12-10"
+            },
+            {
+              "rule": "SameDay",
+              "quantity": "250",
+              "allowable_cost": "10851.37",
+              "gain_or_loss": "47.29",
+              "acquisition_date": "2024-12-10"
+            }
+          ]
+        }
+      ],
+      "total_gain": "9609.41",
+      "total_loss": "136.30",
+      "net_gain": "9473.11"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ACME",
+      "quantity": "8362",
+      "total_cost": "259261.91"
+    },
+    {
+      "ticker": "BETA",
+      "quantity": "175",
+      "total_cost": "4433.91"
+    },
+    {
+      "ticker": "GAMA",
+      "quantity": "700",
+      "total_cost": "4298.93"
+    }
+  ]
+}

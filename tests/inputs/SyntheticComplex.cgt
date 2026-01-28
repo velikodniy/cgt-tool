@@ -1,0 +1,203 @@
+# Test: SyntheticComplex
+# Purpose: Comprehensive synthetic test covering all CGT matching rules and edge cases
+# Rules Tested: Same Day, Bed & Breakfast (full and partial), Section 104, SPLIT, CAPRETURN, Multi-Currency
+# Complexity: Complex
+# Key Features:
+#   - 5 tax years (2020/21, 2021/22, 2022/23, 2023/24, 2024/25)
+#   - 3 tickers: ACME (USD, RSU pattern), BETA (USD, trading), GAMA (GBP, UK stock)
+#   - Stock split (BETA 2:1)
+#   - Capital return (ACME)
+#   - Multi-currency (USD and GBP)
+#   - Same-day matching (multiple scenarios)
+#   - Bed & Breakfast matching (full and partial)
+#   - Exact 30-day B&B boundary tests
+#   - Tax year boundary transactions (April 5/6)
+#   - Buy-sell-buy same day
+#   - Multiple sells same day at different prices
+#   - Section 104 pool maintenance across years
+#
+# Cross-Validation Status:
+#   cgt-calc (KapJI): SKIP - does not support SPLIT/CAPRETURN operations
+#   cgtcalc (mattjgalloway): OK - matches cgt-tool exactly
+#
+# Note: This fixture uses SPLIT and CAPRETURN which are not supported by
+# cgt-calc (KapJI). Cross-validation against cgt-calc will be skipped.
+# cgtcalc (mattjgalloway) supports these operations and validates correctly.
+#
+# Tickers:
+#   ACME - Fictional tech company, USD, RSU-style vesting pattern
+#   BETA - Fictional company, USD, regular trading with corporate actions
+#   GAMA - Fictional UK company, GBP, multi-currency testing
+
+# === Tax Year 2020/21 (6 Apr 2020 - 5 Apr 2021) ===
+
+# Initial portfolio building - ACME RSU-style vesting
+# Simulating quarterly RSU vests with sell-to-cover
+2020-05-15 BUY ACME 500 @ 25.00 USD FEES 0 USD
+2020-05-15 SELL ACME 235 @ 24.80 USD FEES 0.10 USD
+
+2020-08-15 BUY ACME 500 @ 28.00 USD FEES 0 USD
+2020-08-15 SELL ACME 235 @ 27.90 USD FEES 0.10 USD
+
+2020-11-15 BUY ACME 500 @ 32.00 USD FEES 0 USD
+2020-11-15 SELL ACME 235 @ 31.85 USD FEES 0.10 USD
+
+2021-02-15 BUY ACME 500 @ 35.00 USD FEES 0 USD
+2021-02-15 SELL ACME 235 @ 34.90 USD FEES 0.10 USD
+
+# BETA initial purchases for trading
+2020-06-01 BUY BETA 200 @ 50.00 USD FEES 5 USD
+2020-09-15 BUY BETA 100 @ 55.00 USD FEES 5 USD
+
+# GAMA - UK stock in GBP
+2020-07-01 BUY GAMA 1000 @ 5.00 FEES 10
+2020-12-01 BUY GAMA 500 @ 5.50 FEES 5
+
+# === Tax Year 2021/22 (6 Apr 2021 - 5 Apr 2022) ===
+
+# ACME continues RSU vesting pattern
+2021-05-15 BUY ACME 600 @ 40.00 USD FEES 0 USD
+2021-05-15 SELL ACME 282 @ 39.90 USD FEES 0.12 USD
+
+2021-08-15 BUY ACME 600 @ 45.00 USD FEES 0 USD
+2021-08-15 SELL ACME 282 @ 44.85 USD FEES 0.12 USD
+
+# Multi-award same-day vesting simulation (4 awards vest same day)
+2021-11-15 BUY ACME 600 @ 50.00 USD FEES 0 USD
+2021-11-15 BUY ACME 200 @ 50.00 USD FEES 0 USD
+2021-11-15 BUY ACME 150 @ 50.00 USD FEES 0 USD
+2021-11-15 BUY ACME 100 @ 50.00 USD FEES 0 USD
+2021-11-15 SELL ACME 494 @ 49.90 USD FEES 0.20 USD
+
+2022-02-15 BUY ACME 700 @ 48.00 USD FEES 0 USD
+2022-02-15 SELL ACME 329 @ 47.90 USD FEES 0.14 USD
+
+# BETA trading - Same Day scenario
+2021-06-10 BUY BETA 150 @ 60.00 USD FEES 5 USD
+2021-06-10 SELL BETA 100 @ 62.00 USD FEES 5 USD
+
+# BETA - Stock split 2:1 on 2021-09-01
+2021-09-01 SPLIT BETA RATIO 2
+
+# GAMA regular trading
+2021-07-15 SELL GAMA 300 @ 6.00 FEES 5
+2021-10-01 BUY GAMA 200 @ 5.80 FEES 3
+
+# Tax year boundary - transaction on April 5 (end of 2021/22)
+2022-04-05 SELL BETA 100 @ 35.00 USD FEES 5 USD
+
+# === Tax Year 2022/23 (6 Apr 2022 - 5 Apr 2023) ===
+
+# Tax year boundary - transaction on April 6 (start of 2022/23)
+2022-04-06 BUY BETA 150 @ 34.00 USD FEES 5 USD
+
+# ACME continues
+2022-05-15 BUY ACME 800 @ 42.00 USD FEES 0 USD
+2022-05-15 SELL ACME 376 @ 41.90 USD FEES 0.16 USD
+
+# ACME Capital Return - $2000 total distribution
+2022-06-15 CAPRETURN ACME 1000 TOTAL 2000 USD FEES 0 USD
+
+2022-08-15 BUY ACME 800 @ 38.00 USD FEES 0 USD
+2022-08-15 SELL ACME 376 @ 37.90 USD FEES 0.16 USD
+
+2022-11-15 BUY ACME 900 @ 35.00 USD FEES 0 USD
+2022-11-15 SELL ACME 423 @ 34.90 USD FEES 0.18 USD
+
+2023-02-15 BUY ACME 900 @ 30.00 USD FEES 0 USD
+2023-02-15 SELL ACME 423 @ 29.90 USD FEES 0.18 USD
+
+# BETA - Bed & Breakfast scenario (sell then buy back within 30 days)
+2022-07-01 SELL BETA 200 @ 40.00 USD FEES 10 USD
+2022-07-20 BUY BETA 200 @ 38.00 USD FEES 5 USD
+
+# BETA - Partial B&B (sell 150, buy back 80 within 30 days)
+2022-10-01 SELL BETA 150 @ 42.00 USD FEES 8 USD
+2022-10-25 BUY BETA 80 @ 40.00 USD FEES 4 USD
+
+# GAMA - Build position
+2022-09-01 BUY GAMA 400 @ 6.20 FEES 8
+2023-01-15 SELL GAMA 500 @ 6.80 FEES 10
+
+# === Tax Year 2023/24 (6 Apr 2023 - 5 Apr 2024) ===
+
+# ACME continues
+2023-05-15 BUY ACME 1000 @ 28.00 USD FEES 0 USD
+2023-05-15 SELL ACME 470 @ 27.90 USD FEES 0.20 USD
+
+2023-08-15 BUY ACME 1000 @ 32.00 USD FEES 0 USD
+2023-08-15 SELL ACME 470 @ 31.90 USD FEES 0.20 USD
+
+# Consecutive day selling (drip pattern)
+2023-09-01 SELL ACME 100 @ 33.00 USD FEES 5 USD
+2023-09-02 SELL ACME 100 @ 33.20 USD FEES 5 USD
+2023-09-03 SELL ACME 100 @ 32.80 USD FEES 5 USD
+2023-09-04 SELL ACME 100 @ 33.50 USD FEES 5 USD
+
+2023-11-15 BUY ACME 1100 @ 36.00 USD FEES 0 USD
+2023-11-15 SELL ACME 517 @ 35.90 USD FEES 0.22 USD
+
+2024-02-15 BUY ACME 1100 @ 40.00 USD FEES 0 USD
+2024-02-15 SELL ACME 517 @ 39.90 USD FEES 0.22 USD
+
+# BETA - Buy-sell-buy same day
+2023-06-20 BUY BETA 100 @ 45.00 USD FEES 5 USD
+2023-06-20 SELL BETA 150 @ 46.00 USD FEES 8 USD
+2023-06-20 BUY BETA 80 @ 45.50 USD FEES 4 USD
+
+# BETA - Multiple sells same day at different prices
+2023-10-15 SELL BETA 50 @ 48.00 USD FEES 3 USD
+2023-10-15 SELL BETA 75 @ 48.50 USD FEES 4 USD
+2023-10-15 SELL BETA 60 @ 47.80 USD FEES 3 USD
+
+# Exact 30-day B&B boundary test - D+30 = matches
+2024-01-10 SELL BETA 100 @ 50.00 USD FEES 5 USD
+2024-02-09 BUY BETA 100 @ 49.00 USD FEES 5 USD
+
+# GAMA - More trading
+2023-07-01 BUY GAMA 300 @ 7.00 FEES 6
+2023-12-01 SELL GAMA 400 @ 7.50 FEES 8
+
+# === Tax Year 2024/25 (6 Apr 2024 - 5 Apr 2025) ===
+
+# Exact 30-day B&B boundary test - D+31 = does NOT match (Section 104)
+2024-04-15 SELL BETA 100 @ 52.00 USD FEES 5 USD
+2024-05-16 BUY BETA 100 @ 51.00 USD FEES 5 USD
+
+# ACME final year
+2024-05-15 BUY ACME 1200 @ 44.00 USD FEES 0 USD
+2024-05-15 SELL ACME 564 @ 43.90 USD FEES 0.24 USD
+
+2024-08-15 BUY ACME 1200 @ 48.00 USD FEES 0 USD
+2024-08-15 SELL ACME 564 @ 47.90 USD FEES 0.24 USD
+
+2024-11-15 BUY ACME 1300 @ 52.00 USD FEES 0 USD
+2024-11-15 SELL ACME 611 @ 51.90 USD FEES 0.26 USD
+
+# Large same-day multiple transactions
+2024-12-10 BUY ACME 500 @ 55.00 USD FEES 0 USD
+2024-12-10 SELL ACME 300 @ 55.50 USD FEES 0.15 USD
+2024-12-10 BUY ACME 200 @ 54.80 USD FEES 0 USD
+2024-12-10 SELL ACME 250 @ 55.20 USD FEES 0.12 USD
+
+# BETA position close out
+2024-09-01 SELL BETA 200 @ 55.00 USD FEES 10 USD
+2024-10-15 SELL BETA 150 @ 56.00 USD FEES 8 USD
+
+# GAMA final trades
+2024-06-01 SELL GAMA 300 @ 8.00 FEES 6
+2024-08-01 BUY GAMA 200 @ 7.80 FEES 4
+2024-11-01 SELL GAMA 400 @ 8.50 FEES 8
+
+# Summary of edge cases covered:
+# - Same Day matching: Multiple instances including buy-sell-buy same day
+# - Bed & Breakfast: Full match (2022-07), partial match (2022-10)
+# - 30-day boundary: D+30 matches (2024-01-10 to 2024-02-09), D+31 doesn't (2024-04-15 to 2024-05-16)
+# - Stock Split: BETA 2:1 on 2021-09-01
+# - Capital Return: ACME $2/share on 2022-06-15
+# - Multi-currency: GAMA trades in GBP, ACME/BETA in USD
+# - Tax year boundary: 2022-04-05 sell (2021/22), 2022-04-06 buy (2022/23)
+# - Consecutive day selling: 2023-09-01 through 2023-09-04
+# - Multiple sells same day different prices: 2023-10-15
+# - RSU-style same-day vest+sell: Every quarterly ACME transaction
+# - Multi-award same-day: 2021-11-15 (4 buys + 1 sell)

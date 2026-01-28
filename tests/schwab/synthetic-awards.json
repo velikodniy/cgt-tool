@@ -1,0 +1,190 @@
+{
+  "FromDate": "01/01/2023",
+  "ToDate": "12/31/2024",
+  "Transactions": [
+    {
+      "Date": "11/15/2024",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1300",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$52.00",
+            "SalePrice": "$51.90",
+            "SharesSoldWithheldForTaxes": "611",
+            "NetSharesDeposited": "689",
+            "Taxes": "$31,710.90"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "08/15/2024",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1200",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$48.00",
+            "SalePrice": "$47.90",
+            "SharesSoldWithheldForTaxes": "564",
+            "NetSharesDeposited": "636",
+            "Taxes": "$27,014.76"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "05/15/2024",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1200",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$44.00",
+            "SalePrice": "$43.90",
+            "SharesSoldWithheldForTaxes": "564",
+            "NetSharesDeposited": "636",
+            "Taxes": "$24,759.60"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "02/15/2024",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1100",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$40.00",
+            "SalePrice": "$39.90",
+            "SharesSoldWithheldForTaxes": "517",
+            "NetSharesDeposited": "583",
+            "Taxes": "$20,628.30"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "11/15/2023",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1100",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$36.00",
+            "SalePrice": "$35.90",
+            "SharesSoldWithheldForTaxes": "517",
+            "NetSharesDeposited": "583",
+            "Taxes": "$18,560.30"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "08/15/2023",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "1000",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$32.00",
+            "SalePrice": "$31.90",
+            "SharesSoldWithheldForTaxes": "470",
+            "NetSharesDeposited": "530",
+            "Taxes": "$14,993.00"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "05/15/2023",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "500",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "08/10/2021",
+            "AwardId": "RSU-10002",
+            "FairMarketValuePrice": "$28.00",
+            "SalePrice": "$27.90",
+            "SharesSoldWithheldForTaxes": "235",
+            "NetSharesDeposited": "265",
+            "Taxes": "$6,556.50"
+          }
+        }
+      ]
+    },
+    {
+      "Date": "05/15/2023",
+      "Action": "Lapse",
+      "Symbol": "ACME",
+      "Quantity": "500",
+      "Description": "Restricted Stock Lapse",
+      "FeesAndCommissions": null,
+      "DisbursementElection": null,
+      "Amount": null,
+      "TransactionDetails": [
+        {
+          "Details": {
+            "AwardDate": "02/15/2022",
+            "AwardId": "RSU-10001",
+            "FairMarketValuePrice": "$28.00",
+            "SalePrice": "$27.90",
+            "SharesSoldWithheldForTaxes": "235",
+            "NetSharesDeposited": "265",
+            "Taxes": "$6,556.50"
+          }
+        }
+      ]
+    }
+  ]
+}

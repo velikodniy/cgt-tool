@@ -9,5 +9,9 @@ release/
 *.log
 .env*
 
+# Private data (not for repo)
+examples/
+exchange_rates.csv
+
 # macOS
 .DS_Store

@@ -1,0 +1,40 @@
+name: Cross-Validate
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+
+jobs:
+  cross-validate:
+    name: Cross-validate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build cgt-tool
+        run: cargo build --release
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Clone and build cgtcalc
+        run: |
+          git clone --depth 1 https://github.com/mattjgalloway/cgtcalc "$HOME/cgtcalc"
+          cd "$HOME/cgtcalc"
+          swift build -c release
+
+      - name: Run cross-validation
+        run: |
+          export PATH="$PWD/target/release:$HOME/cgtcalc/.build/release:$PATH"
+          python3 scripts/cross-validate.py tests/inputs/*.cgt
