@@ -4,7 +4,7 @@
 - [x] 1.2 Add `cross-validate` job (macos-latest): checkout, setup Rust, build cgt-tool, setup Python/uv
 - [x] 1.3 Build cgtcalc from source and add to PATH
 - [x] 1.4 Add cross-validation run step calling `python3 scripts/cross-validate.py tests/inputs/*.cgt`
-- [ ] 1.5 Test workflow manually via workflow_dispatch (requires GitHub push)
+- [x] 1.5 Test workflow manually via workflow_dispatch (requires GitHub push)
 
 ## 2. Synthetic CGT Fixture
 
@@ -39,4 +39,4 @@
 
 - [x] 5.1 Run cross-validate.py locally against SyntheticComplex.cgt
 - [x] 5.2 Document any expected discrepancies in fixture header comments
-- [ ] 5.3 Verify CI workflow completes successfully with new fixture (requires GitHub push)
+- [x] 5.3 Verify CI workflow completes successfully with new fixture (requires GitHub push)
