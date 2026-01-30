@@ -1,7 +1,7 @@
 # SUMMARY
 
-Tax year    Gain        Proceeds    Exemption     Taxable gain
-==============================================================
+Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
+===========================================================================================================================
 
 # TAX YEAR DETAILS
 

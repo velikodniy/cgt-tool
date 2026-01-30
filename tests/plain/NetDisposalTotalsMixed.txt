@@ -1,0 +1,56 @@
+# SUMMARY
+
+Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
+===========================================================================================================================
+2023/24     3           £90.00        £90.00      £0.00       £2,300.00   £6,000.00     £0.00
+
+Notes:
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 100 MIX on 10/01/2024 - GAIN £80.00
+   Same Day: 40 shares
+   B&B: 60 shares from 20/01/2024
+   Gross Proceeds: 100 × £10 = £1,000.00
+   Cost: £920.00
+   Result: £80.00
+
+2) SELL 100 ZERO on 10/02/2024 - GAIN £0.00
+   Same Day: 50 shares
+   B&B: 50 shares from 20/02/2024
+   Gross Proceeds: 100 × £10 = £1,000.00
+   Cost: £1,000.00
+   Result: £0.00
+
+3) SELL 50 POOL on 01/03/2024 - GAIN £10.00
+   Same Day: 20 shares
+   Section 104: 30 shares @ £5
+   Gross Proceeds: 50 × £6 = £300.00
+   Cost: £290.00
+   Result: £10.00
+
+
+# HOLDINGS
+
+MIX: 100 units at £9 avg cost
+POOL: 70 units at £5 avg cost
+ZERO: 100 units at £10 avg cost
+
+# TRANSACTIONS
+
+01/01/2024 BUY 100 MIX @ £9 (£0 fees)
+01/01/2024 BUY 100 POOL @ £5 (£0 fees)
+01/01/2024 BUY 100 ZERO @ £10 (£0 fees)
+10/01/2024 BUY 40 MIX @ £11 (£0 fees)
+10/01/2024 SELL 100 MIX @ £10 (£0 fees)
+20/01/2024 BUY 60 MIX @ £8 (£0 fees)
+10/02/2024 BUY 50 ZERO @ £12 (£0 fees)
+10/02/2024 SELL 100 ZERO @ £10 (£0 fees)
+20/02/2024 BUY 50 ZERO @ £8 (£0 fees)
+01/03/2024 BUY 20 POOL @ £7 (£0 fees)
+01/03/2024 SELL 50 POOL @ £6 (£0 fees)

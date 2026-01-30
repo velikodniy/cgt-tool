@@ -1,5 +1,15 @@
 // Capital Gains Tax Report Template
-#let data = sys.inputs
+#let data = (
+  generation_date: (year: 0, month: 0, day: 0),
+  summary_rows: (),
+  tax_years: (),
+  has_holdings: false,
+  holdings_rows: (),
+  has_transactions: false,
+  transaction_rows: (),
+  has_asset_events: false,
+  asset_event_rows: (),
+) + sys.inputs
 
 // Color palette - Minimal, professional grayscale
 #let text-dark = rgb("#1F2328")
@@ -174,18 +184,21 @@
 = Summary
 
 #table(
-  columns: (1.2fr, 1fr, 1fr, 1fr, 1fr),
-  align: (left, right, right, right, right),
+  columns: (1.1fr, 0.8fr, 1.4fr, 0.9fr, 0.9fr, 1.1fr, 1fr, 1fr),
+  align: (left, right, right, right, right, right, right, right),
   stroke: (x: none, y: 0.5pt + border-color),
   inset: 4pt,
   fill: (_, row) => if row == 0 { header-bg } else if calc.odd(row) { alt-row } else { none },
   table.header(
-    [*Tax Year*], [*Gain/Loss*], [*Proceeds*], [*Exemption*], [*Taxable*],
+    [*Tax Year*], [*Disposals*], [*Net Gain/Loss*], [*Gains*], [*Losses*], [*Proceeds*], [*Exemption*], [*Taxable*],
   ),
   ..data.summary_rows
     .map(row => (
       fmt-tax-year(row.start_year),
+      str(row.disposal_count),
       fmt-money(row.net_gain),
+      fmt-money(row.total_gain),
+      fmt-money(row.total_loss),
       fmt-money(row.gross_proceeds),
       fmt-money(row.exemption),
       fmt-money(row.taxable),
@@ -193,9 +206,14 @@
     .flatten()
 )
 #v(0.2em)
-#text(size: 6pt, fill: text-muted)[
-  *Note:* Proceeds = SA108 Box 21 (gross, before sale fees).
-  Taxable amount is calculated after applying the annual exemption.
+#block[
+  #set text(size: 6pt, fill: text-muted)
+  *Notes:*
+  #list(
+    [Proceeds = SA108 Box 21 (gross, before sale fees)],
+    [Gains/Losses are net per disposal after matching rules (CG51560)],
+    [Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)],
+  )
 ]
 
 // Disposal Details Section

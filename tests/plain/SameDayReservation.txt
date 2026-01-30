@@ -1,0 +1,39 @@
+# SUMMARY
+
+Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
+===========================================================================================================================
+2023/24     2           £195.00       £195.00     £0.00       £1,775.00   £6,000.00     £0.00
+
+Notes:
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 100 SNAP on 01/02/2024 - GAIN £170.00
+   B&B: 30 shares from 02/02/2024
+   Section 104: 70 shares @ £10
+   Gross Proceeds: 100 × £12 = £1,200.00
+   Cost: £1,030.00
+   Result: £170.00
+
+2) SELL 50 SNAP on 02/02/2024 - GAIN £25.00
+   Same Day: 50 shares
+   Gross Proceeds: 50 × £11.5 = £575.00
+   Cost: £550.00
+   Result: £25.00
+
+
+# HOLDINGS
+
+SNAP: 130 units at £10 avg cost
+
+# TRANSACTIONS
+
+01/01/2024 BUY 200 SNAP @ £10 (£0 fees)
+01/02/2024 SELL 100 SNAP @ £12 (£0 fees)
+02/02/2024 BUY 80 SNAP @ £11 (£0 fees)
+02/02/2024 SELL 50 SNAP @ £11.5 (£0 fees)

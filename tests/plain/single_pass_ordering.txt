@@ -2,7 +2,7 @@
 
 Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
 ===========================================================================================================================
-2022/23     1           £166.67       £166.67     £0.00       £1,100.00   £12,300.00    £0.00
+2023/24     1           £110.00       £110.00     £0.00       £600.00     £6,000.00     £0.00
 
 Notes:
 - Proceeds = SA108 Box 21 (gross, before sale fees)
@@ -11,21 +11,23 @@ Notes:
 
 # TAX YEAR DETAILS
 
-## 2022/23
+## 2023/24
 
-1) SELL 10 AAPL on 03/01/2023 - GAIN £166.67
-   Section 104: 10 shares @ £93.33
-   Gross Proceeds: 10 × £110 = £1,100.00
-   Cost: £933.33
-   Result: £166.67
+1) SELL 50 ABC on 01/02/2024 - GAIN £110.00
+   Same Day: 20 shares
+   B&B: 30 shares from 10/02/2024
+   Gross Proceeds: 50 × £12 = £600.00
+   Cost: £490.00
+   Result: £110.00
 
 
 # HOLDINGS
 
-AAPL: 5 units at £93.33 avg cost
+ABC: 110 units at £9.91 avg cost
 
 # TRANSACTIONS
 
-01/01/2023 BUY 10 AAPL @ £90 (£0 fees)
-02/01/2023 BUY 5 AAPL @ £100 (£0 fees)
-03/01/2023 SELL 10 AAPL @ £110 (£0 fees)
+01/01/2024 BUY 100 ABC @ £10 (£0 fees)
+01/02/2024 SELL 50 ABC @ £12 (£0 fees)
+01/02/2024 BUY 20 ABC @ £11 (£0 fees)
+10/02/2024 BUY 40 ABC @ £9 (£0 fees)

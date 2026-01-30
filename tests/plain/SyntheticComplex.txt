@@ -1,15 +1,17 @@
 # SUMMARY
 
-Tax year    Gain        Proceeds    Exemption     Taxable gain
-==============================================================
-2020/21     £161.30     £21,580.02  £12,300.00    £0.00
-2021/22     £722.16     £55,565.09  £12,300.00    £0.00
-2022/23     £2,191.77   £62,731.01  £12,300.00    £0.00
-2023/24     £3,061.34   £83,874.69  £6,000.00     £0.00
-2024/25     £9,473.11   £113,832.24 £3,000.00     £6,473.11
+Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
+===========================================================================================================================
+2020/21     4           £161.30       £161.30     £0.00       £21,580.02  £12,300.00    £0.00
+2021/22     7           £722.16       £722.16     £0.00       £55,565.09  £12,300.00    £0.00
+2022/23     7           £2,191.77     £2,295.26   £103.49     £62,731.01  £12,300.00    £0.00
+2023/24     14          £3,061.34     £4,042.93   £981.60     £83,874.69  £6,000.00     £0.00
+2024/25     10          £9,473.11     £9,609.41   £136.30     £113,832.24 £3,000.00     £6,473.11
 
-Note: Proceeds = SA108 Box 21 (gross, before sale fees)
-Note: Gains/Losses are net per disposal after matching rules (CG51560)
+Notes:
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)
 
 # TAX YEAR DETAILS
 

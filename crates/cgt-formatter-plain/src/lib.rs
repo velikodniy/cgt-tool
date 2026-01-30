@@ -19,12 +19,12 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     let _ = writeln!(out, "# SUMMARY\n");
     let _ = writeln!(
         out,
-        "{:<12}{:<12}{:<12}{:<14}Taxable gain",
-        "Tax year", "Gain", "Proceeds", "Exemption"
+        "{:<12}{:<12}{:<14}{:<12}{:<12}{:<12}{:<14}Taxable gain",
+        "Tax year", "Disposals", "Net gain/loss", "Gains", "Losses", "Proceeds", "Exemption"
     );
     let _ = writeln!(
         out,
-        "=============================================================="
+        "==========================================================================================================================="
     );
 
     for year in &report.tax_years {
@@ -35,9 +35,12 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
         let _ = writeln!(
             out,
-            "{:<12}{:<12}{:<12}{:<14}{}",
+            "{:<12}{:<12}{:<14}{:<12}{:<12}{:<12}{:<14}{}",
             format_tax_year(year.period.start_year()),
+            year.disposal_count,
             format_gbp(year.net_gain),
+            format_gbp(year.total_gain),
+            format_gbp(year.total_loss),
             format_gbp(gross_proceeds),
             format_gbp(exemption),
             format_gbp(taxable)
@@ -48,7 +51,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
-            "\nNote: Proceeds = SA108 Box 21 (gross, before sale fees)\nNote: Gains/Losses are net per disposal after matching rules (CG51560)"
+            "\nNotes:\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)"
         );
     }
 

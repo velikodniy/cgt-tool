@@ -1,0 +1,42 @@
+# SUMMARY
+
+Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
+===========================================================================================================================
+2023/24     1           £100.00       £100.00     £0.00       £550.00     £6,000.00     £0.00
+2024/25     1           £200.00       £200.00     £0.00       £1,200.00   £3,000.00     £0.00
+
+Notes:
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 5 ABC on 01/02/2024 - GAIN £100.00
+   B&B: 5 shares from 10/02/2024
+   Gross Proceeds: 5 × £110 = £550.00
+   Cost: £450.00
+   Result: £100.00
+
+
+## 2024/25
+
+1) SELL 10 ABC on 01/06/2024 - GAIN £200.00
+   Section 104: 10 shares @ £100
+   Gross Proceeds: 10 × £120 = £1,200.00
+   Cost: £1,000.00
+   Result: £200.00
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+01/01/2024 BUY 10 ABC @ £100 (£0 fees)
+01/02/2024 SELL 5 ABC @ £110 (£0 fees)
+10/02/2024 BUY 5 ABC @ £90 (£0 fees)
+01/06/2024 SELL 10 ABC @ £120 (£0 fees)

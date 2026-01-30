@@ -121,7 +121,13 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
             "start_year".into(),
             (year.period.start_year() as i64).into_value(),
         );
+        row.insert(
+            "disposal_count".into(),
+            (year.disposal_count as i64).into_value(),
+        );
         row.insert("net_gain".into(), decimal_to_value(year.net_gain)?);
+        row.insert("total_gain".into(), decimal_to_value(year.total_gain)?);
+        row.insert("total_loss".into(), decimal_to_value(year.total_loss)?);
         row.insert("gross_proceeds".into(), decimal_to_value(gross_proceeds)?);
         row.insert("exemption".into(), decimal_to_value(exemption)?);
         row.insert("taxable".into(), decimal_to_value(taxable)?);
@@ -329,4 +335,56 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8
         .map_err(|e| CgtError::PdfGeneration(format!("PDF export failed: {e:?}")))?;
 
     Ok(pdf)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cgt_core::{Disposal, Match, MatchRule, TaxPeriod, TaxReport, TaxYearSummary};
+    use chrono::NaiveDate;
+    use rust_decimal::Decimal;
+    use typst::foundations::Value;
+
+    #[test]
+    fn test_summary_rows_include_counts_and_totals() {
+        let date = NaiveDate::from_ymd_opt(2024, 6, 15).expect("valid date");
+        let disposal = Disposal {
+            date,
+            ticker: "ACME".to_string(),
+            quantity: Decimal::from(10),
+            gross_proceeds: Decimal::from(1000),
+            proceeds: Decimal::from(995),
+            matches: vec![Match {
+                rule: MatchRule::SameDay,
+                quantity: Decimal::from(10),
+                allowable_cost: Decimal::from(900),
+                gain_or_loss: Decimal::from(95),
+                acquisition_date: Some(date),
+            }],
+        };
+
+        let report = TaxReport {
+            tax_years: vec![TaxYearSummary {
+                period: TaxPeriod::new(2024).expect("valid tax year"),
+                disposals: vec![disposal],
+                disposal_count: 1,
+                total_gain: Decimal::from(95),
+                total_loss: Decimal::ZERO,
+                net_gain: Decimal::from(95),
+            }],
+            holdings: vec![],
+        };
+
+        let rows = build_summary_rows(&report).expect("summary rows");
+        let first = rows.first().expect("summary row");
+        assert!(matches!(first, Value::Dict(_)), "expected dict summary row");
+        let Value::Dict(dict) = first else {
+            return;
+        };
+
+        assert!(dict.get("disposal_count").is_ok());
+        assert!(dict.get("net_gain").is_ok());
+        assert!(dict.get("total_gain").is_ok());
+        assert!(dict.get("total_loss").is_ok());
+    }
 }
