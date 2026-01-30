@@ -4,7 +4,7 @@ Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      
 =========================================================================================================================
 2022/23     3           -£24,134.11           £691.79               £24,825.90  £10,506.97  £12,300.00  £0.00
 2023/24     6           -£5,686.43            £2,244.96             £7,931.39   £26,260.66  £6,000.00   £0.00
-2024/25     6           £1,564.83             £3,974.32             £2,409.49   £37,164.47  £3,000.00   £0.00
+2024/25     6           £1,558.63             £3,968.11             £2,409.49   £37,164.47  £3,000.00   £0.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
@@ -91,12 +91,12 @@ Notes:
    Cost: £6,159.37
    Result: £1,960.56
 
-2) SELL 40 AAPL on 10/06/2024 - GAIN £51.93
+2) SELL 40 AAPL on 10/06/2024 - GAIN £41.59
    Same Day: 40 shares
    Gross Proceeds: 40 × £155.0082618616725 = £6,200.33
    Net Proceeds: £6,200.33 - £7.87 fees = £6,192.46
-   Cost: £6,140.53
-   Result: £51.93
+   Cost: £6,150.87
+   Result: £41.59
 
 3) SELL 60 GOOGL on 01/08/2024 - GAIN £211.00
    B&B: 60 shares from 20/08/2024
@@ -105,12 +105,12 @@ Notes:
    Cost: £7,603.78
    Result: £211.00
 
-4) SELL 50 AAPL on 15/10/2024 - GAIN £1,735.83
-   Section 104: 50 shares @ £135.37
+4) SELL 50 AAPL on 15/10/2024 - GAIN £1,739.96
+   Section 104: 50 shares @ £135.29
    Gross Proceeds: 50 × £170.312618272652 = £8,515.63
    Net Proceeds: £8,515.63 - £11.35 fees = £8,504.28
-   Cost: £6,768.45
-   Result: £1,735.83
+   Cost: £6,764.31
+   Result: £1,739.96
 
 5) SELL 40 GOOGL on 01/12/2024 - LOSS £2,409.49
    Section 104: 40 shares @ £206.15
@@ -129,7 +129,7 @@ Notes:
 
 # HOLDINGS
 
-AAPL: 75 units at £135.37 avg cost
+AAPL: 75 units at £135.29 avg cost
 GB00B41YBW71: 50 units at £12.6 avg cost
 GOOGL: 115 units at £206.15 avg cost
 MSFT: 55 units at £274.77 avg cost

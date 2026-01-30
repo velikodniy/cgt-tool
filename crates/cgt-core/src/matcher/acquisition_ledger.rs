@@ -197,22 +197,51 @@ impl AcquisitionLedger {
 
     /// Consume shares from lots on a specific date (for Same Day matching).
     pub fn consume_shares_on_date(&mut self, date: NaiveDate, amount: Decimal) -> Decimal {
-        let mut remaining = amount;
+        let mut total_available = Decimal::ZERO;
         let mut total_cost = Decimal::ZERO;
+        let mut lots_on_date = Vec::new();
 
-        for lot in &mut self.lots {
-            if lot.date == date && remaining > Decimal::ZERO {
+        for (idx, lot) in self.lots.iter().enumerate() {
+            if lot.date == date {
                 let available = lot.available();
                 if available > Decimal::ZERO {
-                    let to_consume = remaining.min(available);
-                    total_cost += to_consume * lot.adjusted_unit_cost();
-                    lot.consume(to_consume);
-                    remaining -= to_consume;
+                    total_available += available;
+                    total_cost += available * lot.adjusted_unit_cost();
+                    lots_on_date.push((idx, available));
                 }
             }
         }
 
-        total_cost
+        if total_available == Decimal::ZERO || amount <= Decimal::ZERO {
+            return Decimal::ZERO;
+        }
+
+        let matched = amount.min(total_available);
+        let ratio = matched / total_available;
+        let mut remaining = matched;
+
+        for (pos, (idx, available)) in lots_on_date.iter().enumerate() {
+            let to_consume = if pos + 1 == lots_on_date.len() {
+                remaining.min(*available)
+            } else {
+                let proportional = *available * ratio;
+                if proportional > remaining {
+                    remaining
+                } else {
+                    proportional
+                }
+            };
+
+            if to_consume > Decimal::ZERO {
+                if let Some(lot) = self.lots.get_mut(*idx) {
+                    lot.consume(to_consume);
+                }
+                remaining -= to_consume;
+            }
+        }
+
+        let average_cost = total_cost / total_available;
+        matched * average_cost
     }
 
     /// Consume shares from lots before a date (for cost-basis tracking).

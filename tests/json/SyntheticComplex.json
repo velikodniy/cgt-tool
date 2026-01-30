@@ -348,8 +348,8 @@
             {
               "rule": "SameDay",
               "quantity": "150",
-              "allowable_cost": "5484.80",
-              "gain_or_loss": "88.55",
+              "allowable_cost": "5491.54",
+              "gain_or_loss": "81.81",
               "acquisition_date": "2023-06-20"
             }
           ]
@@ -440,8 +440,8 @@
             {
               "rule": "Section104",
               "quantity": "185",
-              "allowable_cost": "4006.28",
-              "gain_or_loss": "3186.65"
+              "allowable_cost": "4004.53",
+              "gain_or_loss": "3188.40"
             }
           ]
         },
@@ -510,9 +510,9 @@
         }
       ],
       "disposal_count": 12,
-      "total_gain": "4042.93",
+      "total_gain": "4037.95",
       "total_loss": "981.60",
-      "net_gain": "3061.34"
+      "net_gain": "3056.36"
     },
     {
       "period": "2024/25",
@@ -527,8 +527,8 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "2165.56",
-              "gain_or_loss": "1927.25"
+              "allowable_cost": "2164.61",
+              "gain_or_loss": "1928.20"
             }
           ]
         },
@@ -589,8 +589,8 @@
             {
               "rule": "Section104",
               "quantity": "200",
-              "allowable_cost": "5067.32",
-              "gain_or_loss": "3365.76"
+              "allowable_cost": "5065.79",
+              "gain_or_loss": "3367.30"
             }
           ]
         },
@@ -604,8 +604,8 @@
             {
               "rule": "Section104",
               "quantity": "150",
-              "allowable_cost": "3800.49",
-              "gain_or_loss": "2551.79"
+              "allowable_cost": "3799.34",
+              "gain_or_loss": "2552.94"
             }
           ]
         },
@@ -650,36 +650,36 @@
             {
               "rule": "SameDay",
               "quantity": "300",
-              "allowable_cost": "13031.12",
-              "gain_or_loss": "118.35",
+              "allowable_cost": "13017.58",
+              "gain_or_loss": "131.89",
               "acquisition_date": "2024-12-10"
             },
             {
               "rule": "SameDay",
               "quantity": "250",
-              "allowable_cost": "10851.37",
-              "gain_or_loss": "47.29",
+              "allowable_cost": "10847.98",
+              "gain_or_loss": "50.68",
               "acquisition_date": "2024-12-10"
             }
           ]
         }
       ],
       "disposal_count": 9,
-      "total_gain": "9609.41",
+      "total_gain": "9629.98",
       "total_loss": "136.30",
-      "net_gain": "9473.11"
+      "net_gain": "9493.67"
     }
   ],
   "holdings": [
     {
       "ticker": "ACME",
-      "quantity": "8362",
-      "total_cost": "259261.91"
+      "quantity": "8362.000000000000000000000000",
+      "total_cost": "259278.84"
     },
     {
       "ticker": "BETA",
-      "quantity": "175",
-      "total_cost": "4433.91"
+      "quantity": "175.00000000000000000000000000",
+      "total_cost": "4432.56"
     },
     {
       "ticker": "GAMA",

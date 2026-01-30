@@ -26,6 +26,7 @@ If you buy and sell shares of the same class in the same company on the same day
 
 - All purchases on the same day are aggregated (treated as one transaction)
 - All sales on the same day are aggregated (treated as one disposal)
+- Allowable cost for same-day matching uses a weighted average across all same-day purchases (including expenses)
 - The rule applies regardless of transaction order within the day
 - Matched shares do NOT enter the Section 104 pool
 - Expenses are apportioned proportionally

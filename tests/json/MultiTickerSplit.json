@@ -5,21 +5,6 @@
       "disposals": [
         {
           "date": "2023-08-01",
-          "ticker": "AAPL",
-          "quantity": "10",
-          "gross_proceeds": "600",
-          "proceeds": "600",
-          "matches": [
-            {
-              "rule": "Section104",
-              "quantity": "10",
-              "allowable_cost": "500",
-              "gain_or_loss": "100"
-            }
-          ]
-        },
-        {
-          "date": "2023-08-01",
           "ticker": "MSFT",
           "quantity": "10",
           "gross_proceeds": "550",
@@ -30,6 +15,21 @@
               "quantity": "10",
               "allowable_cost": "500",
               "gain_or_loss": "50"
+            }
+          ]
+        },
+        {
+          "date": "2023-08-01",
+          "ticker": "AAPL",
+          "quantity": "10",
+          "gross_proceeds": "600",
+          "proceeds": "600",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "10",
+              "allowable_cost": "500",
+              "gain_or_loss": "100"
             }
           ]
         }
