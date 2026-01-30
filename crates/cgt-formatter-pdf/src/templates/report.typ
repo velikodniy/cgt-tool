@@ -212,7 +212,7 @@
   #list(
     [Proceeds = SA108 Box 21 (gross, before sale fees)],
     [Gains/Losses are net per disposal after matching rules (CG51560)],
-    [Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)],
+    [Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions],
   )
 ]
 

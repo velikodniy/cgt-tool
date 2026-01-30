@@ -48,8 +48,6 @@ pub fn calculate(
     tax_year_start: Option<i32>,
     fx_cache: Option<&FxCache>,
 ) -> Result<TaxReport, CgtError> {
-    let disposal_counts = count_disposals_by_year(&transactions);
-
     // Convert all transactions to GBP-normalized form
     let transactions = transactions_to_gbp(&transactions, fx_cache)?;
 
@@ -61,12 +59,12 @@ pub fn calculate(
     let tax_years = match tax_year_start {
         Some(year) => {
             // Filter matches for the requested tax year
-            let summary = build_tax_year_summary(year, &match_results, &disposal_counts)?;
+            let summary = build_tax_year_summary(year, &match_results)?;
             vec![summary]
         }
         None => {
             // Group all matches by tax year
-            build_all_tax_year_summaries(&match_results, &disposal_counts)?
+            build_all_tax_year_summaries(&match_results)?
         }
     };
 
@@ -84,7 +82,6 @@ pub fn calculate(
 fn build_tax_year_summary(
     tax_year_start: i32,
     match_results: &[MatchResult],
-    disposal_counts: &HashMap<u16, u32>,
 ) -> Result<TaxYearSummary, CgtError> {
     let start_date =
         chrono::NaiveDate::from_ymd_opt(tax_year_start, 4, 6).ok_or(CgtError::InvalidDateYear {
@@ -105,10 +102,7 @@ fn build_tax_year_summary(
     let disposals = group_matches_into_disposals(year_matches);
     let (total_gain, total_loss) = calculate_totals(&disposals);
     let tax_period = TaxPeriod::from_date(start_date);
-    let disposal_count = disposal_counts
-        .get(&tax_period.start_year())
-        .copied()
-        .unwrap_or(0);
+    let disposal_count = disposals.len() as u32;
 
     Ok(TaxYearSummary {
         period: tax_period,
@@ -123,7 +117,6 @@ fn build_tax_year_summary(
 /// Build summaries for all tax years that have disposals.
 fn build_all_tax_year_summaries(
     match_results: &[MatchResult],
-    disposal_counts: &HashMap<u16, u32>,
 ) -> Result<Vec<TaxYearSummary>, CgtError> {
     // Group matches by tax year
     let mut matches_by_year: HashMap<u16, Vec<MatchResult>> = HashMap::new();
@@ -144,7 +137,7 @@ fn build_all_tax_year_summaries(
             TaxPeriod::new(year).map_err(|_| CgtError::InvalidDateYear { year: year as i32 })?;
         let disposals = group_matches_into_disposals(year_matches);
         let (total_gain, total_loss) = calculate_totals(&disposals);
-        let disposal_count = disposal_counts.get(&year).copied().unwrap_or(0);
+        let disposal_count = disposals.len() as u32;
 
         summaries.push(TaxYearSummary {
             period: tax_period,
@@ -160,18 +153,6 @@ fn build_all_tax_year_summaries(
     summaries.sort_by_key(|s| s.period.start_year());
 
     Ok(summaries)
-}
-
-fn count_disposals_by_year(transactions: &[Transaction]) -> HashMap<u16, u32> {
-    let mut counts: HashMap<u16, u32> = HashMap::new();
-    for transaction in transactions {
-        if matches!(transaction.operation, Operation::Sell { .. }) {
-            let tax_period = TaxPeriod::from_date(transaction.date);
-            let entry = counts.entry(tax_period.start_year()).or_insert(0);
-            *entry += 1;
-        }
-    }
-    counts
 }
 
 /// Calculate total gains and losses from disposals.

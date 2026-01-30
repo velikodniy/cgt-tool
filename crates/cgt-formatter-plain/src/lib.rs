@@ -51,7 +51,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
-            "\nNotes:\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Disposal count is the number of SELL transactions per tax year (SA108 Capital Gains Tax Summary)"
+            "\nNotes:\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions"
         );
     }
 
