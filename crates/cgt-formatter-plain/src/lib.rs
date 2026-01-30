@@ -17,8 +17,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
     // SUMMARY
     let _ = writeln!(out, "# SUMMARY\n");
-    let _ = writeln!(
-        out,
+    let header_line = format!(
         "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
         "Tax year",
         "Disposals",
@@ -29,6 +28,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         "Exemption",
         "Taxable gain"
     );
+    let _ = writeln!(out, "{}", header_line.trim_end());
     let _ = writeln!(
         out,
         "========================================================================================================================="
@@ -40,8 +40,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         let gross_proceeds: Decimal = year.disposals.iter().map(|d| d.gross_proceeds).sum();
         let taxable = (year.net_gain - exemption).max(Decimal::ZERO);
 
-        let _ = writeln!(
-            out,
+        let row_line = format!(
             "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
             format_tax_year(year.period.start_year()),
             year.disposal_count,
@@ -52,6 +51,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             format_gbp(exemption),
             format_gbp(taxable)
         );
+        let _ = writeln!(out, "{}", row_line.trim_end());
     }
 
     // SA108 note
