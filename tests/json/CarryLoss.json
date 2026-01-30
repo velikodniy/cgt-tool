@@ -20,6 +20,7 @@
           ]
         }
       ],
+      "disposal_count": 1,
       "total_gain": "0",
       "total_loss": "1000",
       "net_gain": "-1000"
@@ -44,6 +45,7 @@
           ]
         }
       ],
+      "disposal_count": 1,
       "total_gain": "1000",
       "total_loss": "0",
       "net_gain": "1000"
@@ -68,6 +70,7 @@
           ]
         }
       ],
+      "disposal_count": 1,
       "total_gain": "19000",
       "total_loss": "0",
       "net_gain": "19000"

@@ -440,6 +440,8 @@ pub struct Disposal {
 pub struct TaxYearSummary {
     pub period: TaxPeriod,
     pub disposals: Vec<Disposal>,
+    #[serde(default)]
+    pub disposal_count: u32,
     #[serde(serialize_with = "decimal_money::serialize")]
     pub total_gain: Decimal,
     #[serde(serialize_with = "decimal_money::serialize")]

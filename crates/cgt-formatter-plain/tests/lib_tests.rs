@@ -46,6 +46,7 @@ fn test_proceeds_line_with_fees() {
         tax_years: vec![TaxYearSummary {
             period: TaxPeriod::new(2018).expect("valid tax year"),
             disposals: vec![disposal],
+            disposal_count: 1,
             total_gain: Decimal::ZERO,
             total_loss: Decimal::new(19863, 3),
             net_gain: Decimal::new(-19863, 3),
@@ -75,6 +76,7 @@ fn test_dividend_single_symbol() {
         tax_years: vec![TaxYearSummary {
             period: TaxPeriod::new(2020).expect("valid tax year"),
             disposals: vec![],
+            disposal_count: 0,
             total_gain: Decimal::ZERO,
             total_loss: Decimal::ZERO,
             net_gain: Decimal::ZERO,

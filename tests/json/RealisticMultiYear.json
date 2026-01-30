@@ -49,6 +49,7 @@
           ]
         }
       ],
+      "disposal_count": 3,
       "total_gain": "691.79",
       "total_loss": "24825.90",
       "net_gain": "-24134.11"
@@ -149,6 +150,7 @@
           ]
         }
       ],
+      "disposal_count": 6,
       "total_gain": "2244.96",
       "total_loss": "7931.39",
       "net_gain": "-5686.43"
@@ -249,6 +251,7 @@
           ]
         }
       ],
+      "disposal_count": 6,
       "total_gain": "3974.32",
       "total_loss": "2409.49",
       "net_gain": "1564.83"

@@ -53,8 +53,8 @@
           "date": "2024-03-01",
           "ticker": "POOL",
           "quantity": "50",
-          "gross_proceeds": "300",
-          "proceeds": "300",
+          "gross_proceeds": "300.00",
+          "proceeds": "300.00",
           "matches": [
             {
               "rule": "SameDay",
@@ -67,14 +67,15 @@
               "rule": "Section104",
               "quantity": "30",
               "allowable_cost": "150",
-              "gain_or_loss": "30"
+              "gain_or_loss": "30.00"
             }
           ]
         }
       ],
-      "total_gain": "90",
+      "disposal_count": 3,
+      "total_gain": "90.00",
       "total_loss": "0",
-      "net_gain": "90"
+      "net_gain": "90.00"
     }
   ],
   "holdings": [

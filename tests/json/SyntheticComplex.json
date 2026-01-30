@@ -68,6 +68,7 @@
           ]
         }
       ],
+      "disposal_count": 4,
       "total_gain": "161.30",
       "total_loss": "0",
       "net_gain": "161.30"
@@ -187,6 +188,7 @@
           ]
         }
       ],
+      "disposal_count": 7,
       "total_gain": "722.16",
       "total_loss": "0",
       "net_gain": "722.16"
@@ -312,6 +314,7 @@
           ]
         }
       ],
+      "disposal_count": 7,
       "total_gain": "2295.26",
       "total_loss": "103.49",
       "net_gain": "2191.77"
@@ -506,6 +509,7 @@
           ]
         }
       ],
+      "disposal_count": 14,
       "total_gain": "4042.93",
       "total_loss": "981.60",
       "net_gain": "3061.34"
@@ -660,6 +664,7 @@
           ]
         }
       ],
+      "disposal_count": 10,
       "total_gain": "9609.41",
       "total_loss": "136.30",
       "net_gain": "9473.11"
