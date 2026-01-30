@@ -1,15 +1,15 @@
 # SUMMARY
 
-Tax year    Disposals   Net gain/loss Gains       Losses      Proceeds    Exemption     Taxable gain
-===========================================================================================================================
-2018/19     1           -£19.86       £0.00       £19.86      £46.70      £11,700.00    £0.00
-2019/20     1           -£19.86       £0.00       £19.86      £46.70      £12,000.00    £0.00
-2020/21     1           -£19.86       £0.00       £19.86      £46.70      £12,300.00    £0.00
+Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
+=========================================================================================================================
+2018/19     1           -£19.86               £0.00                 £19.86      £46.70      £11,700.00  £0.00
+2019/20     1           -£19.86               £0.00                 £19.86      £46.70      £12,000.00  £0.00
+2020/21     1           -£19.86               £0.00                 £19.86      £46.70      £12,300.00  £0.00
 
 Notes:
-- Proceeds = SA108 Box 21 (gross, before sale fees)
-- Gains/Losses are net per disposal after matching rules (CG51560)
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Proceeds = SA108 Box 21 (gross, before sale fees)
 
 # TAX YEAR DETAILS
 

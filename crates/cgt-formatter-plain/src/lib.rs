@@ -19,12 +19,19 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     let _ = writeln!(out, "# SUMMARY\n");
     let _ = writeln!(
         out,
-        "{:<12}{:<12}{:<14}{:<12}{:<12}{:<12}{:<14}Taxable gain",
-        "Tax year", "Disposals", "Net gain/loss", "Gains", "Losses", "Proceeds", "Exemption"
+        "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
+        "Tax year",
+        "Disposals",
+        "Gains (after losses)",
+        "Gains (before losses)",
+        "Losses",
+        "Proceeds",
+        "Exemption",
+        "Taxable gain"
     );
     let _ = writeln!(
         out,
-        "==========================================================================================================================="
+        "========================================================================================================================="
     );
 
     for year in &report.tax_years {
@@ -35,7 +42,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
         let _ = writeln!(
             out,
-            "{:<12}{:<12}{:<14}{:<12}{:<12}{:<12}{:<14}{}",
+            "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
             format_tax_year(year.period.start_year()),
             year.disposal_count,
             format_gbp(year.net_gain),
@@ -51,7 +58,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
-            "\nNotes:\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions"
+            "\nNotes:\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Proceeds = SA108 Box 21 (gross, before sale fees)"
         );
     }
 

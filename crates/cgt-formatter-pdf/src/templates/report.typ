@@ -184,13 +184,28 @@
 = Summary
 
 #table(
-  columns: (1.1fr, 0.8fr, 1.4fr, 0.9fr, 0.9fr, 1.1fr, 1fr, 1fr),
+  columns: (1fr, 1fr, 1fr, 1fr, 1fr, 1fr, 1fr, 1fr),
   align: (left, right, right, right, right, right, right, right),
   stroke: (x: none, y: 0.5pt + border-color),
-  inset: 4pt,
+  inset: 3pt,
   fill: (_, row) => if row == 0 { header-bg } else if calc.odd(row) { alt-row } else { none },
   table.header(
-    [*Tax Year*], [*Disposals*], [*Net Gain/Loss*], [*Gains*], [*Losses*], [*Proceeds*], [*Exemption*], [*Taxable*],
+    text(size: 8pt)[*Tax Year*],
+    text(size: 8pt)[*Disposals*#super("1")],
+    stack(
+      spacing: 1pt,
+      text(size: 8pt)[*Gains*#super("2")],
+      text(size: 7pt)[*(after losses)*],
+    ),
+    stack(
+      spacing: 1pt,
+      text(size: 8pt)[*Gains*#super("2")],
+      text(size: 7pt)[*(before losses)*],
+    ),
+    text(size: 8pt)[*Losses*#super("2")],
+    text(size: 8pt)[*Proceeds*#super("3")],
+    text(size: 8pt)[*Exemption*],
+    text(size: 8pt)[*Taxable gain*],
   ),
   ..data.summary_rows
     .map(row => (
@@ -209,10 +224,10 @@
 #block[
   #set text(size: 6pt, fill: text-muted)
   *Notes:*
-  #list(
+  #enum(numbering: "1.",
+    [Disposals groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions],
+    [Gains and losses are net per disposal after matching rules (CG51560) and align with SA108 Boxes 23 and 24],
     [Proceeds = SA108 Box 21 (gross, before sale fees)],
-    [Gains/Losses are net per disposal after matching rules (CG51560)],
-    [Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions],
   )
 ]
 
