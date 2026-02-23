@@ -142,11 +142,6 @@ impl AcquisitionLedger {
         ));
     }
 
-    /// Get total remaining shares across all lots.
-    pub fn remaining_shares(&self) -> Decimal {
-        self.lots.iter().map(|lot| lot.available()).sum()
-    }
-
     /// Get remaining shares for a specific acquisition date.
     pub fn remaining_for_date(&self, date: NaiveDate) -> Decimal {
         self.lots
@@ -180,18 +175,115 @@ impl AcquisitionLedger {
     /// The adjustment is apportioned based on remaining shares at the time of the event.
     /// For S104 pooling, all shares are fungible, so we apportion based on each lot's
     /// proportion of total holdings, not based on the event amount.
-    pub fn apply_cost_adjustment(&mut self, adjustment: Decimal) {
-        let total_held: Decimal = self.lots.iter().map(|lot| lot.held_for_adjustment()).sum();
-        if total_held == Decimal::ZERO {
-            return;
+    ///
+    /// Returns any unapplied adjustment:
+    /// - `Decimal::ZERO` when fully applied
+    /// - negative value when a CAPRETURN reduction exceeds available basis
+    /// - positive value when no holdings exist to apply an increase
+    pub fn apply_cost_adjustment(&mut self, adjustment: Decimal) -> Decimal {
+        if adjustment == Decimal::ZERO {
+            return Decimal::ZERO;
         }
 
-        for lot in &mut self.lots {
-            let held = lot.held_for_adjustment();
-            if held > Decimal::ZERO {
-                let apportioned = adjustment * (held / total_held);
-                lot.cost_offset += apportioned;
+        let mut weighted_lots: Vec<(usize, Decimal)> = self
+            .lots
+            .iter()
+            .enumerate()
+            .filter_map(|(idx, lot)| {
+                let held = lot.held_for_adjustment();
+                (held > Decimal::ZERO).then_some((idx, held))
+            })
+            .collect();
+
+        if weighted_lots.is_empty() {
+            return adjustment;
+        }
+
+        if adjustment > Decimal::ZERO {
+            let total_held: Decimal = weighted_lots.iter().map(|(_, held)| *held).sum();
+            if total_held == Decimal::ZERO {
+                return adjustment;
             }
+
+            let mut remaining = adjustment;
+            for (position, (idx, held)) in weighted_lots.iter().enumerate() {
+                let apportioned = if position + 1 == weighted_lots.len() {
+                    remaining
+                } else {
+                    adjustment * (*held / total_held)
+                };
+
+                if let Some(lot) = self.lots.get_mut(*idx) {
+                    lot.cost_offset += apportioned;
+                }
+                remaining -= apportioned;
+            }
+
+            return Decimal::ZERO;
+        }
+
+        // Negative adjustment (CAPRETURN): cap reductions so adjusted lot cost never goes below zero.
+        // Any unapplied reduction becomes a deemed gain.
+        let mut remaining_reduction = -adjustment;
+
+        loop {
+            weighted_lots.retain(|(idx, held)| {
+                if *held <= Decimal::ZERO {
+                    return false;
+                }
+                self.lots
+                    .get(*idx)
+                    .map(|lot| lot.adjusted_cost() > Decimal::ZERO)
+                    .unwrap_or(false)
+            });
+
+            if remaining_reduction <= Decimal::ZERO || weighted_lots.is_empty() {
+                break;
+            }
+
+            let total_held: Decimal = weighted_lots.iter().map(|(_, held)| *held).sum();
+            if total_held == Decimal::ZERO {
+                break;
+            }
+
+            let mut pass_remaining = remaining_reduction;
+            for (position, (idx, held)) in weighted_lots.iter().enumerate() {
+                let capacity = self
+                    .lots
+                    .get(*idx)
+                    .map(|lot| lot.adjusted_cost().max(Decimal::ZERO))
+                    .unwrap_or(Decimal::ZERO);
+
+                if capacity <= Decimal::ZERO {
+                    continue;
+                }
+
+                let requested = if position + 1 == weighted_lots.len() {
+                    pass_remaining
+                } else {
+                    remaining_reduction * (*held / total_held)
+                };
+
+                let applied = requested.min(capacity);
+                if applied > Decimal::ZERO {
+                    if let Some(lot) = self.lots.get_mut(*idx) {
+                        lot.cost_offset -= applied;
+                    }
+                    pass_remaining -= applied;
+                }
+            }
+
+            if pass_remaining >= remaining_reduction {
+                break;
+            }
+
+            remaining_reduction = pass_remaining;
+        }
+
+        if remaining_reduction > Decimal::ZERO {
+            -remaining_reduction
+        } else {
+            Decimal::ZERO
         }
     }
 
@@ -274,20 +366,6 @@ impl AcquisitionLedger {
                 }
             }
         }
-    }
-
-    /// Get a lot by transaction index.
-    pub fn get_lot_by_idx(&self, transaction_idx: usize) -> Option<&AcquisitionLot> {
-        self.lots
-            .iter()
-            .find(|lot| lot.transaction_idx == transaction_idx)
-    }
-
-    /// Get mutable lot by transaction index.
-    pub fn get_lot_by_idx_mut(&mut self, transaction_idx: usize) -> Option<&mut AcquisitionLot> {
-        self.lots
-            .iter_mut()
-            .find(|lot| lot.transaction_idx == transaction_idx)
     }
 
     /// Get all lots.

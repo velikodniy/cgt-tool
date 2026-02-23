@@ -393,6 +393,7 @@ impl CgtServer {
                     MatchRule::SameDay => "Same Day",
                     MatchRule::BedAndBreakfast => "Bed & Breakfast",
                     MatchRule::Section104 => "Section 104",
+                    MatchRule::CapitalReturnExcess => "Capital Return Excess",
                 };
 
                 let explanation = match m.rule {
@@ -416,6 +417,12 @@ impl CgtServer {
                         format!(
                             "Matched {} shares from Section 104 pool at average cost. Cost basis: {}",
                             m.quantity, m.allowable_cost
+                        )
+                    }
+                    MatchRule::CapitalReturnExcess => {
+                        format!(
+                            "Capital return exceeded remaining basis. Deemed gain recognized: {}",
+                            m.gain_or_loss
                         )
                     }
                 };

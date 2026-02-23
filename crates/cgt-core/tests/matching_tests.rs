@@ -860,3 +860,124 @@ fn test_same_day_reservation_priority_over_bnb() {
     // Total: £195
     assert_eq!(year.total_gain, dec!(195), "Total gain should be £195");
 }
+
+#[test]
+fn test_sell_without_prior_acquisition_returns_error() {
+    let cgt_content = r#"
+2024-06-01 SELL ACME 10 @ 12.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let error = calculate(transactions, Some(2024), None)
+        .expect_err("Expected unmatched sell to fail")
+        .to_string();
+
+    assert!(
+        error.contains("no prior acquisitions"),
+        "Expected no prior acquisitions error, got: {error}"
+    );
+}
+
+#[test]
+fn test_oversell_returns_error() {
+    let cgt_content = r#"
+2024-01-01 BUY ACME 5 @ 10.00 GBP
+2024-06-01 SELL ACME 10 @ 12.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let error = calculate(transactions, Some(2024), None)
+        .expect_err("Expected oversell to fail")
+        .to_string();
+
+    assert!(
+        error.contains("exceeds holding"),
+        "Expected exceeds holding error, got: {error}"
+    );
+}
+
+#[test]
+fn test_same_day_reservation_with_interleaved_buys() {
+    // Interleaved buys for another ticker must not cause over-reservation on the
+    // B&B acquisition date for the target ticker.
+    let cgt_content = r#"
+2024-01-01 BUY SNAP 200 @ 10.00 GBP
+2024-02-01 SELL SNAP 100 @ 12.00 GBP
+2024-02-02 BUY SNAP 40 @ 11.00 GBP
+2024-02-02 BUY OTHER 1 @ 1.00 GBP
+2024-02-02 BUY SNAP 40 @ 11.00 GBP
+2024-02-02 SELL SNAP 50 @ 11.50 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+
+    let year = report.tax_years.first().expect("Expected a tax year");
+
+    let feb1_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.date.to_string() == "2024-02-01")
+        .expect("Missing Feb 1 disposal");
+
+    let feb2_disposal = year
+        .disposals
+        .iter()
+        .find(|d| d.date.to_string() == "2024-02-02" && d.ticker == "SNAP")
+        .expect("Missing Feb 2 SNAP disposal");
+
+    let feb1_bnb = feb1_disposal
+        .matches
+        .iter()
+        .find(|m| m.rule == MatchRule::BedAndBreakfast)
+        .expect("Feb 1 should have B&B match");
+    assert_eq!(
+        feb1_bnb.quantity,
+        dec!(30),
+        "Feb 1 B&B should use 30 shares after reserving 50 for Same Day"
+    );
+
+    let feb1_s104 = feb1_disposal
+        .matches
+        .iter()
+        .find(|m| m.rule == MatchRule::Section104)
+        .expect("Feb 1 should have S104 match");
+    assert_eq!(feb1_s104.quantity, dec!(70));
+
+    assert_eq!(feb2_disposal.matches.len(), 1);
+    assert_eq!(feb2_disposal.matches[0].rule, MatchRule::SameDay);
+    assert_eq!(feb2_disposal.matches[0].quantity, dec!(50));
+}
+
+#[test]
+fn test_capreturn_excess_creates_deemed_gain_and_clamps_pool_cost() {
+    let cgt_content = r#"
+2024-01-01 BUY ACME 10 @ 100.00 GBP
+2024-02-01 CAPRETURN ACME 10 TOTAL 1200.00 GBP FEES 0.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+
+    let year = report.tax_years.first().expect("Expected a tax year");
+    assert_eq!(year.total_gain, dec!(200));
+    assert_eq!(year.total_loss, Decimal::ZERO);
+
+    assert_eq!(year.disposals.len(), 1);
+    let deemed_disposal = &year.disposals[0];
+    assert_eq!(deemed_disposal.ticker, "ACME");
+
+    assert_eq!(deemed_disposal.matches.len(), 1);
+    let deemed_match = &deemed_disposal.matches[0];
+    assert_eq!(deemed_match.rule, MatchRule::CapitalReturnExcess);
+    assert_eq!(deemed_match.allowable_cost, Decimal::ZERO);
+    assert_eq!(deemed_match.gain_or_loss, dec!(200));
+
+    let holding = report
+        .holdings
+        .iter()
+        .find(|h| h.ticker == "ACME")
+        .expect("Expected ACME holding");
+    assert_eq!(holding.quantity, dec!(10));
+    assert_eq!(holding.total_cost, Decimal::ZERO);
+}

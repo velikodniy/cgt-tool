@@ -154,6 +154,8 @@
     } else {
       "B&B: " + qty + " shares"
     }
+  } else if item.rule == "CAPRETURN_EXCESS" {
+    "Capital Return Excess: deemed gain"
   } else {
     let unit = if item.quantity != 0 { item.allowable_cost / item.quantity } else { 0 }
     "Section 104: " + qty + " shares @ " + fmt-money(unit)

@@ -46,6 +46,7 @@ pub fn match_bed_and_breakfast(
     all_transactions: &[GbpTransaction],
     cost_offsets: &[Decimal],
     future_consumption: &mut HashMap<usize, Decimal>,
+    same_day_reservations: &mut HashMap<(NaiveDate, String), Decimal>,
 ) -> Result<Vec<MatchResult>, CgtError> {
     let mut results = Vec::new();
 
@@ -103,18 +104,32 @@ pub fn match_bed_and_breakfast(
                 price,
                 fees,
             } => {
-                // Reserve shares for Same Day matching on this acquisition date.
-                // Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1)).
-                // Cap reservation at acquisition quantity to handle edge case where
-                // same-day sells exceed buys.
-                let same_day_sells =
-                    same_day_disposal_quantity(tx.date, &tx.ticker, all_transactions);
-                let reserved_for_same_day = same_day_sells.min(*amount);
                 let already_reserved = future_consumption
                     .get(&idx)
                     .copied()
                     .unwrap_or(Decimal::ZERO);
-                let available_at_buy_time = *amount - reserved_for_same_day - already_reserved;
+
+                let available_before_same_day = *amount - already_reserved;
+                if available_before_same_day <= Decimal::ZERO {
+                    continue;
+                }
+
+                // Reserve shares for Same Day matching on this acquisition date.
+                // Per TCGA92/S106A(9), B&B is "subject to" Same Day rule (S105(1)).
+                // Reservation is tracked across all same-day lots for this date+ticker,
+                // so interleaved buys cannot over-reserve.
+                let reservation_key = (tx.date, tx.ticker.clone());
+                let reservation_remaining = same_day_reservations
+                    .entry(reservation_key)
+                    .or_insert_with(|| {
+                        same_day_disposal_quantity(tx.date, &tx.ticker, all_transactions)
+                    });
+
+                let reserve_now =
+                    available_before_same_day.min((*reservation_remaining).max(Decimal::ZERO));
+                *reservation_remaining -= reserve_now;
+
+                let available_at_buy_time = available_before_same_day - reserve_now;
                 if available_at_buy_time <= Decimal::ZERO {
                     continue;
                 }

@@ -405,6 +405,7 @@ pub enum MatchRule {
     SameDay,
     BedAndBreakfast,
     Section104,
+    CapitalReturnExcess,
 }
 
 /// How a disposal (or portion) was matched to an acquisition.

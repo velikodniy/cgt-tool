@@ -59,6 +59,7 @@ fn match_rule_label(rule: &MatchRule) -> &'static str {
         MatchRule::SameDay => "SAME_DAY",
         MatchRule::BedAndBreakfast => "BED_AND_BREAKFAST",
         MatchRule::Section104 => "SECTION_104",
+        MatchRule::CapitalReturnExcess => "CAPRETURN_EXCESS",
     }
 }
 

@@ -65,8 +65,9 @@ impl Matcher {
         // Preprocess: sort and merge same-day transactions
         let transactions = self.preprocess(transactions);
 
-        let cost_offsets = self.compute_cost_offsets(&transactions);
+        let (cost_offsets, capreturn_excess_gains) = self.compute_cost_offsets(&transactions);
         let mut future_consumption: HashMap<usize, Decimal> = HashMap::new();
+        let mut same_day_reservations: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
 
         // Process transactions in order, grouped by date
         // Buys are added before same-day sells for matching; cost offsets already applied.
@@ -119,6 +120,7 @@ impl Matcher {
                         &transactions,
                         &cost_offsets,
                         &mut future_consumption,
+                        &mut same_day_reservations,
                     )?;
                 }
             }
@@ -133,6 +135,14 @@ impl Matcher {
             // Process splits/unsplits
             for tx in &transactions[i..day_end] {
                 self.process_corporate_action(tx)?;
+            }
+
+            // Record deemed gains for CAPRETURN excess over basis.
+            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
+                let idx = i + offset;
+                if let Some(excess_gain) = capreturn_excess_gains.get(&idx) {
+                    self.record_capreturn_excess(tx, *excess_gain)?;
+                }
             }
 
             i = day_end;
@@ -219,8 +229,12 @@ impl Matcher {
         merged
     }
 
-    fn compute_cost_offsets(&self, transactions: &[GbpTransaction]) -> Vec<Decimal> {
+    fn compute_cost_offsets(
+        &self,
+        transactions: &[GbpTransaction],
+    ) -> (Vec<Decimal>, HashMap<usize, Decimal>) {
         let mut ledgers: HashMap<String, AcquisitionLedger> = HashMap::new();
+        let mut capreturn_excess_gains: HashMap<usize, Decimal> = HashMap::new();
         let mut i = 0;
 
         while i < transactions.len() {
@@ -231,19 +245,23 @@ impl Matcher {
             }
 
             // Apply corporate actions for the day (before same-day buys)
-            for tx in &transactions[i..day_end] {
+            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
+                let idx = i + offset;
                 match &tx.operation {
                     Operation::CapReturn {
                         total_value, fees, ..
                     } => {
+                        let net_value = *total_value - *fees;
                         if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
-                            let net_value = *total_value - *fees;
-                            ledger.apply_cost_adjustment(-net_value);
+                            let unapplied = ledger.apply_cost_adjustment(-net_value);
+                            if unapplied < Decimal::ZERO {
+                                capreturn_excess_gains.insert(idx, -unapplied);
+                            }
                         }
                     }
                     Operation::Dividend { total_value, .. } => {
                         if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
-                            ledger.apply_cost_adjustment(*total_value);
+                            let _ = ledger.apply_cost_adjustment(*total_value);
                         }
                     }
                     _ => {}
@@ -300,7 +318,7 @@ impl Matcher {
             }
         }
 
-        offsets
+        (offsets, capreturn_excess_gains)
     }
 
     /// Process a sell transaction.
@@ -311,6 +329,7 @@ impl Matcher {
         all_transactions: &[GbpTransaction],
         cost_offsets: &[Decimal],
         future_consumption: &mut HashMap<usize, Decimal>,
+        same_day_reservations: &mut HashMap<(NaiveDate, String), Decimal>,
     ) -> Result<(), CgtError> {
         let Operation::Sell {
             amount,
@@ -340,6 +359,7 @@ impl Matcher {
             all_transactions,
             cost_offsets,
             future_consumption,
+            same_day_reservations,
         )?;
         for m in bnb_matched {
             self.matches.push(m);
@@ -350,7 +370,7 @@ impl Matcher {
             let s104_matched = section104::match_section_104(
                 self,
                 tx,
-                remaining,
+                &mut remaining,
                 gross_proceeds,
                 total_fees,
                 *amount,
@@ -359,6 +379,52 @@ impl Matcher {
                 self.matches.push(m);
             }
         }
+
+        if remaining > Decimal::ZERO {
+            if remaining == *amount {
+                return Err(CgtError::InvalidTransaction(format!(
+                    "SELL {} on {} has no prior acquisitions (attempted to dispose {})",
+                    tx.ticker, tx.date, amount
+                )));
+            }
+
+            let matched = *amount - remaining;
+            return Err(CgtError::InvalidTransaction(format!(
+                "SELL {} on {} exceeds holding: attempted {}, matched {}, unmatched {}",
+                tx.ticker, tx.date, amount, matched, remaining
+            )));
+        }
+
+        Ok(())
+    }
+
+    fn record_capreturn_excess(
+        &mut self,
+        tx: &GbpTransaction,
+        excess_gain: Decimal,
+    ) -> Result<(), CgtError> {
+        if excess_gain <= Decimal::ZERO {
+            return Ok(());
+        }
+
+        let Operation::CapReturn { amount, .. } = &tx.operation else {
+            return Err(CgtError::InvalidTransaction(format!(
+                "Internal error: CAPRETURN excess recorded for non-CAPRETURN transaction {} on {}",
+                tx.ticker, tx.date
+            )));
+        };
+
+        self.matches.push(MatchResult {
+            disposal_date: tx.date,
+            disposal_ticker: tx.ticker.clone(),
+            quantity: *amount,
+            gross_proceeds: excess_gain,
+            proceeds: excess_gain,
+            allowable_cost: Decimal::ZERO,
+            gain_or_loss: excess_gain,
+            rule: MatchRule::CapitalReturnExcess,
+            acquisition_date: None,
+        });
 
         Ok(())
     }
@@ -416,19 +482,9 @@ impl Matcher {
         Ok(())
     }
 
-    /// Get the ledger for a ticker.
-    pub fn get_ledger(&self, ticker: &str) -> Option<&AcquisitionLedger> {
-        self.ledgers.get(ticker)
-    }
-
     /// Get mutable ledger for a ticker.
     pub fn get_ledger_mut(&mut self, ticker: &str) -> Option<&mut AcquisitionLedger> {
         self.ledgers.get_mut(ticker)
-    }
-
-    /// Get the Section 104 pool for a ticker.
-    pub fn get_pool(&self, ticker: &str) -> Option<&Section104Holding> {
-        self.pools.get(ticker)
     }
 
     /// Get mutable Section 104 pool for a ticker.

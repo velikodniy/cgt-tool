@@ -13,12 +13,12 @@ use rust_decimal::Decimal;
 pub fn match_section_104(
     matcher: &mut Matcher,
     sell_tx: &GbpTransaction,
-    remaining: Decimal,
+    remaining: &mut Decimal,
     gross_proceeds: Decimal,
     total_fees: Decimal,
     total_sell_amount: Decimal,
 ) -> Result<Option<MatchResult>, CgtError> {
-    if remaining == Decimal::ZERO {
+    if *remaining == Decimal::ZERO {
         return Ok(None);
     }
 
@@ -36,7 +36,10 @@ pub fn match_section_104(
     }
 
     // Calculate how much we can match from the pool
-    let matched_qty = remaining.min(pool.quantity);
+    let matched_qty = (*remaining).min(pool.quantity);
+    if matched_qty == Decimal::ZERO {
+        return Ok(None);
+    }
 
     // Calculate proportional cost from pool
     let unit_cost = if pool.quantity != Decimal::ZERO {
@@ -49,6 +52,7 @@ pub fn match_section_104(
     // Update pool
     pool.quantity -= matched_qty;
     pool.total_cost -= cost;
+    *remaining -= matched_qty;
 
     // Calculate proportional proceeds and fees
     let proportion = matched_qty / total_sell_amount;
