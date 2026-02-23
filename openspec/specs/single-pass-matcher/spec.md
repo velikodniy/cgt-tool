@@ -28,10 +28,27 @@ The matcher MUST apply split and unsplit ratios that occur between the disposal 
 
 If a future Buy is claimed by a prior B&B Sell, the matcher MUST reduce the available quantity for that Buy so it is not added to the Section 104 pool or matched again.
 
+Same-day reservation for that future acquisition date MUST be tracked across all same-day lots for the same ticker, including when those lots are non-adjacent in the transaction stream.
+
 #### Scenario: Future buy consumed by earlier sell
 
 - **WHEN** input file `tests/inputs/single_pass_future_consumption.cgt` is processed
 - **THEN** output MUST match `tests/json/single_pass_future_consumption.json`
+
+#### Scenario: Interleaved same-day buys
+
+- **WHEN** same-day buys for a ticker are separated by other tickers' transactions
+- **THEN** total Same Day reservation for that date+ticker MUST not be applied per-lot independently
+- **AND** B&B availability MUST reflect aggregate date-level reservation
+
+### Requirement: Unmatched disposals are rejected
+
+If a disposal cannot be fully matched after Same Day, B&B, and Section 104 passes, the matcher MUST return an error instead of silently producing a partial disposal.
+
+#### Scenario: Oversell rejection
+
+- **WHEN** input contains a SELL quantity larger than available matched shares
+- **THEN** processing MUST fail with an invalid transaction error indicating unmatched quantity
 
 ### Requirement: Corporate actions use live holdings state
 

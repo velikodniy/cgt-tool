@@ -45,12 +45,18 @@ The system SHALL parse Charles Schwab transaction JSON exports. The input is a J
 #### Scenario: Parse dividend
 
 - **WHEN** JSON contains a cash dividend transaction
-- **THEN** output `DIVIDEND` transaction
+- **THEN** output `DIVIDEND` transaction using DSL form `DIVIDEND <ticker> <quantity> TOTAL <value> [TAX ...]`
+- **AND** when share quantity is unavailable in source data, converter SHALL emit quantity `1`
 
 #### Scenario: Parse dividend with tax withheld
 
 - **WHEN** JSON contains dividend transaction followed by NRA Withholding transaction on same date for same symbol
-- **THEN** combine into single `DIVIDEND` with `TAX` amount from withholding
+- **THEN** combine into single `DIVIDEND ... TOTAL ... TAX ...` with tax amount from withholding
+
+#### Scenario: Converted output is valid DSL
+
+- **WHEN** converter emits Schwab dividend lines
+- **THEN** output SHALL be accepted by the CGT DSL parser without syntax errors
 
 #### Scenario: Skip non-CGT transactions
 

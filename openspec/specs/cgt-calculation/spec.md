@@ -22,7 +22,9 @@ Implementation Note: Matching logic is now modularized in `matcher/same_day.rs`.
 
 The system SHALL match disposals with acquisitions within 30 days after sale, subject to Same Day matching priority per TCGA92/S106A(9).
 
-When evaluating a potential B&B acquisition date, the system SHALL reserve shares needed for Same Day matching on that date before allowing earlier disposals to consume them. The available quantity for B&B matching SHALL be: `acquisition_quantity - min(same_day_disposal_quantity, acquisition_quantity)`.
+When evaluating a potential B&B acquisition date, the system SHALL reserve shares needed for Same Day matching on that date before allowing earlier disposals to consume them.
+
+Reservation SHALL be tracked at the date+ticker level across all same-day acquisition lots (including interleaved lots), so total Same Day reservation cannot exceed total same-day acquisition quantity.
 
 #### Scenario: B&B match
 
@@ -50,6 +52,13 @@ When evaluating a potential B&B acquisition date, the system SHALL reserve share
 - **THEN** the reservation SHALL be capped at the acquisition quantity
 - **AND** excess same-day disposal shares proceed to B&B or S104 matching per normal rules
 
+#### Scenario: Interleaved same-day buys do not over-reserve
+
+- **WHEN** multiple buys for the same ticker occur on the same date
+- **AND** those buys are split by unrelated transactions (for other tickers)
+- **THEN** Same Day reservation SHALL be applied across the aggregate date+ticker quantity
+- **AND** earlier disposals' B&B matches SHALL use only post-reservation remainder
+
 ### Requirement: Section 104 Pool
 
 The system SHALL maintain pooled holdings at average cost for remaining shares.
@@ -59,6 +68,12 @@ The system SHALL maintain pooled holdings at average cost for remaining shares.
 - **WHEN** disposing shares not matched by Same Day or B&B
 - **THEN** use average cost from Section 104 pool
 - **AND** update pool on purchases (add) and sales (reduce proportionally)
+
+#### Scenario: Disposal exceeds available shares
+
+- **WHEN** a SELL cannot be fully matched by Same Day, B&B, and Section 104 rules
+- **THEN** calculation SHALL fail with an invalid transaction error
+- **AND** the error SHALL indicate no prior acquisitions or that disposal exceeds holdings
 
 #### Scenario: Zero sell amount guard
 
@@ -170,6 +185,12 @@ The system SHALL adjust pools for SPLIT, UNSPLIT, and CAPRETURN, correctly deter
 - **AND** remaining shares span multiple lots
 - **THEN** the cost reduction is distributed proportionally across remaining shares in each lot
 - **AND** lots acquired after the event date are not affected
+
+#### Scenario: Capital return exceeds remaining basis
+
+- **WHEN** a CAPRETURN reduction is greater than remaining allowable basis
+- **THEN** Section 104 basis SHALL be floored at zero
+- **AND** the unapplied excess SHALL be reported as a deemed gain in that tax year
 
 #### Scenario: Asset event after same-day buy and sell
 

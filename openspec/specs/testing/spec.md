@@ -80,6 +80,18 @@ The system SHALL include tests for edge cases identified from HMRC guidance and 
 - **THEN** the excess creates a gain
 - **AND** cost basis is reduced to zero
 
+#### Scenario: Sell exceeds available shares
+
+- **WHEN** a SELL cannot be fully matched to acquisitions
+- **THEN** calculation fails with a validation-style error
+- **AND** no partial disposal output is produced
+
+#### Scenario: Interleaved same-day buy reservation
+
+- **WHEN** same-day buys for a ticker are split by other tickers' transactions
+- **THEN** Same Day reservation is applied to aggregate date+ticker quantity
+- **AND** earlier B&B disposals only consume post-reservation remainder
+
 #### Scenario: Split then immediate sell
 
 - **WHEN** a stock split occurs
@@ -234,6 +246,7 @@ The system SHALL include Schwab-format JSON test fixtures that can be converted 
 - **WHEN** synthetic Schwab JSON files are converted via `cgt convert schwab`
 - **THEN** the resulting CGT DSL produces equivalent calculations to `SyntheticComplex.cgt`
 - **AND** RSU acquisitions use vest date (from awards) not settlement date
+- **AND** dividend lines include `TOTAL` and parse successfully as CGT DSL
 
 ### Requirement: RSU Vesting Edge Cases
 

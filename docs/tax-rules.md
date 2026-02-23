@@ -317,6 +317,7 @@ When a company returns capital to shareholders:
 - Reduces the cost base of your holding
 - May trigger a deemed disposal if return exceeds cost base
 - The reduction is apportioned across the Section 104 pool based on shares held
+- In this tool, pool cost is never allowed below £0; any excess is reported as a deemed gain
 
 **Example 1: Simple Capital Return**
 
@@ -325,6 +326,16 @@ When a company returns capital to shareholders:
 - Return: 100 × £2.00 = £200
 - New pool cost: £800 - £200 = £600
 - If return exceeded £800, the excess would be a gain
+
+### Tool Treatment When Return Exceeds Remaining Pool Cost
+
+For `CAPRETURN` events, this calculator applies the distribution to the Section 104 cost pool first.
+If the reduction would push the pool below zero:
+
+- The pool cost is floored at £0
+- The excess amount is reported as a deemed gain in the same tax year
+
+This is consistent with the small capital distribution approach in CG57844 (reduce Section 104 pool expenditure) and CG57847 (where distribution exceeds allowable expenditure, remaining allowable expenditure is exhausted and excess is chargeable).
 
 **Example 2: Capital Return with Multiple Lots**
 
@@ -441,6 +452,9 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 - [CG51590 - Share Identification: Examples](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51590)
 - [CG51746 - Bonus and Rights Issues](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51746)
 - [CG58620 - Capital Returns](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg58620)
+- [CG57835 - Small Capital Distributions: Introduction](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg57835)
+- [CG57844 - Small Capital Distributions: Section 104 Computation](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg57844)
+- [CG57847 - Small Capital Distributions: Proceeds More Than Allowable Expenditure](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg57847)
 
 ### HMRC Employment-Related Securities Manual
 
@@ -461,6 +475,6 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 
 ---
 
-**Document Version:** 1.3
-**Last Updated:** 2025-12-19
+**Document Version:** 1.4
+**Last Updated:** 2026-02-23
 **Source:** HMRC Capital Gains Manual (CG51500-CG51600), HMRC Employment-Related Securities Manual (ERSM20192)
