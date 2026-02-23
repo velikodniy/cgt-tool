@@ -14,4 +14,5 @@ thiserror = "1.0"
 workspace = true
 
 [dev-dependencies]
+cgt-core = { path = "../cgt-core" }
 rust_decimal_macros = "1.33"

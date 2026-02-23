@@ -66,18 +66,21 @@ pub fn format_sell(
 }
 
 /// Format a DIVIDEND transaction line
+///
+/// Schwab exports do not include share quantity for dividend rows, so quantity is emitted
+/// as `1` and the cash value is emitted via `TOTAL` to produce valid CGT DSL.
 pub fn format_dividend(
     date: &NaiveDate,
     symbol: &str,
-    amount: Decimal,
+    total_value: Decimal,
     currency: &str,
     tax: Option<Decimal>,
 ) -> String {
     let mut line = format!(
-        "{} DIVIDEND {} {} {}",
+        "{} DIVIDEND {} 1 TOTAL {} {}",
         format_date(date),
         symbol,
-        format_amount(amount),
+        format_amount(total_value),
         currency
     );
 
@@ -88,11 +91,6 @@ pub fn format_dividend(
     }
 
     line
-}
-
-/// Format a SPLIT transaction line
-pub fn format_split(date: &NaiveDate, symbol: &str, ratio: &str) -> String {
-    format!("{} SPLIT {} {}", format_date(date), symbol, ratio)
 }
 
 /// Format a comment line

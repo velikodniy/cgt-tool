@@ -48,7 +48,10 @@ fn test_format_sell() {
 fn test_format_dividend_with_tax() {
     let date = NaiveDate::from_ymd_opt(2023, 7, 15).unwrap();
     let result = format_dividend(&date, "FOO", dec!(50.00), "USD", Some(dec!(7.50)));
-    assert_eq!(result, "2023-07-15 DIVIDEND FOO 50.00 USD TAX 7.50 USD");
+    assert_eq!(
+        result,
+        "2023-07-15 DIVIDEND FOO 1 TOTAL 50.00 USD TAX 7.50 USD"
+    );
 }
 
 #[test]

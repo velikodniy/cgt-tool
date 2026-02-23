@@ -485,7 +485,11 @@ fn test_nra_tax_missing_symbol_is_ignored() {
 
     let result = converter.convert(&input).unwrap();
 
-    assert!(result.cgt_content.contains("DIVIDEND FOO 50.00 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND FOO 1 TOTAL 50.00 USD")
+    );
     assert!(!result.cgt_content.contains("TAX"));
     assert_eq!(result.skipped_count, 0);
 }
@@ -882,7 +886,11 @@ fn test_dividend_negative_amount_handling() {
 
     let result = converter.convert(&input).unwrap();
     // Should handle negative amount (abs value)
-    assert!(result.cgt_content.contains("DIVIDEND FOO 10.00 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND FOO 1 TOTAL 10.00 USD")
+    );
 }
 
 #[test]
@@ -943,11 +951,11 @@ fn test_tax_withholding_types() {
     assert!(
         result
             .cgt_content
-            .contains("DIVIDEND FOO 100.00 USD TAX 15.00 USD")
+            .contains("DIVIDEND FOO 1 TOTAL 100.00 USD TAX 15.00 USD")
     );
     assert!(
         result
             .cgt_content
-            .contains("DIVIDEND BAR 50.00 USD TAX 7.50 USD")
+            .contains("DIVIDEND BAR 1 TOTAL 50.00 USD TAX 7.50 USD")
     );
 }

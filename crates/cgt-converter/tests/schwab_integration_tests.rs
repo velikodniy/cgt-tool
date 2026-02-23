@@ -1,5 +1,6 @@
 use cgt_converter::BrokerConverter;
 use cgt_converter::schwab::{SchwabConverter, SchwabInput};
+use cgt_core::parser::parse_file;
 
 #[test]
 fn test_basic_buy_sell() {
@@ -129,7 +130,27 @@ fn test_dividend_with_tax() {
     assert!(
         result
             .cgt_content
-            .contains("2023-07-15 DIVIDEND FOO 50.00 USD TAX 7.50 USD")
+            .contains("2023-07-15 DIVIDEND FOO 1 TOTAL 50.00 USD TAX 7.50 USD")
+    );
+}
+
+#[test]
+fn test_converted_dividend_output_parses_as_dsl() {
+    let json = include_str!("fixtures/schwab/transactions_dividend.json");
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+    let parse_result = parse_file(&result.cgt_content);
+
+    assert!(
+        parse_result.is_ok(),
+        "Converted output should be valid CGT DSL: {}",
+        result.cgt_content
     );
 }
 
@@ -628,11 +649,27 @@ fn test_multiple_dividend_types() {
 
     let result = converter.convert(&input).unwrap();
 
-    assert!(result.cgt_content.contains("DIVIDEND FOO 50.00 USD"));
-    assert!(result.cgt_content.contains("DIVIDEND BAR 30.00 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND FOO 1 TOTAL 50.00 USD")
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND BAR 1 TOTAL 30.00 USD")
+    );
     // Capital gains treated as dividends
-    assert!(result.cgt_content.contains("DIVIDEND ETFX 10.00 USD"));
-    assert!(result.cgt_content.contains("DIVIDEND ETFX 20.00 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND ETFX 1 TOTAL 10.00 USD")
+    );
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND ETFX 1 TOTAL 20.00 USD")
+    );
 }
 
 #[test]
@@ -684,7 +721,7 @@ fn test_dividend_with_multiple_tax_withholdings() {
     assert!(
         result
             .cgt_content
-            .contains("DIVIDEND FOO 100.00 USD TAX 15.00 USD")
+            .contains("DIVIDEND FOO 1 TOTAL 100.00 USD TAX 15.00 USD")
     );
 }
 
@@ -713,7 +750,11 @@ fn test_dividend_without_tax() {
 
     let result = converter.convert(&input).unwrap();
     // No TAX clause when no withholding
-    assert!(result.cgt_content.contains("DIVIDEND ETFX 50.00 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND ETFX 1 TOTAL 50.00 USD")
+    );
     assert!(!result.cgt_content.contains("TAX"));
 }
 
@@ -892,7 +933,11 @@ fn test_typical_monthly_activity() {
     let result = converter.convert(&input).unwrap();
 
     // Check all CGT-relevant transactions are present
-    assert!(result.cgt_content.contains("DIVIDEND ETFX 25.50 USD"));
+    assert!(
+        result
+            .cgt_content
+            .contains("DIVIDEND ETFX 1 TOTAL 25.50 USD")
+    );
     assert!(result.cgt_content.contains("BUY ACME 100 @ 55.00 USD"));
     assert!(result.cgt_content.contains("SELL ACME 30 @ 55.00 USD"));
     assert!(result.cgt_content.contains("BUY FOO 5 @ 165.00 USD"));

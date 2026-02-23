@@ -387,6 +387,7 @@ dependencies = [
 name = "cgt-converter"
 version = "0.11.1"
 dependencies = [
+ "cgt-core",
  "chrono",
  "rust_decimal",
  "rust_decimal_macros",
