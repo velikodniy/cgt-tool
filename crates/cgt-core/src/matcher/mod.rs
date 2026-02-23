@@ -65,7 +65,7 @@ impl Matcher {
         // Preprocess: sort and merge same-day transactions
         let transactions = self.preprocess(transactions);
 
-        let (cost_offsets, capreturn_excess_gains) = self.compute_cost_offsets(&transactions);
+        let cost_offsets = self.compute_cost_offsets(&transactions)?;
         let mut future_consumption: HashMap<usize, Decimal> = HashMap::new();
         let mut same_day_reservations: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
 
@@ -135,14 +135,6 @@ impl Matcher {
             // Process splits/unsplits
             for tx in &transactions[i..day_end] {
                 self.process_corporate_action(tx)?;
-            }
-
-            // Record deemed gains for CAPRETURN excess over basis.
-            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
-                let idx = i + offset;
-                if let Some(excess_gain) = capreturn_excess_gains.get(&idx) {
-                    self.record_capreturn_excess(tx, *excess_gain)?;
-                }
             }
 
             i = day_end;
@@ -232,9 +224,8 @@ impl Matcher {
     fn compute_cost_offsets(
         &self,
         transactions: &[GbpTransaction],
-    ) -> (Vec<Decimal>, HashMap<usize, Decimal>) {
+    ) -> Result<Vec<Decimal>, CgtError> {
         let mut ledgers: HashMap<String, AcquisitionLedger> = HashMap::new();
-        let mut capreturn_excess_gains: HashMap<usize, Decimal> = HashMap::new();
         let mut i = 0;
 
         while i < transactions.len() {
@@ -245,23 +236,33 @@ impl Matcher {
             }
 
             // Apply corporate actions for the day (before same-day buys)
-            for (offset, tx) in transactions[i..day_end].iter().enumerate() {
-                let idx = i + offset;
+            for tx in &transactions[i..day_end] {
                 match &tx.operation {
                     Operation::CapReturn {
                         total_value, fees, ..
                     } => {
                         let net_value = *total_value - *fees;
                         if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
-                            let unapplied = ledger.apply_cost_adjustment(-net_value);
-                            if unapplied < Decimal::ZERO {
-                                capreturn_excess_gains.insert(idx, -unapplied);
+                            let basis_before = ledger.total_adjusted_cost();
+                            if net_value > basis_before {
+                                return Err(CgtError::InvalidTransaction(format!(
+                                    "CAPRETURN {} on {}: capital distribution £{} exceeds \
+                                     allowable cost £{}. TCGA92/S122(2) does not apply when \
+                                     distribution exceeds expenditure (CG57847). \
+                                     Part-disposal under S122(1) or election under S122(4) \
+                                     is required.",
+                                    tx.ticker,
+                                    tx.date,
+                                    net_value.round_dp(2),
+                                    basis_before.round_dp(2)
+                                )));
                             }
+                            ledger.apply_cost_adjustment(-net_value);
                         }
                     }
                     Operation::Dividend { total_value, .. } => {
                         if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
-                            let _ = ledger.apply_cost_adjustment(*total_value);
+                            ledger.apply_cost_adjustment(*total_value);
                         }
                     }
                     _ => {}
@@ -318,7 +319,7 @@ impl Matcher {
             }
         }
 
-        (offsets, capreturn_excess_gains)
+        Ok(offsets)
     }
 
     /// Process a sell transaction.
@@ -394,37 +395,6 @@ impl Matcher {
                 tx.ticker, tx.date, amount, matched, remaining
             )));
         }
-
-        Ok(())
-    }
-
-    fn record_capreturn_excess(
-        &mut self,
-        tx: &GbpTransaction,
-        excess_gain: Decimal,
-    ) -> Result<(), CgtError> {
-        if excess_gain <= Decimal::ZERO {
-            return Ok(());
-        }
-
-        let Operation::CapReturn { amount, .. } = &tx.operation else {
-            return Err(CgtError::InvalidTransaction(format!(
-                "Internal error: CAPRETURN excess recorded for non-CAPRETURN transaction {} on {}",
-                tx.ticker, tx.date
-            )));
-        };
-
-        self.matches.push(MatchResult {
-            disposal_date: tx.date,
-            disposal_ticker: tx.ticker.clone(),
-            quantity: *amount,
-            gross_proceeds: excess_gain,
-            proceeds: excess_gain,
-            allowable_cost: Decimal::ZERO,
-            gain_or_loss: excess_gain,
-            rule: MatchRule::CapitalReturnExcess,
-            acquisition_date: None,
-        });
 
         Ok(())
     }

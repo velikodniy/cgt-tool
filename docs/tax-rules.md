@@ -314,10 +314,9 @@ When a company splits its shares or issues bonus shares:
 
 When a company returns capital to shareholders:
 
-- Reduces the cost base of your holding
-- May trigger a deemed disposal if return exceeds cost base
+- Reduces the cost base of your holding (TCGA92/S122(2), CG57844)
 - The reduction is apportioned across the Section 104 pool based on shares held
-- In this tool, pool cost is never allowed below £0; any excess is reported as a deemed gain
+- This treatment applies only when the distribution is "small" per S122(2)
 
 **Example 1: Simple Capital Return**
 
@@ -325,17 +324,18 @@ When a company returns capital to shareholders:
 
 - Return: 100 × £2.00 = £200
 - New pool cost: £800 - £200 = £600
-- If return exceeded £800, the excess would be a gain
 
-### Tool Treatment When Return Exceeds Remaining Pool Cost
+### Capital Return Exceeding Allowable Cost
 
-For `CAPRETURN` events, this calculator applies the distribution to the Section 104 cost pool first.
-If the reduction would push the pool below zero:
+Per CG57847, if the capital distribution exceeds allowable expenditure,
+TCGA92/S122(2) does not apply. The taxpayer must use either:
 
-- The pool cost is floored at £0
-- The excess amount is reported as a deemed gain in the same tax year
+- **S122(1)**: Part-disposal treatment (full computation)
+- **S122(4)**: Election to reduce distribution by remaining allowable cost
 
-This is consistent with the small capital distribution approach in CG57844 (reduce Section 104 pool expenditure) and CG57847 (where distribution exceeds allowable expenditure, remaining allowable expenditure is exhausted and excess is chargeable).
+This tool does not currently support either treatment. If a `CAPRETURN`
+would reduce pool cost below zero, calculation fails with an error
+referencing S122 and CG57847.
 
 **Example 2: Capital Return with Multiple Lots**
 

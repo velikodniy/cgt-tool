@@ -173,25 +173,18 @@ fn calculate_totals(disposals: &[Disposal]) -> (Decimal, Decimal) {
     (total_gain, total_loss)
 }
 
-/// Group match results into Disposal objects by (date, ticker)
+/// Group match results into Disposal objects by (date, ticker).
 fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal> {
-    // Group by (date, ticker, deemed-capreturn flag) so deemed CAPRETURN gains do
-    // not merge into regular SELL disposals on the same day.
-    let mut disposal_map: HashMap<(NaiveDate, String, bool), Vec<MatchResult>> = HashMap::new();
+    let mut disposal_map: HashMap<(NaiveDate, String), Vec<MatchResult>> = HashMap::new();
 
     for m in match_results {
-        let key = (
-            m.disposal_date,
-            m.disposal_ticker.clone(),
-            m.rule == MatchRule::CapitalReturnExcess,
-        );
+        let key = (m.disposal_date, m.disposal_ticker.clone());
         disposal_map.entry(key).or_default().push(m);
     }
 
-    // Convert to Disposal structs
     let mut disposals: Vec<Disposal> = disposal_map
         .into_iter()
-        .map(|((date, ticker, _is_deemed_capreturn), matches)| {
+        .map(|((date, ticker), matches)| {
             // Round to avoid tiny precision errors from proportional fee allocation
             let total_gross_proceeds: Decimal = matches
                 .iter()
@@ -227,22 +220,7 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
         })
         .collect();
 
-    // Sort disposals by date, then ticker, then kind for consistent output.
-    disposals.sort_by(|a, b| {
-        let a_is_deemed = a
-            .matches
-            .iter()
-            .all(|m| m.rule == MatchRule::CapitalReturnExcess);
-        let b_is_deemed = b
-            .matches
-            .iter()
-            .all(|m| m.rule == MatchRule::CapitalReturnExcess);
-
-        a.date
-            .cmp(&b.date)
-            .then_with(|| a.ticker.cmp(&b.ticker))
-            .then_with(|| a_is_deemed.cmp(&b_is_deemed))
-    });
+    disposals.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
 
     disposals
 }

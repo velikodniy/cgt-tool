@@ -949,35 +949,29 @@ fn test_same_day_reservation_with_interleaved_buys() {
     assert_eq!(feb2_disposal.matches[0].quantity, dec!(50));
 }
 
+/// CAPRETURN exceeding allowable cost is rejected per CG57847:
+/// TCGA92/S122(2) does not apply when distribution exceeds expenditure.
 #[test]
-fn test_capreturn_excess_creates_deemed_gain_and_clamps_pool_cost() {
+fn test_capreturn_exceeding_basis_returns_error() {
     let cgt_content = r#"
 2024-01-01 BUY ACME 10 @ 100.00 GBP
 2024-02-01 CAPRETURN ACME 10 TOTAL 1200.00 GBP FEES 0.00 GBP
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+    let result = calculate(transactions, Some(2023), None);
 
-    let year = report.tax_years.first().expect("Expected a tax year");
-    assert_eq!(year.total_gain, dec!(200));
-    assert_eq!(year.total_loss, Decimal::ZERO);
-
-    assert_eq!(year.disposals.len(), 1);
-    let deemed_disposal = &year.disposals[0];
-    assert_eq!(deemed_disposal.ticker, "ACME");
-
-    assert_eq!(deemed_disposal.matches.len(), 1);
-    let deemed_match = &deemed_disposal.matches[0];
-    assert_eq!(deemed_match.rule, MatchRule::CapitalReturnExcess);
-    assert_eq!(deemed_match.allowable_cost, Decimal::ZERO);
-    assert_eq!(deemed_match.gain_or_loss, dec!(200));
-
-    let holding = report
-        .holdings
-        .iter()
-        .find(|h| h.ticker == "ACME")
-        .expect("Expected ACME holding");
-    assert_eq!(holding.quantity, dec!(10));
-    assert_eq!(holding.total_cost, Decimal::ZERO);
+    assert!(
+        result.is_err(),
+        "Expected error when CAPRETURN exceeds basis"
+    );
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("exceeds allowable cost"),
+        "Error should mention exceeding allowable cost, got: {err}"
+    );
+    assert!(
+        err.contains("S122"),
+        "Error should reference TCGA92/S122, got: {err}"
+    );
 }

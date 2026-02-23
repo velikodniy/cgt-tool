@@ -399,13 +399,15 @@ pub struct Section104Holding {
     pub total_cost: Decimal,
 }
 
-/// Enumeration of HMRC share matching rules.
+/// Enumeration of HMRC share matching rules (CG51560).
+///
+/// Applied in priority order: Same Day (S105(1)), Bed & Breakfast (S106A),
+/// then Section 104 pool.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
 pub enum MatchRule {
     SameDay,
     BedAndBreakfast,
     Section104,
-    CapitalReturnExcess,
 }
 
 /// How a disposal (or portion) was matched to an acquisition.

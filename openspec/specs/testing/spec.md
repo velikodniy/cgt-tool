@@ -77,8 +77,8 @@ The system SHALL include tests for edge cases identified from HMRC guidance and 
 #### Scenario: Capital return exceeds cost basis
 
 - **WHEN** capital return amount exceeds the cost basis
-- **THEN** the excess creates a gain
-- **AND** cost basis is reduced to zero
+- **THEN** calculation fails with an error referencing TCGA92/S122 and CG57847
+- **AND** no partial output is produced
 
 #### Scenario: Sell exceeds available shares
 

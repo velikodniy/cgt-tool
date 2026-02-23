@@ -224,33 +224,17 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
     } else {
         "LOSS"
     };
-    let is_capreturn_excess = disposal
-        .matches
-        .iter()
-        .all(|m| m.rule == MatchRule::CapitalReturnExcess);
 
-    if is_capreturn_excess {
-        let _ = writeln!(
-            out,
-            "{}) CAPRETURN EXCESS {} on {} - {} {}",
-            index,
-            disposal.ticker,
-            format_date(disposal.date),
-            gain_type,
-            format_gbp(total_gain.abs())
-        );
-    } else {
-        let _ = writeln!(
-            out,
-            "{}) SELL {} {} on {} - {} {}",
-            index,
-            format_decimal_trimmed(disposal.quantity),
-            disposal.ticker,
-            format_date(disposal.date),
-            gain_type,
-            format_gbp(total_gain.abs())
-        );
-    }
+    let _ = writeln!(
+        out,
+        "{}) SELL {} {} on {} - {} {}",
+        index,
+        format_decimal_trimmed(disposal.quantity),
+        disposal.ticker,
+        format_date(disposal.date),
+        gain_type,
+        format_gbp(total_gain.abs())
+    );
 
     for m in &disposal.matches {
         match m.rule {
@@ -284,48 +268,37 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
                     format_decimal_trimmed(round_gbp(cost_per_share))
                 );
             }
-            MatchRule::CapitalReturnExcess => {
-                let _ = writeln!(
-                    out,
-                    "   Capital Return Excess: deemed gain {}",
-                    format_gbp(m.gain_or_loss)
-                );
-            }
         }
     }
 
-    if is_capreturn_excess {
-        let _ = writeln!(out, "   Deemed Proceeds: {}", format_gbp(disposal.proceeds));
+    // Calculate unit price from gross proceeds (handles same-day merges correctly)
+    let unit_price = if disposal.quantity != Decimal::ZERO {
+        disposal.gross_proceeds / disposal.quantity
     } else {
-        // Calculate unit price from gross proceeds (handles same-day merges correctly)
-        let unit_price = if disposal.quantity != Decimal::ZERO {
-            disposal.gross_proceeds / disposal.quantity
-        } else {
-            Decimal::ZERO
-        };
+        Decimal::ZERO
+    };
 
-        // Calculate fees from difference between gross and net
-        let sell_fees = disposal.gross_proceeds - disposal.proceeds;
+    // Calculate fees from difference between gross and net
+    let sell_fees = disposal.gross_proceeds - disposal.proceeds;
 
-        // Show gross proceeds calculation
+    // Show gross proceeds calculation
+    let _ = writeln!(
+        out,
+        "   Gross Proceeds: {} × £{} = {}",
+        format_decimal_trimmed(disposal.quantity),
+        format_decimal_trimmed(unit_price),
+        format_gbp(disposal.gross_proceeds)
+    );
+
+    // Show net proceeds if fees exist
+    if sell_fees > Decimal::ZERO {
         let _ = writeln!(
             out,
-            "   Gross Proceeds: {} × £{} = {}",
-            format_decimal_trimmed(disposal.quantity),
-            format_decimal_trimmed(unit_price),
-            format_gbp(disposal.gross_proceeds)
+            "   Net Proceeds: {} - {} fees = {}",
+            format_gbp(disposal.gross_proceeds),
+            format_gbp(sell_fees),
+            format_gbp(disposal.proceeds)
         );
-
-        // Show net proceeds if fees exist
-        if sell_fees > Decimal::ZERO {
-            let _ = writeln!(
-                out,
-                "   Net Proceeds: {} - {} fees = {}",
-                format_gbp(disposal.gross_proceeds),
-                format_gbp(sell_fees),
-                format_gbp(disposal.proceeds)
-            );
-        }
     }
 
     let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();

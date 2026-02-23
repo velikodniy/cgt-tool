@@ -189,8 +189,10 @@ The system SHALL adjust pools for SPLIT, UNSPLIT, and CAPRETURN, correctly deter
 #### Scenario: Capital return exceeds remaining basis
 
 - **WHEN** a CAPRETURN reduction is greater than remaining allowable basis
-- **THEN** Section 104 basis SHALL be floored at zero
-- **AND** the unapplied excess SHALL be reported as a deemed gain in that tax year
+- **THEN** calculation SHALL fail with an error
+- **AND** the error SHALL reference TCGA92/S122(2) and CG57847
+- **AND** the error SHALL explain that S122(2) does not apply when distribution exceeds expenditure
+- **NOTE** Part-disposal under S122(1) or election under S122(4) is not currently supported
 
 #### Scenario: Asset event after same-day buy and sell
 
