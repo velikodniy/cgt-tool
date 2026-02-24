@@ -341,6 +341,28 @@ impl Matcher {
             return Ok(());
         };
 
+        // Pre-cascade holding check: you must hold shares to dispose of them.
+        // B&B determines cost basis for a valid disposal — it does not enable
+        // disposing of shares the taxpayer does not hold (CG51590 Example 1).
+        let ledger_held = self
+            .ledgers
+            .get(&tx.ticker)
+            .map(|l| l.remaining_for_date(tx.date))
+            .unwrap_or(Decimal::ZERO);
+        let pool_held = self
+            .pools
+            .get(&tx.ticker)
+            .map(|p| p.quantity)
+            .unwrap_or(Decimal::ZERO);
+        let total_held = ledger_held + pool_held;
+        if *amount > total_held {
+            return Err(CgtError::InvalidTransaction(format!(
+                "SELL {} on {}: disposal of {} shares exceeds holding of {} \
+                 (same-day ledger: {}, S104 pool: {})",
+                tx.ticker, tx.date, amount, total_held, ledger_held, pool_held
+            )));
+        }
+
         let mut remaining = *amount;
         let gross_proceeds = *amount * *price;
         let total_fees = *fees;

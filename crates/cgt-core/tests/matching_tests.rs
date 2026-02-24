@@ -873,8 +873,8 @@ fn test_sell_without_prior_acquisition_returns_error() {
         .to_string();
 
     assert!(
-        error.contains("no prior acquisitions"),
-        "Expected no prior acquisitions error, got: {error}"
+        error.contains("exceeds holding"),
+        "Expected holding exceeded error, got: {error}"
     );
 }
 
@@ -947,6 +947,74 @@ fn test_same_day_reservation_with_interleaved_buys() {
     assert_eq!(feb2_disposal.matches.len(), 1);
     assert_eq!(feb2_disposal.matches[0].rule, MatchRule::SameDay);
     assert_eq!(feb2_disposal.matches[0].quantity, dec!(50));
+}
+
+/// B&B must not rescue a sell with zero holding (CG51590 Example 1).
+/// B&B determines cost basis — it does not enable disposing of shares not held.
+#[test]
+fn test_bnb_does_not_rescue_sell_with_zero_holding() {
+    let cgt_content = r#"
+2024-01-01 BUY ACME 10 @ 100.00 GBP
+2024-01-01 SELL ACME 10 @ 110.00 GBP
+2024-06-01 SELL ACME 10 @ 120.00 GBP
+2024-06-15 BUY ACME 10 @ 115.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let result = calculate(transactions, Some(2023), None);
+
+    assert!(
+        result.is_err(),
+        "Expected error when selling with zero holding"
+    );
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("exceeds holding"),
+        "Error should mention exceeding holding, got: {err}"
+    );
+}
+
+/// B&B with a valid pool holding succeeds. Per CG51590 Example 1,
+/// the disposal is valid because the seller holds shares in the S104 pool.
+#[test]
+fn test_bnb_with_valid_pool_holding_succeeds() {
+    let cgt_content = r#"
+2024-01-01 BUY ACME 100 @ 10.00 GBP
+2024-06-01 SELL ACME 100 @ 12.00 GBP
+2024-06-15 BUY ACME 100 @ 11.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let report = calculate(transactions, Some(2024), None).expect("Should succeed");
+
+    let year = report.tax_years.first().expect("Expected a tax year");
+    assert_eq!(year.disposals.len(), 1);
+    let disposal = &year.disposals[0];
+    // B&B should match: sell on June 1, buy on June 15 (14 days)
+    assert_eq!(disposal.matches.len(), 1);
+    assert_eq!(disposal.matches[0].rule, MatchRule::BedAndBreakfast);
+    assert_eq!(disposal.matches[0].quantity, dec!(100));
+    // Cost should be from the June 15 buy (£11.00 × 100 = £1100)
+    assert_eq!(disposal.matches[0].allowable_cost, dec!(1100));
+}
+
+/// Sell exceeding partial holding returns error with quantities.
+#[test]
+fn test_sell_exceeding_partial_holding_returns_error() {
+    let cgt_content = r#"
+2024-01-01 BUY ACME 50 @ 10.00 GBP
+2024-06-01 SELL ACME 100 @ 12.00 GBP
+"#;
+
+    let transactions = parse_file(cgt_content).expect("Failed to parse");
+    let result = calculate(transactions, Some(2023), None);
+
+    assert!(result.is_err(), "Expected error when sell exceeds holding");
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("100") && err.contains("50"),
+        "Error should mention disposal qty (100) and holding (50), got: {err}"
+    );
 }
 
 /// CAPRETURN exceeding allowable cost is rejected per CG57847:
