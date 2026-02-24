@@ -69,19 +69,14 @@ class CalculatorResult:
 def run_cgt_tool(cgt_file: Path) -> CalculatorResult:
     """Run cgt-tool and parse JSON output."""
     try:
-        # Prefer pre-built binary if available
-        # Check PATH first, then target/release
-        cmd = ["cgt-tool"]
-
-        # Check if cgt-tool is in PATH
-        if subprocess.run(["which", "cgt-tool"], capture_output=True).returncode != 0:
-            # Not in PATH, try target/release
-            release_bin = Path.cwd() / "target" / "release" / "cgt-tool"
-            if release_bin.exists():
-                cmd = [str(release_bin)]
-            else:
-                # Fallback to cargo run
-                cmd = ["cargo", "run", "--quiet", "--"]
+        # Prefer local build over PATH to ensure we test the current code
+        release_bin = Path.cwd() / "target" / "release" / "cgt-tool"
+        if release_bin.exists():
+            cmd = [str(release_bin)]
+        elif subprocess.run(["which", "cgt-tool"], capture_output=True).returncode == 0:
+            cmd = ["cgt-tool"]
+        else:
+            cmd = ["cargo", "run", "--quiet", "--"]
 
         result = subprocess.run(
             cmd
