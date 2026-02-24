@@ -4,6 +4,7 @@
 //! before processing, providing clear error messages.
 
 use crate::models::{Operation, Transaction};
+use cgt_money::CurrencyAmount;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -92,6 +93,69 @@ impl fmt::Display for ValidationWarning {
     }
 }
 
+/// Fields for a trade-like operation (Buy, Sell, CapReturn) to be validated.
+struct TradeFields<'a> {
+    action: &'a str,
+    amount: Decimal,
+    price: &'a CurrencyAmount,
+    price_label: &'a str,
+    fees: &'a CurrencyAmount,
+}
+
+/// Check quantity, price, and fees fields common to Buy, Sell, and CapReturn.
+fn check_trade_fields(
+    result: &mut ValidationResult,
+    line: Option<usize>,
+    date: NaiveDate,
+    ticker: &str,
+    fields: &TradeFields<'_>,
+) {
+    if fields.amount == Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!("{} with zero quantity", fields.action),
+        });
+    }
+
+    if fields.amount < Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!(
+                "{} with negative quantity: {}",
+                fields.action, fields.amount
+            ),
+        });
+    }
+
+    if fields.price.amount < Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!(
+                "{} with negative {}: {}",
+                fields.action, fields.price_label, fields.price.amount
+            ),
+        });
+    }
+
+    if fields.fees.amount < Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!(
+                "{} with negative fees: {}",
+                fields.action, fields.fees.amount
+            ),
+        });
+    }
+}
+
 /// Validate a list of transactions before calculation.
 ///
 /// Checks for:
@@ -120,45 +184,19 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 price,
                 fees,
             } => {
-                // Check zero quantity
-                if *amount == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "BUY with zero quantity".to_string(),
-                    });
-                }
-
-                // Check negative quantity
-                if *amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative quantity: {}", amount),
-                    });
-                }
-
-                // Check negative price (GBP value)
-                if price.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative price: {}", price.amount),
-                    });
-                }
-
-                // Check negative fees (GBP value)
-                if fees.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("BUY with negative fees: {}", fees.amount),
-                    });
-                }
+                check_trade_fields(
+                    &mut result,
+                    line,
+                    tx.date,
+                    &tx.ticker,
+                    &TradeFields {
+                        action: "BUY",
+                        amount: *amount,
+                        price,
+                        price_label: "price",
+                        fees,
+                    },
+                );
 
                 // Track first buy date
                 first_buy
@@ -176,45 +214,19 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 price,
                 fees,
             } => {
-                // Check zero quantity
-                if *amount == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "SELL with zero quantity".to_string(),
-                    });
-                }
-
-                // Check negative quantity
-                if *amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative quantity: {}", amount),
-                    });
-                }
-
-                // Check negative price (GBP value)
-                if price.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative price: {}", price.amount),
-                    });
-                }
-
-                // Check negative fees (GBP value)
-                if fees.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("SELL with negative fees: {}", fees.amount),
-                    });
-                }
+                check_trade_fields(
+                    &mut result,
+                    line,
+                    tx.date,
+                    &tx.ticker,
+                    &TradeFields {
+                        action: "SELL",
+                        amount: *amount,
+                        price,
+                        price_label: "price",
+                        fees,
+                    },
+                );
 
                 // Check for sell before buy (warning)
                 if let Some(&first_buy_date) = first_buy.get(tx.ticker.as_str()) {
@@ -240,7 +252,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             }
 
             Operation::Split { ratio } => {
-                // Check zero ratio
                 if *ratio == Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -250,7 +261,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative ratio
                 if *ratio < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -262,7 +272,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             }
 
             Operation::Unsplit { ratio } => {
-                // Check zero ratio
                 if *ratio == Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -272,7 +281,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative ratio
                 if *ratio < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -288,7 +296,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 total_value,
                 ..
             } => {
-                // Check zero quantity
                 if *amount == Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -298,7 +305,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative quantity
                 if *amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -308,7 +314,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                     });
                 }
 
-                // Check negative total value (GBP value)
                 if total_value.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
@@ -327,48 +332,19 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 total_value,
                 fees,
             } => {
-                // Check zero quantity
-                if *amount == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "CAPRETURN with zero quantity".to_string(),
-                    });
-                }
-
-                // Check negative quantity
-                if *amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative quantity: {}", amount),
-                    });
-                }
-
-                // Check negative total value (GBP value)
-                if total_value.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!(
-                            "CAPRETURN with negative total value: {}",
-                            total_value.amount
-                        ),
-                    });
-                }
-
-                // Check negative fees (GBP value)
-                if fees.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("CAPRETURN with negative fees: {}", fees.amount),
-                    });
-                }
+                check_trade_fields(
+                    &mut result,
+                    line,
+                    tx.date,
+                    &tx.ticker,
+                    &TradeFields {
+                        action: "CAPRETURN",
+                        amount: *amount,
+                        price: total_value,
+                        price_label: "total value",
+                        fees,
+                    },
+                );
             }
         }
     }
