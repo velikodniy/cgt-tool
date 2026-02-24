@@ -106,7 +106,10 @@ def main():
         sys.exit(1)
 
     lines = convert_to_raw(input_path)
-    # Note: cgt-calc has issues with header rows in some versions, so we omit it
+    # Sort by (date, action) with BUY before SELL on the same day.
+    # cgt-calc processes transactions sequentially and requires shares
+    # to exist before selling, so BUY must come first within a day.
+    lines.sort(key=lambda l: (l.split(",")[0], 0 if l.split(",")[1] == "BUY" else 1))
     for line in lines:
         print(line)
 

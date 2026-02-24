@@ -2,75 +2,81 @@
 # Purpose: Demonstrates all three CGT matching rules in a single test
 # Rules Tested: Same Day, Bed & Breakfast, Section 104
 # Complexity: Complex
-# Key Features: Each transaction pair uses a different matching rule
-# Expected Outcome: Total loss £20 (3 matches, each £20 loss, carried forward)
+# Key Features: Each disposal uses a different matching rule, all with valid holdings
 #
 # Verification Status: Verified
-# Verified By: Manual calculation 2025-12-08
+# Verified By: Manual calculation 2026-02-24
 # Verification Notes: See detailed verification below
 #
 # === DETAILED VERIFICATION ===
 #
-# CHRONOLOGICAL ORDER (transactions reordered for understanding):
-# 1. 2018-08-28: BUY 10 @ £4.1565 + £12.5 expenses (Same Day setup)
-# 2. 2018-08-28: SELL 10 @ £4.6702 - £12.5 expenses (Same Day match)
-# 3. 2019-08-28: SELL 10 @ £4.6702 - £12.5 expenses (B&B trigger)
-# 4. 2019-09-20: BUY 10 @ £4.1565 + £12.5 expenses (B&B match - within 30 days)
-# 5. 2020-08-28: BUY 10 @ £4.1565 + £12.5 expenses (Section 104 pool)
-# 6. 2020-10-28: SELL 10 @ £4.6702 - £12.5 expenses (Section 104 match)
+# CHRONOLOGICAL ORDER:
+# 1. 2018-06-01: BUY 10 @ £4.1565 + £12.5 fees → enters S104 pool
+# 2. 2018-08-28: BUY 10 @ £4.1565 + £12.5 fees → Same Day match setup
+# 3. 2018-08-28: SELL 10 @ £4.6702 - £12.5 fees → Same Day match
+# 4. 2019-08-28: SELL 10 @ £4.6702 - £12.5 fees → B&B (backed by pool holding of 10)
+# 5. 2019-09-20: BUY 10 @ £4.1565 + £12.5 fees → matched to B&B sell
+# 6. 2020-08-28: BUY 10 @ £4.1565 + £12.5 fees → enters S104 pool
+# 7. 2020-10-28: SELL 10 @ £4.6702 - £12.5 fees → Section 104 match
 #
 # === MATCH 1: Same Day (2018-08-28) - Tax Year 2018/19 ===
 #
-# Buy: 10 shares × £4.1565 + £12.5 expenses = £54.065
-# Sell: 10 shares × £4.6702 - £12.5 expenses = £34.202
+# Buy: 10 shares × £4.1565 + £12.5 fees = £54.065
+# Sell: 10 shares × £4.6702 - £12.5 fees = £34.202
 #
 # Same Day Rule applies (buy and sell on same date).
 # Proceeds: £34.202
 # Cost: £54.065
-# Loss: £34.202 - £54.065 = -£19.863 ≈ -£20
+# Loss: £34.202 - £54.065 = -£19.863 ≈ -£19.86
+#
+# Pool state after: 10 shares (from 2018-06-01 buy), cost £54.065
 #
 # === MATCH 2: Bed & Breakfast (2019-08-28) - Tax Year 2019/20 ===
 #
-# Sell on 2019-08-28: 10 shares × £4.6702 - £12.5 expenses = £34.202
-# Buy on 2019-09-20: 10 shares × £4.1565 + £12.5 expenses = £54.065
+# Holdings at time of sell: S104 pool has 10 shares (from 2018-06-01)
+#
+# Sell on 2019-08-28: 10 shares × £4.6702 - £12.5 fees = £34.202
+# Buy on 2019-09-20: 10 shares × £4.1565 + £12.5 fees = £54.065
 #
 # B&B Rule applies: Buy is within 30 days AFTER the sale.
 # Days between: 2019-09-20 - 2019-08-28 = 23 days (within 30-day window)
+# Per CG51590 Example 1: B&B provides cost basis, pool is not reduced.
 #
 # Proceeds: £34.202
-# Cost: £54.065 (the later purchase cost)
-# Loss: £34.202 - £54.065 = -£19.863 ≈ -£20
+# Cost: £54.065 (the later purchase cost, per B&B)
+# Loss: £34.202 - £54.065 = -£19.863 ≈ -£19.86
+#
+# Pool state after: 10 shares remain (B&B does not consume pool),
+# but B&B buy also does not enter pool. Net: 10 shares, cost £54.065.
 #
 # === MATCH 3: Section 104 (2020-10-28) - Tax Year 2020/21 ===
 #
-# Buy on 2020-08-28: 10 shares × £4.1565 + £12.5 expenses = £54.065
-# This enters the Section 104 pool (no same day sale, no B&B match)
+# Buy on 2020-08-28: 10 shares × £4.1565 + £12.5 fees = £54.065
+# This enters the Section 104 pool.
+# Pool before sell: 20 shares (10 from 2018-06-01 + 10 from 2020-08-28),
+# cost £108.13, avg £5.4065/share
 #
-# Pool: 10 shares, £54.065 cost, avg £5.4065/share
-#
-# Sell on 2020-10-28: 10 shares × £4.6702 - £12.5 expenses = £34.202
+# Sell on 2020-10-28: 10 shares × £4.6702 - £12.5 fees = £34.202
 # No same day buy, no B&B buy within 30 days → Section 104 match
 #
 # Proceeds: £34.202
-# Cost from pool: £54.065
-# Loss: £34.202 - £54.065 = -£19.863 ≈ -£20
+# Cost from pool: 10 × £5.4065 = £54.065
+# Loss: £34.202 - £54.065 = -£19.863 ≈ -£19.86
 #
-# Pool after: 0 shares
+# Pool after: 10 shares, cost £54.065
 #
 # FINAL RESULT:
-#   Tax Year 2018/19: Loss £20 (Same Day)
-#   Tax Year 2019/20: Loss £20 (B&B)
-#   Tax Year 2020/21: Loss £20 (Section 104)
-#   Total Gain: £0
-#   Total Loss: £20 (per JSON - likely showing single year or first loss only)
-#   Note: JSON shows total_loss: 20 which may represent one match
-#   Verification: ✓ Each match calculation is correct
+#   Tax Year 2018/19: Loss £19.86 (Same Day)
+#   Tax Year 2019/20: Loss £19.86 (B&B)
+#   Tax Year 2020/21: Loss £19.86 (Section 104)
 # === END DETAILED VERIFICATION ===
 #
+# Initial pool holding (backs the B&B sell in 2019)
+2018-06-01 BUY GB00B41YBW71 10 @ 4.1565 FEES 12.5
 # Same day
 2018-08-28 BUY GB00B41YBW71 10 @ 4.1565 FEES 12.5
 2018-08-28 SELL GB00B41YBW71 10 @ 4.6702 FEES 12.5
-# Bed and breakfast
+# Bed and breakfast (pool holds 10 shares from 2018-06-01)
 2019-08-28 SELL GB00B41YBW71 10 @ 4.6702 FEES 12.5
 2019-09-20 BUY GB00B41YBW71 10 @ 4.1565 FEES 12.5
 # Section 104
