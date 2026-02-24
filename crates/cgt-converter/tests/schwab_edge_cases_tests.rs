@@ -304,7 +304,9 @@ fn test_empty_expenses() {
 }
 
 #[test]
-fn test_unsupported_transaction_as_comment() {
+fn test_known_non_cgt_actions_skipped_silently() {
+    // Known non-CGT actions (Wire Sent, Credit Interest, etc.) should be
+    // counted as skipped but produce no comments or warnings.
     let json = r#"{
         "BrokerageTransactions": [
             {
@@ -348,12 +350,69 @@ fn test_unsupported_transaction_as_comment() {
 
     let result = converter.convert(&input).unwrap();
 
-    // Should have comments for skipped transactions
-    assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
-    assert!(result.cgt_content.contains("# SKIPPED: Credit Interest"));
-    // skipped_count equals the number of skipped transactions added as comments.
-    // Buys do not produce warnings, and missing awards is not warned when no RSUs are present.
+    // Known non-CGT actions are skipped silently — no inline SKIPPED comments
+    assert!(
+        !result.cgt_content.contains("# SKIPPED: Wire Sent"),
+        "Known non-CGT actions should not produce inline SKIPPED comments. Output: {}",
+        result.cgt_content
+    );
+    assert!(
+        !result.cgt_content.contains("# SKIPPED: Credit Interest"),
+        "Known non-CGT actions should not produce inline SKIPPED comments. Output: {}",
+        result.cgt_content
+    );
+    assert!(result.warnings.is_empty());
     assert_eq!(result.skipped_count, 2);
+}
+
+#[test]
+fn test_unknown_action_produces_warning() {
+    // Truly unknown actions should produce both a SKIPPED comment and a warning
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "04/25/2023",
+                "Action": "Buy",
+                "Symbol": "XYZZ",
+                "Description": "TEST",
+                "Quantity": "10",
+                "Price": "$125.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$1254.95"
+            },
+            {
+                "Date": "05/01/2023",
+                "Action": "Crypto Transfer",
+                "Symbol": "BTC",
+                "Description": "CRYPTO STUFF",
+                "Quantity": null,
+                "Price": null,
+                "Fees & Comm": null,
+                "Amount": "-$1000.00"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert!(
+        result.cgt_content.contains("# SKIPPED: Crypto Transfer"),
+        "Unknown actions should produce SKIPPED comment. Output: {}",
+        result.cgt_content
+    );
+    assert_eq!(result.warnings.len(), 1);
+    assert!(
+        result.warnings[0].contains("Unknown Schwab action"),
+        "Warning should mention unknown action: {}",
+        result.warnings[0]
+    );
+    assert_eq!(result.skipped_count, 1);
 }
 
 #[test]
@@ -958,4 +1017,456 @@ fn test_tax_withholding_types() {
             .cgt_content
             .contains("DIVIDEND BAR 1 TOTAL 50.00 USD TAX 7.50 USD")
     );
+}
+
+// ===========================================
+// Cancel Sell Tests
+// ===========================================
+
+#[test]
+fn test_cancel_sell_removes_matching_sell() {
+    // A Cancel Sell should remove the original Sell with the same
+    // (date, symbol, quantity, price).
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "04/25/2023",
+                "Action": "Buy",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "100",
+                "Price": "$50.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$5004.95"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // The sell should have been removed by the cancellation
+    assert!(
+        !result.cgt_content.contains("SELL XYZZ"),
+        "Cancel Sell should remove the matching Sell. Output: {}",
+        result.cgt_content
+    );
+    // The buy should still be present
+    assert!(result.cgt_content.contains("BUY XYZZ 100 @ 50.00 USD"));
+    assert!(result.warnings.is_empty());
+    assert_eq!(result.skipped_count, 0);
+}
+
+#[test]
+fn test_cancel_sell_before_original_in_json() {
+    // Schwab lists newest transactions first, so Cancel Sell can appear
+    // BEFORE the original Sell in the JSON. Deferred cancellation handles this.
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "04/25/2023",
+                "Action": "Buy",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "100",
+                "Price": "$50.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$5004.95"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // The sell should have been removed even though Cancel Sell came first in JSON
+    assert!(
+        !result.cgt_content.contains("SELL XYZZ"),
+        "Deferred cancellation should handle Cancel Sell appearing before Sell. Output: {}",
+        result.cgt_content
+    );
+    assert!(result.cgt_content.contains("BUY XYZZ 100 @ 50.00 USD"));
+    assert!(result.warnings.is_empty());
+}
+
+#[test]
+fn test_cancel_sell_with_replacement_sell() {
+    // Full Schwab correction pattern: original Sell, Cancel Sell, replacement Sell
+    // at a corrected price. Only the replacement should survive.
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.50",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2770.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Only the replacement sell (at $55.50) should remain
+    assert!(
+        result.cgt_content.contains("SELL XYZZ 50 @ 55.50 USD"),
+        "Replacement sell at corrected price should remain. Output: {}",
+        result.cgt_content
+    );
+    // The original sell (at $55.00) should have been cancelled
+    assert!(
+        !result.cgt_content.contains("@ 55.00 USD"),
+        "Original sell at $55.00 should have been cancelled. Output: {}",
+        result.cgt_content
+    );
+    // Exactly one SELL line
+    let sell_count = result.cgt_content.matches("SELL XYZZ").count();
+    assert_eq!(
+        sell_count, 1,
+        "Should have exactly one sell after cancellation"
+    );
+    assert!(result.warnings.is_empty());
+}
+
+#[test]
+fn test_cancel_sell_unmatched_produces_warning() {
+    // A Cancel Sell with no matching original Sell should produce a warning
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "04/25/2023",
+                "Action": "Buy",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "100",
+                "Price": "$50.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$5004.95"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    assert_eq!(result.warnings.len(), 1);
+    assert!(
+        result.warnings[0].contains("Cancel Sell"),
+        "Warning should mention Cancel Sell: {}",
+        result.warnings[0]
+    );
+    assert!(
+        result.warnings[0].contains("no matching sell"),
+        "Warning should say no matching sell: {}",
+        result.warnings[0]
+    );
+}
+
+#[test]
+fn test_multiple_cancel_sells() {
+    // Multiple cancellations in one file — each should match its own sell
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/15/2023",
+                "Action": "Sell",
+                "Symbol": "FOO",
+                "Description": "FOO INC",
+                "Quantity": "20",
+                "Price": "$100.00",
+                "Fees & Comm": "$2.00",
+                "Amount": "$1998.00"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            },
+            {
+                "Date": "05/15/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "FOO",
+                "Description": "FOO INC",
+                "Quantity": "20",
+                "Price": "$100.00",
+                "Fees & Comm": "$2.00",
+                "Amount": "-$1998.00"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Both sells should have been cancelled
+    assert!(
+        !result.cgt_content.contains("SELL"),
+        "Both sells should be cancelled. Output: {}",
+        result.cgt_content
+    );
+    assert!(result.warnings.is_empty());
+}
+
+#[test]
+fn test_cancel_sell_only_cancels_one_of_duplicate_sells() {
+    // If there are two identical sells and one Cancel Sell, only one sell
+    // should be removed.
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Exactly one sell should remain
+    let sell_count = result.cgt_content.matches("SELL XYZZ").count();
+    assert_eq!(
+        sell_count, 1,
+        "Cancel Sell should only remove one of two identical sells. Output: {}",
+        result.cgt_content
+    );
+    assert!(result.warnings.is_empty());
+}
+
+#[test]
+fn test_cancel_sell_parsed_as_known_not_skipped() {
+    // Cancel Sell should be parsed as a known transaction, not skipped as unknown
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // Should NOT be treated as an unknown/skipped transaction
+    assert_eq!(
+        result.skipped_count, 0,
+        "Cancel Sell should not increment skipped_count"
+    );
+    assert!(
+        !result.cgt_content.contains("SKIPPED"),
+        "Cancel Sell should not produce a SKIPPED comment"
+    );
+}
+
+#[test]
+fn test_cancel_sell_uses_as_of_date() {
+    // Cancel Sell often has "MM/DD/YYYY as of MM/DD/YYYY" format — should use
+    // the "as of" date for matching against the original sell.
+    let json = r#"{
+        "BrokerageTransactions": [
+            {
+                "Date": "05/10/2023",
+                "Action": "Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "$2745.05"
+            },
+            {
+                "Date": "05/12/2023 as of 05/10/2023",
+                "Action": "Cancel Sell",
+                "Symbol": "XYZZ",
+                "Description": "XYZZ CORP",
+                "Quantity": "50",
+                "Price": "$55.00",
+                "Fees & Comm": "$4.95",
+                "Amount": "-$2745.05"
+            }
+        ]
+    }"#;
+
+    let converter = SchwabConverter::new();
+    let input = SchwabInput {
+        transactions_json: json.to_string(),
+        awards_json: None,
+    };
+
+    let result = converter.convert(&input).unwrap();
+
+    // The "as of" date (05/10) should be used, matching the original sell
+    assert!(
+        !result.cgt_content.contains("SELL XYZZ"),
+        "Cancel Sell with 'as of' date should match original sell. Output: {}",
+        result.cgt_content
+    );
+    assert!(result.warnings.is_empty());
 }

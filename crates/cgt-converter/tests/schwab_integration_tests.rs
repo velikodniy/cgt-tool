@@ -284,15 +284,20 @@ fn test_skipped_transactions() {
 
     let result = converter.convert(&input).unwrap();
 
-    // Skipped transactions are recorded as comments (no warnings when no RSUs)
+    // Known non-CGT actions are counted as skipped but produce no comments
     assert_eq!(result.skipped_count, 2);
     assert!(result.warnings.is_empty());
 
-    // Output should contain the Buy and comments for skipped transactions
+    // Output should contain the Buy but no inline SKIPPED comments for known actions
     assert!(result.cgt_content.contains("BUY XYZZ"));
-    // Unsupported transactions are now added as comments
-    assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
-    assert!(result.cgt_content.contains("# SKIPPED: Credit Interest"));
+    assert!(
+        !result.cgt_content.contains("# SKIPPED: Wire Sent"),
+        "Known non-CGT actions should not produce inline SKIPPED comments"
+    );
+    assert!(
+        !result.cgt_content.contains("# SKIPPED: Credit Interest"),
+        "Known non-CGT actions should not produce inline SKIPPED comments"
+    );
 }
 
 // ===========================================
@@ -827,7 +832,9 @@ fn test_csv_with_fewer_fields() {
 
     let result = converter.convert(&input).unwrap();
     assert!(result.cgt_content.contains("BUY XYZZ"));
-    assert!(result.cgt_content.contains("# SKIPPED: Wire Sent"));
+    // Wire Sent is a known non-CGT action — skipped silently
+    assert_eq!(result.skipped_count, 1);
+    assert!(result.warnings.is_empty());
 }
 
 // ===========================================

@@ -176,6 +176,46 @@ impl BrokerConverter for SchwabConverter {
     }
 }
 
+/// A pending cancellation from a Cancel Sell transaction.
+struct PendingCancellation {
+    date: NaiveDate,
+    symbol: String,
+    quantity: Decimal,
+    price: Decimal,
+}
+
+/// Remove sells that were cancelled. Each cancellation matches a sell with
+/// the same (date, symbol, quantity, price). Unmatched cancellations produce
+/// warnings.
+fn apply_cancellations(
+    transactions: &mut Vec<CgtTransaction>,
+    cancellations: Vec<PendingCancellation>,
+    warnings: &mut Vec<String>,
+) {
+    for cancel in cancellations {
+        if let Some(pos) = transactions.iter().position(|txn| {
+            matches!(
+                txn,
+                CgtTransaction::Sell {
+                    date: d,
+                    symbol: s,
+                    quantity: q,
+                    price: p,
+                    ..
+                } if *d == cancel.date && s == &cancel.symbol
+                    && *q == cancel.quantity && *p == cancel.price
+            )
+        }) {
+            transactions.remove(pos);
+        } else {
+            warnings.push(format!(
+                "Cancel Sell on {} for {} {} shares @ {} has no matching sell to cancel",
+                cancel.date, cancel.symbol, cancel.quantity, cancel.price
+            ));
+        }
+    }
+}
+
 /// Process Schwab transactions into CGT transactions
 fn process_transactions(
     transactions: Vec<SchwabTransactionsItem>,
@@ -185,6 +225,7 @@ fn process_transactions(
     let mut warnings = Vec::new();
     let mut skipped_count = 0;
     let mut dividend_taxes: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
+    let mut pending_cancellations: Vec<PendingCancellation> = Vec::new();
 
     let has_stock_plan_activity = transactions.iter().any(|txn| {
         matches!(
@@ -248,6 +289,18 @@ fn process_transactions(
                         expenses: fees_commissions.unwrap_or(Decimal::ZERO),
                     });
                 }
+                SchwabTransaction::CancelSell(trade) => {
+                    // Cancel Sell reverses a prior sell (e.g., Schwab price correction).
+                    // The cancelled sell never happened — collect for post-processing
+                    // since the original sell may appear later in the JSON (Schwab
+                    // lists newest transactions first).
+                    pending_cancellations.push(PendingCancellation {
+                        date: trade.common.date,
+                        symbol: trade.common.symbol,
+                        quantity: trade.quantity,
+                        price: trade.price,
+                    });
+                }
                 SchwabTransaction::StockPlanActivity(activity) => {
                     let SchwabStockPlanActivity { common, quantity } = activity;
                     // RSU vesting - need FMV and vest date from awards file
@@ -308,15 +361,30 @@ fn process_transactions(
                 SchwabTransaction::NraTaxAdj(_) | SchwabTransaction::NraWithholding(_) => {
                     // Already processed in first pass
                 }
+                SchwabTransaction::NonCgt => {
+                    skipped_count += 1;
+                }
             },
             SchwabTransactionsItem::Unknown(raw) => {
                 let comment = format_unknown_comment(&raw);
+                warnings.push(format!(
+                    "Unknown Schwab action '{}' — skipped. \
+                     Please report this so it can be added to the converter.",
+                    comment
+                ));
                 cgt_transactions.push(CgtTransaction::Comment {
                     comment: comment.clone(),
                 });
                 skipped_count += 1;
             }
         }
+    }
+
+    // Apply deferred cancellations: remove original sells that were cancelled.
+    // This must happen after all transactions are processed because Cancel Sell
+    // entries can appear before their corresponding original Sell in the JSON.
+    if !pending_cancellations.is_empty() {
+        apply_cancellations(&mut cgt_transactions, pending_cancellations, &mut warnings);
     }
 
     Ok((cgt_transactions, warnings, skipped_count))
@@ -352,7 +420,9 @@ mod tests {
         let result = converter.convert(&input).unwrap();
 
         assert_eq!(result.skipped_count, 1);
-        assert!(result.warnings.is_empty());
+        // Unknown actions produce a warning
+        assert_eq!(result.warnings.len(), 1);
+        assert!(result.warnings[0].contains("Unknown Schwab action"));
         assert!(
             result
                 .cgt_content

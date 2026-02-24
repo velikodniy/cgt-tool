@@ -31,8 +31,10 @@ pub(crate) enum SchwabTransactionsItem {
 
 string_enum! {
     pub(crate) enum SchwabAction {
+        // CGT-relevant actions
         Buy => "Buy",
         Sell => "Sell",
+        CancelSell => "Cancel Sell",
         StockPlanActivity => "Stock Plan Activity",
         CashDividend => "Cash Dividend",
         QualifiedDividend => "Qualified Dividend",
@@ -41,6 +43,15 @@ string_enum! {
         StockSplit => "Stock Split",
         NraTaxAdj => "NRA Tax Adj",
         NraWithholding => "NRA Withholding",
+        // Non-CGT actions (cash movements, fees, adjustments)
+        Adjustment => "Adjustment",
+        CreditInterest => "Credit Interest",
+        Journal => "Journal",
+        MiscCashEntry => "Misc Cash Entry",
+        MoneyLinkTransfer => "MoneyLink Transfer",
+        ServiceFee => "Service Fee",
+        WireFundsAdj => "Wire Funds Adj",
+        WireSent => "Wire Sent",
     }
 }
 
@@ -80,6 +91,7 @@ pub(crate) struct SchwabNraTax {
 pub(crate) enum SchwabTransaction {
     Buy(SchwabTrade),
     Sell(SchwabTrade),
+    CancelSell(SchwabTrade),
     StockPlanActivity(SchwabStockPlanActivity),
     CashDividend(SchwabDividend),
     QualifiedDividend(SchwabDividend),
@@ -88,6 +100,8 @@ pub(crate) enum SchwabTransaction {
     StockSplit(SchwabStockSplit),
     NraTaxAdj(SchwabNraTax),
     NraWithholding(SchwabNraTax),
+    /// Known action that is not relevant for CGT (cash movements, fees, etc.)
+    NonCgt,
 }
 
 #[derive(Debug, Clone)]
@@ -163,6 +177,7 @@ fn parse_known_transaction(
     match action {
         SchwabAction::Buy => Ok(SchwabTransaction::Buy(parse_trade(action, value)?)),
         SchwabAction::Sell => Ok(SchwabTransaction::Sell(parse_trade(action, value)?)),
+        SchwabAction::CancelSell => Ok(SchwabTransaction::CancelSell(parse_trade(action, value)?)),
         SchwabAction::StockPlanActivity => Ok(SchwabTransaction::StockPlanActivity(
             parse_stock_plan_activity(value)?,
         )),
@@ -181,6 +196,14 @@ fn parse_known_transaction(
         SchwabAction::NraWithholding => {
             Ok(SchwabTransaction::NraWithholding(parse_nra_tax(value)?))
         }
+        SchwabAction::Adjustment
+        | SchwabAction::CreditInterest
+        | SchwabAction::Journal
+        | SchwabAction::MiscCashEntry
+        | SchwabAction::MoneyLinkTransfer
+        | SchwabAction::ServiceFee
+        | SchwabAction::WireFundsAdj
+        | SchwabAction::WireSent => Ok(SchwabTransaction::NonCgt),
     }
 }
 
