@@ -11,4 +11,4 @@ pub use config::Config;
 pub use error::CgtError;
 pub use exemption::get_exemption;
 pub use models::*;
-pub use validation::{ValidationError, ValidationResult, ValidationWarning, validate};
+pub use validation::{Severity, ValidationIssue, ValidationResult, validate};

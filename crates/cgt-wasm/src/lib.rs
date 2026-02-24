@@ -1,6 +1,4 @@
-use cgt_core::{
-    Disposal, ValidationError, ValidationWarning, calculator, get_exemption, parser, validate,
-};
+use cgt_core::{Disposal, ValidationIssue, calculator, get_exemption, parser, validate};
 use cgt_money::load_default_cache;
 use rust_decimal::Decimal;
 use serde::Serialize;
@@ -13,12 +11,12 @@ use utils::map_error;
 #[derive(Serialize)]
 struct ValidationResultJson {
     is_valid: bool,
-    errors: Vec<ValidationErrorJson>,
-    warnings: Vec<ValidationWarningJson>,
+    errors: Vec<ValidationIssueJson>,
+    warnings: Vec<ValidationIssueJson>,
 }
 
 #[derive(Serialize)]
-struct ValidationErrorJson {
+struct ValidationIssueJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     line: Option<usize>,
     date: String,
@@ -26,33 +24,13 @@ struct ValidationErrorJson {
     message: String,
 }
 
-#[derive(Serialize)]
-struct ValidationWarningJson {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    line: Option<usize>,
-    date: String,
-    ticker: String,
-    message: String,
-}
-
-impl From<&ValidationError> for ValidationErrorJson {
-    fn from(error: &ValidationError) -> Self {
-        ValidationErrorJson {
-            line: error.line,
-            date: error.date.to_string(),
-            ticker: error.ticker.clone(),
-            message: error.message.clone(),
-        }
-    }
-}
-
-impl From<&ValidationWarning> for ValidationWarningJson {
-    fn from(warning: &ValidationWarning) -> Self {
-        ValidationWarningJson {
-            line: warning.line,
-            date: warning.date.to_string(),
-            ticker: warning.ticker.clone(),
-            message: warning.message.clone(),
+impl From<&ValidationIssue> for ValidationIssueJson {
+    fn from(issue: &ValidationIssue) -> Self {
+        ValidationIssueJson {
+            line: issue.line,
+            date: issue.date.to_string(),
+            ticker: issue.ticker.clone(),
+            message: issue.message.clone(),
         }
     }
 }
