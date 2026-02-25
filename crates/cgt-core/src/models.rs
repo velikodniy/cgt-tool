@@ -252,74 +252,66 @@ pub struct GbpTransaction {
     pub operation: Operation<Decimal>,
 }
 
+impl Operation<CurrencyAmount> {
+    /// Convert all monetary fields in this operation to GBP.
+    fn to_gbp(
+        &self,
+        date: NaiveDate,
+        fx_cache: Option<&FxCache>,
+    ) -> Result<Operation<Decimal>, CgtError> {
+        match self {
+            Operation::Buy {
+                amount,
+                price,
+                fees,
+            } => Ok(Operation::Buy {
+                amount: *amount,
+                price: amount_to_gbp(price, date, fx_cache)?,
+                fees: amount_to_gbp(fees, date, fx_cache)?,
+            }),
+            Operation::Sell {
+                amount,
+                price,
+                fees,
+            } => Ok(Operation::Sell {
+                amount: *amount,
+                price: amount_to_gbp(price, date, fx_cache)?,
+                fees: amount_to_gbp(fees, date, fx_cache)?,
+            }),
+            Operation::Dividend {
+                amount,
+                total_value,
+                tax_paid,
+            } => Ok(Operation::Dividend {
+                amount: *amount,
+                total_value: amount_to_gbp(total_value, date, fx_cache)?,
+                tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
+            }),
+            Operation::CapReturn {
+                amount,
+                total_value,
+                fees,
+            } => Ok(Operation::CapReturn {
+                amount: *amount,
+                total_value: amount_to_gbp(total_value, date, fx_cache)?,
+                fees: amount_to_gbp(fees, date, fx_cache)?,
+            }),
+            Operation::Split { ratio } => Ok(Operation::Split { ratio: *ratio }),
+            Operation::Unsplit { ratio } => Ok(Operation::Unsplit { ratio: *ratio }),
+        }
+    }
+}
+
 impl Transaction {
     /// Convert this transaction to a GBP-normalized transaction.
     ///
     /// All monetary amounts are converted to GBP using the FX rate for the transaction date.
     /// If the transaction is already in GBP, no conversion is needed.
     pub fn to_gbp(&self, fx_cache: Option<&FxCache>) -> Result<GbpTransaction, CgtError> {
-        let date = self.date;
-        let operation = match &self.operation {
-            Operation::Buy {
-                amount,
-                price,
-                fees,
-            } => {
-                let price_gbp = amount_to_gbp(price, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
-                Operation::Buy {
-                    amount: *amount,
-                    price: price_gbp,
-                    fees: fees_gbp,
-                }
-            }
-            Operation::Sell {
-                amount,
-                price,
-                fees,
-            } => {
-                let price_gbp = amount_to_gbp(price, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
-                Operation::Sell {
-                    amount: *amount,
-                    price: price_gbp,
-                    fees: fees_gbp,
-                }
-            }
-            Operation::Dividend {
-                amount,
-                total_value,
-                tax_paid,
-            } => {
-                let total_value_gbp = amount_to_gbp(total_value, date, fx_cache)?;
-                let tax_paid_gbp = amount_to_gbp(tax_paid, date, fx_cache)?;
-                Operation::Dividend {
-                    amount: *amount,
-                    total_value: total_value_gbp,
-                    tax_paid: tax_paid_gbp,
-                }
-            }
-            Operation::CapReturn {
-                amount,
-                total_value,
-                fees,
-            } => {
-                let total_value_gbp = amount_to_gbp(total_value, date, fx_cache)?;
-                let fees_gbp = amount_to_gbp(fees, date, fx_cache)?;
-                Operation::CapReturn {
-                    amount: *amount,
-                    total_value: total_value_gbp,
-                    fees: fees_gbp,
-                }
-            }
-            Operation::Split { ratio } => Operation::Split { ratio: *ratio },
-            Operation::Unsplit { ratio } => Operation::Unsplit { ratio: *ratio },
-        };
-
         Ok(GbpTransaction {
             date: self.date,
             ticker: self.ticker.clone(),
-            operation,
+            operation: self.operation.to_gbp(self.date, fx_cache)?,
         })
     }
 }
