@@ -43,7 +43,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         let row_line = format!(
             "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
             format_tax_year(year.period.start_year()),
-            year.disposal_count,
+            year.disposal_count(),
             format_gbp(year.net_gain),
             format_gbp(year.total_gain),
             format_gbp(year.total_loss),
