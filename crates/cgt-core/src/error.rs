@@ -6,9 +6,6 @@ pub enum CgtError {
     #[error("Parsing error: {0}")]
     ParseError(#[from] Box<pest::error::Error<crate::parser::Rule>>),
 
-    #[error("IO error: {0}")]
-    IoError(#[from] std::io::Error),
-
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
@@ -23,12 +20,6 @@ pub enum CgtError {
 
     #[error("Unsupported tax year {0} for CGT exemption lookup - please update the tool")]
     UnsupportedExemptionYear(u16),
-
-    #[error("PDF generation failed: {0}")]
-    PdfGeneration(String),
-
-    #[error("Invalid currency code '{code}': not a recognized ISO 4217 currency")]
-    InvalidCurrencyCode { code: String },
 
     #[error("Missing FX rate for {currency} in {year}-{month:02}")]
     MissingFxRate {
