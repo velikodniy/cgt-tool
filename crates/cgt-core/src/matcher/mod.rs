@@ -475,12 +475,12 @@ impl Matcher {
     }
 
     /// Get mutable ledger for a ticker.
-    pub fn get_ledger_mut(&mut self, ticker: &str) -> Option<&mut AcquisitionLedger> {
+    pub(super) fn get_ledger_mut(&mut self, ticker: &str) -> Option<&mut AcquisitionLedger> {
         self.ledgers.get_mut(ticker)
     }
 
     /// Get mutable Section 104 pool for a ticker.
-    pub fn get_pool_mut(&mut self, ticker: &str) -> Option<&mut Section104Holding> {
+    pub(super) fn get_pool_mut(&mut self, ticker: &str) -> Option<&mut Section104Holding> {
         self.pools.get_mut(ticker)
     }
 }
