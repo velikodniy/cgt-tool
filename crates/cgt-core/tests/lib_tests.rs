@@ -36,21 +36,34 @@ fn test_tax_period_deserialization_invalid_years() {
 fn test_tax_period_from_date() {
     // March 15, 2024 is in tax year 2023/24 (before April 6)
     let date = NaiveDate::from_ymd_opt(2024, 3, 15).expect("valid date");
-    let period = TaxPeriod::from_date(date);
+    let period = TaxPeriod::from_date(date).expect("valid tax period");
     assert_eq!(period.start_year(), 2023);
 
     // April 10, 2024 is in tax year 2024/25 (on or after April 6)
     let date = NaiveDate::from_ymd_opt(2024, 4, 10).expect("valid date");
-    let period = TaxPeriod::from_date(date);
+    let period = TaxPeriod::from_date(date).expect("valid tax period");
     assert_eq!(period.start_year(), 2024);
 
     // April 5, 2024 is still in tax year 2023/24 (before April 6)
     let date = NaiveDate::from_ymd_opt(2024, 4, 5).expect("valid date");
-    let period = TaxPeriod::from_date(date);
+    let period = TaxPeriod::from_date(date).expect("valid tax period");
     assert_eq!(period.start_year(), 2023);
 
     // April 6, 2024 is in tax year 2024/25 (on April 6)
     let date = NaiveDate::from_ymd_opt(2024, 4, 6).expect("valid date");
-    let period = TaxPeriod::from_date(date);
+    let period = TaxPeriod::from_date(date).expect("valid tax period");
     assert_eq!(period.start_year(), 2024);
+}
+
+#[test]
+fn test_tax_period_from_date_outside_valid_range() {
+    // January 1, 1900 resolves to tax year 1899/00, which is below the minimum
+    let date = NaiveDate::from_ymd_opt(1900, 1, 1).expect("valid date");
+    let result = TaxPeriod::from_date(date);
+    assert!(result.is_err());
+    let err = result.unwrap_err().to_string();
+    assert!(
+        err.contains("1899"),
+        "Expected error mentioning year 1899, got: {err}"
+    );
 }

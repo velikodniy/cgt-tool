@@ -108,15 +108,19 @@ impl TaxPeriod {
     /// UK tax year starts April 6, so:
     /// - 2024-03-15 → "2023/24" (before April 6)
     /// - 2024-04-10 → "2024/25" (on or after April 6)
-    pub fn from_date(date: NaiveDate) -> Self {
+    ///
+    /// # Errors
+    /// Returns `CgtError::InvalidTaxYear` if the derived year is outside the valid range.
+    pub fn from_date(date: NaiveDate) -> Result<Self, CgtError> {
         let year = date.year() as u16;
         let month = date.month();
         let day = date.day();
-        if month < 4 || (month == 4 && day < 6) {
-            Self(year - 1)
+        let start_year = if month < 4 || (month == 4 && day < 6) {
+            year - 1
         } else {
-            Self(year)
-        }
+            year
+        };
+        Self::new(start_year)
     }
 
     /// Get the start year of this tax period.
