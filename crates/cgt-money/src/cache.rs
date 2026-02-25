@@ -42,4 +42,67 @@ impl FxCache {
     pub fn is_empty(&self) -> bool {
         self.rates.is_empty()
     }
+
+    /// Check whether any rate exists for the given currency code across all cached periods.
+    pub fn has_currency(&self, code: &str) -> bool {
+        let code = code.trim().to_uppercase();
+        let Some(currency) = Currency::from_code(&code) else {
+            return false;
+        };
+        self.rates.keys().any(|k| k.code == currency)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::RateSource;
+    use rust_decimal::Decimal;
+
+    fn make_entry(code: &str, year: i32, month: u32) -> RateEntry {
+        let currency = Currency::from_code(code).expect("valid currency code in test");
+        RateEntry {
+            key: RateKey::new(currency, year, month),
+            rate_per_gbp: Decimal::new(125, 2),
+            source: RateSource::Bundled { period: None },
+            minor_units: 2,
+            symbol: None,
+        }
+    }
+
+    #[test]
+    fn has_currency_returns_true_for_present_currency() {
+        let mut cache = FxCache::new();
+        cache.insert(make_entry("USD", 2024, 1));
+        assert!(cache.has_currency("USD"));
+    }
+
+    #[test]
+    fn has_currency_returns_false_for_absent_currency() {
+        let mut cache = FxCache::new();
+        cache.insert(make_entry("USD", 2024, 1));
+        assert!(!cache.has_currency("EUR"));
+    }
+
+    #[test]
+    fn has_currency_is_case_insensitive() {
+        let mut cache = FxCache::new();
+        cache.insert(make_entry("USD", 2024, 1));
+        assert!(cache.has_currency("usd"));
+        assert!(cache.has_currency("Usd"));
+    }
+
+    #[test]
+    fn has_currency_returns_false_for_invalid_iso_code() {
+        let mut cache = FxCache::new();
+        cache.insert(make_entry("USD", 2024, 1));
+        assert!(!cache.has_currency("XYZ123"));
+        assert!(!cache.has_currency(""));
+    }
+
+    #[test]
+    fn has_currency_returns_false_on_empty_cache() {
+        let cache = FxCache::new();
+        assert!(!cache.has_currency("USD"));
+    }
 }
