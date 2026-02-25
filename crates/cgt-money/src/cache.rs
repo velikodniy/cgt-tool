@@ -24,9 +24,7 @@ impl FxCache {
         }
     }
 
-    pub fn get(&self, code: &str, year: i32, month: u32) -> Option<&RateEntry> {
-        let code = code.trim().to_uppercase();
-        let currency = Currency::from_code(&code)?;
+    pub fn get(&self, currency: Currency, year: i32, month: u32) -> Option<&RateEntry> {
         let key = RateKey {
             code: currency,
             year,
