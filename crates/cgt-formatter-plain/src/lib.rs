@@ -36,9 +36,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
     for year in &report.tax_years {
         let exemption = get_exemption(year.period.start_year())?;
-        // Use gross proceeds for SA108 Box 21 compatibility
-        let gross_proceeds: Decimal = year.disposals.iter().map(|d| d.gross_proceeds).sum();
-        let taxable = (year.net_gain - exemption).max(Decimal::ZERO);
+        let gross_proceeds = year.gross_proceeds();
+        let taxable = year.taxable_gain(exemption);
 
         let row_line = format!(
             "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
@@ -218,7 +217,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 }
 
 fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
-    let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
+    let total_gain = disposal.net_gain_or_loss();
     let gain_type = if total_gain >= Decimal::ZERO {
         "GAIN"
     } else {
@@ -301,7 +300,7 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
         );
     }
 
-    let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
+    let total_cost = disposal.total_allowable_cost();
     let _ = writeln!(out, "   Cost: {}", format_gbp(total_cost));
     let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
 }
