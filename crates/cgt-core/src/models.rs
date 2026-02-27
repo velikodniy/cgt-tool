@@ -112,6 +112,7 @@ impl TaxPeriod {
     /// # Errors
     /// Returns `CgtError::InvalidTaxYear` if the derived year is outside the valid range.
     pub fn from_date(date: NaiveDate) -> Result<Self, CgtError> {
+        // UK tax year starts on 6 April
         let tax_year_boundary = NaiveDate::from_ymd_opt(date.year(), 4, 6)
             .ok_or(CgtError::InvalidDateYear { year: date.year() })?;
         let start_year = if date < tax_year_boundary {
