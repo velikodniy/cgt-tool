@@ -477,9 +477,8 @@ impl CgtServer {
         let entry = cache
             .get(&currency_upper, req.year, req.month)
             .ok_or_else(|| {
-                // Check if currency exists in any period
-                let has_currency = (2015..=2025)
-                    .any(|y| (1..=12).any(|m| cache.get(&currency_upper, y, m).is_some()));
+                // Check if currency exists in any cached period
+                let has_currency = cache.has_currency(&currency_upper);
 
                 let hint = if has_currency {
                     HINT_FX_RATE_EXISTS
