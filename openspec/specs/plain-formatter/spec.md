@@ -117,3 +117,13 @@ The system SHALL include a brief note in the report explaining which values corr
 - **WHEN** generating a report with disposals
 - **THEN** include a note below the summary table indicating that Proceeds = SA108 Box 21, and that allowable costs include all fees
 - **AND** clarify that gains and losses are reported as net per-disposal results after applying matching rules (CG51560)
+
+### Requirement: Use Core Computed Methods
+
+The plain formatter SHALL obtain disposal and tax-year derived totals from `cgt-core` model methods rather than re-implementing formulas locally.
+
+#### Scenario: Plain summary and disposal rendering
+
+- **WHEN** plain text output renders disposal totals and annual summary values
+- **THEN** the formatter uses `Disposal` and `TaxYearSummary` computed methods for those values
+- **AND** output values remain unchanged from prior behavior
