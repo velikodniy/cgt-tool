@@ -196,18 +196,10 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
                 .map(|m| m.proceeds)
                 .sum::<Decimal>()
                 .round_dp(10);
-            let total_quantity: Decimal = matches.iter().map(|m| m.quantity).sum();
+            let total_quantity: Decimal = matches.iter().map(|m| m.match_detail.quantity).sum();
 
-            let converted_matches: Vec<Match> = matches
-                .into_iter()
-                .map(|m| Match {
-                    rule: m.rule,
-                    quantity: m.quantity,
-                    allowable_cost: m.allowable_cost,
-                    gain_or_loss: m.gain_or_loss,
-                    acquisition_date: m.acquisition_date,
-                })
-                .collect();
+            let converted_matches: Vec<Match> =
+                matches.into_iter().map(|m| m.match_detail).collect();
 
             Disposal {
                 date,

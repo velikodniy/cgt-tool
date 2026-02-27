@@ -4,7 +4,7 @@
 
 use super::{MatchResult, Matcher};
 use crate::error::CgtError;
-use crate::models::{GbpTransaction, MatchRule, Operation};
+use crate::models::{GbpTransaction, Match, MatchRule, Operation};
 use rust_decimal::Decimal;
 
 /// Match disposal against same-day acquisitions.
@@ -53,13 +53,15 @@ pub fn match_same_day(
         results.push(MatchResult {
             disposal_date: sell_tx.date,
             disposal_ticker: sell_tx.ticker.clone(),
-            quantity: matched_qty,
             gross_proceeds,
             proceeds: net_proceeds,
-            allowable_cost: cost,
-            gain_or_loss,
-            rule: MatchRule::SameDay,
-            acquisition_date: Some(sell_tx.date),
+            match_detail: Match {
+                rule: MatchRule::SameDay,
+                quantity: matched_qty,
+                allowable_cost: cost,
+                gain_or_loss,
+                acquisition_date: Some(sell_tx.date),
+            },
         });
 
         *remaining -= matched_qty;

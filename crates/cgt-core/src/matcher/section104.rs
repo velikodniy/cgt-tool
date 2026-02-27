@@ -4,7 +4,7 @@
 
 use super::{MatchResult, Matcher};
 use crate::error::CgtError;
-use crate::models::{GbpTransaction, MatchRule};
+use crate::models::{GbpTransaction, Match, MatchRule};
 use rust_decimal::Decimal;
 
 /// Match disposal against Section 104 pool.
@@ -65,12 +65,14 @@ pub fn match_section_104(
     Ok(Some(MatchResult {
         disposal_date: sell_tx.date,
         disposal_ticker: sell_tx.ticker.clone(),
-        quantity: matched_qty,
         gross_proceeds: gross_portion,
         proceeds: net_proceeds,
-        allowable_cost: cost,
-        gain_or_loss,
-        rule: MatchRule::Section104,
-        acquisition_date: None,
+        match_detail: Match {
+            rule: MatchRule::Section104,
+            quantity: matched_qty,
+            allowable_cost: cost,
+            gain_or_loss,
+            acquisition_date: None,
+        },
     }))
 }

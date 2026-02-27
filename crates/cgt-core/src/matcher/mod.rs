@@ -11,25 +11,25 @@ mod section104;
 pub use acquisition_ledger::{AcquisitionExtras, AcquisitionLedger, AcquisitionLot};
 
 use crate::error::CgtError;
-use crate::models::{GbpTransaction, MatchRule, Operation, Section104Holding};
+use crate::models::{GbpTransaction, Match, Operation, Section104Holding};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
 
 /// Result of matching a disposal against acquisitions.
+///
+/// Contains disposal-level metadata alongside the inner `Match` that
+/// records rule, quantity, cost, and gain/loss for the matched portion.
 #[derive(Debug, Clone)]
 pub struct MatchResult {
     pub disposal_date: NaiveDate,
     pub disposal_ticker: String,
-    pub quantity: Decimal,
     /// Gross proceeds before sale fees (quantity × unit price).
     pub gross_proceeds: Decimal,
     /// Net proceeds after sale fees (gross_proceeds - fees).
     pub proceeds: Decimal,
-    pub allowable_cost: Decimal,
-    pub gain_or_loss: Decimal,
-    pub rule: MatchRule,
-    pub acquisition_date: Option<NaiveDate>,
+    /// The match detail: rule, quantity, cost, gain/loss, acquisition date.
+    pub match_detail: Match,
 }
 
 /// Efficient matcher for CGT share matching rules.

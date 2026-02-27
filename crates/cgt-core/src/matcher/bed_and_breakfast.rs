@@ -6,7 +6,7 @@
 
 use super::MatchResult;
 use crate::error::CgtError;
-use crate::models::{GbpTransaction, MatchRule, Operation};
+use crate::models::{GbpTransaction, Match, MatchRule, Operation};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use std::collections::HashMap;
@@ -165,13 +165,15 @@ pub fn match_bed_and_breakfast(
                 results.push(MatchResult {
                     disposal_date: sell_tx.date,
                     disposal_ticker: sell_tx.ticker.clone(),
-                    quantity: matched_qty_at_sell_time,
                     gross_proceeds,
                     proceeds: net_proceeds,
-                    allowable_cost: cost,
-                    gain_or_loss,
-                    rule: MatchRule::BedAndBreakfast,
-                    acquisition_date: Some(tx.date),
+                    match_detail: Match {
+                        rule: MatchRule::BedAndBreakfast,
+                        quantity: matched_qty_at_sell_time,
+                        allowable_cost: cost,
+                        gain_or_loss,
+                        acquisition_date: Some(tx.date),
+                    },
                 });
 
                 *remaining -= matched_qty_at_sell_time;
