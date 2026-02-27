@@ -450,6 +450,18 @@ pub struct Disposal {
     pub matches: Vec<Match>,
 }
 
+impl Disposal {
+    #[must_use]
+    pub fn net_gain_or_loss(&self) -> Decimal {
+        self.matches.iter().map(|m| m.gain_or_loss).sum()
+    }
+
+    #[must_use]
+    pub fn total_allowable_cost(&self) -> Decimal {
+        self.matches.iter().map(|m| m.allowable_cost).sum()
+    }
+}
+
 /// Summary of CGT activity within a single UK tax year.
 #[derive(Debug, Clone, Deserialize, PartialEq, JsonSchema)]
 pub struct TaxYearSummary {
@@ -467,6 +479,16 @@ impl TaxYearSummary {
     /// Number of disposals in this tax year, derived from the disposals vector.
     pub fn disposal_count(&self) -> u32 {
         self.disposals.len() as u32
+    }
+
+    #[must_use]
+    pub fn gross_proceeds(&self) -> Decimal {
+        self.disposals.iter().map(|d| d.gross_proceeds).sum()
+    }
+
+    #[must_use]
+    pub fn taxable_gain(&self, annual_exempt_amount: Decimal) -> Decimal {
+        (self.net_gain - annual_exempt_amount).max(Decimal::ZERO)
     }
 }
 

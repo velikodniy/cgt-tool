@@ -143,3 +143,13 @@ The system SHALL include a brief note in the PDF report explaining which values 
 
 - **WHEN** generating a PDF report with disposals
 - **THEN** include a note indicating that Proceeds = SA108 Box 21, and that allowable costs include all fees
+
+### Requirement: Use Core Computed Methods
+
+The PDF formatter SHALL obtain disposal and tax-year derived totals from `cgt-core` model methods rather than re-implementing formulas locally.
+
+#### Scenario: PDF summary and disposal rendering
+
+- **WHEN** PDF output renders disposal totals and annual summary values
+- **THEN** the formatter uses `Disposal` and `TaxYearSummary` computed methods for those values
+- **AND** output values remain unchanged from prior behavior

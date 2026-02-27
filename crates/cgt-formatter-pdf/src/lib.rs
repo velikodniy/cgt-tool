@@ -126,9 +126,8 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
     let mut rows = Vec::new();
     for year in &report.tax_years {
         let exemption = get_exemption(year.period.start_year())?;
-        // Use gross proceeds for SA108 Box 21 compatibility
-        let gross_proceeds: Decimal = year.disposals.iter().map(|d| d.gross_proceeds).sum();
-        let taxable = (year.net_gain - exemption).max(Decimal::ZERO);
+        let gross_proceeds = year.gross_proceeds();
+        let taxable = year.taxable_gain(exemption);
 
         let mut row = Dict::new();
         row.insert(
@@ -286,8 +285,8 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
 fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     let mut dict = Dict::new();
 
-    let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
-    let total_cost: Decimal = disposal.matches.iter().map(|m| m.allowable_cost).sum();
+    let total_gain = disposal.net_gain_or_loss();
+    let total_cost = disposal.total_allowable_cost();
 
     dict.insert("ticker".into(), disposal.ticker.clone().into_value());
     dict.insert("date".into(), date_dict(disposal.date).into_value());
