@@ -12,7 +12,7 @@ pub use cgt_money::{Currency, CurrencyAmount};
 /// Serialize a Decimal to at most 2 decimal places for monetary amounts.
 mod decimal_money {
     use rust_decimal::Decimal;
-    use serde::{self, Serializer};
+    use serde::{self, Serialize, Serializer};
 
     pub fn serialize<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -21,6 +21,19 @@ mod decimal_money {
         // Round to 2 decimal places for display
         let rounded = value.round_dp(2);
         serializer.serialize_str(&rounded.to_string())
+    }
+
+    /// Wrapper for serializing Decimal as a rounded monetary string.
+    pub struct DecimalMoney(pub Decimal);
+
+    impl Serialize for DecimalMoney {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            let rounded = self.0.round_dp(2);
+            serializer.serialize_str(&rounded.to_string())
+        }
     }
 }
 
@@ -438,18 +451,40 @@ pub struct Disposal {
 }
 
 /// Summary of CGT activity within a single UK tax year.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, JsonSchema)]
+#[derive(Debug, Clone, Deserialize, PartialEq, JsonSchema)]
 pub struct TaxYearSummary {
     pub period: TaxPeriod,
     pub disposals: Vec<Disposal>,
-    #[serde(default)]
-    pub disposal_count: u32,
     #[serde(serialize_with = "decimal_money::serialize")]
     pub total_gain: Decimal,
     #[serde(serialize_with = "decimal_money::serialize")]
     pub total_loss: Decimal,
     #[serde(serialize_with = "decimal_money::serialize")]
     pub net_gain: Decimal,
+}
+
+impl TaxYearSummary {
+    /// Number of disposals in this tax year, derived from the disposals vector.
+    pub fn disposal_count(&self) -> u32 {
+        self.disposals.len() as u32
+    }
+}
+
+impl Serialize for TaxYearSummary {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut state = serializer.serialize_struct("TaxYearSummary", 6)?;
+        state.serialize_field("period", &self.period)?;
+        state.serialize_field("disposals", &self.disposals)?;
+        state.serialize_field("disposal_count", &self.disposal_count())?;
+        state.serialize_field("total_gain", &decimal_money::DecimalMoney(self.total_gain))?;
+        state.serialize_field("total_loss", &decimal_money::DecimalMoney(self.total_loss))?;
+        state.serialize_field("net_gain", &decimal_money::DecimalMoney(self.net_gain))?;
+        state.end()
+    }
 }
 
 /// The complete CGT calculation output.

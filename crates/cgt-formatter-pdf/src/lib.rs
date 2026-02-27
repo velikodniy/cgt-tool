@@ -123,7 +123,7 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
         );
         row.insert(
             "disposal_count".into(),
-            (year.disposal_count as i64).into_value(),
+            (year.disposal_count() as i64).into_value(),
         );
         row.insert("net_gain".into(), decimal_to_value(year.net_gain)?);
         row.insert("total_gain".into(), decimal_to_value(year.total_gain)?);
@@ -367,7 +367,6 @@ mod tests {
             tax_years: vec![TaxYearSummary {
                 period: TaxPeriod::new(2024).expect("valid tax year"),
                 disposals: vec![disposal],
-                disposal_count: 1,
                 total_gain: Decimal::from(95),
                 total_loss: Decimal::ZERO,
                 net_gain: Decimal::from(95),
