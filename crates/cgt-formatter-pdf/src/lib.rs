@@ -4,7 +4,8 @@
 //! without requiring any external tool installation.
 
 use cgt_core::{
-    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction,
+    get_exemption, sort_by_date_ticker,
 };
 use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -74,19 +75,6 @@ fn match_rule_label(rule: &MatchRule) -> &'static str {
         MatchRule::BedAndBreakfast => "BED_AND_BREAKFAST",
         MatchRule::Section104 => "SECTION_104",
     }
-}
-
-/// Sort transactions by date, then by ticker for deterministic output.
-fn sort_by_date_ticker<T, F, G>(items: &mut [T], get_date: F, get_ticker: G)
-where
-    F: Fn(&T) -> NaiveDate,
-    G: Fn(&T) -> &str,
-{
-    items.sort_by(|a, b| {
-        get_date(a)
-            .cmp(&get_date(b))
-            .then_with(|| get_ticker(a).cmp(get_ticker(b)))
-    });
 }
 
 fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Result<Dict, PdfError> {
@@ -225,7 +213,7 @@ fn build_transaction_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
         rows.push((transaction.date, transaction.ticker.clone(), row));
     }
 
-    rows.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    sort_by_date_ticker(&mut rows, |row| row.0, |row| &row.1);
 
     let values: Vec<Value> = rows
         .into_iter()
@@ -272,7 +260,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
         rows.push((transaction.date, transaction.ticker.clone(), row));
     }
 
-    rows.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    sort_by_date_ticker(&mut rows, |row| row.0, |row| &row.1);
 
     let values: Vec<Value> = rows
         .into_iter()

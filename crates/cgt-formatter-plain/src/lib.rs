@@ -1,6 +1,9 @@
 //! Plain text formatter for CGT tax reports.
 
-use cgt_core::{CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption};
+use cgt_core::{
+    CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
+    sort_by_date_ticker,
+};
 use cgt_format::{
     format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
     format_tax_year, round_gbp,
@@ -69,7 +72,11 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
         // Sort disposals by date, then by ticker for deterministic output
         let mut disposals: Vec<_> = year.disposals.iter().collect();
-        disposals.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
+        sort_by_date_ticker(
+            &mut disposals,
+            |disposal| disposal.date,
+            |disposal| &disposal.ticker,
+        );
 
         for (i, disposal) in disposals.iter().enumerate() {
             format_disposal(&mut out, i + 1, disposal);
@@ -105,7 +112,11 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         .iter()
         .filter(|t| matches!(t.operation, Operation::Buy { .. } | Operation::Sell { .. }))
         .collect();
-    txns.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
+    sort_by_date_ticker(
+        &mut txns,
+        |transaction| transaction.date,
+        |transaction| &transaction.ticker,
+    );
 
     for t in txns {
         match &t.operation {
@@ -156,7 +167,11 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
             )
         })
         .collect();
-    events.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
+    sort_by_date_ticker(
+        &mut events,
+        |transaction| transaction.date,
+        |transaction| &transaction.ticker,
+    );
 
     if !events.is_empty() {
         let _ = writeln!(out, "\n# ASSET EVENTS\n");

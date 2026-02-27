@@ -208,7 +208,11 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
         })
         .collect();
 
-    disposals.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
+    crate::sort_by_date_ticker(
+        &mut disposals,
+        |disposal| disposal.date,
+        |disposal| &disposal.ticker,
+    );
 
     disposals
 }
