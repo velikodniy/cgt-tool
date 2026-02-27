@@ -12,8 +12,6 @@ pub struct AcquisitionLot {
     pub date: NaiveDate,
     /// Original quantity purchased
     pub original_amount: Decimal,
-    /// Remaining quantity (not yet matched)
-    pub remaining_amount: Decimal,
     /// Price per share
     pub price: Decimal,
     /// Transaction expenses
@@ -58,7 +56,6 @@ impl AcquisitionLot {
             transaction_idx,
             date,
             original_amount: amount,
-            remaining_amount: amount,
             price,
             expenses,
             cost_offset,
@@ -89,12 +86,12 @@ impl AcquisitionLot {
 
     /// Get available amount (not consumed by matching).
     pub fn available(&self) -> Decimal {
-        self.remaining_amount - self.consumed - self.reserved - self.in_pool
+        self.original_amount - self.consumed - self.reserved - self.in_pool
     }
 
     /// Get the amount held for corporate action adjustments.
     pub fn held_for_adjustment(&self) -> Decimal {
-        self.remaining_amount - self.consumed
+        self.original_amount - self.consumed
     }
 
     /// Consume shares for matching (Same Day or B&B).
