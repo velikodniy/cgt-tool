@@ -59,10 +59,10 @@ fn load_cache_merges_folder_over_bundled() {
     .unwrap();
 
     // Folder-provided rates for March 2025 should be present
-    let eur = cache.get("EUR", 2025, 3).unwrap();
+    let eur = cache.get(Currency::EUR, 2025, 3).unwrap();
     assert_eq!(eur.rate_per_gbp, Decimal::from_str_exact("1.1328").unwrap());
     // Ensure bundled rates still present
-    assert!(cache.get("USD", 2024, 12).is_some());
+    assert!(cache.get(Currency::USD, 2024, 12).is_some());
 }
 
 #[test]
@@ -78,9 +78,9 @@ fn period_mismatch_is_rejected() {
 }
 
 #[test]
-fn cache_get_is_case_insensitive() {
+fn cache_get_empty_returns_none() {
     let cache = FxCache::new();
-    assert!(cache.get("eur", 2025, 3).is_none());
+    assert!(cache.get(Currency::EUR, 2025, 3).is_none());
 }
 
 #[test]

@@ -1,6 +1,6 @@
 //! Tests for FX rate fallback behavior between provided folder and bundled rates.
 
-use cgt_money::{FxCache, RateFile, load_cache_with_overrides, load_default_cache};
+use cgt_money::{Currency, FxCache, RateFile, load_cache_with_overrides, load_default_cache};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
@@ -39,7 +39,7 @@ fn folder_rate_overrides_bundled_for_same_month() {
     .unwrap();
 
     // Folder rate should override bundled for EUR Dec 2024
-    let eur = cache.get("EUR", 2024, 12).unwrap();
+    let eur = cache.get(Currency::EUR, 2024, 12).unwrap();
     assert_eq!(
         eur.rate_per_gbp.to_string(),
         "9.9999",
@@ -47,7 +47,7 @@ fn folder_rate_overrides_bundled_for_same_month() {
     );
 
     // USD from bundled should still be present (not overridden)
-    let usd = cache.get("USD", 2024, 12).unwrap();
+    let usd = cache.get(Currency::USD, 2024, 12).unwrap();
     assert!(
         usd.rate_per_gbp.to_string() != "9.9999",
         "USD should use bundled rate"
@@ -64,7 +64,7 @@ fn folder_adds_rates_for_missing_months() {
     .unwrap();
 
     // Jan 2025 EUR should come from folder (bundled covers 2015-2025)
-    let eur = cache.get("EUR", 2025, 1).unwrap();
+    let eur = cache.get(Currency::EUR, 2025, 1).unwrap();
     assert_eq!(
         eur.rate_per_gbp.to_string(),
         "1.2500",
@@ -72,7 +72,7 @@ fn folder_adds_rates_for_missing_months() {
     );
 
     // Dec 2024 EUR should still come from bundled
-    let eur_dec = cache.get("EUR", 2024, 12).unwrap();
+    let eur_dec = cache.get(Currency::EUR, 2024, 12).unwrap();
     assert!(
         eur_dec.rate_per_gbp.to_string() != "1.2500",
         "Bundled Dec 2024 rate should remain"
@@ -85,20 +85,14 @@ fn missing_rate_returns_none() {
 
     // Far future month should not exist
     assert!(
-        cache.get("EUR", 2130, 1).is_none(),
+        cache.get(Currency::EUR, 2130, 1).is_none(),
         "Rate for far future month should return None"
     );
 
     // Far future month should not exist
     assert!(
-        cache.get("USD", 2130, 1).is_none(),
+        cache.get(Currency::USD, 2130, 1).is_none(),
         "Rate for far future should return None"
-    );
-
-    // Non-existent currency
-    assert!(
-        cache.get("XXX", 2024, 12).is_none(),
-        "Unknown currency should return None"
     );
 }
 
@@ -108,29 +102,18 @@ fn empty_folder_uses_bundled_only() {
 
     // Should still have bundled rates
     assert!(
-        cache.get("USD", 2024, 12).is_some(),
+        cache.get(Currency::USD, 2024, 12).is_some(),
         "Bundled rates should be available with empty folder"
     );
 }
 
 #[test]
-fn cache_lookup_is_case_insensitive() {
+fn cache_lookup_with_currency_enum() {
     let cache = load_default_cache().unwrap();
 
-    // All these should find the same rate
-    let lower = cache.get("usd", 2024, 12);
-    let upper = cache.get("USD", 2024, 12);
-    let mixed = cache.get("Usd", 2024, 12);
-
-    assert!(lower.is_some(), "Lowercase lookup should work");
-    assert!(upper.is_some(), "Uppercase lookup should work");
-    assert!(mixed.is_some(), "Mixed case lookup should work");
-
-    assert_eq!(
-        lower.unwrap().rate_per_gbp,
-        upper.unwrap().rate_per_gbp,
-        "All lookups should return same rate"
-    );
+    // Currency enum guarantees a valid, correctly-cased code
+    let result = cache.get(Currency::USD, 2024, 12);
+    assert!(result.is_some(), "Currency enum lookup should work");
 }
 
 #[test]
@@ -138,20 +121,29 @@ fn bundled_rates_contain_major_currencies() {
     let cache = load_default_cache().unwrap();
 
     // These common currencies should be present in the bundled rates
-    let major_currencies = ["USD", "EUR", "JPY", "GBP", "CHF", "CAD", "AUD", "CNY"];
+    let major_currencies = [
+        Currency::USD,
+        Currency::EUR,
+        Currency::JPY,
+        Currency::GBP,
+        Currency::CHF,
+        Currency::CAD,
+        Currency::AUD,
+        Currency::CNY,
+    ];
 
-    for code in major_currencies {
+    for currency in major_currencies {
         // GBP won't be in the rates (it's the base currency)
-        if code == "GBP" {
+        if currency == Currency::GBP {
             assert!(
-                cache.get(code, 2024, 12).is_none(),
+                cache.get(currency, 2024, 12).is_none(),
                 "GBP should not be in rates (it's the base)"
             );
         } else {
             assert!(
-                cache.get(code, 2024, 12).is_some(),
+                cache.get(currency, 2024, 12).is_some(),
                 "Major currency {} should be in bundled rates",
-                code
+                currency.code()
             );
         }
     }
@@ -166,7 +158,7 @@ fn no_folder_loads_bundled_only() {
         "Cache should not be empty with bundled rates"
     );
     assert!(
-        cache.get("USD", 2024, 12).is_some(),
+        cache.get(Currency::USD, 2024, 12).is_some(),
         "Should have USD from bundled"
     );
 }
@@ -187,12 +179,12 @@ fn bundled_rates_cover_multiple_years() {
     // Verify rates exist for 2015-2024 (full 10-year coverage)
     for year in 2015..=2024 {
         assert!(
-            cache.get("USD", year, 6).is_some(),
+            cache.get(Currency::USD, year, 6).is_some(),
             "Should have USD rate for {} June",
             year
         );
         assert!(
-            cache.get("EUR", year, 1).is_some(),
+            cache.get(Currency::EUR, year, 1).is_some(),
             "Should have EUR rate for {} January",
             year
         );

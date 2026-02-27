@@ -9,7 +9,7 @@ use crate::resources::{
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
 use cgt_core::{CurrencyAmount, Disposal, MatchRule, TaxReport, Transaction};
-use cgt_money::{FxCache, load_default_cache};
+use cgt_money::{Currency, FxCache, load_default_cache};
 use chrono::Datelike;
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
@@ -471,32 +471,39 @@ impl CgtServer {
             .as_ref()
             .ok_or_else(|| McpError::internal_error("FX rates not available", None))?;
 
-        // Normalize currency code to uppercase
+        // Parse and validate currency code
         let currency_upper = req.currency.to_uppercase();
+        let currency = Currency::from_code(&currency_upper).ok_or_else(|| {
+            McpError::invalid_params(
+                format!(
+                    "Unknown currency code: '{}'\n\n{HINT_INVALID_CURRENCY}",
+                    req.currency
+                ),
+                None,
+            )
+        })?;
 
-        let entry = cache
-            .get(&currency_upper, req.year, req.month)
-            .ok_or_else(|| {
-                // Check if currency exists in any cached period
-                let has_currency = cache.has_currency(&currency_upper);
+        let entry = cache.get(currency, req.year, req.month).ok_or_else(|| {
+            // Check if currency exists in any cached period
+            let has_currency = cache.has_currency(&currency_upper);
 
-                let hint = if has_currency {
-                    HINT_FX_RATE_EXISTS
-                } else {
-                    HINT_FX_RATE_UNKNOWN
-                };
+            let hint = if has_currency {
+                HINT_FX_RATE_EXISTS
+            } else {
+                HINT_FX_RATE_UNKNOWN
+            };
 
-                let msg = format!(
-                    "No exchange rate found for {currency_upper} in {}-{:02}\n\n{hint}",
-                    req.year, req.month
-                );
+            let msg = format!(
+                "No exchange rate found for {currency_upper} in {}-{:02}\n\n{hint}",
+                req.year, req.month
+            );
 
-                McpError::invalid_params(msg, None)
-            })?;
+            McpError::invalid_params(msg, None)
+        })?;
 
         let response = FxRateResponse {
             rate: entry.rate_per_gbp.to_string(),
-            currency: req.currency.to_uppercase(),
+            currency: currency_upper,
             period: format!("{}-{:02}", req.year, req.month),
         };
 

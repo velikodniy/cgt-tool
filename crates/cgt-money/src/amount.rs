@@ -52,14 +52,13 @@ impl CurrencyAmount {
             return Ok(self.amount);
         }
 
-        let code = self.currency.code();
-        let rate_entry = fx_cache.get(code, date.year(), date.month()).ok_or(
-            FxConversionError::MissingRate {
-                currency: code.to_string(),
+        let rate_entry = fx_cache
+            .get(self.currency, date.year(), date.month())
+            .ok_or(FxConversionError::MissingRate {
+                currency: self.currency.code().to_string(),
                 year: date.year(),
                 month: date.month(),
-            },
-        )?;
+            })?;
 
         Ok(self.amount / rate_entry.rate_per_gbp)
     }
