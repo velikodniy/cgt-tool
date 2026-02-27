@@ -9,6 +9,7 @@ use cgt_core::{
 use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use thiserror::Error;
 use typst::foundations::{Dict, IntoValue, Value};
 use typst_as_lib::TypstEngine;
 
@@ -19,13 +20,26 @@ static TEMPLATE: &str = include_str!("templates/report.typ");
 static ROBOTO_REGULAR: &[u8] = include_bytes!("../fonts/Roboto-Regular.ttf");
 static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
-fn decimal_to_f64(value: Decimal) -> Result<f64, CgtError> {
-    value.to_f64().ok_or_else(|| {
-        CgtError::PdfGeneration("Failed to convert Decimal to float for PDF".to_string())
-    })
+#[derive(Debug, Error)]
+pub enum PdfError {
+    #[error(transparent)]
+    Core(#[from] CgtError),
+
+    #[error("PDF generation failed: failed to convert Decimal to float")]
+    DecimalToFloat,
+
+    #[error("PDF generation failed: Typst compilation failed: {0}")]
+    TypstCompilation(String),
+
+    #[error("PDF generation failed: PDF export failed: {0}")]
+    PdfExport(String),
 }
 
-fn decimal_to_value(value: Decimal) -> Result<Value, CgtError> {
+fn decimal_to_f64(value: Decimal) -> Result<f64, PdfError> {
+    value.to_f64().ok_or(PdfError::DecimalToFloat)
+}
+
+fn decimal_to_value(value: Decimal) -> Result<Value, PdfError> {
     Ok(decimal_to_f64(value)?.into_value())
 }
 
@@ -44,7 +58,7 @@ fn optional_date_value(date: Option<NaiveDate>) -> Value {
     }
 }
 
-fn currency_amount_value(amount: &CurrencyAmount) -> Result<Value, CgtError> {
+fn currency_amount_value(amount: &CurrencyAmount) -> Result<Value, PdfError> {
     let mut dict = Dict::new();
     dict.insert("amount".into(), decimal_to_value(amount.amount)?);
     dict.insert(
@@ -75,7 +89,7 @@ where
     });
 }
 
-fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Result<Dict, CgtError> {
+fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Result<Dict, PdfError> {
     let mut data = Dict::new();
 
     // Generation date
@@ -108,7 +122,7 @@ fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Resu
     Ok(data)
 }
 
-fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
+fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
     let mut rows = Vec::new();
     for year in &report.tax_years {
         let exemption = get_exemption(year.period.start_year())?;
@@ -136,7 +150,7 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
     Ok(rows)
 }
 
-fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
+fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
     report
         .tax_years
         .iter()
@@ -154,7 +168,7 @@ fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
                 .into_iter()
                 .map(build_disposal_dict)
                 .map(|result| result.map(IntoValue::into_value))
-                .collect::<Result<Vec<_>, CgtError>>()?;
+                .collect::<Result<Vec<_>, PdfError>>()?;
 
             year_dict.insert("disposals".into(), disposals.into_value());
             Ok(year_dict.into_value())
@@ -162,7 +176,7 @@ fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, CgtError> {
         .collect()
 }
 
-fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), CgtError> {
+fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), PdfError> {
     let mut active: Vec<_> = report
         .holdings
         .iter()
@@ -179,12 +193,12 @@ fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), CgtErro
             row.insert("total_cost".into(), decimal_to_value(h.total_cost)?);
             Ok(row.into_value())
         })
-        .collect::<Result<Vec<_>, CgtError>>()?;
+        .collect::<Result<Vec<_>, PdfError>>()?;
 
     Ok((!active.is_empty(), rows))
 }
 
-fn build_transaction_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Value>), CgtError> {
+fn build_transaction_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Value>), PdfError> {
     let mut rows: Vec<(NaiveDate, String, Dict)> = Vec::new();
 
     for transaction in transactions {
@@ -222,7 +236,7 @@ fn build_transaction_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
     Ok((!values.is_empty(), values))
 }
 
-fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Value>), CgtError> {
+fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Value>), PdfError> {
     let mut rows: Vec<(NaiveDate, String, Dict)> = Vec::new();
 
     for transaction in transactions {
@@ -269,7 +283,7 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
     Ok((!values.is_empty(), values))
 }
 
-fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, CgtError> {
+fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     let mut dict = Dict::new();
 
     let total_gain: Decimal = disposal.matches.iter().map(|m| m.gain_or_loss).sum();
@@ -300,7 +314,7 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, CgtError> {
             );
             Ok(match_dict.into_value())
         })
-        .collect::<Result<Vec<_>, CgtError>>()?;
+        .collect::<Result<Vec<_>, PdfError>>()?;
     dict.insert("matches".into(), matches.into_value());
 
     Ok(dict)
@@ -316,9 +330,9 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, CgtError> {
 /// PDF file contents as bytes, or error if generation fails.
 ///
 /// # Errors
-/// Returns `CgtError::PdfGeneration` if Typst compilation or PDF export fails.
+/// Returns `PdfError::TypstCompilation` or `PdfError::PdfExport` if generation fails.
 /// Returns `CgtError::UnsupportedExemptionYear` if a tax year's exemption is unavailable.
-pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8>, CgtError> {
+pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8>, PdfError> {
     let data = build_template_data(report, transactions)?;
 
     let engine = TypstEngine::builder()
@@ -329,10 +343,10 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8
     let compiled = engine.compile_with_input(data);
     let doc = compiled
         .output
-        .map_err(|e| CgtError::PdfGeneration(format!("Typst compilation failed: {e}")))?;
+        .map_err(|e| PdfError::TypstCompilation(e.to_string()))?;
 
     let pdf = typst_pdf::pdf(&doc, &typst_pdf::PdfOptions::default())
-        .map_err(|e| CgtError::PdfGeneration(format!("PDF export failed: {e:?}")))?;
+        .map_err(|e| PdfError::PdfExport(format!("{e:?}")))?;
 
     Ok(pdf)
 }

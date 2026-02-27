@@ -431,6 +431,7 @@ dependencies = [
  "cgt-format",
  "chrono",
  "rust_decimal",
+ "thiserror 1.0.69",
  "typst",
  "typst-as-lib",
  "typst-pdf",
