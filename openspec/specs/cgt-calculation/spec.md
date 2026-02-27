@@ -119,7 +119,7 @@ The system SHALL group disposals by UK tax year (6 April to 5 April). `TaxPeriod
 
 ### Requirement: Tax Year Disposal Count
 
-The system SHALL include a `disposal_count` in each `TaxYearSummary`, representing the number of grouped disposals per tax year after applying same-day aggregation (CG51560).
+The system SHALL derive `disposal_count` from `disposals.len()` in each `TaxYearSummary` via a method, rather than storing it as a separate field. The JSON serialization output SHALL continue to include `disposal_count` with the same value as before.
 
 #### Scenario: Data-driven disposal count (multi-year)
 
