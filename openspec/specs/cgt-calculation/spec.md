@@ -92,7 +92,7 @@ The system SHALL maintain separate Section 104 pools per ticker.
 
 ### Requirement: Tax Year Grouping
 
-The system SHALL group disposals by UK tax year (6 April to 5 April).
+The system SHALL group disposals by UK tax year (6 April to 5 April). `TaxPeriod::from_date()` SHALL return `Result<Self, CgtError>` and enforce the same `[1900, 2100]` range validation as `TaxPeriod::new()`.
 
 #### Scenario: Year boundaries
 
@@ -111,6 +111,11 @@ The system SHALL group disposals by UK tax year (6 April to 5 April).
 - **THEN** return `TaxReport` containing all tax years with disposals
 - **AND** group disposals into separate `TaxYearSummary` entries by tax period
 - **AND** sort `tax_years` chronologically (earliest first)
+
+#### Scenario: Date outside valid tax year range
+
+- **WHEN** `TaxPeriod::from_date()` is called with a date that resolves to a year outside `[1900, 2100]`
+- **THEN** it SHALL return `Err(CgtError::InvalidTaxYear(_))`
 
 ### Requirement: Tax Year Disposal Count
 
