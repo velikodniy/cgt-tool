@@ -101,7 +101,7 @@ fn build_tax_year_summary(
 
     let disposals = group_matches_into_disposals(year_matches);
     let (total_gain, total_loss) = calculate_totals(&disposals);
-    let tax_period = TaxPeriod::from_date(start_date);
+    let tax_period = TaxPeriod::from_date(start_date)?;
     let disposal_count = disposals.len() as u32;
 
     Ok(TaxYearSummary {
@@ -122,7 +122,7 @@ fn build_all_tax_year_summaries(
     let mut matches_by_year: HashMap<u16, Vec<MatchResult>> = HashMap::new();
 
     for m in match_results {
-        let tax_period = TaxPeriod::from_date(m.disposal_date);
+        let tax_period = TaxPeriod::from_date(m.disposal_date)?;
         matches_by_year
             .entry(tax_period.start_year())
             .or_default()
