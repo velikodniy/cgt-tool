@@ -1,6 +1,6 @@
 ## MODIFIED Requirements
 
-### Requirement: Rate lookup
+### Requirement: HMRC Rates
 
 The system SHALL use HMRC monthly average exchange rates for the transaction month.
 
