@@ -2,6 +2,7 @@ use anyhow::{Result, bail};
 use cgt_core::Transaction;
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
+use cgt_format::Formatter;
 use cgt_money::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
@@ -88,7 +89,8 @@ fn main() -> Result<()> {
 
             match format {
                 OutputFormat::Plain => {
-                    let content = cgt_formatter_plain::format(&report);
+                    let formatter = cgt_formatter_plain::PlainFormatter;
+                    let content = formatter.format(&report)?;
                     if let Some(path) = output {
                         fs::write(path, content)?;
                     } else {
@@ -104,7 +106,8 @@ fn main() -> Result<()> {
                     }
                 }
                 OutputFormat::Pdf => {
-                    let pdf_bytes = cgt_formatter_pdf::format(&report)?;
+                    let formatter = cgt_formatter_pdf::PdfFormatter;
+                    let pdf_bytes = formatter.format(&report)?;
                     let (output_path, is_default) = match output {
                         Some(p) => (p.clone(), false),
                         None => {

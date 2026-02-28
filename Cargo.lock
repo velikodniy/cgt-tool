@@ -371,6 +371,7 @@ dependencies = [
  "assert_cmd",
  "cgt-converter",
  "cgt-core",
+ "cgt-format",
  "cgt-formatter-pdf",
  "cgt-formatter-plain",
  "cgt-mcp",
@@ -418,6 +419,7 @@ dependencies = [
 name = "cgt-format"
 version = "0.13.0"
 dependencies = [
+ "cgt-core",
  "cgt-money",
  "chrono",
  "rust_decimal",

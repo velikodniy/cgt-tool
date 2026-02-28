@@ -3,9 +3,17 @@
 //! This crate provides consistent formatting across all output formats (plain text, PDF).
 //! All formatting uses UK conventions (£ symbol, DD/MM/YYYY dates, thousands separators).
 
+use cgt_core::TaxReport;
 use cgt_money::CurrencyAmount;
 use chrono::NaiveDate;
 use rust_decimal::{Decimal, RoundingStrategy};
+
+pub trait Formatter {
+    type Output;
+    type Error: std::error::Error;
+
+    fn format(&self, report: &TaxReport) -> Result<Self::Output, Self::Error>;
+}
 
 /// Format a `CurrencyAmount` rounded to its minor units (e.g., pence for GBP).
 ///

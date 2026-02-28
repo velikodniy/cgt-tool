@@ -6,6 +6,7 @@
 use cgt_core::{
     CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, sort_by_date_ticker,
 };
+use cgt_format::Formatter;
 use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
@@ -330,6 +331,17 @@ pub fn format(report: &TaxReport) -> Result<Vec<u8>, PdfError> {
         .map_err(|e| PdfError::PdfExport(format!("{e:?}")))?;
 
     Ok(pdf)
+}
+
+pub struct PdfFormatter;
+
+impl Formatter for PdfFormatter {
+    type Output = Vec<u8>;
+    type Error = PdfError;
+
+    fn format(&self, report: &TaxReport) -> Result<Self::Output, Self::Error> {
+        format(report)
+    }
 }
 
 #[cfg(test)]

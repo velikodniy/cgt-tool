@@ -9,6 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 cgt-core = { path = "../cgt-core" }
+cgt-format = { path = "../cgt-format" }
 cgt-formatter-plain = { path = "../cgt-formatter-plain" }
 cgt-formatter-pdf = { path = "../cgt-formatter-pdf" }
 cgt-money = { path = "../cgt-money" }

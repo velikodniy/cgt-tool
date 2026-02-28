@@ -2,10 +2,11 @@
 
 use cgt_core::{Disposal, MatchRule, Operation, TaxReport, sort_by_date_ticker};
 use cgt_format::{
-    format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
-    format_tax_year, round_gbp,
+    Formatter, format_currency_amount, format_date, format_decimal_trimmed, format_gbp,
+    format_price, format_tax_year, round_gbp,
 };
 use rust_decimal::Decimal;
+use std::convert::Infallible;
 use std::fmt::Write;
 
 /// Format a tax report as plain text.
@@ -217,6 +218,17 @@ pub fn format(report: &TaxReport) -> String {
     }
 
     out.trim_end().to_string() + "\n"
+}
+
+pub struct PlainFormatter;
+
+impl Formatter for PlainFormatter {
+    type Output = String;
+    type Error = Infallible;
+
+    fn format(&self, report: &TaxReport) -> Result<Self::Output, Self::Error> {
+        Ok(format(report))
+    }
 }
 
 fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
