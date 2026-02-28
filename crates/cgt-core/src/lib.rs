@@ -1,5 +1,6 @@
 pub mod calculator;
 pub mod config;
+pub mod dsl;
 pub mod error;
 pub mod matcher;
 pub mod models;

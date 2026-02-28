@@ -2,21 +2,30 @@
 
 #![allow(clippy::expect_used)]
 
-use cgt_converter::output::{format_buy, format_comment, format_dividend, format_sell};
+use cgt_converter::output::{format_comment, format_dividend, format_trade};
 use chrono::NaiveDate;
 use rust_decimal_macros::dec;
 
 #[test]
-fn test_format_buy_without_expenses() {
+fn test_format_trade_buy_without_expenses() {
     let date = NaiveDate::from_ymd_opt(2023, 4, 25).unwrap();
-    let result = format_buy(&date, "XYZZ", dec!(67.2), dec!(125.6445), "USD", None);
+    let result = format_trade(
+        "BUY",
+        &date,
+        "XYZZ",
+        dec!(67.2),
+        dec!(125.6445),
+        "USD",
+        None,
+    );
     assert_eq!(result, "2023-04-25 BUY XYZZ 67.2 @ 125.6445 USD");
 }
 
 #[test]
-fn test_format_buy_with_expenses() {
+fn test_format_trade_buy_with_expenses() {
     let date = NaiveDate::from_ymd_opt(2023, 5, 10).unwrap();
-    let result = format_buy(
+    let result = format_trade(
+        "BUY",
         &date,
         "XYZZ",
         dec!(10),
@@ -28,9 +37,10 @@ fn test_format_buy_with_expenses() {
 }
 
 #[test]
-fn test_format_sell() {
+fn test_format_trade_sell() {
     let date = NaiveDate::from_ymd_opt(2023, 6, 14).unwrap();
-    let result = format_sell(
+    let result = format_trade(
+        "SELL",
         &date,
         "XYZZ",
         dec!(62.601495),

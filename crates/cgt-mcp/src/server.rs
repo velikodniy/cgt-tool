@@ -8,7 +8,7 @@ use crate::resources::{
 };
 use cgt_core::calculator::calculate;
 use cgt_core::parser::parse_file;
-use cgt_core::{CurrencyAmount, Disposal, MatchRule, TaxReport, Transaction};
+use cgt_core::{Disposal, MatchRule, TaxReport, Transaction};
 use cgt_money::{Currency, FxCache, load_default_cache};
 use chrono::Datelike;
 use rmcp::handler::server::router::tool::ToolRouter;
@@ -525,116 +525,8 @@ impl CgtServer {
         Parameters(req): Parameters<ConvertToDslRequest>,
     ) -> Result<CallToolResult, McpError> {
         let transactions = self.parse_input(&req.transactions)?;
-        let dsl = self.transactions_to_dsl(&transactions)?;
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
         Ok(CallToolResult::success(vec![Content::text(dsl)]))
-    }
-}
-
-impl CgtServer {
-    /// Convert transactions to DSL format.
-    fn transactions_to_dsl(&self, transactions: &[Transaction]) -> Result<String, McpError> {
-        let mut lines = Vec::new();
-
-        for tx in transactions {
-            let line = self.transaction_to_dsl(tx)?;
-            lines.push(line);
-        }
-
-        Ok(lines.join("\n"))
-    }
-
-    /// Convert a single transaction to DSL format.
-    fn transaction_to_dsl(&self, tx: &Transaction) -> Result<String, McpError> {
-        use cgt_core::Operation;
-
-        let date = tx.date.format("%Y-%m-%d");
-
-        match &tx.operation {
-            Operation::Buy {
-                amount,
-                price,
-                fees,
-            } => {
-                let mut line = format!(
-                    "{} BUY {} {} @ {}",
-                    date,
-                    tx.ticker,
-                    amount,
-                    Self::format_currency_amount(price)
-                );
-                if !fees.amount.is_zero() {
-                    line.push_str(&format!(" FEES {}", Self::format_currency_amount(fees)));
-                }
-                Ok(line)
-            }
-            Operation::Sell {
-                amount,
-                price,
-                fees,
-            } => {
-                let mut line = format!(
-                    "{} SELL {} {} @ {}",
-                    date,
-                    tx.ticker,
-                    amount,
-                    Self::format_currency_amount(price)
-                );
-                if !fees.amount.is_zero() {
-                    line.push_str(&format!(" FEES {}", Self::format_currency_amount(fees)));
-                }
-                Ok(line)
-            }
-            Operation::Dividend {
-                amount,
-                total_value,
-                tax_paid,
-            } => {
-                let mut line = format!(
-                    "{} DIVIDEND {} {} TOTAL {}",
-                    date,
-                    tx.ticker,
-                    amount,
-                    Self::format_currency_amount(total_value)
-                );
-                if !tax_paid.amount.is_zero() {
-                    line.push_str(&format!(" TAX {}", Self::format_currency_amount(tax_paid)));
-                }
-                Ok(line)
-            }
-            Operation::CapReturn {
-                amount,
-                total_value,
-                fees,
-            } => {
-                let mut line = format!(
-                    "{} CAPRETURN {} {} TOTAL {}",
-                    date,
-                    tx.ticker,
-                    amount,
-                    Self::format_currency_amount(total_value)
-                );
-                if !fees.amount.is_zero() {
-                    line.push_str(&format!(" FEES {}", Self::format_currency_amount(fees)));
-                }
-                Ok(line)
-            }
-            Operation::Split { ratio } => {
-                Ok(format!("{} SPLIT {} RATIO {}", date, tx.ticker, ratio))
-            }
-            Operation::Unsplit { ratio } => {
-                Ok(format!("{} UNSPLIT {} RATIO {}", date, tx.ticker, ratio))
-            }
-        }
-    }
-
-    /// Format a CurrencyAmount for DSL output.
-    fn format_currency_amount(amount: &CurrencyAmount) -> String {
-        if amount.is_gbp() {
-            // GBP can be written without currency code
-            format!("{} GBP", amount.amount)
-        } else {
-            format!("{} {}", amount.amount, amount.code())
-        }
     }
 }
 
@@ -1579,9 +1471,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         assert!(dsl.contains("2024-01-15 BUY AAPL 100 @"));
         assert!(dsl.contains("2024-06-20 SELL AAPL 50 @"));
@@ -1596,9 +1486,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         assert!(dsl.contains("FEES 10 GBP"));
     }
@@ -1611,9 +1499,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         assert!(dsl.contains("150 USD"));
         assert!(dsl.contains("FEES 10 USD"));
@@ -1627,9 +1513,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         assert!(dsl.contains("2024-06-01 SPLIT NVDA RATIO 4"));
     }
@@ -1642,9 +1526,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP"));
     }
@@ -1658,9 +1540,7 @@ mod tests {
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
-        let dsl = server
-            .transactions_to_dsl(&transactions)
-            .expect("should convert");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         // TAX 0 should be omitted from output
         assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP"));

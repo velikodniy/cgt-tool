@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 
 /// Format a date as YYYY-MM-DD
-pub fn format_date(date: &NaiveDate) -> String {
+pub fn format_date_iso(date: &NaiveDate) -> String {
     date.format("%Y-%m-%d").to_string()
 }
 
@@ -11,8 +11,9 @@ pub fn format_amount(amount: Decimal) -> String {
     amount.to_string()
 }
 
-/// Format a BUY transaction line
-pub fn format_buy(
+/// Format a BUY or SELL transaction line
+pub fn format_trade(
+    action: &str,
     date: &NaiveDate,
     symbol: &str,
     quantity: Decimal,
@@ -21,35 +22,9 @@ pub fn format_buy(
     expenses: Option<Decimal>,
 ) -> String {
     let mut line = format!(
-        "{} BUY {} {} @ {} {}",
-        format_date(date),
-        symbol,
-        format_amount(quantity),
-        format_amount(price),
-        currency
-    );
-
-    if let Some(exp) = expenses
-        && exp > Decimal::ZERO
-    {
-        line.push_str(&format!(" FEES {} {}", format_amount(exp), currency));
-    }
-
-    line
-}
-
-/// Format a SELL transaction line
-pub fn format_sell(
-    date: &NaiveDate,
-    symbol: &str,
-    quantity: Decimal,
-    price: Decimal,
-    currency: &str,
-    expenses: Option<Decimal>,
-) -> String {
-    let mut line = format!(
-        "{} SELL {} {} @ {} {}",
-        format_date(date),
+        "{} {} {} {} @ {} {}",
+        format_date_iso(date),
+        action,
         symbol,
         format_amount(quantity),
         format_amount(price),
@@ -78,7 +53,7 @@ pub fn format_dividend(
 ) -> String {
     let mut line = format!(
         "{} DIVIDEND {} 1 TOTAL {} {}",
-        format_date(date),
+        format_date_iso(date),
         symbol,
         format_amount(total_value),
         currency

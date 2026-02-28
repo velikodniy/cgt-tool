@@ -132,7 +132,8 @@ impl BrokerConverter for SchwabConverter {
                     if let Some(c) = comment {
                         output_lines.push(output::format_comment(c));
                     }
-                    output_lines.push(output::format_buy(
+                    output_lines.push(output::format_trade(
+                        "BUY",
                         date,
                         symbol,
                         *quantity,
@@ -148,7 +149,8 @@ impl BrokerConverter for SchwabConverter {
                     price,
                     expenses,
                 } => {
-                    output_lines.push(output::format_sell(
+                    output_lines.push(output::format_trade(
+                        "SELL",
                         date,
                         symbol,
                         *quantity,
