@@ -12,7 +12,7 @@ quick-xml = { version = "0.36", features = ["serialize"] }
 rust_decimal = { version = "1", default-features = false, features = ["serde", "std"] }
 schemars = { version = "0.8", features = ["rust_decimal"] }
 serde = { version = "1", features = ["derive"] }
-thiserror = "1"
+thiserror = "2"
 
 [lints]
 workspace = true
