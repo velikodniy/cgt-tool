@@ -107,9 +107,7 @@ fn build_tax_year_summary(
     let disposals = group_matches_into_disposals(year_matches);
     let (total_gain, total_loss) = calculate_totals(&disposals);
     let tax_period = TaxPeriod::from_date(start_date)?;
-    let exempt_amount = config
-        .get_exemption(tax_period.start_year())
-        .unwrap_or(Decimal::ZERO);
+    let exempt_amount = config.get_exemption(tax_period.start_year())?;
 
     Ok(TaxYearSummary {
         period: tax_period,
@@ -145,9 +143,7 @@ fn build_all_tax_year_summaries(
             TaxPeriod::new(year).map_err(|_| CgtError::InvalidDateYear { year: year as i32 })?;
         let disposals = group_matches_into_disposals(year_matches);
         let (total_gain, total_loss) = calculate_totals(&disposals);
-        let exempt_amount = config
-            .get_exemption(tax_period.start_year())
-            .unwrap_or(Decimal::ZERO);
+        let exempt_amount = config.get_exemption(tax_period.start_year())?;
 
         summaries.push(TaxYearSummary {
             period: tax_period,

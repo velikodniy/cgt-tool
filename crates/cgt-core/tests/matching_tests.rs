@@ -39,6 +39,28 @@ fn get_config() -> Config {
 }
 
 #[test]
+fn test_calculate_errors_when_exemption_year_missing() {
+    let transactions = parse_file(
+        "
+2024-01-15 BUY AAPL 100 @ 150 GBP
+2024-06-20 SELL AAPL 50 @ 180 GBP
+",
+    )
+    .expect("Failed to parse input");
+
+    let config = Config {
+        exemptions: std::collections::HashMap::new(),
+    };
+
+    let result = calculate(&transactions, Some(2024), None, &config);
+
+    assert!(matches!(
+        result,
+        Err(cgt_core::CgtError::UnsupportedExemptionYear(2024))
+    ));
+}
+
+#[test]
 fn test_data_driven_matching() {
     let inputs_dir = get_test_inputs_dir();
     let json_dir = get_test_json_dir();

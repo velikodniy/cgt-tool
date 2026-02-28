@@ -123,8 +123,8 @@ impl CgtServer {
     /// Create a new CGT MCP server.
     pub fn new() -> Result<Self, McpServerError> {
         let fx_cache = load_default_cache()?;
-        let config =
-            cgt_core::Config::embedded().map_err(|e| McpServerError::Service(e.to_string()))?;
+        let config = cgt_core::Config::load_with_overrides()
+            .map_err(|e| McpServerError::Service(e.to_string()))?;
         Ok(Self {
             fx_cache: Some(fx_cache),
             config,
@@ -353,7 +353,11 @@ impl CgtServer {
         Parameters(req): Parameters<CalculateReportRequest>,
     ) -> Result<CallToolResult, McpError> {
         let report = self.do_calculate_report(&req.transactions, req.year)?;
-        let json = serde_json::to_string_pretty(&report).map_err(|e| {
+        let response = serde_json::json!({
+            "tax_years": report.tax_years,
+            "holdings": report.holdings,
+        });
+        let json = serde_json::to_string_pretty(&response).map_err(|e| {
             McpError::internal_error(format!("JSON serialization error: {e}"), None)
         })?;
         Ok(CallToolResult::success(vec![Content::text(json)]))
@@ -755,6 +759,7 @@ mod tests {
         let text = extract_text(&call_result).expect("Expected text content");
         assert!(text.contains("tax_years"));
         assert!(text.contains("disposals"));
+        assert!(!text.contains("\"transactions\""));
     }
 
     #[tokio::test]
