@@ -3,7 +3,7 @@
 //! This crate provides consistent formatting across all output formats (plain text, PDF).
 //! All formatting uses UK conventions (£ symbol, DD/MM/YYYY dates, thousands separators).
 
-use cgt_core::TaxReport;
+use cgt_core::{TaxPeriod, TaxReport};
 use cgt_money::CurrencyAmount;
 use chrono::NaiveDate;
 use rust_decimal::{Decimal, RoundingStrategy};
@@ -183,5 +183,7 @@ pub fn format_date(date: NaiveDate) -> String {
 /// assert_eq!(format_tax_year(2014), "2014/15");
 /// ```
 pub fn format_tax_year(start_year: u16) -> String {
-    format!("{}/{:02}", start_year, (start_year + 1) % 100)
+    TaxPeriod::new(start_year)
+        .map(|period| period.to_string())
+        .unwrap_or_else(|_| format!("{}/{:02}", start_year, (start_year + 1) % 100))
 }
