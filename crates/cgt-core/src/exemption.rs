@@ -13,7 +13,7 @@ static CONFIG: OnceLock<Config> = OnceLock::new();
 
 /// Get the global configuration, loading it with overrides on first access.
 fn get_config() -> &'static Config {
-    CONFIG.get_or_init(Config::load_with_overrides)
+    CONFIG.get_or_init(|| Config::load_with_overrides().unwrap_or_default())
 }
 
 /// Get the UK annual CGT exemption for a given tax year start.

@@ -31,13 +31,12 @@ impl Config {
     ///
     /// This configuration is compiled into the binary and provides
     /// default exemption values for supported tax years.
-    pub fn embedded() -> Self {
-        Self::from_toml(EMBEDDED_CONFIG).unwrap_or_else(|e| {
-            eprintln!("Warning: Failed to parse embedded config: {e}");
-            Self {
-                exemptions: HashMap::new(),
-            }
-        })
+    ///
+    /// # Errors
+    /// Returns `CgtError::ConfigError` if the embedded configuration cannot be parsed.
+    pub fn embedded() -> Result<Self, CgtError> {
+        Self::from_toml(EMBEDDED_CONFIG)
+            .map_err(|e| CgtError::ConfigError(format!("failed to parse embedded config: {e}")))
     }
 
     /// Parse configuration from TOML string.
@@ -59,8 +58,11 @@ impl Config {
     ///
     /// Override files are merged with embedded defaults. Values from
     /// override files take precedence.
-    pub fn load_with_overrides() -> Self {
-        let mut config = Self::embedded();
+    ///
+    /// # Errors
+    /// Returns `CgtError::ConfigError` if the embedded configuration cannot be parsed.
+    pub fn load_with_overrides() -> Result<Self, CgtError> {
+        let mut config = Self::embedded()?;
 
         // Try loading override files
         let override_paths = Self::override_paths();
@@ -74,7 +76,7 @@ impl Config {
             }
         }
 
-        config
+        Ok(config)
     }
 
     /// Get potential override file paths.

@@ -27,6 +27,9 @@ pub enum CgtError {
         year: i32,
         month: u32,
     },
+
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
 }
 
 impl From<PestConsumeError<crate::parser::Rule>> for CgtError {

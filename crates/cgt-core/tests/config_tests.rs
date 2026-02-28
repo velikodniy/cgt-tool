@@ -7,19 +7,19 @@ use rust_decimal::Decimal;
 
 #[test]
 fn test_embedded_config_loads() {
-    let config = Config::embedded();
+    let config = Config::embedded().expect("embedded config should load");
     assert!(!config.exemptions.is_empty());
 }
 
 #[test]
 fn test_embedded_has_2023_exemption() {
-    let config = Config::embedded();
+    let config = Config::embedded().expect("embedded config should load");
     assert_eq!(config.get_exemption(2023).ok(), Some(Decimal::from(6000)));
 }
 
 #[test]
 fn test_embedded_has_all_years() {
-    let config = Config::embedded();
+    let config = Config::embedded().expect("embedded config should load");
     for year in 2014..=2024 {
         assert!(
             config.get_exemption(year).is_ok(),
@@ -30,14 +30,14 @@ fn test_embedded_has_all_years() {
 
 #[test]
 fn test_unsupported_year_returns_error() {
-    let config = Config::embedded();
+    let config = Config::embedded().expect("embedded config should load");
     assert!(config.get_exemption(2010).is_err());
     assert!(config.get_exemption(2030).is_err());
 }
 
 #[test]
 fn test_load_with_overrides_includes_embedded() {
-    let config = Config::load_with_overrides();
+    let config = Config::load_with_overrides().expect("config should load");
     // Should still have embedded values even if no override files exist
     assert!(config.get_exemption(2023).is_ok());
 }
