@@ -1,6 +1,4 @@
-use cgt_core::{
-    Config, Disposal, ValidationError, ValidationWarning, calculator, parser, validate,
-};
+use cgt_core::{Config, Disposal, calculator, parser, validate};
 use cgt_money::load_default_cache;
 use rust_decimal::Decimal;
 use serde::Serialize;
@@ -8,54 +6,6 @@ use wasm_bindgen::prelude::*;
 
 mod utils;
 use utils::map_error;
-
-/// Serializable wrapper for validation results
-#[derive(Serialize)]
-struct ValidationResultJson {
-    is_valid: bool,
-    errors: Vec<ValidationErrorJson>,
-    warnings: Vec<ValidationWarningJson>,
-}
-
-#[derive(Serialize)]
-struct ValidationErrorJson {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    line: Option<usize>,
-    date: String,
-    ticker: String,
-    message: String,
-}
-
-#[derive(Serialize)]
-struct ValidationWarningJson {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    line: Option<usize>,
-    date: String,
-    ticker: String,
-    message: String,
-}
-
-impl From<&ValidationError> for ValidationErrorJson {
-    fn from(error: &ValidationError) -> Self {
-        ValidationErrorJson {
-            line: error.line,
-            date: error.date.to_string(),
-            ticker: error.ticker.clone(),
-            message: error.message.clone(),
-        }
-    }
-}
-
-impl From<&ValidationWarning> for ValidationWarningJson {
-    fn from(warning: &ValidationWarning) -> Self {
-        ValidationWarningJson {
-            line: warning.line,
-            date: warning.date.to_string(),
-            ticker: warning.ticker.clone(),
-            message: warning.message.clone(),
-        }
-    }
-}
 
 /// Initialize the WASM module. This must be called before using any other functions.
 ///
@@ -222,18 +172,7 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
 /// ```
 #[wasm_bindgen]
 pub fn validate_dsl(dsl: &str) -> Result<String, JsValue> {
-    // Parse transactions
     let transactions = parser::parse_file(dsl).map_err(map_error)?;
-
-    // Validate
-    let validation_result = validate(&transactions);
-
-    // Convert to serializable format
-    let json_result = ValidationResultJson {
-        is_valid: validation_result.is_valid(),
-        errors: validation_result.errors.iter().map(Into::into).collect(),
-        warnings: validation_result.warnings.iter().map(Into::into).collect(),
-    };
-
-    serde_json::to_string_pretty(&json_result).map_err(map_error)
+    let result = validate(&transactions);
+    serde_json::to_string_pretty(&result).map_err(map_error)
 }

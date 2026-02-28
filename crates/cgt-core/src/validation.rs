@@ -7,16 +7,30 @@ use crate::models::{Operation, Transaction};
 use cgt_money::CurrencyAmount;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
+use serde::Serialize;
+use serde::ser::SerializeStruct;
 use std::collections::HashMap;
 use std::fmt;
 
 /// Result of validating a transaction list.
+///
+/// Serializes with an additional `is_valid` field derived from [`Self::is_valid`].
 #[derive(Debug, Clone, Default)]
 pub struct ValidationResult {
     /// Critical errors that prevent calculation.
     pub errors: Vec<ValidationError>,
     /// Warnings that don't prevent calculation but may indicate issues.
     pub warnings: Vec<ValidationWarning>,
+}
+
+impl Serialize for ValidationResult {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut state = serializer.serialize_struct("ValidationResult", 3)?;
+        state.serialize_field("is_valid", &self.is_valid())?;
+        state.serialize_field("errors", &self.errors)?;
+        state.serialize_field("warnings", &self.warnings)?;
+        state.end()
+    }
 }
 
 impl ValidationResult {
@@ -32,9 +46,10 @@ impl ValidationResult {
 }
 
 /// A validation error that prevents calculation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ValidationError {
     /// Line number in original input (if known).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub line: Option<usize>,
     /// Date of the problematic transaction.
     pub date: NaiveDate,
@@ -63,9 +78,10 @@ impl fmt::Display for ValidationError {
 }
 
 /// A validation warning that doesn't prevent calculation.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ValidationWarning {
     /// Line number in original input (if known).
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub line: Option<usize>,
     /// Date of the problematic transaction.
     pub date: NaiveDate,
