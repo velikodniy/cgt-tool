@@ -19,8 +19,8 @@ fn test_format_gbp() {
 
 #[test]
 fn test_format_date() {
-    let date = NaiveDate::from_ymd_opt(2018, 8, 28).expect("valid date");
-    assert_eq!(format_date(date), "28/08/2018");
+    let date = NaiveDate::from_ymd_opt(2020, 4, 1).expect("valid date");
+    assert_eq!(format_date(date), "01/04/2020");
 }
 
 #[test]
@@ -42,17 +42,6 @@ fn test_proceeds_line_with_fees() {
         }],
     };
 
-    let report = TaxReport {
-        tax_years: vec![TaxYearSummary {
-            period: TaxPeriod::new(2018).expect("valid tax year"),
-            disposals: vec![disposal],
-            total_gain: Decimal::ZERO,
-            total_loss: Decimal::new(19863, 3),
-            net_gain: Decimal::new(-19863, 3),
-        }],
-        holdings: vec![],
-    };
-
     let transactions = vec![Transaction {
         date,
         ticker,
@@ -63,7 +52,20 @@ fn test_proceeds_line_with_fees() {
         },
     }];
 
-    let output = format(&report, &transactions).expect("format should succeed");
+    let report = TaxReport {
+        tax_years: vec![TaxYearSummary {
+            period: TaxPeriod::new(2018).expect("valid tax year"),
+            disposals: vec![disposal],
+            total_gain: Decimal::ZERO,
+            total_loss: Decimal::new(19863, 3),
+            net_gain: Decimal::new(-19863, 3),
+            exempt_amount: Decimal::from(11700),
+        }],
+        holdings: vec![],
+        transactions,
+    };
+
+    let output = format(&report);
     assert!(output.contains("Gross Proceeds: 10 × £4.6702 = £46.70"));
     assert!(output.contains("Net Proceeds: £46.70 - £12.50 fees = £34.20"));
 }
@@ -71,16 +73,6 @@ fn test_proceeds_line_with_fees() {
 #[test]
 fn test_dividend_single_symbol() {
     let date = NaiveDate::from_ymd_opt(2020, 4, 1).expect("valid date");
-    let report = TaxReport {
-        tax_years: vec![TaxYearSummary {
-            period: TaxPeriod::new(2020).expect("valid tax year"),
-            disposals: vec![],
-            total_gain: Decimal::ZERO,
-            total_loss: Decimal::ZERO,
-            net_gain: Decimal::ZERO,
-        }],
-        holdings: vec![],
-    };
 
     let transactions = vec![Transaction {
         date,
@@ -92,7 +84,20 @@ fn test_dividend_single_symbol() {
         },
     }];
 
-    let output = format(&report, &transactions).expect("format should succeed");
+    let report = TaxReport {
+        tax_years: vec![TaxYearSummary {
+            period: TaxPeriod::new(2020).expect("valid tax year"),
+            disposals: vec![],
+            total_gain: Decimal::ZERO,
+            total_loss: Decimal::ZERO,
+            net_gain: Decimal::ZERO,
+            exempt_amount: Decimal::from(12300),
+        }],
+        holdings: vec![],
+        transactions,
+    };
+
+    let output = format(&report);
     assert!(output.contains("DIVIDEND FOOBAR 15 £30.00"));
     assert!(!output.contains("££"));
 }

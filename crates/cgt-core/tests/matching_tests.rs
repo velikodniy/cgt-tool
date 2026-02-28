@@ -1,5 +1,6 @@
 #![allow(clippy::expect_used)]
 
+use cgt_core::Config;
 use cgt_core::calculator::calculate;
 use cgt_core::models::*;
 use cgt_core::parser::parse_file;
@@ -30,6 +31,11 @@ fn get_test_json_dir() -> PathBuf {
 /// Create an FxCache from bundled rates for testing.
 fn get_fx_cache() -> FxCache {
     load_default_cache().expect("Failed to load bundled FX rates")
+}
+
+/// Create a Config from embedded defaults for testing.
+fn get_config() -> Config {
+    Config::embedded().expect("Failed to load embedded config")
 }
 
 #[test]
@@ -67,7 +73,7 @@ fn test_data_driven_matching() {
                 serde_json::from_str(&output_content).expect("Failed to parse expected output");
 
             // Calculate without year filter to get all tax years, with FX cache for multi-currency
-            let actual_report = calculate(transactions.clone(), None, Some(&fx_cache))
+            let actual_report = calculate(&transactions, None, Some(&fx_cache), &get_config())
                 .expect("Failed to calculate");
 
             // Allow larger precision differences because reference data (cgtcalc output)
@@ -137,7 +143,7 @@ fn test_tax_year_totals_use_net_disposals() {
     let input_content = fs::read_to_string(&input_path).expect("Failed to read input");
     let transactions = parse_file(&input_content).expect("Failed to parse input");
 
-    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let report = calculate(&transactions, None, None, &get_config()).expect("Failed to calculate");
     let year = report.tax_years.first().expect("Expected a tax year");
 
     let mix_disposal = year
@@ -182,7 +188,8 @@ fn test_high_precision_decimal_quantity_preserved() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     // Quantity should be exactly preserved
@@ -202,7 +209,8 @@ fn test_very_small_fractional_share_quantity() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -228,7 +236,8 @@ fn test_quantity_precision_through_section_104_pool() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Total bought: 100.000000 shares exactly
     // After selling 50, pool should have 50.000000
@@ -253,7 +262,8 @@ fn test_proceeds_deduct_selling_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -280,7 +290,8 @@ fn test_proceeds_with_zero_expenses() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -299,7 +310,8 @@ fn test_expenses_apportioned_in_partial_sale() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -323,7 +335,8 @@ fn test_expenses_apportioned_across_match_rules() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -369,7 +382,8 @@ fn test_large_quantity_with_precise_decimals() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -388,7 +402,8 @@ fn test_price_with_many_decimal_places() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -411,7 +426,8 @@ fn test_bed_and_breakfast_quantity_precision() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     let disposal = &report.tax_years[0].disposals[0];
     assert_eq!(
@@ -441,7 +457,7 @@ fn test_all_years_report_generation() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let report = calculate(&transactions, None, None, &get_config()).expect("Failed to calculate");
 
     // Should have two tax years: 2023/24 (Dec 2023 sale) and 2024/25 (Jun 2024 sale)
     assert_eq!(
@@ -469,7 +485,8 @@ fn test_single_year_filter_still_works() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Should only have 2024/25 tax year
     assert_eq!(
@@ -492,7 +509,7 @@ fn test_all_years_sorted_chronologically() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let report = calculate(&transactions, None, None, &get_config()).expect("Failed to calculate");
 
     // Should have 3 tax years
     assert_eq!(report.tax_years.len(), 3);
@@ -511,7 +528,7 @@ fn test_all_years_no_disposals_returns_empty() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let report = calculate(&transactions, None, None, &get_config()).expect("Failed to calculate");
 
     // No disposals means no tax years in report
     assert_eq!(
@@ -541,7 +558,8 @@ fn test_capreturn_apportioned_across_multiple_lots() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Total cost before CAPRETURN: 1000 + 900 = 1900
     // CAPRETURN reduces cost by 100 (event is for 10 shares, but affects all 20 proportionally)
@@ -585,7 +603,7 @@ fn test_capreturn_with_prior_partial_sale() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, None, None).expect("Failed to calculate");
+    let report = calculate(&transactions, None, None, &get_config()).expect("Failed to calculate");
 
     // Timeline:
     // 1. Buy 10 @ 100 = £1000
@@ -647,7 +665,8 @@ fn test_dividend_increases_cost_proportionally() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Total cost before DIVIDEND: 1000 + 900 = 1900
     // DIVIDEND increases cost by 50 (distributed proportionally):
@@ -680,7 +699,8 @@ fn test_capreturn_and_dividend_combined() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Total cost before events: 1000 + 900 = 1900
     // CAPRETURN -100: 1900 - 100 = 1800
@@ -710,7 +730,8 @@ fn test_capreturn_event_amount_less_than_holdings() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // Cost before CAPRETURN: 100 * 10 = 1000
     // CAPRETURN is for 50 shares at -25, but we hold 100 shares
@@ -748,7 +769,8 @@ fn test_capreturn_does_not_affect_later_acquisitions() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
     // At CAPRETURN time: only 10 shares from lot 1
     // CAPRETURN -50 applied only to lot 1
@@ -792,7 +814,8 @@ fn test_same_day_reservation_priority_over_bnb() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2023), None, &get_config()).expect("Failed to calculate");
 
     let year = report.tax_years.first().expect("Expected a tax year");
 
@@ -868,7 +891,7 @@ fn test_sell_without_prior_acquisition_returns_error() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let error = calculate(transactions, Some(2024), None)
+    let error = calculate(&transactions, Some(2024), None, &get_config())
         .expect_err("Expected unmatched sell to fail")
         .to_string();
 
@@ -886,7 +909,7 @@ fn test_oversell_returns_error() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let error = calculate(transactions, Some(2024), None)
+    let error = calculate(&transactions, Some(2024), None, &get_config())
         .expect_err("Expected oversell to fail")
         .to_string();
 
@@ -910,7 +933,8 @@ fn test_same_day_reservation_with_interleaved_buys() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2023), None).expect("Failed to calculate");
+    let report =
+        calculate(&transactions, Some(2023), None, &get_config()).expect("Failed to calculate");
 
     let year = report.tax_years.first().expect("Expected a tax year");
 
@@ -961,7 +985,7 @@ fn test_bnb_does_not_rescue_sell_with_zero_holding() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let result = calculate(transactions, Some(2023), None);
+    let result = calculate(&transactions, Some(2023), None, &get_config());
 
     assert!(
         result.is_err(),
@@ -985,7 +1009,7 @@ fn test_bnb_with_valid_pool_holding_succeeds() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let report = calculate(transactions, Some(2024), None).expect("Should succeed");
+    let report = calculate(&transactions, Some(2024), None, &get_config()).expect("Should succeed");
 
     let year = report.tax_years.first().expect("Expected a tax year");
     assert_eq!(year.disposals.len(), 1);
@@ -1007,7 +1031,7 @@ fn test_sell_exceeding_partial_holding_returns_error() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let result = calculate(transactions, Some(2023), None);
+    let result = calculate(&transactions, Some(2023), None, &get_config());
 
     assert!(result.is_err(), "Expected error when sell exceeds holding");
     let err = result.unwrap_err().to_string();
@@ -1027,7 +1051,7 @@ fn test_capreturn_exceeding_basis_returns_error() {
 "#;
 
     let transactions = parse_file(cgt_content).expect("Failed to parse");
-    let result = calculate(transactions, Some(2023), None);
+    let result = calculate(&transactions, Some(2023), None, &get_config());
 
     assert!(
         result.is_err(),

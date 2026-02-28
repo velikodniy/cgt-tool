@@ -1,14 +1,16 @@
-//! Tests for cgt-core exemption.rs (get_exemption function)
+//! Tests for CGT exemption lookup via Config.
 
 #![allow(clippy::expect_used)]
 
-use cgt_core::{CgtError, get_exemption};
+use cgt_core::{CgtError, Config};
 use rust_decimal::Decimal;
 
 /// Test all known exemption years in a single parameterized test.
 /// The exemption values are from HMRC guidance.
 #[test]
 fn test_exemption_known_years() {
+    let config = Config::embedded().expect("embedded config should load");
+
     let cases: &[(u16, i64)] = &[
         (2014, 11000),
         (2015, 11100),
@@ -24,7 +26,7 @@ fn test_exemption_known_years() {
     ];
 
     for &(year, expected) in cases {
-        let result = get_exemption(year);
+        let result = config.get_exemption(year);
         assert!(
             result.is_ok(),
             "Year {} should have exemption but got error: {:?}",
@@ -43,7 +45,8 @@ fn test_exemption_known_years() {
 
 #[test]
 fn test_exemption_unsupported_past() {
-    let result = get_exemption(2010);
+    let config = Config::embedded().expect("embedded config should load");
+    let result = config.get_exemption(2010);
     assert!(result.is_err());
     assert!(matches!(
         result,
@@ -53,7 +56,8 @@ fn test_exemption_unsupported_past() {
 
 #[test]
 fn test_exemption_unsupported_future() {
-    let result = get_exemption(2030);
+    let config = Config::embedded().expect("embedded config should load");
+    let result = config.get_exemption(2030);
     assert!(result.is_err());
     assert!(matches!(
         result,

@@ -83,11 +83,12 @@ fn main() -> Result<()> {
 
             let transactions = parse_file(&content)?;
 
-            let report = calculate(transactions.clone(), *year, Some(&fx_cache))?;
+            let config = cgt_core::Config::load_with_overrides()?;
+            let report = calculate(&transactions, *year, Some(&fx_cache), &config)?;
 
             match format {
                 OutputFormat::Plain => {
-                    let content = cgt_formatter_plain::format(&report, &transactions)?;
+                    let content = cgt_formatter_plain::format(&report);
                     if let Some(path) = output {
                         fs::write(path, content)?;
                     } else {
@@ -103,7 +104,7 @@ fn main() -> Result<()> {
                     }
                 }
                 OutputFormat::Pdf => {
-                    let pdf_bytes = cgt_formatter_pdf::format(&report, &transactions)?;
+                    let pdf_bytes = cgt_formatter_pdf::format(&report)?;
                     let (output_path, is_default) = match output {
                         Some(p) => (p.clone(), false),
                         None => {

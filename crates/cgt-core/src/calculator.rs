@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::error::CgtError;
 use crate::matcher::{MatchResult, Matcher};
 use crate::models::*;
@@ -20,7 +21,7 @@ use std::collections::HashMap;
 ///
 /// ```
 /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// use cgt_core::{validation, calculator, Transaction, Operation, CurrencyAmount, Currency};
+/// use cgt_core::{validation, calculator, Config, Transaction, Operation, CurrencyAmount, Currency};
 /// use chrono::NaiveDate;
 /// use rust_decimal_macros::dec;
 ///
@@ -39,32 +40,34 @@ use std::collections::HashMap;
 /// let result = validation::validate(&transactions);
 /// assert!(result.is_valid());
 ///
-/// let report = calculator::calculate(transactions, None, None)?;
+/// let config = Config::embedded()?;
+/// let report = calculator::calculate(&transactions, None, None, &config)?;
 /// # Ok(())
 /// # }
 /// ```
 pub fn calculate(
-    transactions: Vec<Transaction>,
+    transactions: &[Transaction],
     tax_year_start: Option<i32>,
     fx_cache: Option<&FxCache>,
+    config: &Config,
 ) -> Result<TaxReport, CgtError> {
     // Convert all transactions to GBP-normalized form
-    let transactions = transactions_to_gbp(&transactions, fx_cache)?;
+    let gbp_transactions = transactions_to_gbp(transactions, fx_cache)?;
 
     // Use the Matcher module for all share matching logic
     let mut matcher = Matcher::new();
-    let (match_results, pools) = matcher.process(transactions)?;
+    let (match_results, pools) = matcher.process(gbp_transactions)?;
 
     // Build tax year summaries
     let tax_years = match tax_year_start {
         Some(year) => {
             // Filter matches for the requested tax year
-            let summary = build_tax_year_summary(year, &match_results)?;
+            let summary = build_tax_year_summary(year, &match_results, config)?;
             vec![summary]
         }
         None => {
             // Group all matches by tax year
-            build_all_tax_year_summaries(&match_results)?
+            build_all_tax_year_summaries(&match_results, config)?
         }
     };
 
@@ -75,6 +78,7 @@ pub fn calculate(
     Ok(TaxReport {
         tax_years,
         holdings,
+        transactions: transactions.to_vec(),
     })
 }
 
@@ -82,6 +86,7 @@ pub fn calculate(
 fn build_tax_year_summary(
     tax_year_start: i32,
     match_results: &[MatchResult],
+    config: &Config,
 ) -> Result<TaxYearSummary, CgtError> {
     let start_date =
         chrono::NaiveDate::from_ymd_opt(tax_year_start, 4, 6).ok_or(CgtError::InvalidDateYear {
@@ -102,6 +107,9 @@ fn build_tax_year_summary(
     let disposals = group_matches_into_disposals(year_matches);
     let (total_gain, total_loss) = calculate_totals(&disposals);
     let tax_period = TaxPeriod::from_date(start_date)?;
+    let exempt_amount = config
+        .get_exemption(tax_period.start_year())
+        .unwrap_or(Decimal::ZERO);
 
     Ok(TaxYearSummary {
         period: tax_period,
@@ -109,12 +117,14 @@ fn build_tax_year_summary(
         total_gain,
         total_loss,
         net_gain: total_gain - total_loss,
+        exempt_amount,
     })
 }
 
 /// Build summaries for all tax years that have disposals.
 fn build_all_tax_year_summaries(
     match_results: &[MatchResult],
+    config: &Config,
 ) -> Result<Vec<TaxYearSummary>, CgtError> {
     // Group matches by tax year
     let mut matches_by_year: HashMap<u16, Vec<MatchResult>> = HashMap::new();
@@ -135,6 +145,9 @@ fn build_all_tax_year_summaries(
             TaxPeriod::new(year).map_err(|_| CgtError::InvalidDateYear { year: year as i32 })?;
         let disposals = group_matches_into_disposals(year_matches);
         let (total_gain, total_loss) = calculate_totals(&disposals);
+        let exempt_amount = config
+            .get_exemption(tax_period.start_year())
+            .unwrap_or(Decimal::ZERO);
 
         summaries.push(TaxYearSummary {
             period: tax_period,
@@ -142,6 +155,7 @@ fn build_all_tax_year_summaries(
             total_gain,
             total_loss,
             net_gain: total_gain - total_loss,
+            exempt_amount,
         });
     }
 

@@ -473,12 +473,14 @@ pub struct TaxYearSummary {
     pub total_loss: Decimal,
     #[serde(serialize_with = "decimal_money::serialize")]
     pub net_gain: Decimal,
+    #[serde(default, serialize_with = "decimal_money::serialize")]
+    pub exempt_amount: Decimal,
 }
 
 impl TaxYearSummary {
     /// Number of disposals in this tax year, derived from the disposals vector.
-    pub fn disposal_count(&self) -> u32 {
-        self.disposals.len() as u32
+    pub fn disposal_count(&self) -> usize {
+        self.disposals.len()
     }
 
     #[must_use]
@@ -498,13 +500,17 @@ impl Serialize for TaxYearSummary {
         S: serde::Serializer,
     {
         use serde::ser::SerializeStruct;
-        let mut state = serializer.serialize_struct("TaxYearSummary", 6)?;
+        let mut state = serializer.serialize_struct("TaxYearSummary", 7)?;
         state.serialize_field("period", &self.period)?;
         state.serialize_field("disposals", &self.disposals)?;
         state.serialize_field("disposal_count", &self.disposal_count())?;
         state.serialize_field("total_gain", &decimal_money::DecimalMoney(self.total_gain))?;
         state.serialize_field("total_loss", &decimal_money::DecimalMoney(self.total_loss))?;
         state.serialize_field("net_gain", &decimal_money::DecimalMoney(self.net_gain))?;
+        state.serialize_field(
+            "exempt_amount",
+            &decimal_money::DecimalMoney(self.exempt_amount),
+        )?;
         state.end()
     }
 }
@@ -514,4 +520,6 @@ impl Serialize for TaxYearSummary {
 pub struct TaxReport {
     pub tax_years: Vec<TaxYearSummary>,
     pub holdings: Vec<Section104Holding>,
+    #[serde(default)]
+    pub transactions: Vec<Transaction>,
 }

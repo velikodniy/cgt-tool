@@ -4,8 +4,7 @@
 //! without requiring any external tool installation.
 
 use cgt_core::{
-    CgtError, CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction,
-    get_exemption, sort_by_date_ticker,
+    CurrencyAmount, Disposal, MatchRule, Operation, TaxReport, Transaction, sort_by_date_ticker,
 };
 use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
@@ -23,9 +22,6 @@ static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
 #[derive(Debug, Error)]
 pub enum PdfError {
-    #[error(transparent)]
-    Core(#[from] CgtError),
-
     #[error("PDF generation failed: failed to convert Decimal to float")]
     DecimalToFloat,
 
@@ -77,7 +73,7 @@ fn match_rule_label(rule: &MatchRule) -> &'static str {
     }
 }
 
-fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Result<Dict, PdfError> {
+fn build_template_data(report: &TaxReport) -> Result<Dict, PdfError> {
     let mut data = Dict::new();
 
     // Generation date
@@ -98,12 +94,12 @@ fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Resu
     data.insert("holdings_rows".into(), holdings_rows.into_value());
 
     // Transactions
-    let (has_transactions, transaction_rows) = build_transaction_rows(transactions)?;
+    let (has_transactions, transaction_rows) = build_transaction_rows(&report.transactions)?;
     data.insert("has_transactions".into(), has_transactions.into_value());
     data.insert("transaction_rows".into(), transaction_rows.into_value());
 
     // Asset events
-    let (has_asset_events, asset_event_rows) = build_asset_event_rows(transactions)?;
+    let (has_asset_events, asset_event_rows) = build_asset_event_rows(&report.transactions)?;
     data.insert("has_asset_events".into(), has_asset_events.into_value());
     data.insert("asset_event_rows".into(), asset_event_rows.into_value());
 
@@ -113,7 +109,7 @@ fn build_template_data(report: &TaxReport, transactions: &[Transaction]) -> Resu
 fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
     let mut rows = Vec::new();
     for year in &report.tax_years {
-        let exemption = get_exemption(year.period.start_year())?;
+        let exemption = year.exempt_amount;
         let gross_proceeds = year.gross_proceeds();
         let taxable = year.taxable_gain(exemption);
 
@@ -310,17 +306,15 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
 /// Generate a PDF report from tax data.
 ///
 /// # Arguments
-/// * `report` - The calculated tax report
-/// * `transactions` - Original transactions for display
+/// * `report` - The calculated tax report (includes transactions for display)
 ///
 /// # Returns
 /// PDF file contents as bytes, or error if generation fails.
 ///
 /// # Errors
 /// Returns `PdfError::TypstCompilation` or `PdfError::PdfExport` if generation fails.
-/// Returns `CgtError::UnsupportedExemptionYear` if a tax year's exemption is unavailable.
-pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<Vec<u8>, PdfError> {
-    let data = build_template_data(report, transactions)?;
+pub fn format(report: &TaxReport) -> Result<Vec<u8>, PdfError> {
+    let data = build_template_data(report)?;
 
     let engine = TypstEngine::builder()
         .main_file(TEMPLATE)
@@ -371,8 +365,10 @@ mod tests {
                 total_gain: Decimal::from(95),
                 total_loss: Decimal::ZERO,
                 net_gain: Decimal::from(95),
+                exempt_amount: Decimal::from(3000),
             }],
             holdings: vec![],
+            transactions: vec![],
         };
 
         let rows = build_summary_rows(&report).expect("summary rows");

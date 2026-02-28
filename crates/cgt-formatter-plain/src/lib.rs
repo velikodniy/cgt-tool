@@ -1,9 +1,6 @@
 //! Plain text formatter for CGT tax reports.
 
-use cgt_core::{
-    CgtError, Disposal, MatchRule, Operation, TaxReport, Transaction, get_exemption,
-    sort_by_date_ticker,
-};
+use cgt_core::{Disposal, MatchRule, Operation, TaxReport, sort_by_date_ticker};
 use cgt_format::{
     format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
     format_tax_year, round_gbp,
@@ -12,10 +9,7 @@ use rust_decimal::Decimal;
 use std::fmt::Write;
 
 /// Format a tax report as plain text.
-///
-/// # Errors
-/// Returns `CgtError::UnsupportedExemptionYear` if the tax year is not supported.
-pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String, CgtError> {
+pub fn format(report: &TaxReport) -> String {
     let mut out = String::new();
 
     // SUMMARY
@@ -38,7 +32,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     );
 
     for year in &report.tax_years {
-        let exemption = get_exemption(year.period.start_year())?;
+        let exemption = year.exempt_amount;
         let gross_proceeds = year.gross_proceeds();
         let taxable = year.taxable_gain(exemption);
 
@@ -70,15 +64,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     for year in &report.tax_years {
         let _ = writeln!(out, "\n## {}\n", format_tax_year(year.period.start_year()));
 
-        // Sort disposals by date, then by ticker for deterministic output
-        let mut disposals: Vec<_> = year.disposals.iter().collect();
-        sort_by_date_ticker(
-            &mut disposals,
-            |disposal| disposal.date,
-            |disposal| &disposal.ticker,
-        );
-
-        for (i, disposal) in disposals.iter().enumerate() {
+        for (i, disposal) in year.disposals.iter().enumerate() {
             format_disposal(&mut out, i + 1, disposal);
         }
     }
@@ -108,7 +94,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
 
     // TRANSACTIONS
     let _ = writeln!(out, "\n# TRANSACTIONS\n");
-    let mut txns: Vec<_> = transactions
+    let mut txns: Vec<_> = report
+        .transactions
         .iter()
         .filter(|t| matches!(t.operation, Operation::Buy { .. } | Operation::Sell { .. }))
         .collect();
@@ -155,7 +142,8 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
     }
 
     // ASSET EVENTS
-    let mut events: Vec<_> = transactions
+    let mut events: Vec<_> = report
+        .transactions
         .iter()
         .filter(|t| {
             matches!(
@@ -228,7 +216,7 @@ pub fn format(report: &TaxReport, transactions: &[Transaction]) -> Result<String
         }
     }
 
-    Ok(out.trim_end().to_string() + "\n")
+    out.trim_end().to_string() + "\n"
 }
 
 fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {

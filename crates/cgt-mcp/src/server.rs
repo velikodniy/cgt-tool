@@ -115,6 +115,7 @@ pub struct MatchDetail {
 #[derive(Clone)]
 pub struct CgtServer {
     fx_cache: Option<FxCache>,
+    config: cgt_core::Config,
     tool_router: ToolRouter<Self>,
 }
 
@@ -122,8 +123,11 @@ impl CgtServer {
     /// Create a new CGT MCP server.
     pub fn new() -> Result<Self, McpServerError> {
         let fx_cache = load_default_cache()?;
+        let config =
+            cgt_core::Config::embedded().map_err(|e| McpServerError::Service(e.to_string()))?;
         Ok(Self {
             fx_cache: Some(fx_cache),
+            config,
             tool_router: Self::tool_router(),
         })
     }
@@ -210,7 +214,7 @@ Price/fees can be:
             ));
         }
 
-        calculate(transactions, year, self.fx_cache.as_ref())
+        calculate(&transactions, year, self.fx_cache.as_ref(), &self.config)
             .map_err(|e| Self::format_calculation_error(e, year))
     }
 
@@ -773,6 +777,7 @@ mod tests {
     fn test_server_without_fx() -> CgtServer {
         CgtServer {
             fx_cache: None,
+            config: cgt_core::Config::embedded().expect("embedded config should load"),
             tool_router: CgtServer::tool_router(),
         }
     }

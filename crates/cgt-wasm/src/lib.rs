@@ -1,5 +1,5 @@
 use cgt_core::{
-    Disposal, ValidationError, ValidationWarning, calculator, get_exemption, parser, validate,
+    Config, Disposal, ValidationError, ValidationWarning, calculator, parser, validate,
 };
 use cgt_money::load_default_cache;
 use rust_decimal::Decimal;
@@ -145,17 +145,20 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
     // Load bundled FX rates (embedded in WASM)
     let fx_cache = load_default_cache().map_err(map_error)?;
 
+    // Load embedded config
+    let config = Config::embedded().map_err(map_error)?;
+
     // Calculate tax report
-    let report =
-        calculator::calculate(transactions, tax_year, Some(&fx_cache)).map_err(map_error)?;
+    let report = calculator::calculate(&transactions, tax_year, Some(&fx_cache), &config)
+        .map_err(map_error)?;
 
     // Enhance with exemption and tax calculations
-    let tax_years: Result<Vec<TaxYear>, JsValue> = report
+    let tax_years: Vec<TaxYear> = report
         .tax_years
         .iter()
         .map(|ty| {
             let start_year = ty.period.start_year();
-            let exemption = get_exemption(start_year).map_err(map_error)?;
+            let exemption = ty.exempt_amount;
             let gross_proceeds: Decimal = ty.disposals.iter().map(|d| d.gross_proceeds).sum();
             let total_cost: Decimal = ty
                 .disposals
@@ -168,7 +171,7 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
             // Tax liability calculation (simplified - set to zero for now)
             let tax_liability = Decimal::ZERO;
 
-            Ok(TaxYear {
+            TaxYear {
                 period: Some(cgt_format::format_tax_year(start_year)),
                 year: Some(start_year),
                 disposals: ty.disposals.clone(),
@@ -180,11 +183,9 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
                 exemption: exemption.to_string(),
                 taxable_gain: taxable.to_string(),
                 tax_liability: tax_liability.to_string(),
-            })
+            }
         })
         .collect();
-
-    let tax_years = tax_years?;
 
     let holdings: Result<Vec<serde_json::Value>, _> = report
         .holdings
