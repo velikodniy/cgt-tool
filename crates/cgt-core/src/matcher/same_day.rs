@@ -2,7 +2,7 @@
 //!
 //! Matches disposals with acquisitions on the same day.
 
-use super::{MatchResult, Matcher};
+use super::{MatchResult, Matcher, compute_proceeds};
 use crate::error::CgtError;
 use crate::models::{GbpTransaction, Match, MatchRule, Operation};
 use rust_decimal::Decimal;
@@ -42,19 +42,15 @@ pub fn match_same_day(
         let matched_qty = (*remaining).min(available);
         let cost = ledger.consume_shares_on_date(sell_tx.date, matched_qty);
 
-        // Calculate proportional proceeds and fees (GBP values are already Decimal)
-        let proportion = matched_qty / *sell_amount;
-        let gross_proceeds = matched_qty * *sell_price;
-        let fees = *sell_fees * proportion;
-        let net_proceeds = gross_proceeds - fees;
+        let proceeds = compute_proceeds(matched_qty, *sell_amount, *sell_price, *sell_fees);
 
-        let gain_or_loss = net_proceeds - cost;
+        let gain_or_loss = proceeds.net_proceeds - cost;
 
         results.push(MatchResult {
             disposal_date: sell_tx.date,
             disposal_ticker: sell_tx.ticker.clone(),
-            gross_proceeds,
-            proceeds: net_proceeds,
+            gross_proceeds: proceeds.gross_proceeds,
+            proceeds: proceeds.net_proceeds,
             match_detail: Match {
                 rule: MatchRule::SameDay,
                 quantity: matched_qty,

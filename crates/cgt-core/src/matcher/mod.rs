@@ -32,6 +32,41 @@ pub struct MatchResult {
     pub match_detail: Match,
 }
 
+/// Proportional disposal proceeds for a matched quantity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ProportionalProceeds {
+    pub(crate) gross_proceeds: Decimal,
+    pub(crate) fees: Decimal,
+    pub(crate) net_proceeds: Decimal,
+}
+
+/// Compute proportional disposal proceeds for a matched quantity.
+pub(crate) fn compute_proceeds(
+    matched_qty: Decimal,
+    sell_qty: Decimal,
+    sell_price: Decimal,
+    sell_fees: Decimal,
+) -> ProportionalProceeds {
+    if sell_qty == Decimal::ZERO {
+        return ProportionalProceeds {
+            gross_proceeds: Decimal::ZERO,
+            fees: Decimal::ZERO,
+            net_proceeds: Decimal::ZERO,
+        };
+    }
+
+    let proportion = matched_qty / sell_qty;
+    let gross_proceeds = matched_qty * sell_price;
+    let fees = sell_fees * proportion;
+    let net_proceeds = gross_proceeds - fees;
+
+    ProportionalProceeds {
+        gross_proceeds,
+        fees,
+        net_proceeds,
+    }
+}
+
 /// Efficient matcher for CGT share matching rules.
 ///
 /// Processes transactions in chronological order, maintaining per-ticker
@@ -225,6 +260,10 @@ impl Matcher {
         &self,
         transactions: &[GbpTransaction],
     ) -> Result<Vec<Decimal>, CgtError> {
+        // Intentionally two-pass: B&B can match a disposal to a future buy, while
+        // CAPRETURN/DIVIDEND events after that disposal may still adjust that buy's
+        // allowable cost. We therefore precompute per-acquisition cost offsets over
+        // the full timeline before running disposal matching.
         let mut ledgers: HashMap<String, AcquisitionLedger> = HashMap::new();
         let mut i = 0;
 
@@ -332,12 +371,7 @@ impl Matcher {
         future_consumption: &mut HashMap<usize, Decimal>,
         same_day_reservations: &mut HashMap<(NaiveDate, String), Decimal>,
     ) -> Result<(), CgtError> {
-        let Operation::Sell {
-            amount,
-            price,
-            fees,
-        } = &tx.operation
-        else {
+        let Operation::Sell { amount, .. } = &tx.operation else {
             return Ok(());
         };
 
@@ -364,8 +398,6 @@ impl Matcher {
         }
 
         let mut remaining = *amount;
-        let gross_proceeds = *amount * *price;
-        let total_fees = *fees;
 
         // 1. Same Day matching
         let same_day_matched =
@@ -390,14 +422,7 @@ impl Matcher {
 
         // 3. Section 104 pool
         if remaining > Decimal::ZERO {
-            let s104_matched = section104::match_section_104(
-                self,
-                tx,
-                &mut remaining,
-                gross_proceeds,
-                total_fees,
-                *amount,
-            )?;
+            let s104_matched = section104::match_section_104(self, tx, &mut remaining, *amount)?;
             if let Some(m) = s104_matched {
                 self.matches.push(m);
             }
@@ -488,5 +513,39 @@ impl Matcher {
 impl Default for Matcher {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compute_proceeds;
+    use rust_decimal::Decimal;
+    use rust_decimal_macros::dec;
+
+    #[test]
+    fn compute_proceeds_full_match() {
+        let proceeds = compute_proceeds(dec!(100), dec!(100), dec!(12), dec!(5));
+
+        assert_eq!(proceeds.gross_proceeds, dec!(1200));
+        assert_eq!(proceeds.fees, dec!(5));
+        assert_eq!(proceeds.net_proceeds, dec!(1195));
+    }
+
+    #[test]
+    fn compute_proceeds_partial_match() {
+        let proceeds = compute_proceeds(dec!(25), dec!(100), dec!(8), dec!(12));
+
+        assert_eq!(proceeds.gross_proceeds, dec!(200));
+        assert_eq!(proceeds.fees, dec!(3));
+        assert_eq!(proceeds.net_proceeds, dec!(197));
+    }
+
+    #[test]
+    fn compute_proceeds_zero_sell_quantity_returns_zeroes() {
+        let proceeds = compute_proceeds(dec!(10), Decimal::ZERO, dec!(8), dec!(12));
+
+        assert_eq!(proceeds.gross_proceeds, Decimal::ZERO);
+        assert_eq!(proceeds.fees, Decimal::ZERO);
+        assert_eq!(proceeds.net_proceeds, Decimal::ZERO);
     }
 }
