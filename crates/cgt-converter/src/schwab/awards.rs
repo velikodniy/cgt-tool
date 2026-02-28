@@ -119,19 +119,6 @@ fn parse_award_date(date_str: &str) -> Result<NaiveDate, ConvertError> {
         .map_err(|_| ConvertError::InvalidDate(date_str.to_string()))
 }
 
-fn parse_optional_price(price_str: &str) -> Result<Option<Decimal>, ConvertError> {
-    let trimmed = price_str.trim();
-    if trimmed.is_empty() || trimmed == "--" {
-        return Ok(None);
-    }
-
-    let cleaned = trimmed.replace(['$', ','], "");
-    cleaned
-        .parse::<Decimal>()
-        .map(Some)
-        .map_err(|_| ConvertError::InvalidAmount(price_str.to_string()))
-}
-
 fn extract_award_fmv(
     details: &AwardDetails,
     parent_date: NaiveDate,
@@ -143,12 +130,12 @@ fn extract_award_fmv(
             .map(parse_award_date)
             .transpose()?
             .unwrap_or(parent_date);
-        let fmv = parse_optional_price(vest_fmv_str)?;
+        let fmv = super::parse_dollar_amount(vest_fmv_str)?;
         return Ok((Some(vest_date), fmv, true));
     }
 
     if let Some(fmv_str) = details.fair_market_value_price.as_deref() {
-        let fmv = parse_optional_price(fmv_str)?;
+        let fmv = super::parse_dollar_amount(fmv_str)?;
         return Ok((Some(parent_date), fmv, false));
     }
 

@@ -9,6 +9,19 @@ use rust_decimal::Decimal;
 use std::collections::HashMap;
 
 pub use awards::{AwardLookup, AwardsData};
+
+/// Parse a Schwab dollar amount string: strips `$`, commas, handles empty/placeholder values.
+pub(crate) fn parse_dollar_amount(s: &str) -> Result<Option<Decimal>, ConvertError> {
+    let trimmed = s.trim();
+    if trimmed.is_empty() || trimmed == "--" {
+        return Ok(None);
+    }
+    let cleaned = trimmed.replace(['$', ','], "");
+    cleaned
+        .parse::<Decimal>()
+        .map(Some)
+        .map_err(|_| ConvertError::InvalidAmount(s.to_string()))
+}
 use transactions::{
     SchwabDividend, SchwabStockPlanActivity, SchwabStockSplit, SchwabTrade, SchwabTransaction,
     SchwabTransactionsItem, format_unknown_comment, parse_transactions_json,

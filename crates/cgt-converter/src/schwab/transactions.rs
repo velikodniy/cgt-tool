@@ -3,7 +3,6 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::Deserialize;
 use serde_json::Value;
-use std::str::FromStr;
 
 const KEY_ACTION: &str = "Action";
 const KEY_DATE: &str = "Date";
@@ -305,7 +304,7 @@ fn parse_required_decimal_field(
     label: &str,
 ) -> Result<Decimal, ConvertError> {
     let raw = get_required_string(value, key, label)?;
-    parse_amount(raw)?.ok_or_else(|| {
+    super::parse_dollar_amount(raw)?.ok_or_else(|| {
         ConvertError::InvalidTransaction(format!("{} missing {}", action.as_str(), label))
     })
 }
@@ -315,7 +314,7 @@ fn parse_optional_decimal_field(
     key: &'static str,
 ) -> Result<Option<Decimal>, ConvertError> {
     match get_optional_string(value, key) {
-        Some(amount) => parse_amount(amount),
+        Some(amount) => super::parse_dollar_amount(amount),
         None => Ok(None),
     }
 }
@@ -340,24 +339,10 @@ fn parse_date(date_str: &str) -> Result<NaiveDate, ConvertError> {
     }
 }
 
-/// Parse a Schwab amount (handles $-prefix, commas, empty strings)
-fn parse_amount(amount_str: &str) -> Result<Option<Decimal>, ConvertError> {
-    let trimmed = amount_str.trim();
-    if trimmed.is_empty() || trimmed == "--" {
-        return Ok(None);
-    }
-
-    // Remove $ prefix and commas
-    let cleaned = trimmed.replace(['$', ','], "");
-
-    Decimal::from_str(&cleaned)
-        .map(Some)
-        .map_err(|_| ConvertError::InvalidAmount(amount_str.to_string()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::schwab::parse_dollar_amount;
     use rust_decimal_macros::dec;
 
     #[test]
@@ -381,25 +366,25 @@ mod tests {
 
     #[test]
     fn test_parse_amount_with_dollar() {
-        let result = parse_amount("$125.64").unwrap().unwrap();
+        let result = parse_dollar_amount("$125.64").unwrap().unwrap();
         assert_eq!(result, dec!(125.64));
     }
 
     #[test]
     fn test_parse_amount_with_commas() {
-        let result = parse_amount("$1,234.56").unwrap().unwrap();
+        let result = parse_dollar_amount("$1,234.56").unwrap().unwrap();
         assert_eq!(result, dec!(1234.56));
     }
 
     #[test]
     fn test_parse_amount_empty() {
-        let result = parse_amount("").unwrap();
+        let result = parse_dollar_amount("").unwrap();
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_parse_amount_dashes() {
-        let result = parse_amount("--").unwrap();
+        let result = parse_dollar_amount("--").unwrap();
         assert_eq!(result, None);
     }
 
@@ -458,43 +443,43 @@ mod tests {
 
     #[test]
     fn test_parse_amount_negative() {
-        let result = parse_amount("-$125.64").unwrap().unwrap();
+        let result = parse_dollar_amount("-$125.64").unwrap().unwrap();
         assert_eq!(result, dec!(-125.64));
     }
 
     #[test]
     fn test_parse_amount_large_number() {
-        let result = parse_amount("$1,234,567.89").unwrap().unwrap();
+        let result = parse_dollar_amount("$1,234,567.89").unwrap().unwrap();
         assert_eq!(result, dec!(1234567.89));
     }
 
     #[test]
     fn test_parse_amount_zero() {
-        let result = parse_amount("$0.00").unwrap().unwrap();
+        let result = parse_dollar_amount("$0.00").unwrap().unwrap();
         assert_eq!(result, dec!(0.00));
     }
 
     #[test]
     fn test_parse_amount_small_decimal() {
-        let result = parse_amount("$0.01").unwrap().unwrap();
+        let result = parse_dollar_amount("$0.01").unwrap().unwrap();
         assert_eq!(result, dec!(0.01));
     }
 
     #[test]
     fn test_parse_amount_many_decimals() {
-        let result = parse_amount("$125.6445").unwrap().unwrap();
+        let result = parse_dollar_amount("$125.6445").unwrap().unwrap();
         assert_eq!(result, dec!(125.6445));
     }
 
     #[test]
     fn test_parse_amount_whitespace() {
-        let result = parse_amount("  $125.64  ").unwrap().unwrap();
+        let result = parse_dollar_amount("  $125.64  ").unwrap().unwrap();
         assert_eq!(result, dec!(125.64));
     }
 
     #[test]
     fn test_parse_amount_no_dollar() {
-        let result = parse_amount("125.64").unwrap().unwrap();
+        let result = parse_dollar_amount("125.64").unwrap().unwrap();
         assert_eq!(result, dec!(125.64));
     }
 }
