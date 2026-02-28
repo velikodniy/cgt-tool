@@ -463,6 +463,8 @@ impl Disposal {
 }
 
 /// Summary of CGT activity within a single UK tax year.
+///
+/// Disposals are sorted by date, then ticker.
 #[derive(Debug, Clone, Deserialize, PartialEq, JsonSchema)]
 pub struct TaxYearSummary {
     pub period: TaxPeriod,

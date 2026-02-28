@@ -145,11 +145,9 @@ fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
                 (year.period.start_year() as i64).into_value(),
             );
 
-            let mut sorted_disposals: Vec<_> = year.disposals.iter().collect();
-            sort_by_date_ticker(&mut sorted_disposals, |d| d.date, |d| &d.ticker);
-
-            let disposals: Vec<Value> = sorted_disposals
-                .into_iter()
+            let disposals: Vec<Value> = year
+                .disposals
+                .iter()
                 .map(build_disposal_dict)
                 .map(|result| result.map(IntoValue::into_value))
                 .collect::<Result<Vec<_>, PdfError>>()?;
