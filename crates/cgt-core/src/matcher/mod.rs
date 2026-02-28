@@ -262,8 +262,11 @@ impl Matcher {
     ) -> Result<Vec<Decimal>, CgtError> {
         // Intentionally two-pass: B&B can match a disposal to a future buy, while
         // CAPRETURN/DIVIDEND events after that disposal may still adjust that buy's
-        // allowable cost. We therefore precompute per-acquisition cost offsets over
-        // the full timeline before running disposal matching.
+        // allowable cost. Example: sell in February, buy in March (used by B&B),
+        // CAPRETURN in April. The February disposal must use March acquisition cost
+        // after the April adjustment. A single forward pass cannot know that value
+        // without retroactive mutation, so we precompute per-acquisition offsets
+        // over the full timeline before disposal matching.
         let mut ledgers: HashMap<String, AcquisitionLedger> = HashMap::new();
         let mut i = 0;
 

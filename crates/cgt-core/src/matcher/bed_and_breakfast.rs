@@ -97,6 +97,27 @@ fn matched_buy_cost(
     matched_qty_at_buy_time * unit_cost
 }
 
+fn matched_quantities_with_split_ratio(
+    remaining_at_sell_time: Decimal,
+    available_at_buy_time: Decimal,
+    cumulative_ratio_effect: Decimal,
+) -> (Decimal, Decimal) {
+    let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
+    let matched_qty_at_sell_time = remaining_at_sell_time.min(available_at_sell_time);
+    let matched_qty_at_buy_time = matched_qty_at_sell_time * cumulative_ratio_effect;
+
+    (matched_qty_at_sell_time, matched_qty_at_buy_time)
+}
+
+fn reserve_future_buy_consumption(
+    future_consumption: &mut HashMap<usize, Decimal>,
+    idx: usize,
+    matched_qty_at_buy_time: Decimal,
+) {
+    let reserved_entry = future_consumption.entry(idx).or_insert(Decimal::ZERO);
+    *reserved_entry += matched_qty_at_buy_time;
+}
+
 fn build_bnb_match(
     sell_tx: &GbpTransaction,
     acquisition_date: NaiveDate,
@@ -202,14 +223,12 @@ pub fn match_bed_and_breakfast(
                     continue;
                 }
 
-                // Convert to sell-time equivalent (accounting for splits between sell and buy)
-                let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
-
-                // Match quantity at sell time
-                let matched_qty_at_sell_time = (*remaining).min(available_at_sell_time);
-
-                // Convert back to buy-time quantity for cost calculation
-                let matched_qty_at_buy_time = matched_qty_at_sell_time * cumulative_ratio_effect;
+                let (matched_qty_at_sell_time, matched_qty_at_buy_time) =
+                    matched_quantities_with_split_ratio(
+                        *remaining,
+                        available_at_buy_time,
+                        cumulative_ratio_effect,
+                    );
 
                 // Get cost for the matched quantity
                 let cost = matched_buy_cost(
@@ -231,8 +250,7 @@ pub fn match_bed_and_breakfast(
                 ));
 
                 *remaining -= matched_qty_at_sell_time;
-                let reserved_entry = future_consumption.entry(idx).or_insert(Decimal::ZERO);
-                *reserved_entry += matched_qty_at_buy_time;
+                reserve_future_buy_consumption(future_consumption, idx, matched_qty_at_buy_time);
             }
             _ => {}
         }
