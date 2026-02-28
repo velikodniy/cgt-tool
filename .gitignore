@@ -13,5 +13,8 @@ release/
 examples/
 exchange_rates.csv
 
+# Design docs (local only)
+docs/plans/
+
 # macOS
 .DS_Store
