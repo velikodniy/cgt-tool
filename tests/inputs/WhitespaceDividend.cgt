@@ -2,7 +2,7 @@
 # Purpose: Tests parser handles extra whitespace (tabs and multiple spaces)
 # Rules Tested: Parser whitespace handling, Section 104 Pooling
 # Complexity: Simple
-# Key Features: Tabs and extra spaces in DIVIDEND line and other lines
+# Key Features: Tabs and extra spaces in ACCUMULATION line and other lines
 # Expected Outcome: Parses correctly, same result as normal spacing
 #
 # Verification Status: Verified
@@ -26,5 +26,5 @@
 #   Total loss: £0
 #
 2023-01-01	BUY	SPACEY	100	@	10	FEES	5
-2023-06-15		DIVIDEND    SPACEY    100    TOTAL    50    TAX    0
+2023-06-15		ACCUMULATION    SPACEY    100    TOTAL    50    TAX    0
 2023-12-01  SELL   SPACEY   100   @   12   FEES   5

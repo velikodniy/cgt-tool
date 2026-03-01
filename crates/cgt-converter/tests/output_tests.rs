@@ -60,7 +60,7 @@ fn test_format_dividend_with_tax() {
     let result = format_dividend(&date, "FOO", dec!(50.00), "USD", Some(dec!(7.50)));
     assert_eq!(
         result,
-        "2023-07-15 DIVIDEND FOO 1 TOTAL 50.00 USD TAX 7.50 USD"
+        "2023-07-15 DIVIDEND FOO TOTAL 50.00 USD TAX 7.50 USD"
     );
 }
 

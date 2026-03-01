@@ -1527,13 +1527,13 @@ mod tests {
     fn test_convert_to_dsl_dividend() {
         let server = test_server_without_fx();
         let json_input = r#"[
-            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "amount": "100", "total_value": "50", "tax_paid": "5"}
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "total_value": "50", "tax_paid": "5"}
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
         let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
-        assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP"));
+        assert!(dsl.contains("2024-03-01 DIVIDEND VWRL TOTAL 50 GBP TAX 5 GBP"));
     }
 
     #[test]
@@ -1541,14 +1541,14 @@ mod tests {
         let server = test_server_without_fx();
         // tax_paid is 0 (or omitted), so TAX clause should not appear in output
         let json_input = r#"[
-            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "amount": "100", "total_value": "50", "tax_paid": "0"}
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "total_value": "50", "tax_paid": "0"}
         ]"#;
 
         let transactions = server.parse_input(json_input).expect("should parse");
         let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
 
         // TAX 0 should be omitted from output
-        assert!(dsl.contains("2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP"));
+        assert!(dsl.contains("2024-03-01 DIVIDEND VWRL TOTAL 50 GBP"));
         assert!(
             !dsl.contains("TAX"),
             "TAX clause should be omitted when tax is 0: {dsl}"

@@ -564,7 +564,7 @@ fn test_all_years_no_disposals_returns_empty() {
     assert_eq!(report.holdings[0].ticker, "ACME");
 }
 
-// CAPRETURN and DIVIDEND cost apportionment tests
+// CAPRETURN and ACCUMULATION cost apportionment tests
 // These tests verify that cost adjustments are correctly apportioned across acquisition lots
 // based on each lot's proportion of total holdings, not based on the event amount.
 
@@ -677,12 +677,12 @@ fn test_capreturn_with_prior_partial_sale() {
 }
 
 #[test]
-fn test_dividend_increases_cost_proportionally() {
+fn test_accumulation_increases_cost_proportionally() {
     // Accumulation fund dividend should increase cost basis proportionally
     let cgt_content = r#"
 2024-01-01 BUY ACME 10 @ 100.00 GBP
 2024-02-01 BUY ACME 10 @ 90.00 GBP
-2024-03-01 DIVIDEND ACME 10 TOTAL 50 GBP TAX 0 GBP
+2024-03-01 ACCUMULATION ACME 10 TOTAL 50 GBP TAX 0 GBP
 2024-06-01 SELL ACME 20 @ 110.00 GBP
 "#;
 
@@ -690,8 +690,8 @@ fn test_dividend_increases_cost_proportionally() {
     let report =
         calculate(&transactions, Some(2024), None, &get_config()).expect("Failed to calculate");
 
-    // Total cost before DIVIDEND: 1000 + 900 = 1900
-    // DIVIDEND increases cost by 50 (distributed proportionally):
+    // Total cost before ACCUMULATION: 1000 + 900 = 1900
+    // ACCUMULATION increases cost by 50 (distributed proportionally):
     //   Lot 1 (10 of 20): +50 * (10/20) = +25
     //   Lot 2 (10 of 20): +50 * (10/20) = +25
     // Total cost after: 1900 + 50 = 1950
@@ -705,18 +705,18 @@ fn test_dividend_increases_cost_proportionally() {
     assert_eq!(
         total_gain,
         dec!(250),
-        "DIVIDEND should increase cost proportionally, resulting in gain of 250"
+        "ACCUMULATION should increase cost proportionally, resulting in gain of 250"
     );
 }
 
 #[test]
-fn test_capreturn_and_dividend_combined() {
-    // Both CAPRETURN and DIVIDEND on same holding
+fn test_capreturn_and_accumulation_combined() {
+    // Both CAPRETURN and ACCUMULATION on same holding
     let cgt_content = r#"
 2024-01-01 BUY ACME 10 @ 100.00 GBP
 2024-02-01 BUY ACME 10 @ 90.00 GBP
 2024-03-01 CAPRETURN ACME 20 TOTAL 100 GBP FEES 0 GBP
-2024-03-01 DIVIDEND ACME 20 TOTAL 50 GBP TAX 0 GBP
+2024-03-01 ACCUMULATION ACME 20 TOTAL 50 GBP TAX 0 GBP
 2024-06-01 SELL ACME 20 @ 110.00 GBP
 "#;
 
@@ -726,7 +726,7 @@ fn test_capreturn_and_dividend_combined() {
 
     // Total cost before events: 1000 + 900 = 1900
     // CAPRETURN -100: 1900 - 100 = 1800
-    // DIVIDEND +50: 1800 + 50 = 1850
+    // ACCUMULATION +50: 1800 + 50 = 1850
 
     let disposal = &report.tax_years[0].disposals[0];
 
@@ -737,7 +737,7 @@ fn test_capreturn_and_dividend_combined() {
     assert_eq!(
         total_gain,
         dec!(350),
-        "Combined CAPRETURN and DIVIDEND should net to -50 cost adjustment"
+        "Combined CAPRETURN and ACCUMULATION should net to -50 cost adjustment"
     );
 }
 

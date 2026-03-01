@@ -130,7 +130,7 @@ fn test_dividend_with_tax() {
     assert!(
         result
             .cgt_content
-            .contains("2023-07-15 DIVIDEND FOO 1 TOTAL 50.00 USD TAX 7.50 USD")
+            .contains("2023-07-15 DIVIDEND FOO TOTAL 50.00 USD TAX 7.50 USD")
     );
 }
 
@@ -654,27 +654,11 @@ fn test_multiple_dividend_types() {
 
     let result = converter.convert(&input).unwrap();
 
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND FOO 1 TOTAL 50.00 USD")
-    );
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND BAR 1 TOTAL 30.00 USD")
-    );
+    assert!(result.cgt_content.contains("DIVIDEND FOO TOTAL 50.00 USD"));
+    assert!(result.cgt_content.contains("DIVIDEND BAR TOTAL 30.00 USD"));
     // Capital gains treated as dividends
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND ETFX 1 TOTAL 10.00 USD")
-    );
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND ETFX 1 TOTAL 20.00 USD")
-    );
+    assert!(result.cgt_content.contains("DIVIDEND ETFX TOTAL 10.00 USD"));
+    assert!(result.cgt_content.contains("DIVIDEND ETFX TOTAL 20.00 USD"));
 }
 
 #[test]
@@ -726,7 +710,7 @@ fn test_dividend_with_multiple_tax_withholdings() {
     assert!(
         result
             .cgt_content
-            .contains("DIVIDEND FOO 1 TOTAL 100.00 USD TAX 15.00 USD")
+            .contains("DIVIDEND FOO TOTAL 100.00 USD TAX 15.00 USD")
     );
 }
 
@@ -755,11 +739,7 @@ fn test_dividend_without_tax() {
 
     let result = converter.convert(&input).unwrap();
     // No TAX clause when no withholding
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND ETFX 1 TOTAL 50.00 USD")
-    );
+    assert!(result.cgt_content.contains("DIVIDEND ETFX TOTAL 50.00 USD"));
     assert!(!result.cgt_content.contains("TAX"));
 }
 
@@ -940,11 +920,7 @@ fn test_typical_monthly_activity() {
     let result = converter.convert(&input).unwrap();
 
     // Check all CGT-relevant transactions are present
-    assert!(
-        result
-            .cgt_content
-            .contains("DIVIDEND ETFX 1 TOTAL 25.50 USD")
-    );
+    assert!(result.cgt_content.contains("DIVIDEND ETFX TOTAL 25.50 USD"));
     assert!(result.cgt_content.contains("BUY ACME 100 @ 55.00 USD"));
     assert!(result.cgt_content.contains("SELL ACME 30 @ 55.00 USD"));
     assert!(result.cgt_content.contains("BUY FOO 5 @ 165.00 USD"));

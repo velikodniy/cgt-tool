@@ -1,5 +1,5 @@
 # Test: WithAssetEventsSameDay
-# Purpose: Tests same-day buy+sell with asset events (CAPRETURN/DIVIDEND)
+# Purpose: Tests same-day buy+sell with asset events (CAPRETURN/ACCUMULATION)
 # Rules Tested: Same Day Rule (TCGA92/S105(1)), Section 104 Pooling, Capital Returns
 # Complexity: High
 # Key Features: Same-day buy AND sell with capital returns - edge case
@@ -29,13 +29,13 @@
 #   Holdings after: 20 shares @ £183.88 avg (£3,677.50 total)
 #
 #   CAPRETURN 2019-11-30 (20 shares, £95.12): Applied to remaining pool
-#   DIVIDEND 2019-11-30 (20 shares, £110.93): No CGT impact
+#   ACCUMULATION 2019-11-30 (20 shares, £110.93): No CGT impact
 #
 2018-08-29 BUY GB00B3TYHH97 20 @ 184.65 FEES 12.5
 2019-03-15 BUY GB00B3TYHH97 20 @ 181.56 FEES 2
 2019-05-31 CAPRETURN GB00B3TYHH97 40 TOTAL 149.75 FEES 0
-2019-05-31 DIVIDEND GB00B3TYHH97 40 TOTAL 150.24 TAX 0
+2019-05-31 ACCUMULATION GB00B3TYHH97 40 TOTAL 150.24 TAX 0
 2019-11-05 BUY GB00B3TYHH97 20 @ 194.22 FEES 2
 2019-11-05 SELL GB00B3TYHH97 40 @ 194.22 FEES 12.5
 2019-11-30 CAPRETURN GB00B3TYHH97 20 TOTAL 95.12 FEES 0
-2019-11-30 DIVIDEND GB00B3TYHH97 20 TOTAL 110.93 TAX 0
+2019-11-30 ACCUMULATION GB00B3TYHH97 20 TOTAL 110.93 TAX 0
