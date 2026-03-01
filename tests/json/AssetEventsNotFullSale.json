@@ -22,7 +22,9 @@
       "disposal_count": 1,
       "total_gain": "28.33",
       "total_loss": "0",
-      "net_gain": "28.33"
+      "net_gain": "28.33",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
     },
     {
       "period": "2020/21",
@@ -46,7 +48,9 @@
       "disposal_count": 1,
       "total_gain": "57.33",
       "total_loss": "0",
-      "net_gain": "57.33"
+      "net_gain": "57.33",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
     }
   ],
   "holdings": [

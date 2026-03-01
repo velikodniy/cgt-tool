@@ -379,6 +379,8 @@ mod tests {
                 total_loss: Decimal::ZERO,
                 net_gain: Decimal::from(95),
                 exempt_amount: Decimal::from(3000),
+                dividend_income: Decimal::ZERO,
+                dividend_tax_paid: Decimal::ZERO,
             }],
             holdings: vec![],
             transactions: vec![],

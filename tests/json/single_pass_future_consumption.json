@@ -23,7 +23,9 @@
       "disposal_count": 1,
       "total_gain": "100.00",
       "total_loss": "0",
-      "net_gain": "100.00"
+      "net_gain": "100.00",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
     },
     {
       "period": "2024/25",
@@ -47,7 +49,9 @@
       "disposal_count": 1,
       "total_gain": "200.00",
       "total_loss": "0",
-      "net_gain": "200.00"
+      "net_gain": "200.00",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
     }
   ],
   "holdings": [

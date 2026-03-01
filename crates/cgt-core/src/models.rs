@@ -492,6 +492,10 @@ pub struct TaxYearSummary {
     pub net_gain: Decimal,
     #[serde(default, serialize_with = "decimal_money::serialize")]
     pub exempt_amount: Decimal,
+    #[serde(default, serialize_with = "decimal_money::serialize")]
+    pub dividend_income: Decimal,
+    #[serde(default, serialize_with = "decimal_money::serialize")]
+    pub dividend_tax_paid: Decimal,
 }
 
 impl TaxYearSummary {
@@ -517,7 +521,7 @@ impl Serialize for TaxYearSummary {
         S: serde::Serializer,
     {
         use serde::ser::SerializeStruct;
-        let mut state = serializer.serialize_struct("TaxYearSummary", 7)?;
+        let mut state = serializer.serialize_struct("TaxYearSummary", 9)?;
         state.serialize_field("period", &self.period)?;
         state.serialize_field("disposals", &self.disposals)?;
         state.serialize_field("disposal_count", &self.disposal_count())?;
@@ -527,6 +531,14 @@ impl Serialize for TaxYearSummary {
         state.serialize_field(
             "exempt_amount",
             &decimal_money::DecimalMoney(self.exempt_amount),
+        )?;
+        state.serialize_field(
+            "dividend_income",
+            &decimal_money::DecimalMoney(self.dividend_income),
+        )?;
+        state.serialize_field(
+            "dividend_tax_paid",
+            &decimal_money::DecimalMoney(self.dividend_tax_paid),
         )?;
         state.end()
     }

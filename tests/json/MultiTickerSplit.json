@@ -37,7 +37,9 @@
       "disposal_count": 2,
       "total_gain": "150",
       "total_loss": "0",
-      "net_gain": "150"
+      "net_gain": "150",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
     }
   ],
   "holdings": [
