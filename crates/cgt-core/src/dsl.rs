@@ -44,15 +44,13 @@ pub fn transaction_to_dsl(tx: &Transaction) -> String {
             line
         }
         Operation::Dividend {
-            amount,
             total_value,
             tax_paid,
         } => {
             let mut line = format!(
-                "{} DIVIDEND {} {} TOTAL {}",
+                "{} DIVIDEND {} TOTAL {}",
                 date,
                 tx.ticker,
-                amount,
                 format_amount(total_value)
             );
             if !tax_paid.amount.is_zero() {
@@ -209,14 +207,13 @@ mod tests {
             (2024, 3, 1),
             "VWRL",
             Operation::Dividend {
-                amount: dec!(100),
                 total_value: gbp(dec!(50)),
                 tax_paid: gbp(dec!(5)),
             },
         );
         assert_eq!(
             transaction_to_dsl(&t),
-            "2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP"
+            "2024-03-01 DIVIDEND VWRL TOTAL 50 GBP TAX 5 GBP"
         );
     }
 
@@ -226,13 +223,12 @@ mod tests {
             (2024, 3, 1),
             "VWRL",
             Operation::Dividend {
-                amount: dec!(100),
                 total_value: gbp(dec!(50)),
                 tax_paid: gbp(dec!(0)),
             },
         );
         let dsl = transaction_to_dsl(&t);
-        assert_eq!(dsl, "2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP");
+        assert_eq!(dsl, "2024-03-01 DIVIDEND VWRL TOTAL 50 GBP");
         assert!(!dsl.contains("TAX"));
     }
 
@@ -328,7 +324,7 @@ mod tests {
 
     #[test]
     fn roundtrip_dividend() {
-        let input = "2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP";
+        let input = "2024-03-01 DIVIDEND VWRL TOTAL 50 GBP TAX 5 GBP";
         let parsed = parse_file(input).expect("parse should succeed");
         let serialized = transactions_to_dsl(&parsed);
         let reparsed = parse_file(&serialized).expect("reparse should succeed");

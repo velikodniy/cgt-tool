@@ -18,8 +18,8 @@ command = {
 cmd_buy = { ^"BUY" ~ ticker ~ quantity ~ price ~ fees? }
 cmd_sell = { ^"SELL" ~ ticker ~ quantity ~ price ~ fees? }
 
-// DIVIDEND: <date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
-cmd_dividend = { ^"DIVIDEND" ~ ticker ~ quantity ~ total_value ~ tax? }
+// DIVIDEND: <date> DIVIDEND <ticker> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
+cmd_dividend = { ^"DIVIDEND" ~ ticker ~ total_value ~ tax? }
 
 // ACCUMULATION: <date> ACCUMULATION <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
 cmd_accumulation = { ^"ACCUMULATION" ~ ticker ~ quantity ~ total_value ~ tax? }

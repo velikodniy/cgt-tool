@@ -52,7 +52,7 @@ pub fn format_dividend(
     tax: Option<Decimal>,
 ) -> String {
     let mut line = format!(
-        "{} DIVIDEND {} 1 TOTAL {} {}",
+        "{} DIVIDEND {} TOTAL {} {}",
         format_date_iso(date),
         symbol,
         format_amount(total_value),

@@ -78,7 +78,6 @@ fn test_dividend_single_symbol() {
         date,
         ticker: "FOOBAR".to_string(),
         operation: Operation::Dividend {
-            amount: Decimal::from(15),
             total_value: CurrencyAmount::new(Decimal::new(3000, 2), Currency::GBP),
             tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
         },
@@ -98,6 +97,6 @@ fn test_dividend_single_symbol() {
     };
 
     let output = format(&report);
-    assert!(output.contains("DIVIDEND FOOBAR 15 £30.00"));
+    assert!(output.contains("DIVIDEND FOOBAR £30.00"));
     assert!(!output.contains("££"));
 }

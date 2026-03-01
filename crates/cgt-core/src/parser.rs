@@ -128,16 +128,14 @@ impl CgtParser {
 
     fn cmd_dividend(input: Node) -> ParseResult<(String, Operation<CurrencyAmount>)> {
         Ok(match_nodes!(input.into_children();
-            [ticker(t), quantity(q), total_value(tv)] => {
+            [ticker(t), total_value(tv)] => {
                 (t, Operation::Dividend {
-                    amount: q,
                     total_value: tv,
                     tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
                 })
             },
-            [ticker(t), quantity(q), total_value(tv), tax(tx)] => {
+            [ticker(t), total_value(tv), tax(tx)] => {
                 (t, Operation::Dividend {
-                    amount: q,
                     total_value: tv,
                     tax_paid: tx,
                 })

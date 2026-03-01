@@ -224,15 +224,9 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
     for transaction in transactions {
         let mut row = Dict::new();
         let (op_type, amount, value) = match &transaction.operation {
-            Operation::Dividend {
-                amount,
-                total_value,
-                ..
-            } => (
-                "DIVIDEND",
-                decimal_to_value(*amount)?,
-                currency_amount_value(total_value)?,
-            ),
+            Operation::Dividend { total_value, .. } => {
+                ("DIVIDEND", Value::None, currency_amount_value(total_value)?)
+            }
             Operation::Accumulation {
                 amount,
                 total_value,

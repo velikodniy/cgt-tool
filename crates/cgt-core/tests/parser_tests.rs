@@ -41,7 +41,7 @@ fn test_parse_valid_buy() {
 
 #[test]
 fn test_parse_dividend_with_tax_keyword() {
-    let input = "2019-11-30 DIVIDEND GB00B3TYHH97 10 TOTAL 110.93 TAX 0";
+    let input = "2019-11-30 DIVIDEND GB00B3TYHH97 TOTAL 110.93 TAX 0";
     let transactions = parse_file(input).expect("Failed to parse DIVIDEND with TAX keyword");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
@@ -51,12 +51,10 @@ fn test_parse_dividend_with_tax_keyword() {
     );
     assert_eq!(tx.ticker, "GB00B3TYHH97");
     if let Operation::Dividend {
-        amount,
         total_value,
         tax_paid,
     } = &tx.operation
     {
-        assert_eq!(*amount, Decimal::from(10));
         assert_eq!(
             total_value.amount,
             Decimal::from_str("110.93").expect("valid decimal")
@@ -224,7 +222,7 @@ fn test_parse_fees_keyword_not_confused_with_currency() {
 #[test]
 fn test_parse_dividend_without_tax_clause() {
     // TAX clause should be optional, defaulting to 0 GBP
-    let input = "2024-03-15 DIVIDEND VWRL 100 TOTAL 50.00";
+    let input = "2024-03-15 DIVIDEND VWRL TOTAL 50.00";
     let transactions = parse_file(input).expect("Failed to parse DIVIDEND without TAX clause");
     assert_eq!(transactions.len(), 1);
     let tx = &transactions[0];
@@ -234,12 +232,10 @@ fn test_parse_dividend_without_tax_clause() {
     );
     assert_eq!(tx.ticker, "VWRL");
     if let Operation::Dividend {
-        amount,
         total_value,
         tax_paid,
     } = &tx.operation
     {
-        assert_eq!(*amount, Decimal::from(100));
         assert_eq!(
             total_value.amount,
             Decimal::from_str("50.00").expect("valid decimal")
@@ -256,14 +252,13 @@ fn test_parse_dividend_without_tax_clause() {
 #[test]
 fn test_parse_dividend_without_tax_clause_with_currency() {
     // TAX clause should be optional even when total_value has a currency
-    let input = "2024-03-15 DIVIDEND VWRL 100 TOTAL 50.00 USD";
+    let input = "2024-03-15 DIVIDEND VWRL TOTAL 50.00 USD";
     let transactions =
         parse_file(input).expect("Failed to parse DIVIDEND without TAX clause (with currency)");
     assert_eq!(transactions.len(), 1);
     if let Operation::Dividend {
         total_value,
         tax_paid,
-        ..
     } = &transactions[0].operation
     {
         assert!(!total_value.is_gbp(), "total_value should be USD");

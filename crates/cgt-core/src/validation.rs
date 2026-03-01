@@ -307,29 +307,7 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
             }
 
-            Operation::Dividend {
-                amount,
-                total_value,
-                ..
-            } => {
-                if *amount == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "DIVIDEND with zero quantity".to_string(),
-                    });
-                }
-
-                if *amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("DIVIDEND with negative quantity: {}", amount),
-                    });
-                }
-
+            Operation::Dividend { total_value, .. } => {
                 if total_value.amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,

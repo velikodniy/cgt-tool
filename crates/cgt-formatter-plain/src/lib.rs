@@ -167,17 +167,12 @@ pub fn format(report: &TaxReport) -> String {
         let _ = writeln!(out, "\n# ASSET EVENTS\n");
         for t in events {
             match &t.operation {
-                Operation::Dividend {
-                    amount,
-                    total_value,
-                    ..
-                } => {
+                Operation::Dividend { total_value, .. } => {
                     let _ = writeln!(
                         out,
-                        "{} DIVIDEND {} {} {}",
+                        "{} DIVIDEND {} {}",
                         format_date(t.date),
                         t.ticker,
-                        format_decimal_trimmed(*amount),
                         format_currency_amount(total_value)
                     );
                 }

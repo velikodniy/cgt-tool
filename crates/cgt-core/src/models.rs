@@ -67,7 +67,7 @@ fn validate_operation(operation: &Operation<CurrencyAmount>) -> Result<(), Strin
     match operation {
         Operation::Buy { amount, .. } => validate_positive(*amount, "amount", "BUY"),
         Operation::Sell { amount, .. } => validate_positive(*amount, "amount", "SELL"),
-        Operation::Dividend { amount, .. } => validate_positive(*amount, "amount", "DIVIDEND"),
+        Operation::Dividend { .. } => Ok(()),
         Operation::Accumulation { amount, .. } => {
             validate_positive(*amount, "amount", "ACCUMULATION")
         }
@@ -295,11 +295,9 @@ impl Operation<CurrencyAmount> {
                 fees: amount_to_gbp(fees, date, fx_cache)?,
             }),
             Operation::Dividend {
-                amount,
                 total_value,
                 tax_paid,
             } => Ok(Operation::Dividend {
-                amount: *amount,
                 total_value: amount_to_gbp(total_value, date, fx_cache)?,
                 tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
             }),
@@ -395,7 +393,6 @@ pub enum Operation<M: Default> {
         fees: M,
     },
     Dividend {
-        amount: Decimal,
         total_value: M,
         #[serde(default)]
         tax_paid: M,
