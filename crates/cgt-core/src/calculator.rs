@@ -90,7 +90,7 @@ pub fn calculate(
 fn build_tax_year_summary(
     tax_year_start: i32,
     match_results: &[MatchResult],
-    dividend_aggregates: &HashMap<u16, (Decimal, Decimal)>,
+    dividend_aggregates: &HashMap<u16, DividendAggregate>,
     config: &Config,
 ) -> Result<TaxYearSummary, CgtError> {
     let start_date =
@@ -113,10 +113,10 @@ fn build_tax_year_summary(
     let (total_gain, total_loss) = calculate_totals(&disposals);
     let tax_period = TaxPeriod::from_date(start_date)?;
     let exempt_amount = config.get_exemption(tax_period.start_year())?;
-    let (dividend_income, dividend_tax_paid) = dividend_aggregates
+    let dividends = dividend_aggregates
         .get(&tax_period.start_year())
         .copied()
-        .unwrap_or((Decimal::ZERO, Decimal::ZERO));
+        .unwrap_or_default();
 
     Ok(TaxYearSummary {
         period: tax_period,
@@ -125,15 +125,15 @@ fn build_tax_year_summary(
         total_loss,
         net_gain: total_gain - total_loss,
         exempt_amount,
-        dividend_income,
-        dividend_tax_paid,
+        dividend_income: dividends.income,
+        dividend_tax_paid: dividends.tax_paid,
     })
 }
 
 /// Build summaries for all tax years that have disposals.
 fn build_all_tax_year_summaries(
     match_results: &[MatchResult],
-    dividend_aggregates: &HashMap<u16, (Decimal, Decimal)>,
+    dividend_aggregates: &HashMap<u16, DividendAggregate>,
     config: &Config,
 ) -> Result<Vec<TaxYearSummary>, CgtError> {
     // Group matches by tax year
@@ -156,10 +156,7 @@ fn build_all_tax_year_summaries(
         let disposals = group_matches_into_disposals(year_matches);
         let (total_gain, total_loss) = calculate_totals(&disposals);
         let exempt_amount = config.get_exemption(tax_period.start_year())?;
-        let (dividend_income, dividend_tax_paid) = dividend_aggregates
-            .get(&year)
-            .copied()
-            .unwrap_or((Decimal::ZERO, Decimal::ZERO));
+        let dividends = dividend_aggregates.get(&year).copied().unwrap_or_default();
 
         summaries.push(TaxYearSummary {
             period: tax_period,
@@ -168,8 +165,8 @@ fn build_all_tax_year_summaries(
             total_loss,
             net_gain: total_gain - total_loss,
             exempt_amount,
-            dividend_income,
-            dividend_tax_paid,
+            dividend_income: dividends.income,
+            dividend_tax_paid: dividends.tax_paid,
         });
     }
 
@@ -245,9 +242,15 @@ fn group_matches_into_disposals(match_results: Vec<MatchResult>) -> Vec<Disposal
     disposals
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+struct DividendAggregate {
+    income: Decimal,
+    tax_paid: Decimal,
+}
+
 /// Aggregate dividend income and tax paid by tax year from GBP-converted transactions.
-fn aggregate_dividends(transactions: &[GbpTransaction]) -> HashMap<u16, (Decimal, Decimal)> {
-    let mut result: HashMap<u16, (Decimal, Decimal)> = HashMap::new();
+fn aggregate_dividends(transactions: &[GbpTransaction]) -> HashMap<u16, DividendAggregate> {
+    let mut result: HashMap<u16, DividendAggregate> = HashMap::new();
     for tx in transactions {
         if let Operation::Dividend {
             total_value,
@@ -256,8 +259,8 @@ fn aggregate_dividends(transactions: &[GbpTransaction]) -> HashMap<u16, (Decimal
             && let Ok(period) = TaxPeriod::from_date(tx.date)
         {
             let entry = result.entry(period.start_year()).or_default();
-            entry.0 += total_value;
-            entry.1 += tax_paid;
+            entry.income += total_value;
+            entry.tax_paid += tax_paid;
         }
     }
     result
