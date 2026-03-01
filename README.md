@@ -108,8 +108,9 @@ One transaction per line. Keywords are uppercase, placeholders are `<angle brack
 
 ```text
 BUY/SELL:    <date> BUY|SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]
-DIVIDEND:    <date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
-CAPRETURN:   <date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]
+DIVIDEND:       <date> DIVIDEND <ticker> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
+ACCUMULATION:   <date> ACCUMULATION <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
+CAPRETURN:      <date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]
 SPLIT:       <date> SPLIT|UNSPLIT <ticker> RATIO <ratio>
 ```
 

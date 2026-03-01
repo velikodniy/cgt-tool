@@ -355,13 +355,15 @@ Capital return of £100 on 10 shares:
 
 Note: For Section 104 pooling, all shares are fungible. The capital return reduces the total pool cost regardless of which specific shares the return nominally applies to.
 
-### Accumulation Fund Dividends
+### Accumulation Fund Dividends (ACCUMULATION)
 
-When an accumulation fund reinvests dividends:
+When an accumulation fund reinvests dividends, the `ACCUMULATION` keyword records the basis adjustment:
 
 - The reinvested dividend increases the cost base of your holding
 - This is because the dividend is "notionally" reinvested, acquiring additional value
 - The increase is apportioned across lots based on shares held at dividend date
+
+Ordinary cash dividends use the `DIVIDEND` keyword instead. Cash dividends do not affect the CGT cost basis; they are reported as income.
 
 **Example:**
 

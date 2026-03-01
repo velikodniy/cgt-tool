@@ -80,13 +80,17 @@ Reduces pool cost basis by the return amount.
 - Lots acquired after the event date are unaffected.
 - If the return exceeds remaining allowable basis, calculation fails with an error referencing TCGA92/S122(2) and CG57847 (part-disposal under S122(1) or election under S122(4) is not currently supported).
 
-### Accumulation Dividends (DIVIDEND)
+### Accumulation Dividends (ACCUMULATION)
 
 Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN.
 
+### Cash Dividends (DIVIDEND)
+
+Records ordinary cash dividend income. Does not affect Section 104 cost basis. Dividend income and tax paid are aggregated per tax year and reported in the summary.
+
 ### Asset Events After Same-Day Buy/Sell
 
-When a CAPRETURN or DIVIDEND occurs after a date with both BUY and SELL for the same ticker, remaining shares are calculated using CGT matching rules per CG51560: same-day first (TCGA92/S105(1)), then B&B (TCGA92/S106A), then S104.
+When a CAPRETURN or ACCUMULATION occurs after a date with both BUY and SELL for the same ticker, remaining shares are calculated using CGT matching rules per CG51560: same-day first (TCGA92/S105(1)), then B&B (TCGA92/S106A), then S104.
 
 **Golden file:** `tests/inputs/single_pass_corp_action.cgt` → `tests/json/single_pass_corp_action.json`
 
@@ -164,12 +168,13 @@ When a currency/month rate is unavailable, the system fails with a clear error i
 
 ### Transaction Types
 
-| Type          | Format                                                                                 |
-| ------------- | -------------------------------------------------------------------------------------- |
-| BUY/SELL      | `YYYY-MM-DD BUY\|SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]`     |
-| DIVIDEND      | `YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]`   |
-| CAPRETURN     | `YYYY-MM-DD CAPRETURN TICKER QUANTITY TOTAL VALUE [CURRENCY] [FEES AMOUNT [CURRENCY]]` |
-| SPLIT/UNSPLIT | `YYYY-MM-DD SPLIT\|UNSPLIT TICKER RATIO VALUE`                                         |
+| Type          | Format                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| BUY/SELL      | `YYYY-MM-DD BUY\|SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]`       |
+| DIVIDEND      | `YYYY-MM-DD DIVIDEND TICKER TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]`              |
+| ACCUMULATION  | `YYYY-MM-DD ACCUMULATION TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]` |
+| CAPRETURN     | `YYYY-MM-DD CAPRETURN TICKER QUANTITY TOTAL VALUE [CURRENCY] [FEES AMOUNT [CURRENCY]]`   |
+| SPLIT/UNSPLIT | `YYYY-MM-DD SPLIT\|UNSPLIT TICKER RATIO VALUE`                                           |
 
 - FEES, TAX default to 0 when omitted.
 - Currency codes are optional ISO 4217; default is GBP.
@@ -224,7 +229,7 @@ The RSU vest date (from the awards file) is the CGT acquisition date, not the se
 
 ### Dividend + Withholding Merging
 
-When a Cash Dividend and NRA Withholding occur on the same date for the same symbol, they are merged into a single `DIVIDEND ... TOTAL ... TAX ...` line.
+When a Cash Dividend and NRA Withholding occur on the same date for the same symbol, they are merged into a single `DIVIDEND <ticker> TOTAL <value> [<currency>] TAX <amount> [<currency>]` line (no quantity).
 
 ### Date Format Handling
 
