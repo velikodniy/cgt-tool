@@ -49,6 +49,19 @@ pub fn format(report: &TaxReport) -> String {
             format_gbp(taxable)
         );
         let _ = writeln!(out, "{}", row_line.trim_end());
+
+        if year.dividend_income > Decimal::ZERO {
+            let div_line = if year.dividend_tax_paid > Decimal::ZERO {
+                format!(
+                    "Dividend income: {} (tax paid: {})",
+                    format_gbp(year.dividend_income),
+                    format_gbp(year.dividend_tax_paid)
+                )
+            } else {
+                format!("Dividend income: {}", format_gbp(year.dividend_income))
+            };
+            let _ = writeln!(out, "{}", div_line);
+        }
     }
 
     // SA108 note

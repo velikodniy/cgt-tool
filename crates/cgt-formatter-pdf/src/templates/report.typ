@@ -386,7 +386,7 @@
         fmt-date(row.date),
         row.type,
         row.ticker,
-        fmt-qty(row.amount),
+        if row.amount == none { "-" } else { fmt-qty(row.amount) },
         if row.value == none {
           "-"
         } else {
