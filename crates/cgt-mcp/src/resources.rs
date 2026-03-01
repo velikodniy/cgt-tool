@@ -4,7 +4,7 @@
 
 /// Hint for unknown action type errors.
 pub const HINT_UNKNOWN_ACTION: &str =
-    "HINT: Valid actions are: BUY, SELL, DIVIDEND, CAPRETURN, SPLIT, UNSPLIT";
+    "HINT: Valid actions are: BUY, SELL, DIVIDEND, ACCUMULATION, CAPRETURN, SPLIT, UNSPLIT";
 
 /// Hint for invalid currency code errors.
 pub const HINT_INVALID_CURRENCY: &str = "HINT: Use ISO 4217 currency codes like GBP, USD, EUR.\nUse get_fx_rate tool to check available rates.";
@@ -49,10 +49,11 @@ Check https://en.wikipedia.org/wiki/ISO_4217 for valid codes."#;
 
 /// Quick DSL syntax reference for error messages.
 pub const DSL_SYNTAX_REFERENCE: &str = r#"DSL Syntax Reference:
-  BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
-  SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
-  DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [TAX AMOUNT]
-  SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE
+  BUY:          YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
+  SELL:         YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT]
+  DIVIDEND:     YYYY-MM-DD DIVIDEND TICKER TOTAL VALUE [TAX AMOUNT]
+  ACCUMULATION: YYYY-MM-DD ACCUMULATION TICKER QUANTITY TOTAL VALUE [TAX AMOUNT]
+  SPLIT:        YYYY-MM-DD SPLIT TICKER RATIO VALUE
 
 Example: 2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD
 
@@ -129,16 +130,29 @@ Examples:
 ```
 
 ### DIVIDEND
-Record dividend payment (for accumulation funds that reinvest).
+Record an ordinary cash dividend payment. No quantity needed; does not affect cost basis.
 
 ```
-<date> DIVIDEND <ticker> <quantity> TOTAL <amount> [<currency>] [TAX <amount> [<currency>]]
+<date> DIVIDEND <ticker> TOTAL <amount> [<currency>] [TAX <amount> [<currency>]]
 ```
 
 Examples:
 ```
-2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP           # TAX defaults to 0
-2024-03-01 DIVIDEND VWRL 100 TOTAL 50 GBP TAX 5 GBP # With tax withheld
+2024-03-01 DIVIDEND VWRL TOTAL 50 GBP           # TAX defaults to 0
+2024-03-01 DIVIDEND VWRL TOTAL 50 GBP TAX 5 GBP # With tax withheld
+```
+
+### ACCUMULATION
+Record a dividend reinvestment in an accumulation fund. Increases cost basis by the dividend amount (notional disposal and reacquisition at the same price).
+
+```
+<date> ACCUMULATION <ticker> <quantity> TOTAL <amount> [<currency>] [TAX <amount> [<currency>]]
+```
+
+Examples:
+```
+2024-03-01 ACCUMULATION VWRL 100 TOTAL 50 GBP           # TAX defaults to 0
+2024-03-01 ACCUMULATION VWRL 100 TOTAL 50 GBP TAX 5 GBP # With tax withheld
 ```
 
 ### CAPRETURN
@@ -204,8 +218,11 @@ Lines starting with `#` are comments and ignored:
 2024-01-10 BUY VWRL 100 @ 85 GBP FEES 5 GBP
 2024-01-15 BUY AAPL 50 @ 150 USD FEES 10 USD
 
-# Dividend from accumulation fund (TAX clause optional, defaults to 0)
-2024-03-15 DIVIDEND VWRL 100 TOTAL 25 GBP
+# Cash dividend (no cost basis change)
+2024-03-15 DIVIDEND VWRL TOTAL 25 GBP
+
+# Accumulation fund dividend reinvestment (increases cost basis)
+2024-03-15 ACCUMULATION VWRA 100 TOTAL 30 GBP
 
 # Apple stock split
 2024-04-01 SPLIT AAPL RATIO 2
@@ -255,7 +272,8 @@ The year parameter is the START year. Use 2024 for any disposals between 6 April
 - BUY/SELL: Acquire or dispose of shares (triggers CGT on SELL)
 - SPLIT: Stock split (e.g., 2-for-1). Use ratio: "2"
 - UNSPLIT: Reverse split (e.g., 1-for-10). Use ratio: "10"
-- DIVIDEND: For accumulation funds that reinvest dividends
+- DIVIDEND: Ordinary cash dividend (no quantity, no cost basis change)
+- ACCUMULATION: Accumulation fund dividend reinvestment (has quantity, increases cost basis)
 - CAPRETURN: Capital return (reduces cost basis)
 
 ## Transaction Format
@@ -280,8 +298,11 @@ Stock split (2-for-1):
 Stock unsplit/reverse split (1-for-10):
 {"date":"2024-06-01","ticker":"XYZ","action":"UNSPLIT","ratio":"10"}
 
-Dividend (accumulation fund):
-{"date":"2024-03-01","ticker":"VWRL","action":"DIVIDEND","amount":"100","total_value":"50"}
+Cash dividend (no quantity):
+{"date":"2024-03-01","ticker":"VWRL","action":"DIVIDEND","total_value":"50"}
+
+Accumulation fund dividend reinvestment (has quantity):
+{"date":"2024-03-01","ticker":"VWRL","action":"ACCUMULATION","amount":"100","total_value":"50"}
 
 ## Matching Rules (in priority order)
 

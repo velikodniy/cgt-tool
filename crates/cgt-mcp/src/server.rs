@@ -522,7 +522,7 @@ impl CgtServer {
     }
 
     #[tool(
-        description = "Convert JSON transactions to CGT DSL format for use with the cgt-tool CLI.\n\nThe DSL format is a text-based format that can be saved as .cgt files and processed by the cgt-tool command-line interface.\n\n### DSL Syntax:\n- BUY:      YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- SELL:     YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- DIVIDEND: YYYY-MM-DD DIVIDEND TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]\n- SPLIT:    YYYY-MM-DD SPLIT TICKER RATIO VALUE\n- UNSPLIT:  YYYY-MM-DD UNSPLIT TICKER RATIO VALUE\n\nNote: FEES and TAX clauses are optional (default to 0 when omitted).\n\n### Example output:\n2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD\n2024-06-20 SELL AAPL 50 @ 180 USD FEES 5 USD"
+        description = "Convert JSON transactions to CGT DSL format for use with the cgt-tool CLI.\n\nThe DSL format is a text-based format that can be saved as .cgt files and processed by the cgt-tool command-line interface.\n\n### DSL Syntax:\n- BUY:          YYYY-MM-DD BUY TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- SELL:         YYYY-MM-DD SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]\n- DIVIDEND:     YYYY-MM-DD DIVIDEND TICKER TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]\n- ACCUMULATION: YYYY-MM-DD ACCUMULATION TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]\n- SPLIT:        YYYY-MM-DD SPLIT TICKER RATIO VALUE\n- UNSPLIT:      YYYY-MM-DD UNSPLIT TICKER RATIO VALUE\n\nNote: FEES and TAX clauses are optional (default to 0 when omitted).\n\n### Example output:\n2024-01-15 BUY AAPL 100 @ 150 USD FEES 10 USD\n2024-06-20 SELL AAPL 50 @ 180 USD FEES 5 USD"
     )]
     async fn convert_to_dsl(
         &self,
@@ -1193,13 +1193,17 @@ mod tests {
         let server = test_server_without_fx();
         let json_input = r#"[
             {"date": "2024-01-15", "ticker": "VWRL", "action": "BUY", "amount": "100", "price": "85"},
-            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "amount": "100", "total_value": "50", "tax_paid": "0"}
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "DIVIDEND", "total_value": "50", "tax_paid": "0"}
         ]"#;
 
         let result = server.parse_input(json_input);
         assert!(result.is_ok(), "DIVIDEND should parse: {:?}", result.err());
         let transactions = result.ok().unwrap();
         assert_eq!(transactions.len(), 2);
+        assert!(matches!(
+            transactions[1].operation,
+            cgt_core::Operation::Dividend { .. }
+        ));
     }
 
     #[test]
@@ -1401,7 +1405,7 @@ mod tests {
         let server = test_server_without_fx();
         let json_input = r#"[
             {"date": "2024-01-15", "ticker": "VWRL", "action": "buy", "amount": "100", "price": "85"},
-            {"date": "2024-03-01", "ticker": "VWRL", "action": "dividend", "amount": "100", "total_value": "50"}
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "dividend", "total_value": "50"}
         ]"#;
 
         let result = server.parse_input(json_input);
@@ -1623,7 +1627,7 @@ mod tests {
         let server = test_server_without_fx();
         // WRONG format: using price instead of total_value
         let json_input = r#"[
-            {"date": "2024-03-15", "ticker": "VOD", "action": "DIVIDEND", "amount": "100", "price": "0.05"}
+            {"date": "2024-03-15", "ticker": "VOD", "action": "DIVIDEND", "price": "0.05"}
         ]"#;
 
         let result = server.parse_input(json_input);
@@ -1639,9 +1643,9 @@ mod tests {
     #[test]
     fn test_dividend_correct_format() {
         let server = test_server_without_fx();
-        // CORRECT format: using total_value
+        // CORRECT format: using total_value (no amount needed for cash dividend)
         let json_input = r#"[
-            {"date": "2024-03-15", "ticker": "VOD", "action": "DIVIDEND", "amount": "100", "total_value": "5.00"}
+            {"date": "2024-03-15", "ticker": "VOD", "action": "DIVIDEND", "total_value": "5.00"}
         ]"#;
 
         let result = server.parse_input(json_input);
@@ -1649,6 +1653,64 @@ mod tests {
             result.is_ok(),
             "DIVIDEND with total_value should work: {:?}",
             result.err()
+        );
+    }
+
+    #[test]
+    fn test_parse_input_json_accumulation() {
+        let server = test_server_without_fx();
+        let json_input = r#"[
+            {"date": "2024-01-15", "ticker": "VWRL", "action": "BUY", "amount": "100", "price": "85"},
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "ACCUMULATION", "amount": "100", "total_value": "50"}
+        ]"#;
+
+        let result = server.parse_input(json_input);
+        assert!(
+            result.is_ok(),
+            "ACCUMULATION should parse: {:?}",
+            result.err()
+        );
+        let transactions = result.ok().unwrap();
+        assert_eq!(transactions.len(), 2);
+        assert!(matches!(
+            transactions[1].operation,
+            cgt_core::Operation::Accumulation { .. }
+        ));
+    }
+
+    #[test]
+    fn test_convert_to_dsl_accumulation() {
+        let server = test_server_without_fx();
+        let json_input = r#"[
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "ACCUMULATION", "amount": "100", "total_value": "50", "tax_paid": "5"}
+        ]"#;
+
+        let transactions = server.parse_input(json_input).expect("should parse");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
+
+        assert!(
+            dsl.contains("2024-03-01 ACCUMULATION VWRL 100 TOTAL 50 GBP TAX 5 GBP"),
+            "DSL should contain ACCUMULATION line: {dsl}"
+        );
+    }
+
+    #[test]
+    fn test_convert_to_dsl_accumulation_zero_tax_omitted() {
+        let server = test_server_without_fx();
+        let json_input = r#"[
+            {"date": "2024-03-01", "ticker": "VWRL", "action": "ACCUMULATION", "amount": "100", "total_value": "50", "tax_paid": "0"}
+        ]"#;
+
+        let transactions = server.parse_input(json_input).expect("should parse");
+        let dsl = cgt_core::dsl::transactions_to_dsl(&transactions);
+
+        assert!(
+            dsl.contains("2024-03-01 ACCUMULATION VWRL 100 TOTAL 50 GBP"),
+            "DSL should contain ACCUMULATION line: {dsl}"
+        );
+        assert!(
+            !dsl.contains("TAX"),
+            "TAX clause should be omitted when tax is 0: {dsl}"
         );
     }
 
