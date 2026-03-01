@@ -1,0 +1,37 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-12-01",
+          "ticker": "INCOMEFUND",
+          "quantity": "100",
+          "gross_proceeds": "1100",
+          "proceeds": "1095",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "100",
+              "allowable_cost": "1005.00",
+              "gain_or_loss": "90.00"
+            }
+          ]
+        }
+      ],
+      "disposal_count": 1,
+      "total_gain": "90.00",
+      "total_loss": "0",
+      "net_gain": "90.00",
+      "dividend_income": "50",
+      "dividend_tax_paid": "5"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "INCOMEFUND",
+      "quantity": "0",
+      "total_cost": "0.00"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+# SUMMARY
+
+Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
+=========================================================================================================================
+2023/24     1           £90.00                £90.00                £0.00       £1,100.00   £6,000.00   £0.00
+Dividend income: £50.00 (tax paid: £5.00)
+
+Notes:
+- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 100 INCOMEFUND on 01/12/2023 - GAIN £90.00
+   Section 104: 100 shares @ £10.05
+   Gross Proceeds: 100 × £11 = £1,100.00
+   Net Proceeds: £1,100.00 - £5.00 fees = £1,095.00
+   Cost: £1,005.00
+   Result: £90.00
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+01/01/2023 BUY 100 INCOMEFUND @ £10 (£5 fees)
+01/12/2023 SELL 100 INCOMEFUND @ £11 (£5 fees)
+
+# ASSET EVENTS
+
+15/07/2023 DIVIDEND INCOMEFUND £50.00

@@ -1,0 +1,31 @@
+# Test: CashDividend
+# Purpose: Tests ordinary cash dividend does not affect cost basis, appears in income summary
+# Rules Tested: Section 104 Pooling, Cash Dividend reporting
+# Complexity: Simple
+# Key Features: Cash dividend between buy and sell, no cost basis change
+# Expected Outcome: Gain £90, dividend income £50
+#
+# Verification Status: Verified
+# Verified By: Manual calculation 2026-03-01
+# Verification Notes:
+#   Cash dividends do NOT adjust Section 104 pool cost basis.
+#   They are recorded for income reporting only.
+#
+#   Step 1: Buy 100 @ £10 + £5 expenses
+#     Pool: 100 shares, cost = £1,005
+#
+#   Step 2: Dividend TOTAL £50 TAX £5
+#     Pool unchanged: 100 shares, cost = £1,005
+#     Dividend income: £50, tax paid: £5
+#
+#   Step 3: Sell 100 @ £11 - £5 expenses
+#     Proceeds: 100 × £11 - £5 = £1,095
+#     Cost: £1,005
+#     Gain: £1,095 - £1,005 = £90 ✓
+#
+#   Total gain: £90 ✓
+#   Dividend income: £50 ✓
+#
+2023-01-01 BUY INCOMEFUND 100 @ 10 FEES 5
+2023-07-15 DIVIDEND INCOMEFUND TOTAL 50 TAX 5
+2023-12-01 SELL INCOMEFUND 100 @ 11 FEES 5

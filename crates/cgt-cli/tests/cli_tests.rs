@@ -61,6 +61,7 @@ const PLAIN_FORMAT_TESTS: &[&str] = &[
     "ExpensesRounding",
     "WhitespaceDividend",
     "SyntheticComplex",
+    "CashDividend",
 ];
 
 #[test]
