@@ -343,6 +343,42 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 }
             }
 
+            Operation::Accumulation {
+                amount,
+                total_value,
+                ..
+            } => {
+                if *amount == Decimal::ZERO {
+                    result.errors.push(ValidationError {
+                        line,
+                        date: tx.date,
+                        ticker: tx.ticker.clone(),
+                        message: "ACCUMULATION with zero quantity".to_string(),
+                    });
+                }
+
+                if *amount < Decimal::ZERO {
+                    result.errors.push(ValidationError {
+                        line,
+                        date: tx.date,
+                        ticker: tx.ticker.clone(),
+                        message: format!("ACCUMULATION with negative quantity: {}", amount),
+                    });
+                }
+
+                if total_value.amount < Decimal::ZERO {
+                    result.errors.push(ValidationError {
+                        line,
+                        date: tx.date,
+                        ticker: tx.ticker.clone(),
+                        message: format!(
+                            "ACCUMULATION with negative total value: {}",
+                            total_value.amount
+                        ),
+                    });
+                }
+            }
+
             Operation::CapReturn {
                 amount,
                 total_value,

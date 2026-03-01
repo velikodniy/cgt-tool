@@ -233,6 +233,15 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
                 decimal_to_value(*amount)?,
                 currency_amount_value(total_value)?,
             ),
+            Operation::Accumulation {
+                amount,
+                total_value,
+                ..
+            } => (
+                "ACCUMULATION",
+                decimal_to_value(*amount)?,
+                currency_amount_value(total_value)?,
+            ),
             Operation::CapReturn {
                 amount,
                 total_value,

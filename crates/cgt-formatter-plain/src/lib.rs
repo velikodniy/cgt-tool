@@ -150,6 +150,7 @@ pub fn format(report: &TaxReport) -> String {
             matches!(
                 t.operation,
                 Operation::Dividend { .. }
+                    | Operation::Accumulation { .. }
                     | Operation::CapReturn { .. }
                     | Operation::Split { .. }
                     | Operation::Unsplit { .. }
@@ -174,6 +175,20 @@ pub fn format(report: &TaxReport) -> String {
                     let _ = writeln!(
                         out,
                         "{} DIVIDEND {} {} {}",
+                        format_date(t.date),
+                        t.ticker,
+                        format_decimal_trimmed(*amount),
+                        format_currency_amount(total_value)
+                    );
+                }
+                Operation::Accumulation {
+                    amount,
+                    total_value,
+                    ..
+                } => {
+                    let _ = writeln!(
+                        out,
+                        "{} ACCUMULATION {} {} {}",
                         format_date(t.date),
                         t.ticker,
                         format_decimal_trimmed(*amount),

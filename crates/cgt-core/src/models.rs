@@ -68,6 +68,9 @@ fn validate_operation(operation: &Operation<CurrencyAmount>) -> Result<(), Strin
         Operation::Buy { amount, .. } => validate_positive(*amount, "amount", "BUY"),
         Operation::Sell { amount, .. } => validate_positive(*amount, "amount", "SELL"),
         Operation::Dividend { amount, .. } => validate_positive(*amount, "amount", "DIVIDEND"),
+        Operation::Accumulation { amount, .. } => {
+            validate_positive(*amount, "amount", "ACCUMULATION")
+        }
         Operation::CapReturn { amount, .. } => validate_positive(*amount, "amount", "CAPRETURN"),
         Operation::Split { ratio } => validate_positive_ratio(*ratio, "SPLIT"),
         Operation::Unsplit { ratio } => validate_positive_ratio(*ratio, "UNSPLIT"),
@@ -300,6 +303,15 @@ impl Operation<CurrencyAmount> {
                 total_value: amount_to_gbp(total_value, date, fx_cache)?,
                 tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
             }),
+            Operation::Accumulation {
+                amount,
+                total_value,
+                tax_paid,
+            } => Ok(Operation::Accumulation {
+                amount: *amount,
+                total_value: amount_to_gbp(total_value, date, fx_cache)?,
+                tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
+            }),
             Operation::CapReturn {
                 amount,
                 total_value,
@@ -383,6 +395,12 @@ pub enum Operation<M: Default> {
         fees: M,
     },
     Dividend {
+        amount: Decimal,
+        total_value: M,
+        #[serde(default)]
+        tax_paid: M,
+    },
+    Accumulation {
         amount: Decimal,
         total_value: M,
         #[serde(default)]

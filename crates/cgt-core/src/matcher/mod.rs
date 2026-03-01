@@ -307,6 +307,11 @@ impl Matcher {
                             ledger.apply_cost_adjustment(*total_value);
                         }
                     }
+                    Operation::Accumulation { total_value, .. } => {
+                        if let Some(ledger) = ledgers.get_mut(&tx.ticker) {
+                            ledger.apply_cost_adjustment(*total_value);
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -497,6 +502,7 @@ impl Matcher {
             Operation::Buy { .. }
             | Operation::Sell { .. }
             | Operation::Dividend { .. }
+            | Operation::Accumulation { .. }
             | Operation::CapReturn { .. } => {}
         }
         Ok(())

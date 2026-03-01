@@ -60,6 +60,23 @@ pub fn transaction_to_dsl(tx: &Transaction) -> String {
             }
             line
         }
+        Operation::Accumulation {
+            amount,
+            total_value,
+            tax_paid,
+        } => {
+            let mut line = format!(
+                "{} ACCUMULATION {} {} TOTAL {}",
+                date,
+                tx.ticker,
+                amount,
+                format_amount(total_value)
+            );
+            if !tax_paid.amount.is_zero() {
+                line.push_str(&format!(" TAX {}", format_amount(tax_paid)));
+            }
+            line
+        }
         Operation::CapReturn {
             amount,
             total_value,
