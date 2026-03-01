@@ -145,6 +145,25 @@ impl CgtParser {
         ))
     }
 
+    fn cmd_accumulation(input: Node) -> ParseResult<(String, Operation<CurrencyAmount>)> {
+        Ok(match_nodes!(input.into_children();
+            [ticker(t), quantity(q), total_value(tv)] => {
+                (t, Operation::Accumulation {
+                    amount: q,
+                    total_value: tv,
+                    tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
+                })
+            },
+            [ticker(t), quantity(q), total_value(tv), tax(tx)] => {
+                (t, Operation::Accumulation {
+                    amount: q,
+                    total_value: tv,
+                    tax_paid: tx,
+                })
+            },
+        ))
+    }
+
     fn cmd_capreturn(input: Node) -> ParseResult<(String, Operation<CurrencyAmount>)> {
         Ok(match_nodes!(input.into_children();
             [ticker(t), quantity(q), total_value(tv)] => {
@@ -185,6 +204,7 @@ impl CgtParser {
             [cmd_buy(c)] => c,
             [cmd_sell(c)] => c,
             [cmd_dividend(c)] => c,
+            [cmd_accumulation(c)] => c,
             [cmd_capreturn(c)] => c,
             [cmd_split(c)] => c,
             [cmd_unsplit(c)] => c,

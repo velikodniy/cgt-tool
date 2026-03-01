@@ -7,6 +7,7 @@ command = {
     cmd_buy |
     cmd_sell |
     cmd_dividend |
+    cmd_accumulation |
     cmd_capreturn |
     cmd_split |
     cmd_unsplit
@@ -19,6 +20,9 @@ cmd_sell = { ^"SELL" ~ ticker ~ quantity ~ price ~ fees? }
 
 // DIVIDEND: <date> DIVIDEND <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
 cmd_dividend = { ^"DIVIDEND" ~ ticker ~ quantity ~ total_value ~ tax? }
+
+// ACCUMULATION: <date> ACCUMULATION <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]
+cmd_accumulation = { ^"ACCUMULATION" ~ ticker ~ quantity ~ total_value ~ tax? }
 
 // CAPRETURN: <date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]
 cmd_capreturn = { ^"CAPRETURN" ~ ticker ~ quantity ~ total_value ~ fees? }
