@@ -32,8 +32,8 @@ from pathlib import Path
 THRESHOLD = Decimal("1.00")
 
 # Operations not supported by cgt-calc (KapJI) that lead to false diffs
-# Note: our DSL uses SPLIT/UNSPLIT and CAPRETURN; ACCDIV is not present.
-UNSUPPORTED_OPS = {"SPLIT", "UNSPLIT", "CAPRETURN"}
+# ACCUMULATION adjusts cost basis (no CGT impact); cgt-calc has no equivalent.
+UNSUPPORTED_OPS = {"SPLIT", "UNSPLIT", "CAPRETURN", "ACCUMULATION"}
 
 
 def has_unsupported_ops(cgt_file: Path) -> bool:
