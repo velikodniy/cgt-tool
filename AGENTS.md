@@ -19,7 +19,6 @@ python3 scripts/cross-validate.py tests/inputs/*.cgt  # Cross-validation
 crates/
 ├── cgt-core/              # Parsing, calculation, data model
 ├── cgt-cli/               # CLI binary
-├── cgt-mcp/               # MCP server for AI assistants
 ├── cgt-money/             # Currency and FX conversion
 ├── cgt-formatter-plain/   # Plain text output
 ├── cgt-formatter-pdf/     # PDF output (Typst)
@@ -55,8 +54,6 @@ When modifying DSL grammar or transaction formats:
 
 - Update `crates/cgt-core/src/parser.pest` (grammar)
 - Update `crates/cgt-core/src/parser.rs` (parsing logic)
-- Update MCP tool descriptions in `crates/cgt-mcp/src/server.rs`
-- Update DSL resources in `crates/cgt-mcp/src/resources.rs`
 - Update `README.md` syntax documentation
 
 ## After Major Changes

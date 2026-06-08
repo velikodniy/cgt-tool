@@ -9,9 +9,6 @@ graph TD
     cgt-cli --> cgt-formatter-pdf
     cgt-cli --> cgt-converter
 
-    cgt-mcp --> cgt-core
-    cgt-mcp --> cgt-formatter-plain
-
     cgt-formatter-plain --> cgt-format
     cgt-formatter-pdf --> cgt-format
     cgt-format --> cgt-core
@@ -26,7 +23,6 @@ graph TD
 | --------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `cgt-core`            | DSL parsing (pest grammar), HMRC matching rules, CGT calculation, data model. IO-free, WASM-compatible.      |
 | `cgt-cli`             | CLI binary. Reads files, selects output format, writes results.                                              |
-| `cgt-mcp`             | MCP server for AI assistants. Exposes parsing, calculation, and explanation tools over stdio JSON-RPC.       |
 | `cgt-money`           | `CurrencyAmount` type and `FxCache` for HMRC monthly exchange rates. Bundled rates embedded at compile time. |
 | `cgt-format`          | Shared formatting trait and UK-convention helpers (GBP formatting, dates, tax year display).                 |
 | `cgt-formatter-plain` | Plain text report output.                                                                                    |

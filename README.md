@@ -89,7 +89,6 @@ cgt-tool report part1.cgt part2.cgt --format pdf --output report.pdf
 - `report`: calculate gains/losses and produce plain text, PDF, or JSON
 - `convert`: convert supported broker exports into the `.cgt` DSL
 - `parse`: parse/normalize `.cgt` and print JSON (debugging and scripting)
-- `mcp`: run an MCP server so AI apps can call the calculator
 
 Run `cgt-tool --help` or `cgt-tool <subcommand> --help` for all options.
 
@@ -221,21 +220,6 @@ npm install cgt-tool-wasm-<version>.tgz
 ```
 
 See [`crates/cgt-wasm/README.md`](crates/cgt-wasm/README.md) and [`web/`](web/) for full docs and the demo.
-
-### MCP server (AI assistant integration)
-
-MCP (Model Context Protocol) is an open standard for connecting AI apps to external tools.
-
-Start the server:
-
-```bash
-cgt-tool mcp
-```
-
-To connect it to clients like Claude Desktop, you typically add a small JSON config that points to the `cgt-tool` binary and passes `mcp` as an argument. See MCP’s client docs for step-by-step setup:
-
-- [What is MCP](https://modelcontextprotocol.io/docs/getting-started/intro)
-- [Connecting local servers](https://modelcontextprotocol.io/docs/develop/connect-local-servers) (includes Claude Desktop setup)
 
 ## Tax rules
 
