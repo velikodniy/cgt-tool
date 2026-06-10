@@ -353,6 +353,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "cgt"
+version = "0.14.3"
+dependencies = [
+ "chrono",
+ "include_dir",
+ "iso_currency",
+ "pest",
+ "pest_consume",
+ "pest_derive",
+ "quick-xml 0.36.2",
+ "rust_decimal",
+ "rust_decimal_macros",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "cgt-cli"
 version = "0.14.3"
 dependencies = [
