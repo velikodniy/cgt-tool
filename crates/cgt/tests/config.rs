@@ -77,3 +77,55 @@ fn test_apply_overrides_invalid_toml_is_error() {
     // The config keeps its embedded values
     assert!(config.get_exemption(2023).is_ok());
 }
+
+#[test]
+fn test_apply_overrides_empty_string_is_noop() {
+    let mut config = Config::embedded().expect("embedded config should load");
+    let before = config.exemptions.clone();
+    config
+        .apply_overrides_toml("")
+        .expect("empty override should be accepted");
+    assert_eq!(config.exemptions, before);
+}
+
+#[test]
+fn test_apply_overrides_invalid_year_key_is_error() {
+    let mut config = Config::embedded().expect("embedded config should load");
+    let result = config.apply_overrides_toml("[exemptions]\n\"203O\" = 5000\n");
+    let err = result.expect_err("non-numeric year key must be rejected");
+    assert!(
+        err.to_string().contains("203O"),
+        "error should name the bad key: {err}"
+    );
+    // The config keeps its embedded values
+    assert!(config.get_exemption(2023).is_ok());
+}
+
+#[test]
+fn test_apply_overrides_unknown_table_is_error() {
+    let mut config = Config::embedded().expect("embedded config should load");
+    let result = config.apply_overrides_toml("[exemption]\n\"2023\" = 5000\n");
+    assert!(
+        result.is_err(),
+        "typo'd table name must not be a silent no-op"
+    );
+}
+
+#[test]
+fn test_apply_overrides_wrong_value_type_is_error() {
+    let mut config = Config::embedded().expect("embedded config should load");
+    let result = config.apply_overrides_toml("[exemptions]\n\"2023\" = \"abc\"\n");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_apply_overrides_partial_overlap_single_call() {
+    let mut config = Config::embedded().expect("embedded config should load");
+    config
+        .apply_overrides_toml("[exemptions]\n\"2023\" = 9999\n\"2030\" = 5000\n")
+        .expect("override should parse");
+    assert_eq!(config.get_exemption(2023).ok(), Some(Decimal::from(9999)));
+    assert_eq!(config.get_exemption(2030).ok(), Some(Decimal::from(5000)));
+    // Untouched embedded years survive
+    assert!(config.get_exemption(2024).is_ok());
+}

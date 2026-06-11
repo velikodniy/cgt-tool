@@ -14,6 +14,7 @@ static EMBEDDED_CONFIG: &str = include_str!("../data/config.toml");
 
 /// Raw configuration as parsed from TOML (uses string keys).
 #[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct RawConfig {
     #[serde(default)]
     exemptions: HashMap<String, Decimal>,
@@ -40,20 +41,38 @@ impl Config {
     }
 
     /// Parse configuration from TOML string.
-    fn from_toml(content: &str) -> Result<Self, toml::de::Error> {
-        let raw: RawConfig = toml::from_str(content)?;
-        let exemptions = raw
-            .exemptions
-            .into_iter()
-            .filter_map(|(k, v)| k.parse::<u16>().ok().map(|year| (year, v)))
-            .collect();
+    ///
+    /// Strict: unknown tables/fields and exemption keys that are not a
+    /// tax-year start (e.g. `"203O"`) are errors, never silent no-ops.
+    fn from_toml(content: &str) -> Result<Self, String> {
+        let raw: RawConfig = toml::from_str(content).map_err(|e| e.to_string())?;
+        let mut exemptions = HashMap::with_capacity(raw.exemptions.len());
+        for (key, value) in raw.exemptions {
+            let year = key
+                .parse::<u16>()
+                .map_err(|_| format!("invalid exemption year key: '{key}'"))?;
+            exemptions.insert(year, value);
+        }
         Ok(Self { exemptions })
     }
 
     /// Merge exemption overrides from a TOML string (later calls win).
     ///
+    /// The expected shape mirrors the embedded config: an `[exemptions]`
+    /// table mapping quoted tax-year start years to amounts in GBP.
+    ///
+    /// ```
+    /// # fn main() -> Result<(), cgt::CgtError> {
+    /// let mut config = cgt::Config::embedded()?;
+    /// config.apply_overrides_toml("[exemptions]\n\"2024\" = 6000\n")?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
     /// # Errors
-    /// Returns `CgtError::ConfigError` if the TOML string cannot be parsed.
+    /// Returns `CgtError::ConfigError` if the TOML cannot be parsed, contains
+    /// an unknown table, or has an exemption key that is not a valid year.
+    /// On error the existing configuration is left unchanged.
     pub fn apply_overrides_toml(&mut self, toml_text: &str) -> Result<(), CgtError> {
         let overrides = Self::from_toml(toml_text)
             .map_err(|e| CgtError::ConfigError(format!("failed to parse override config: {e}")))?;
