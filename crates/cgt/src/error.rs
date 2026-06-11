@@ -17,13 +17,6 @@ pub enum CgtError {
     #[error("Unsupported tax year {0} for CGT exemption lookup - please update the tool")]
     UnsupportedExemptionYear(u16),
 
-    #[error("Missing FX rate for {currency} in {year}-{month:02}")]
-    MissingFxRate {
-        currency: String,
-        year: i32,
-        month: u32,
-    },
-
     #[error("Configuration error: {0}")]
     ConfigError(String),
 }
