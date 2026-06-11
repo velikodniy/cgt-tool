@@ -21,7 +21,7 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
                 amount,
                 format_amount(price)
             );
-            if !fees.amount.is_zero() {
+            if !is_default(fees) {
                 line.push_str(&format!(" FEES {}", format_amount(fees)));
             }
             line
@@ -38,7 +38,7 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
                 amount,
                 format_amount(price)
             );
-            if !fees.amount.is_zero() {
+            if !is_default(fees) {
                 line.push_str(&format!(" FEES {}", format_amount(fees)));
             }
             line
@@ -53,7 +53,7 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
                 tx.ticker,
                 format_amount(total_value)
             );
-            if !tax_paid.amount.is_zero() {
+            if !is_default(tax_paid) {
                 line.push_str(&format!(" TAX {}", format_amount(tax_paid)));
             }
             line
@@ -70,7 +70,7 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
                 amount,
                 format_amount(total_value)
             );
-            if !tax_paid.amount.is_zero() {
+            if !is_default(tax_paid) {
                 line.push_str(&format!(" TAX {}", format_amount(tax_paid)));
             }
             line
@@ -87,7 +87,7 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
                 amount,
                 format_amount(total_value)
             );
-            if !fees.amount.is_zero() {
+            if !is_default(fees) {
                 line.push_str(&format!(" FEES {}", format_amount(fees)));
             }
             line
@@ -113,6 +113,13 @@ pub fn serialize(transactions: &[Transaction]) -> String {
 /// Format a `CurrencyAmount` for DSL output (e.g. `150 USD` or `120 GBP`).
 fn format_amount(amount: &CurrencyAmount) -> String {
     format!("{} {}", amount.amount, amount.code())
+}
+
+/// True when an optional amount equals the parser's default for an absent
+/// field (zero GBP), so omitting it loses no information. A zero amount in
+/// any other currency must still be written to keep roundtrips lossless.
+fn is_default(amount: &CurrencyAmount) -> bool {
+    amount.amount.is_zero() && amount.is_gbp()
 }
 
 #[cfg(test)]
@@ -220,6 +227,25 @@ mod tests {
         assert_eq!(
             serialize_transaction(&t),
             "2024-03-01 DIVIDEND VWRL TOTAL 50 GBP TAX 5 GBP"
+        );
+    }
+
+    #[test]
+    fn zero_foreign_currency_fees_kept() {
+        // A zero fee in a non-GBP currency is not the parser's default for an
+        // absent FEES clause, so dropping it would make roundtrips lossy.
+        let t = tx(
+            (2020, 5, 15),
+            "ACME",
+            Operation::Buy {
+                amount: dec!(500),
+                price: usd(dec!(25.00)),
+                fees: usd(dec!(0)),
+            },
+        );
+        assert_eq!(
+            serialize_transaction(&t),
+            "2020-05-15 BUY ACME 500 @ 25.00 USD FEES 0 USD"
         );
     }
 
