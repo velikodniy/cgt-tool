@@ -45,6 +45,9 @@ pub(crate) struct Section104Leg {
     pub(crate) quantity: Decimal,
 }
 
+/// Quantity plan for one merged disposal. Rule priority is structural:
+/// at most one Same Day leg, then B&B legs in chronological order, then
+/// at most one Section 104 leg.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct DisposalPlan {
     pub(crate) sell: EventId,
