@@ -1,7 +1,11 @@
 //! Engine error type. Variants are added as engine milestones land.
 
+use chrono::NaiveDate;
 use pest_consume::Error as PestConsumeError;
+use rust_decimal::Decimal;
 use thiserror::Error;
+
+use crate::money::FxConversionError;
 
 #[derive(Debug, Error)]
 pub enum CgtError {
@@ -17,6 +21,49 @@ pub enum CgtError {
     #[error("Unsupported tax year {0} for CGT exemption lookup - please update the tool")]
     UnsupportedExemptionYear(u16),
 
+    #[error("Missing FX rate for {currency} in {year}-{month:02}")]
+    MissingFxRate {
+        currency: String,
+        year: i32,
+        month: u32,
+    },
+
+    #[error(
+        "SELL {ticker} on {date}: disposal of {attempted} shares exceeds holding of {held} \
+         (same-day ledger: {ledger}, S104 pool: {pool}). B&B determines cost basis for a \
+         valid disposal; it does not enable disposing of shares not held (CG51590)."
+    )]
+    DisposalExceedsHolding {
+        ticker: String,
+        date: NaiveDate,
+        attempted: Decimal,
+        held: Decimal,
+        ledger: Decimal,
+        pool: Decimal,
+    },
+
+    #[error("SELL {ticker} on {date} has no prior acquisitions (attempted to dispose {attempted})")]
+    NoPriorAcquisitions {
+        ticker: String,
+        date: NaiveDate,
+        attempted: Decimal,
+    },
+
+    #[error(
+        "SELL {ticker} on {date} exceeds holding: attempted {attempted}, matched {matched}, \
+         unmatched {unmatched}"
+    )]
+    DisposalPartiallyUnmatched {
+        ticker: String,
+        date: NaiveDate,
+        attempted: Decimal,
+        matched: Decimal,
+        unmatched: Decimal,
+    },
+
+    #[error("B&B reservation exceeds buy amount for {ticker} on {date}")]
+    BnbReservationExceedsBuy { ticker: String, date: NaiveDate },
+
     #[error("Configuration error: {0}")]
     ConfigError(String),
 }
@@ -26,5 +73,115 @@ impl From<PestConsumeError<crate::dsl::Rule>> for CgtError {
         // Convert pest_consume error to ParseError
         // The error already contains line/column information
         CgtError::ParseError(Box::new(err.renamed_rules(|rule| format!("{:?}", rule))))
+    }
+}
+
+impl From<FxConversionError> for CgtError {
+    fn from(err: FxConversionError) -> Self {
+        match err {
+            FxConversionError::MissingRate {
+                currency,
+                year,
+                month,
+            } => CgtError::MissingFxRate {
+                currency,
+                year,
+                month,
+            },
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::NaiveDate;
+    use rust_decimal_macros::dec;
+
+    use super::CgtError;
+    use crate::money::FxConversionError;
+
+    fn date(y: i32, m: u32, d: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, d).expect("valid test date")
+    }
+
+    #[test]
+    fn missing_fx_rate_display_matches_legacy() {
+        let err = CgtError::MissingFxRate {
+            currency: "USD".to_string(),
+            year: 2024,
+            month: 2,
+        };
+        assert_eq!(err.to_string(), "Missing FX rate for USD in 2024-02");
+    }
+
+    #[test]
+    fn fx_conversion_error_maps_to_missing_fx_rate() {
+        let err = CgtError::from(FxConversionError::MissingRate {
+            currency: "EUR".to_string(),
+            year: 2023,
+            month: 11,
+        });
+        assert!(matches!(
+            err,
+            CgtError::MissingFxRate { ref currency, year: 2023, month: 11 } if currency == "EUR"
+        ));
+    }
+
+    #[test]
+    fn disposal_exceeds_holding_display_carries_quantities_and_citation() {
+        let err = CgtError::DisposalExceedsHolding {
+            ticker: "SNAP".to_string(),
+            date: date(2024, 2, 1),
+            attempted: dec!(100),
+            held: dec!(80),
+            ledger: dec!(30),
+            pool: dec!(50),
+        };
+        assert_eq!(
+            err.to_string(),
+            "SELL SNAP on 2024-02-01: disposal of 100 shares exceeds holding of 80 \
+             (same-day ledger: 30, S104 pool: 50). B&B determines cost basis for a \
+             valid disposal; it does not enable disposing of shares not held (CG51590)."
+        );
+    }
+
+    #[test]
+    fn no_prior_acquisitions_display_matches_legacy() {
+        let err = CgtError::NoPriorAcquisitions {
+            ticker: "ABC".to_string(),
+            date: date(2024, 2, 1),
+            attempted: dec!(10),
+        };
+        assert_eq!(
+            err.to_string(),
+            "SELL ABC on 2024-02-01 has no prior acquisitions (attempted to dispose 10)"
+        );
+    }
+
+    #[test]
+    fn disposal_partially_unmatched_display_matches_legacy() {
+        let err = CgtError::DisposalPartiallyUnmatched {
+            ticker: "ABC".to_string(),
+            date: date(2024, 6, 1),
+            attempted: dec!(10),
+            matched: dec!(7),
+            unmatched: dec!(3),
+        };
+        assert_eq!(
+            err.to_string(),
+            "SELL ABC on 2024-06-01 exceeds holding: attempted 10, matched 7, unmatched 3"
+        );
+    }
+
+    #[test]
+    fn bnb_reservation_guard_display_matches_legacy() {
+        let err = CgtError::BnbReservationExceedsBuy {
+            ticker: "ABC".to_string(),
+            date: date(2024, 3, 1),
+        };
+        assert_eq!(
+            err.to_string(),
+            "B&B reservation exceeds buy amount for ABC on 2024-03-01"
+        );
     }
 }
