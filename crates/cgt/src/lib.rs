@@ -7,10 +7,9 @@ pub mod model;
 pub mod money;
 pub mod validate;
 
-// Engine internals (Milestone C: normalize + plan). Compiled only for tests
-// until Milestone D wires the public `calculate` entry through them; in a
-// non-test build the module would be entirely dead code, and CI lints with
-// `-D warnings`. Milestone D removes this cfg.
+// Compiled only for tests: no non-test code consumes the engine yet, so a
+// non-test build would flag the whole module as dead code under
+// `-D warnings`.
 #[cfg(test)]
 mod engine;
 

@@ -1,7 +1,8 @@
 //! Fixture-derived plan tests and the share-conservation invariant.
 //!
 //! Fixtures are the golden inputs in tests/inputs/. These tests assert leg
-//! QUANTITIES and event structure only — values are Milestone D's contract.
+//! QUANTITIES and event structure only; monetary values are pinned by the
+//! golden-file tests.
 
 use std::collections::HashMap;
 use std::fs;
@@ -430,10 +431,10 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
 
 #[test]
 fn merged_holding_check_rejects_interleaved_overselling() {
-    // Legacy (row-wise check) computes this input: each sell row individually
-    // fits ledger+pool because B&B consumes the future buy. The merged check
-    // sees one 150-share disposal against 100 held and refuses (CG51560 says
-    // same-day sells form one disposal; decision 9 in the milestone plan).
+    // Same-day sells of a ticker form one disposal (CG51560), so the
+    // holding check applies to the merged day total: 150 sold against 100
+    // held must error, even though each sell row individually fits when the
+    // 60-share buy ten days later is matched by B&B.
     let input = "2024-01-01 BUY TTT 100 @ 1 GBP\n\
                  2024-06-03 SELL TTT 100 @ 1 GBP\n\
                  2024-06-03 BUY UUU 1 @ 1 GBP\n\

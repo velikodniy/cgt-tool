@@ -1,5 +1,4 @@
-//! Private engine internals. Milestone C: normalization and quantity-only
-//! match planning. Valuation and report building arrive in Milestone D.
+//! Private engine internals: normalization and quantity-only match planning.
 
 pub(crate) mod normalize;
 pub(crate) mod plan;

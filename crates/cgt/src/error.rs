@@ -1,4 +1,4 @@
-//! Engine error type. Variants are added as engine milestones land.
+//! Engine error type.
 
 use chrono::NaiveDate;
 use pest_consume::Error as PestConsumeError;
@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn missing_fx_rate_display_matches_legacy() {
+    fn missing_fx_rate_display() {
         let err = CgtError::MissingFxRate {
             currency: "USD".to_string(),
             year: 2024,
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn no_prior_acquisitions_display_matches_legacy() {
+    fn no_prior_acquisitions_display() {
         let err = CgtError::NoPriorAcquisitions {
             ticker: "ABC".to_string(),
             date: date(2024, 2, 1),
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn disposal_partially_unmatched_display_matches_legacy() {
+    fn disposal_partially_unmatched_display() {
         let err = CgtError::DisposalPartiallyUnmatched {
             ticker: "ABC".to_string(),
             date: date(2024, 6, 1),
@@ -174,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn bnb_reservation_guard_display_matches_legacy() {
+    fn bnb_reservation_guard_display() {
         let err = CgtError::BnbReservationExceedsBuy {
             ticker: "ABC".to_string(),
             date: date(2024, 3, 1),

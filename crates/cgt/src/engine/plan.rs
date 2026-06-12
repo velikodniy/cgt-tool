@@ -1,12 +1,10 @@
 //! Phase 1 of the engine: quantity-only match planning over the normalized
 //! event stream.
 //!
-//! Reproduces the legacy matcher's quantity semantics (cgt-core/src/matcher/):
-//! pre-cascade holding verification (CG51590; mod.rs:380-401), Same Day
-//! (TCGA92/S105(1); same_day.rs), Bed & Breakfast with same-day reservations
-//! and split-ratio mapping (TCGA92/S106A; bed_and_breakfast.rs), then
-//! Section 104 (section104.rs). NO COSTS are computed here; legs carry
-//! quantities and event references only.
+//! Rules, in cascade order: pre-cascade holding verification (CG51590),
+//! Same Day (TCGA92/S105(1)), Bed & Breakfast with same-day reservations
+//! and split-ratio mapping (TCGA92/S106A), then Section 104. NO COSTS are
+//! computed here; legs carry quantities and event references only.
 
 use std::collections::HashMap;
 
@@ -27,7 +25,7 @@ pub(crate) struct SameDayLeg {
 /// Bed & Breakfast matched quantity for one disposal, tied to its buy event.
 ///
 /// Two scales because SPLIT/UNSPLIT events between the sell and the buy
-/// change the share denomination (bed_and_breakfast.rs:100-110):
+/// change the share denomination:
 /// `quantity_at_buy_scale = quantity_at_sell_scale * cumulative_ratio`.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct BnbLeg {
@@ -117,7 +115,7 @@ struct Planner<'s> {
     /// B&B reservations against future merged buys (buy share scale).
     bnb_reservations: HashMap<EventId, Decimal>,
     /// Same-day shields: per (date, ticker), sell quantity not yet protected
-    /// from B&B consumption of that date's buys (bed_and_breakfast.rs:50-81).
+    /// from B&B consumption of that date's buys (TCGA92/S106A(9)).
     same_day_reservations: HashMap<(chrono::NaiveDate, String), Decimal>,
     disposals: Vec<DisposalPlan>,
 }
@@ -134,9 +132,9 @@ impl<'s> Planner<'s> {
         }
     }
 
-    /// Process one day, replicating the legacy day loop (matcher/mod.rs:96-182):
-    /// buys enter the day ledger, sells run the matching cascade, leftover
-    /// buy quantity pools, SPLIT/UNSPLIT scale the pool LAST.
+    /// Process one day: buys enter the day ledger, sells run the matching
+    /// cascade, leftover buy quantity pools, SPLIT/UNSPLIT scale the pool
+    /// LAST.
     fn process_day(&mut self, day: &[Event]) -> Result<(), CgtError> {
         self.day_available.clear();
 
@@ -148,7 +146,7 @@ impl<'s> Planner<'s> {
                     .copied()
                     .unwrap_or(Decimal::ZERO);
                 if reserved > trade.quantity {
-                    // Defensive legacy guard (matcher/mod.rs:128-134).
+                    // Defensive: B&B never reserves more than a buy's quantity.
                     return Err(CgtError::BnbReservationExceedsBuy {
                         ticker: event.ticker.clone(),
                         date: event.date,
@@ -199,14 +197,12 @@ impl<'s> Planner<'s> {
     }
 
     fn process_sell(&mut self, sell: &Event, trade: &Trade) -> Result<(), CgtError> {
-        // Zero-quantity disposals produce no legs and no disposal entry
-        // (legacy emits no MatchResult: same_day.rs:36-40,
-        // bed_and_breakfast.rs:174-177, section104.rs:31-34).
+        // Zero-quantity disposals produce no legs and no disposal entry.
         if trade.quantity == Decimal::ZERO {
             return Ok(());
         }
 
-        // Pre-cascade holding verification (CG51590; matcher/mod.rs:380-401):
+        // Pre-cascade holding verification (CG51590):
         // the disposal must be covered by today's unconsumed buy quantity
         // plus the S104 pool. B&B never rescues an uncovered disposal.
         let ledger_held = self
@@ -239,7 +235,7 @@ impl<'s> Planner<'s> {
             section_104: None,
         };
 
-        // 1. Same Day (TCGA92/S105(1); same_day.rs:30-64).
+        // 1. Same Day (TCGA92/S105(1)).
         if ledger_held > Decimal::ZERO {
             let matched = remaining.min(ledger_held);
             self.day_available
@@ -248,10 +244,10 @@ impl<'s> Planner<'s> {
             remaining -= matched;
         }
 
-        // 2. Bed & Breakfast (TCGA92/S106A; bed_and_breakfast.rs:154-260).
+        // 2. Bed & Breakfast (TCGA92/S106A).
         self.match_bed_and_breakfast(sell, &mut remaining, &mut disposal);
 
-        // 3. Section 104 remainder (section104.rs:13-62).
+        // 3. Section 104 remainder.
         if remaining > Decimal::ZERO
             && let Some(pool) = self.pools.get_mut(sell.ticker.as_str())
             && *pool > Decimal::ZERO
@@ -262,9 +258,8 @@ impl<'s> Planner<'s> {
             disposal.section_104 = Some(Section104Leg { quantity: matched });
         }
 
-        // Post-cascade exhaustiveness errors (matcher/mod.rs:434-447).
-        // Defensive: the pre-cascade check makes these unreachable, but the
-        // legacy cascade keeps them and so does the rewrite.
+        // Post-cascade exhaustiveness errors. Defensive: the pre-cascade
+        // check makes these unreachable.
         if remaining > Decimal::ZERO {
             if remaining == trade.quantity {
                 return Err(CgtError::NoPriorAcquisitions {
@@ -288,7 +283,7 @@ impl<'s> Planner<'s> {
 
     /// Match the remainder against acquisitions 1..=30 days after the sell,
     /// chronologically, tracking SPLIT/UNSPLIT scale changes across the
-    /// window (bed_and_breakfast.rs:154-260).
+    /// window.
     fn match_bed_and_breakfast(
         &mut self,
         sell: &Event,
@@ -304,14 +299,11 @@ impl<'s> Planner<'s> {
             }
             let days_diff = (event.date - sell.date).num_days();
             if days_diff <= 0 {
-                // Same-day events are the Same Day rule's domain
-                // (bed_and_breakfast.rs:195-198).
+                // Same-day events are the Same Day rule's domain.
                 continue;
             }
             if days_diff > BNB_WINDOW_DAYS {
                 // Date-sorted stream: nothing later can be in the window.
-                // (Legacy breaks only on same-ticker events past the window,
-                // bed_and_breakfast.rs:188-202 — outcome-identical.)
                 break;
             }
             if event.ticker != sell.ticker {
@@ -329,19 +321,19 @@ impl<'s> Planner<'s> {
                 EventKind::Buy(buy) => {
                     if cumulative_ratio_effect == Decimal::ZERO {
                         // A zero SPLIT ratio leaves nothing to map back to
-                        // the sell's scale. Legacy panics on this division
-                        // (bed_and_breakfast.rs:105); validation rejects
-                        // non-positive ratios, so this is unreachable for
-                        // validated input. Skip to stay panic-free.
+                        // the sell's scale; validation rejects non-positive
+                        // ratios, so this is unreachable for validated
+                        // input. Skip to stay panic-free.
                         continue;
                     }
                     let available_at_buy_time = self.available_for_bnb(event, buy.quantity);
                     if available_at_buy_time <= Decimal::ZERO {
                         continue;
                     }
-                    // Legacy arithmetic shape (bed_and_breakfast.rs:100-110):
-                    // divide availability into the sell scale BEFORE the min,
-                    // then multiply back; affects fractional-share rounding.
+                    // The operation order is load-bearing for output
+                    // equivalence (rust_decimal is path-dependent): divide
+                    // availability into the sell scale BEFORE the min, then
+                    // multiply back; affects fractional-share rounding.
                     let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
                     let matched_at_sell = (*remaining).min(available_at_sell_time);
                     let matched_at_buy = matched_at_sell * cumulative_ratio_effect;
@@ -361,8 +353,7 @@ impl<'s> Planner<'s> {
     }
 
     /// Quantity of a window buy available to B&B after earlier B&B
-    /// reservations and the Same Day shield for the buy's date
-    /// (bed_and_breakfast.rs:50-81).
+    /// reservations and the Same Day shield for the buy's date.
     fn available_for_bnb(&mut self, buy_event: &Event, buy_quantity: Decimal) -> Decimal {
         let already_reserved = self
             .bnb_reservations
@@ -377,8 +368,7 @@ impl<'s> Planner<'s> {
         // Same Day priority over B&B (TCGA92/S106A(9), S105(1)): per
         // (date, ticker), reserve the total same-day sell quantity once,
         // then decrement as B&B consumes buys on that date. With true
-        // aggregation that total is the merged sell event's quantity, which
-        // equals the legacy per-transaction sum (bed_and_breakfast.rs:21-34).
+        // aggregation that total is the merged sell event's quantity.
         let total_same_day_sells = sell_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
         let reservation_remaining = self
             .same_day_reservations
@@ -394,7 +384,7 @@ impl<'s> Planner<'s> {
 }
 
 /// Total sell quantity for (date, ticker) — the Same Day claim that shields
-/// that date's buys from B&B (bed_and_breakfast.rs:21-34).
+/// that date's buys from B&B.
 fn sell_quantity_on(stream: &EventStream, date: chrono::NaiveDate, ticker: &str) -> Decimal {
     stream
         .events()
@@ -559,9 +549,8 @@ mod tests {
 
     #[test]
     fn split_scales_pool_after_same_date_sell() {
-        // REPLICATES CURRENT BEHAVIOR: splits apply after trades on their
-        // date (matcher/mod.rs:170-173). The spec's D4 adjudication of
-        // same-date SPLIT/SELL ordering is deferred to Milestone D sign-off.
+        // Splits scale the pool after the day's trades, so a same-date
+        // sell uses pre-split quantities.
         let (_, match_plan) = stream_and_plan(
             "2024-01-01 BUY ABC 10 @ 10.00 GBP\n\
              2024-02-01 SPLIT ABC RATIO 2\n\
@@ -625,7 +614,7 @@ mod tests {
     #[test]
     fn zero_quantity_sell_produces_no_disposal() {
         // Not constructible via the DSL/validation path; built directly to
-        // pin the legacy no-MatchResult behavior for zero-quantity sells.
+        // pin that zero-quantity sells produce no disposal entry.
         let transactions = vec![Transaction {
             date: NaiveDate::from_ymd_opt(2024, 1, 5).expect("valid date"),
             ticker: "ABC".to_string(),
@@ -783,8 +772,7 @@ mod tests {
     #[test]
     fn split_in_window_maps_quantities_between_scales() {
         // SPLIT 2 between sell and buy: 8 post-split shares cover 4
-        // pre-split shares (division-then-min shape,
-        // bed_and_breakfast.rs:100-110).
+        // pre-split shares (division-then-min shape).
         let (stream, match_plan) = stream_and_plan(
             "2024-01-01 BUY ABC 20 @ 100.00 GBP\n\
              2024-02-01 SELL ABC 10 @ 120.00 GBP\n\

@@ -1,13 +1,10 @@
 //! Input normalization: GBP conversion, stable date sort, day grouping, and
 //! true (date, ticker, side) trade aggregation into an indexed event stream.
 //!
-//! True aggregation deliberately differs from the legacy adjacency-only merge
-//! (cgt-core matcher/mod.rs:185-257): interleaved same-day buys/sells of one
-//! ticker become ONE event per side. For inputs that pass holding
-//! verification, disposal-level quantities are identical; the holding check
-//! itself runs on the merged day total, which is stricter than the legacy
-//! row-wise check. The equivalence harness classifies the leg-level effect
-//! as "leg-granularity" (value-neutral per disposal).
+//! Same-day buys/sells of one ticker aggregate into ONE event per side,
+//! regardless of how the input rows are interleaved: same-day trades form a
+//! single acquisition and a single disposal (CG51560), and the holding
+//! check downstream applies to the merged day total.
 
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
@@ -49,18 +46,18 @@ pub(crate) enum EventKind {
     Unsplit {
         ratio: Decimal,
     },
-    /// Value-domain pass-through: no quantity effect, priced in Milestone D.
+    /// Value-domain pass-through: no effect on quantity matching.
     Dividend {
         total_value: Decimal,
         tax_paid: Decimal,
     },
-    /// Value-domain pass-through: no quantity effect, priced in Milestone D.
+    /// Value-domain pass-through: no effect on quantity matching.
     Accumulation {
         quantity: Decimal,
         total_value: Decimal,
         tax_paid: Decimal,
     },
-    /// Value-domain pass-through: no quantity effect, priced in Milestone D.
+    /// Value-domain pass-through: no effect on quantity matching.
     CapitalReturn {
         quantity: Decimal,
         total_value: Decimal,
@@ -80,11 +77,10 @@ pub(crate) struct Event {
 ///
 /// Canonical intra-day order: value events (CAPRETURN, ACCUMULATION,
 /// DIVIDEND), then aggregated buys, then aggregated sells, then
-/// SPLIT/UNSPLIT. This mirrors the legacy day loop (matcher/mod.rs:96-182:
-/// buys enter the ledger, sells match, residue pools, splits scale last)
-/// and the cost-offset prepass that applies corporate actions before the
-/// day's buys (matcher/mod.rs:281-312). Relative input order is preserved
-/// within each group (stable sort).
+/// SPLIT/UNSPLIT. Corporate-action cost adjustments therefore apply before
+/// the day's trades, and splits scale quantities only after the day's
+/// trades have matched. Relative input order is preserved within each
+/// group (stable sort).
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct EventStream {
     events: Vec<Event>,
@@ -128,8 +124,7 @@ pub(crate) fn normalize(
         })
         .collect::<Result<Vec<_>, CgtError>>()?;
 
-    // Stable sort by date only: input order is preserved within a day
-    // (legacy: matcher/mod.rs:186).
+    // Stable sort by date only: input order is preserved within a day.
     raw.sort_by_key(|event| event.date);
 
     let mut events = Vec::new();
@@ -147,8 +142,7 @@ pub(crate) fn normalize(
     Ok(EventStream { events })
 }
 
-/// Convert one operation to GBP, mirroring the legacy `Operation::to_gbp`
-/// (cgt-core models.rs:271-326): every monetary field converts at the
+/// Convert one operation to GBP: every monetary field converts at the
 /// transaction date; quantities and ratios pass through unchanged.
 fn kind_to_gbp(
     operation: &Operation<CurrencyAmount>,
@@ -204,8 +198,7 @@ fn kind_to_gbp(
     }
 }
 
-/// Convert an amount to GBP, mirroring the legacy `amount_to_gbp`
-/// (cgt-core models.rs:343-366): GBP passes through without consulting the
+/// Convert an amount to GBP: GBP passes through without consulting the
 /// cache; for non-GBP amounts a missing cache or missing rate is a
 /// `MissingFxRate` error naming the currency and the transaction's month.
 fn amount_to_gbp(
@@ -276,10 +269,10 @@ fn merge_into(side: &mut Vec<(String, Trade)>, ticker: &str, trade: &Trade) {
     }
 }
 
-/// Legacy arithmetic shape — required for golden equivalence at Milestone D.
-/// The legacy preprocess merges same-day trades pairwise, re-deriving the
-/// weighted-average price at each step (cgt-core matcher/mod.rs:196-239);
-/// rust_decimal is path-dependent, so the fold shape is preserved exactly.
+/// Pairwise fold, re-deriving the weighted-average price at each step.
+/// The operation order is load-bearing for output equivalence: rust_decimal
+/// is path-dependent, so do not replace this with sum-of-products followed
+/// by a single division.
 fn merge_trades(current: &mut Trade, next: &Trade) {
     let total = (current.quantity * current.price) + (next.quantity * next.price);
     current.quantity += next.quantity;
@@ -334,8 +327,7 @@ mod tests {
     #[test]
     fn interleaved_same_day_trades_aggregate_per_side() {
         // Interleaved buy/sell/buy of one ticker on one day becomes ONE buy
-        // event and ONE sell event (true aggregation; differs from the
-        // legacy adjacency merge by design).
+        // event and ONE sell event, regardless of row adjacency.
         let stream = stream(
             "2024-03-01 BUY ABC 10 @ 10.00 GBP FEES 1.00 GBP\n\
              2024-03-01 SELL ABC 5 @ 11.00 GBP\n\
@@ -363,9 +355,8 @@ mod tests {
     }
 
     #[test]
-    fn three_way_merge_uses_legacy_pairwise_fold() {
-        // SameDayMergeInterleaved shape: three buys merge pairwise
-        // (matcher/mod.rs:196-239), not via a single sum-then-divide.
+    fn three_way_merge_folds_pairwise() {
+        // Three buys merge pairwise, not via a single sum-then-divide.
         let stream = stream(
             "2018-08-28 BUY GB00B41YBW71 10 @ 8 FEES 2\n\
              2018-10-28 SELL GB00B41YBW71 10 @ 7 FEES 12.5\n\
@@ -474,8 +465,7 @@ mod tests {
 
     #[test]
     fn gbp_amounts_bypass_fx_cache() {
-        // GBP must pass through even with NO cache at all
-        // (legacy models.rs:348-350).
+        // GBP must pass through even with NO cache at all.
         let stream = stream(
             "2024-03-15 BUY ABC 10 @ 150.00 GBP FEES 5.00 GBP\n\
              2024-03-16 DIVIDEND ABC TOTAL 10.00 GBP\n",
