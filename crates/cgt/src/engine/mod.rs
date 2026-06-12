@@ -3,3 +3,6 @@
 
 pub(crate) mod normalize;
 pub(crate) mod plan;
+
+#[cfg(test)]
+mod fixture_tests;

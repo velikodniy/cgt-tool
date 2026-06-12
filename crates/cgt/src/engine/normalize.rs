@@ -99,6 +99,11 @@ impl EventStream {
     pub(crate) fn after(&self, id: EventId) -> &[Event] {
         self.events.get(id.0 + 1..).unwrap_or_default()
     }
+
+    /// Event by id.
+    pub(crate) fn get(&self, id: EventId) -> Option<&Event> {
+        self.events.get(id.0)
+    }
 }
 
 struct RawEvent {
