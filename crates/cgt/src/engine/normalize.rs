@@ -94,6 +94,11 @@ impl EventStream {
     pub(crate) fn events(&self) -> &[Event] {
         &self.events
     }
+
+    /// Events strictly after `id`, in stream order.
+    pub(crate) fn after(&self, id: EventId) -> &[Event] {
+        self.events.get(id.0 + 1..).unwrap_or_default()
+    }
 }
 
 struct RawEvent {
