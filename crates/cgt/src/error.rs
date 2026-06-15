@@ -66,6 +66,37 @@ pub enum CgtError {
 
     #[error("Configuration error: {0}")]
     ConfigError(String),
+
+    #[error(
+        "CAPRETURN {ticker} on {date}: capital distribution £{net} exceeds allowable cost \
+         £{basis}. TCGA92/S122(2) does not apply when distribution exceeds expenditure \
+         (CG57847). Part-disposal under S122(1) or election under S122(4) is required."
+    )]
+    CapitalReturnExceedsBasis {
+        ticker: String,
+        date: NaiveDate,
+        net: Decimal,
+        basis: Decimal,
+    },
+
+    #[error("{0}")]
+    Validation(ValidationErrors),
+}
+
+/// One or more input validation errors, rendered one per line.
+#[derive(Debug)]
+pub struct ValidationErrors(pub Vec<crate::validate::ValidationError>);
+
+impl std::fmt::Display for ValidationErrors {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, err) in self.0.iter().enumerate() {
+            if i > 0 {
+                writeln!(f)?;
+            }
+            write!(f, "{err}")?;
+        }
+        Ok(())
+    }
 }
 
 impl From<PestConsumeError<crate::dsl::Rule>> for CgtError {
@@ -182,6 +213,48 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "B&B reservation exceeds buy amount for ABC on 2024-03-01"
+        );
+    }
+
+    #[test]
+    fn capital_return_exceeds_basis_display_carries_citation() {
+        let err = CgtError::CapitalReturnExceedsBasis {
+            ticker: "ACME".to_string(),
+            date: date(2024, 6, 15),
+            net: dec!(150.50),
+            basis: dec!(100.00),
+        };
+        let rendered = err.to_string();
+        assert!(rendered.contains("CAPRETURN ACME on 2024-06-15"));
+        assert!(rendered.contains("£150.50"));
+        assert!(rendered.contains("£100.00"));
+        assert!(rendered.contains("TCGA92/S122(2)"));
+        assert!(rendered.contains("CG57847"));
+    }
+
+    #[test]
+    fn validation_display_lists_one_error_per_line() {
+        use crate::error::ValidationErrors;
+        use crate::validate::ValidationError;
+
+        let err = CgtError::Validation(ValidationErrors(vec![
+            ValidationError {
+                line: Some(1),
+                date: date(2024, 1, 1),
+                ticker: "ABC".to_string(),
+                message: "first problem".to_string(),
+            },
+            ValidationError {
+                line: None,
+                date: date(2024, 2, 1),
+                ticker: "XYZ".to_string(),
+                message: "second problem".to_string(),
+            },
+        ]));
+        assert_eq!(
+            err.to_string(),
+            "Error (line 1): ABC on 2024-01-01 - first problem\n\
+             Error: XYZ on 2024-02-01 - second problem"
         );
     }
 }
