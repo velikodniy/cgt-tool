@@ -18,7 +18,9 @@ use crate::money::{CurrencyAmount, FxCache};
 pub(crate) struct EventId(usize);
 
 impl EventId {
-    /// Index into the stream's event list.
+    /// Index into the stream's event list. Only the tests inspect raw
+    /// positions; the engine addresses events through `after`/`get`.
+    #[cfg(test)]
     pub(crate) fn index(self) -> usize {
         self.0
     }

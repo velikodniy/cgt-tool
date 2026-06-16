@@ -1,7 +1,9 @@
-//! Private engine internals: normalization and quantity-only match planning.
+//! Private engine internals: normalization, quantity-only match planning,
+//! valuation, and report assembly.
 
 pub(crate) mod normalize;
 pub(crate) mod plan;
+pub(crate) mod report;
 pub(crate) mod value;
 
 #[cfg(test)]
