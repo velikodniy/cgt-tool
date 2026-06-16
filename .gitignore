@@ -10,7 +10,7 @@ release/
 .env*
 
 # Private data (not for repo)
-examples/
+/examples/
 exchange_rates.csv
 
 # Design docs (local only)
