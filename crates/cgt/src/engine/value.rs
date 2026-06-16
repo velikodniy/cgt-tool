@@ -228,21 +228,133 @@ fn same_day_consumed_for(
     total
 }
 
-// Pricing is filled in by a later step; this stub returns empty legs so the
-// replay compiles and the pool-mutation paths can be exercised in isolation.
+/// Proportional disposal proceeds for a matched quantity. The fee proportion
+/// `matched/sell_qty` and the order of operations are load-bearing for output
+/// equivalence; rust_decimal is path-dependent.
+fn proceeds(
+    matched: Decimal,
+    sell_qty: Decimal,
+    sell_price: Decimal,
+    sell_fees: Decimal,
+) -> (Decimal, Decimal) {
+    if sell_qty == Decimal::ZERO {
+        return (Decimal::ZERO, Decimal::ZERO);
+    }
+    let proportion = matched / sell_qty;
+    let gross = matched * sell_price;
+    let fees = sell_fees * proportion;
+    (gross, gross - fees)
+}
+
+/// Price every leg of one disposal. The plan's leg quantities drive pricing;
+/// value never re-derives matching. Same-day and B&B legs leave the pool
+/// untouched; only the Section 104 leg drains it.
 fn price_disposal(
     sell: &Event,
     trade: &Trade,
-    _plan: &DisposalPlan,
-    _stream: &EventStream,
-    _pools: &mut HashMap<String, Pool>,
-    _day_buys: &HashMap<&str, &Trade>,
+    plan: &DisposalPlan,
+    stream: &EventStream,
+    pools: &mut HashMap<String, Pool>,
+    day_buys: &HashMap<&str, &Trade>,
 ) -> Result<PricedDisposal, CgtError> {
+    let sell_qty = trade.quantity;
+    let sell_price = trade.price;
+    let sell_fees = trade.fees;
+    let mut legs: Vec<PricedLeg> = Vec::new();
+
+    // 1. Same Day (TCGA92/S105(1)): cost off the merged same-day buy's unit
+    //    cost. matched * (day_buy_total/day_buy_qty); divide-then-multiply.
+    if let Some(leg) = &plan.same_day {
+        let buy =
+            day_buys
+                .get(sell.ticker.as_str())
+                .ok_or_else(|| CgtError::NoPriorAcquisitions {
+                    ticker: sell.ticker.clone(),
+                    date: sell.date,
+                    attempted: sell_qty,
+                })?;
+        let unit = day_buy_unit_cost(buy);
+        let cost = leg.quantity * unit;
+        let (gross, net) = proceeds(leg.quantity, sell_qty, sell_price, sell_fees);
+        legs.push(PricedLeg {
+            rule: LegRule::SameDay,
+            quantity: leg.quantity,
+            allowable_cost: cost,
+            gross_proceeds: gross,
+            net_proceeds: net,
+            gain_or_loss: net - cost,
+            acquisition_date: Some(sell.date),
+        });
+    }
+
+    // 2. Bed & Breakfast (TCGA92/S106A): price off the raw merged target buy.
+    //    A B&B-consumed share is never held at a later corporate action, so no
+    //    cost offset applies here.
+    for bnb in &plan.bed_and_breakfast {
+        let buy_event = stream
+            .get(bnb.buy)
+            .ok_or_else(|| CgtError::NoPriorAcquisitions {
+                ticker: sell.ticker.clone(),
+                date: sell.date,
+                attempted: sell_qty,
+            })?;
+        let EventKind::Buy(buy) = &buy_event.kind else {
+            return Err(CgtError::NoPriorAcquisitions {
+                ticker: sell.ticker.clone(),
+                date: sell.date,
+                attempted: sell_qty,
+            });
+        };
+        let unit = day_buy_unit_cost(buy);
+        let cost = bnb.quantity_at_buy_scale * unit;
+        let (gross, net) = proceeds(bnb.quantity_at_sell_scale, sell_qty, sell_price, sell_fees);
+        legs.push(PricedLeg {
+            rule: LegRule::BedAndBreakfast,
+            quantity: bnb.quantity_at_sell_scale,
+            allowable_cost: cost,
+            gross_proceeds: gross,
+            net_proceeds: net,
+            gain_or_loss: net - cost,
+            acquisition_date: Some(bnb.acquisition_date),
+        });
+    }
+
+    // 3. Section 104: cost off the pool average at this moment.
+    //    matched * (pool_cost/pool_qty); divide-then-multiply, then drain.
+    if let Some(leg) = &plan.section_104 {
+        let pool =
+            pools
+                .get_mut(sell.ticker.as_str())
+                .ok_or_else(|| CgtError::NoPriorAcquisitions {
+                    ticker: sell.ticker.clone(),
+                    date: sell.date,
+                    attempted: sell_qty,
+                })?;
+        let unit = if pool.quantity != Decimal::ZERO {
+            pool.cost / pool.quantity
+        } else {
+            Decimal::ZERO
+        };
+        let cost = leg.quantity * unit;
+        pool.quantity -= leg.quantity;
+        pool.cost -= cost;
+        let (gross, net) = proceeds(leg.quantity, sell_qty, sell_price, sell_fees);
+        legs.push(PricedLeg {
+            rule: LegRule::Section104,
+            quantity: leg.quantity,
+            allowable_cost: cost,
+            gross_proceeds: gross,
+            net_proceeds: net,
+            gain_or_loss: net - cost,
+            acquisition_date: None,
+        });
+    }
+
     Ok(PricedDisposal {
         date: sell.date,
         ticker: sell.ticker.clone(),
-        quantity: trade.quantity,
-        legs: Vec::new(),
+        quantity: sell_qty,
+        legs,
     })
 }
 
@@ -250,7 +362,9 @@ fn price_disposal(
 mod tests {
     use rust_decimal_macros::dec;
 
-    use super::{Holding, LegRule, ValuedReport, value};
+    use chrono::NaiveDate;
+
+    use super::{Holding, LegRule, PricedLeg, ValuedReport, value};
     use crate::engine::normalize::normalize;
     use crate::engine::plan::plan;
     use crate::error::CgtError;
@@ -275,6 +389,17 @@ mod tests {
             .iter()
             .find(|holding| holding.ticker == ticker)
             .expect("holding present")
+    }
+
+    fn leg<'r>(report: &'r ValuedReport, date: &str, rule: LegRule) -> &'r PricedLeg {
+        let on = NaiveDate::parse_from_str(date, "%Y-%m-%d").expect("test date parses");
+        report
+            .disposals
+            .iter()
+            .filter(|disposal| disposal.date == on)
+            .flat_map(|disposal| disposal.legs.iter())
+            .find(|leg| leg.rule == rule)
+            .expect("priced leg present")
     }
 
     #[test]
@@ -363,5 +488,89 @@ mod tests {
             .map(|holding| holding.ticker.as_str())
             .collect();
         assert_eq!(tickers, ["ABC", "MMM", "ZZZ"]);
+    }
+
+    #[test]
+    fn section_104_leg_prices_off_the_pool_average_and_drains_it() {
+        // Pool unit cost (10*10 + 5)/10 = 10.5; 4 shares cost 4*10.5 = 42.
+        // Drain leaves 6 shares at 105 - 42 = 63.
+        let report = valued(
+            "2024-01-01 BUY ABC 10 @ 10.00 GBP FEES 5.00 GBP\n\
+             2024-06-01 SELL ABC 4 @ 20.00 GBP FEES 2.00 GBP\n",
+        );
+
+        let s104 = leg(&report, "2024-06-01", LegRule::Section104);
+        assert_eq!(s104.allowable_cost, dec!(42));
+        assert_eq!(s104.gross_proceeds, dec!(80));
+        assert_eq!(s104.net_proceeds, dec!(78));
+        assert_eq!(s104.gain_or_loss, dec!(36));
+
+        let pool = holding(&report, "ABC");
+        assert_eq!(pool.quantity, dec!(6));
+        assert_eq!(pool.total_cost, dec!(63));
+    }
+
+    #[test]
+    fn same_day_and_section_104_legs_price_independently() {
+        // The 2024-06-01 buy (5 @ 12 = 60) is same-day with the sell; it prices
+        // the 5-share same-day leg at 5*(60/5) = 60 and never touches the pool.
+        // The remaining 3 shares match the 2024-01-01 pool at 100/10 = 10.
+        let report = valued(
+            "2024-01-01 BUY ABC 10 @ 10.00 GBP\n\
+             2024-06-01 BUY ABC 5 @ 12.00 GBP\n\
+             2024-06-01 SELL ABC 8 @ 13.00 GBP\n",
+        );
+
+        let same_day = leg(&report, "2024-06-01", LegRule::SameDay);
+        assert_eq!(same_day.allowable_cost, dec!(60));
+        assert_eq!(same_day.gross_proceeds, dec!(65));
+        assert_eq!(same_day.net_proceeds, dec!(65));
+        assert_eq!(same_day.gain_or_loss, dec!(5));
+
+        let s104 = leg(&report, "2024-06-01", LegRule::Section104);
+        assert_eq!(s104.allowable_cost, dec!(30));
+        assert_eq!(s104.gross_proceeds, dec!(39));
+        assert_eq!(s104.net_proceeds, dec!(39));
+        assert_eq!(s104.gain_or_loss, dec!(9));
+
+        let pool = holding(&report, "ABC");
+        assert_eq!(pool.quantity, dec!(7));
+        assert_eq!(pool.total_cost, dec!(70));
+    }
+
+    #[test]
+    fn bed_and_breakfast_leg_ignores_a_later_capital_return() {
+        // The B&B leg prices off the raw 2024-06-15 buy with no cost offset:
+        // unit (30*14 + 3)/30 = 14.1, cost 30*14.1 = 423. The 2024-07-01
+        // CAPRETURN reduces only the pool that holds the S104 residue, never
+        // the already-priced B&B leg (TCGA92/S106A consumed shares are not held
+        // at the event date).
+        let report = valued(
+            "2024-01-01 BUY DEF 50 @ 10.00 GBP\n\
+             2024-06-01 SELL DEF 50 @ 15.00 GBP FEES 5.00 GBP\n\
+             2024-06-15 BUY DEF 30 @ 14.00 GBP FEES 3.00 GBP\n\
+             2024-07-01 CAPRETURN DEF 50 TOTAL 100.00 GBP FEES 0.00 GBP\n",
+        );
+
+        let bnb = leg(&report, "2024-06-01", LegRule::BedAndBreakfast);
+        assert_eq!(bnb.allowable_cost, dec!(423));
+        assert_eq!(bnb.gross_proceeds, dec!(450));
+        assert_eq!(bnb.net_proceeds, dec!(447));
+        assert_eq!(bnb.gain_or_loss, dec!(24));
+        assert_eq!(
+            bnb.acquisition_date,
+            Some(NaiveDate::from_ymd_opt(2024, 6, 15).expect("valid date"))
+        );
+
+        let s104 = leg(&report, "2024-06-01", LegRule::Section104);
+        assert_eq!(s104.allowable_cost, dec!(200));
+        assert_eq!(s104.gross_proceeds, dec!(300));
+        assert_eq!(s104.net_proceeds, dec!(298));
+        assert_eq!(s104.gain_or_loss, dec!(98));
+
+        // The CAPRETURN net (100 - 0) reduces only the pool: 300 - 100 = 200.
+        let pool = holding(&report, "DEF");
+        assert_eq!(pool.quantity, dec!(30));
+        assert_eq!(pool.total_cost, dec!(200));
     }
 }
