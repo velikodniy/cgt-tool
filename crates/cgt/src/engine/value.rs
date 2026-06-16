@@ -573,4 +573,27 @@ mod tests {
         assert_eq!(pool.quantity, dec!(30));
         assert_eq!(pool.total_cost, dec!(200));
     }
+
+    #[test]
+    fn same_day_leg_ignores_a_later_capital_return() {
+        // A same-day disposal's cost is fixed at the disposal date: it prices
+        // off that day's buy (40 of 100 @ 10 = 400) and is never adjusted by a
+        // corporate action months later. The CAPRETURN reduces only the pool
+        // that holds the 60-share residue (600 - 50 = 550).
+        let report = valued(
+            "2024-01-15 BUY ABC 100 @ 10.00 GBP\n\
+             2024-01-15 SELL ABC 40 @ 9.00 GBP\n\
+             2024-06-15 CAPRETURN ABC 60 TOTAL 50.00 GBP FEES 0.00 GBP\n",
+        );
+
+        let same_day = leg(&report, "2024-01-15", LegRule::SameDay);
+        assert_eq!(same_day.allowable_cost, dec!(400));
+        assert_eq!(same_day.gross_proceeds, dec!(360));
+        assert_eq!(same_day.net_proceeds, dec!(360));
+        assert_eq!(same_day.gain_or_loss, dec!(-40));
+
+        let pool = holding(&report, "ABC");
+        assert_eq!(pool.quantity, dec!(60));
+        assert_eq!(pool.total_cost, dec!(550));
+    }
 }
