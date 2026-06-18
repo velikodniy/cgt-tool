@@ -3,6 +3,7 @@
 pub mod config;
 pub mod dsl;
 pub mod error;
+pub mod format;
 pub mod model;
 pub mod money;
 pub mod report;
