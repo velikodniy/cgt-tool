@@ -596,4 +596,56 @@ mod tests {
         assert_eq!(pool.quantity, dec!(60));
         assert_eq!(pool.total_cost, dec!(550));
     }
+
+    #[test]
+    fn bed_and_breakfast_leg_unaffected_by_later_corporate_actions() {
+        // Shares matched under bed-and-breakfast leave the Section 104 holding
+        // (CG51560), so a later capital distribution or accumulation adjusts the
+        // pool of shares still held (TCGA92/S110(8)(d)), never the matched legs.
+        // B&B 30 shares price off the raw buy (30*14+3)/30 = 14.1 -> 423; the
+        // 2024-07-01 CAPRETURN(40) + ACCUMULATION(60) net +20 lands in the 30
+        // pooled shares (300 - 40 + 60 = 320).
+        let report = valued(
+            "2024-01-01 BUY DEF 50 @ 10.00 GBP\n\
+             2024-06-01 SELL DEF 50 @ 15.00 GBP FEES 5.00 GBP\n\
+             2024-06-15 BUY DEF 30 @ 14.00 GBP FEES 3.00 GBP\n\
+             2024-07-01 CAPRETURN DEF 20 TOTAL 40.00 GBP FEES 0.00 GBP\n\
+             2024-07-01 ACCUMULATION DEF 20 TOTAL 60.00 GBP TAX 0.00 GBP\n",
+        );
+
+        let bnb = leg(&report, "2024-06-01", LegRule::BedAndBreakfast);
+        assert_eq!(bnb.allowable_cost, dec!(423));
+        assert_eq!(bnb.gain_or_loss, dec!(24));
+        let s104 = leg(&report, "2024-06-01", LegRule::Section104);
+        assert_eq!(s104.allowable_cost, dec!(200));
+
+        let pool = holding(&report, "DEF");
+        assert_eq!(pool.quantity, dec!(30));
+        assert_eq!(pool.total_cost, dec!(320));
+    }
+
+    #[test]
+    fn same_day_leg_unaffected_by_later_corporate_actions() {
+        // Same-day-matched shares also leave the Section 104 holding (CG51560);
+        // the 2024-07-01 CAPRETURN(50) + ACCUMULATION(80) net +30 adjusts only
+        // the 90 pooled shares (900 - 50 + 80 = 930), not the same-day leg
+        // (20 @ 12 = 240).
+        let report = valued(
+            "2024-01-01 BUY GHI 100 @ 10.00 GBP\n\
+             2024-06-01 BUY GHI 20 @ 12.00 GBP\n\
+             2024-06-01 SELL GHI 30 @ 13.00 GBP\n\
+             2024-07-01 CAPRETURN GHI 90 TOTAL 50.00 GBP FEES 0.00 GBP\n\
+             2024-07-01 ACCUMULATION GHI 90 TOTAL 80.00 GBP TAX 0.00 GBP\n",
+        );
+
+        let same_day = leg(&report, "2024-06-01", LegRule::SameDay);
+        assert_eq!(same_day.allowable_cost, dec!(240));
+        assert_eq!(same_day.gain_or_loss, dec!(20));
+        let s104 = leg(&report, "2024-06-01", LegRule::Section104);
+        assert_eq!(s104.allowable_cost, dec!(100));
+
+        let pool = holding(&report, "GHI");
+        assert_eq!(pool.quantity, dec!(90));
+        assert_eq!(pool.total_cost, dec!(930));
+    }
 }
