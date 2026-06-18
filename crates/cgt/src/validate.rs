@@ -326,15 +326,9 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                 total_value,
                 ..
             } => {
-                if *amount == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "ACCUMULATION with zero quantity".to_string(),
-                    });
-                }
-
+                // A zero-quantity accumulation is a no-op: no units accrue, so
+                // it neither matches nor adjusts a pool. Only a negative
+                // quantity is invalid.
                 if *amount < Decimal::ZERO {
                     result.errors.push(ValidationError {
                         line,
