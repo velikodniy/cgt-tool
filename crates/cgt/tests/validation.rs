@@ -40,6 +40,44 @@ fn make_split(date: &str, ticker: &str, ratio: i64) -> Transaction {
     }
 }
 
+fn make_accumulation(date: &str, ticker: &str, amount: i64, total: i64) -> Transaction {
+    Transaction {
+        date: date.parse().expect("valid date"),
+        ticker: ticker.to_string(),
+        operation: Operation::Accumulation {
+            amount: Decimal::from(amount),
+            total_value: CurrencyAmount::new(Decimal::from(total), Currency::GBP),
+            tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
+        },
+    }
+}
+
+#[test]
+fn test_zero_quantity_accumulation_is_accepted() {
+    // A zero-quantity accumulation is a no-op (no units accrue), not an error.
+    let txns = vec![
+        make_buy("2020-01-01", "FUND", 100, 10, 0),
+        make_accumulation("2020-06-01", "FUND", 0, 0),
+    ];
+    let result = validate::validate(&txns);
+    assert!(
+        result.is_valid(),
+        "zero-quantity accumulation must be accepted"
+    );
+}
+
+#[test]
+fn test_negative_quantity_accumulation_is_rejected() {
+    let txns = vec![make_accumulation("2020-06-01", "FUND", -5, 10)];
+    let result = validate::validate(&txns);
+    assert!(!result.is_valid());
+    assert!(
+        result.errors[0].message.contains("negative quantity"),
+        "got: {}",
+        result.errors[0].message
+    );
+}
+
 #[test]
 fn test_valid_transactions() {
     let txns = vec![
