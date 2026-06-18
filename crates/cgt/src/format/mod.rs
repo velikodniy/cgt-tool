@@ -4,6 +4,8 @@
 //! separators) and rounds money 2dp midpoint-away-from-zero, the single
 //! rounding policy. Load-bearing for output equivalence.
 
+pub mod plain;
+
 use chrono::NaiveDate;
 use rust_decimal::{Decimal, RoundingStrategy};
 

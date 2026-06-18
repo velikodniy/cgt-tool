@@ -13,6 +13,7 @@ mod engine;
 
 pub use config::Config;
 pub use error::CgtError;
+pub use format::plain;
 pub use model::{Operation, TaxPeriod, Transaction};
 pub use money::FxCache;
 pub use report::{Disposal, Holding, MatchLeg, MatchRule, TaxReport, TaxYearSummary};
