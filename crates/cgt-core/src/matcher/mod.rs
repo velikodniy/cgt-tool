@@ -183,7 +183,7 @@ impl Matcher {
 
     /// Sort transactions by date and merge same-day same-ticker buys/sells.
     fn preprocess(&self, mut transactions: Vec<GbpTransaction>) -> Vec<GbpTransaction> {
-        transactions.sort_by(|a, b| a.date.cmp(&b.date));
+        transactions.sort_by_key(|a| a.date);
 
         let mut merged = Vec::new();
         if transactions.is_empty() {

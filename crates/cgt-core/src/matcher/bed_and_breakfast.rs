@@ -38,10 +38,8 @@ fn apply_split_ratio_effect(cumulative_ratio_effect: &mut Decimal, tx: &GbpTrans
         Operation::Split { ratio } => {
             *cumulative_ratio_effect *= *ratio;
         }
-        Operation::Unsplit { ratio } => {
-            if *ratio != Decimal::ZERO {
-                *cumulative_ratio_effect /= *ratio;
-            }
+        Operation::Unsplit { ratio } if *ratio != Decimal::ZERO => {
+            *cumulative_ratio_effect /= *ratio;
         }
         _ => {}
     }
