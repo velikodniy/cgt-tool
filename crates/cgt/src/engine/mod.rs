@@ -8,3 +8,5 @@ pub(crate) mod value;
 
 #[cfg(test)]
 mod fixture_tests;
+#[cfg(test)]
+mod fixture_value_tests;

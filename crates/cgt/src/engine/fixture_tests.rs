@@ -334,6 +334,28 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
         );
     }
 
+    // Each buy's recorded B&B reservation equals the sum of every disposal
+    // leg that draws on that buy, measured at the buy's share scale. Buys with
+    // no B&B leg carry no reservation entry.
+    let mut reserved_by_legs: HashMap<EventId, Decimal> = HashMap::new();
+    for disposal in &match_plan.disposals {
+        for leg in &disposal.bed_and_breakfast {
+            *reserved_by_legs.entry(leg.buy).or_default() += leg.quantity_at_buy_scale;
+        }
+    }
+    assert_eq!(
+        reserved_by_legs.len(),
+        match_plan.bnb_reservations.len(),
+        "{name}: B&B reservation entries do not match the buys consumed by legs"
+    );
+    for (buy, leg_total) in &reserved_by_legs {
+        assert_eq!(
+            match_plan.bnb_reservations.get(buy),
+            Some(leg_total),
+            "{name}: reservation for buy {buy:?} disagrees with its legs"
+        );
+    }
+
     // Replay: reservations bounded by buys; day ledger and pool never negative.
     let mut pools: HashMap<&str, Decimal> = HashMap::new();
     let events = stream.events();
