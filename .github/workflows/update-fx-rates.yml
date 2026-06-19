@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  RATES_DIR: crates/cgt-money/resources/rates
+  RATES_DIR: crates/cgt/resources/rates
 
 jobs:
   update-rates:
