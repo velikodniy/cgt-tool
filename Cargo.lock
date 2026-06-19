@@ -474,6 +474,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cgt-pdf"
+version = "0.14.3"
+dependencies = [
+ "cgt",
+ "chrono",
+ "rust_decimal",
+ "thiserror",
+ "typst",
+ "typst-as-lib",
+ "typst-pdf",
+]
+
+[[package]]
 name = "cgt-wasm"
 version = "0.14.3"
 dependencies = [
