@@ -123,8 +123,8 @@ const ReportBuilder = {
             <tr>
                 <td>${escapeHtml(ty.period || "Unknown")}</td>
                 <td class="number">${formatCurrency(ty.net_gain)}</td>
-                <td class="number">${formatCurrency(ty.total_proceeds)}</td>
-                <td class="number">${formatCurrency(ty.exemption)}</td>
+                <td class="number">${formatCurrency(ty.gross_proceeds)}</td>
+                <td class="number">${formatCurrency(ty.exempt_amount)}</td>
                 <td class="number">${formatCurrency(ty.taxable_gain)}</td>
             </tr>
         `,
@@ -237,53 +237,11 @@ const ReportBuilder = {
         `;
   },
 
-  taxYear: (ty, isSingleYear) => {
+  taxYear: (ty) => {
     const yearLabel = escapeHtml(ty.period || "Unknown");
     const disposalsHtml =
       ty.disposals && ty.disposals.length > 0
         ? ty.disposals.map((disp, idx) => ReportBuilder.disposalCard(disp, idx)).join("")
-        : "";
-
-    const taxBreakdownHtml =
-      ty.tax_rates && ty.tax_rates.length > 0
-        ? `
-            <div class="tax-breakdown">
-                <h4>Tax Breakdown</h4>
-                ${ty.tax_rates
-                  .map(
-                    (rate) => `
-                    <div class="tax-rate-item">
-                        <span>${escapeHtml(rate.rate_name)}: ${formatCurrency(rate.taxable)} @ ${escapeHtml(rate.rate)}%</span>
-                        <strong>${formatCurrency(rate.tax)}</strong>
-                    </div>
-                `,
-                  )
-                  .join("")}
-            </div>
-        `
-        : "";
-
-    const taxLiabilityHtml =
-      isSingleYear && ty.tax_liability !== undefined
-        ? `
-            <div class="tax-liability-box">
-                <div class="tax-liability-label">Total Tax Liability</div>
-                <div class="tax-liability-value">${formatCurrency(ty.tax_liability || "0")}</div>
-            </div>
-            ${
-              parseFloat(ty.tax_liability || 0) === 0 &&
-              parseFloat(ty.taxable_gain || 0) === 0 &&
-              parseFloat(ty.net_gain || 0) > 0
-                ? `
-                <div class="note warning" style="margin-top: 16px;">
-                    <strong>ℹ️ Why is tax liability £0.00?</strong><br>
-                    The net gain (${formatCurrency(ty.net_gain)}) is fully covered by the annual exemption (${formatCurrency(ty.exemption)}),
-                    so there is no taxable gain and therefore no tax to pay.
-                </div>
-            `
-                : ""
-            }
-        `
         : "";
 
     return `
@@ -298,11 +256,11 @@ const ReportBuilder = {
                     <div class="summary-grid">
                         <div class="summary-item">
                             <span class="summary-label">Total Proceeds</span>
-                            <span class="summary-value">${formatCurrency(ty.total_proceeds)}</span>
+                            <span class="summary-value">${formatCurrency(ty.gross_proceeds)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Allowable Costs</span>
-                            <span class="summary-value">${formatCurrency(ty.total_cost)}</span>
+                            <span class="summary-value">${formatCurrency(ty.total_allowable_cost)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Total Gains</span>
@@ -318,15 +276,13 @@ const ReportBuilder = {
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Annual Exemption</span>
-                            <span class="summary-value">${formatCurrency(ty.exemption)}</span>
+                            <span class="summary-value">${formatCurrency(ty.exempt_amount)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Taxable Gain</span>
                             <span class="summary-value">${formatCurrency(ty.taxable_gain)}</span>
                         </div>
                     </div>
-                    ${taxBreakdownHtml}
-                    ${taxLiabilityHtml}
                 </div>
             </div>
         `;
@@ -405,8 +361,7 @@ function generateReport() {
     const parts = [
       ReportBuilder.header(),
       data.tax_years?.length > 1 ? ReportBuilder.summaryTable(data.tax_years) : "",
-      ...(data.tax_years?.map((ty) => ReportBuilder.taxYear(ty, data.tax_years.length === 1)) ||
-        []),
+      ...(data.tax_years?.map((ty) => ReportBuilder.taxYear(ty)) || []),
       ReportBuilder.holdings(data.holdings),
     ];
 
