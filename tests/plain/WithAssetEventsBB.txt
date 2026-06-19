@@ -2,7 +2,7 @@
 
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
-2019/20     1           £265.10               £265.10               £0.00       £7,768.80   £12,000.00  £0.00
+2019/20     1           £280.91               £280.91               £0.00       £7,768.80   £12,000.00  £0.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
@@ -13,18 +13,18 @@ Notes:
 
 ## 2019/20
 
-1) SELL 40 GB00B3TYHH97 on 05/11/2019 - GAIN £265.10
+1) SELL 40 GB00B3TYHH97 on 05/11/2019 - GAIN £280.91
    B&B: 20 shares from 10/11/2019
    Section 104: 20 shares @ £183.48
    Gross Proceeds: 40 × £194.22 = £7,768.80
    Net Proceeds: £7,768.80 - £12.50 fees = £7,756.30
-   Cost: £7,491.21
-   Result: £265.10
+   Cost: £7,475.40
+   Result: £280.91
 
 
 # HOLDINGS
 
-GB00B3TYHH97: 20 units at £183.48 avg cost
+GB00B3TYHH97: 20 units at £184.27 avg cost
 
 # TRANSACTIONS
 

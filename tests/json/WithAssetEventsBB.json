@@ -13,8 +13,8 @@
             {
               "rule": "BedAndBreakfast",
               "quantity": "20",
-              "allowable_cost": "3821.61",
-              "gain_or_loss": "56.54",
+              "allowable_cost": "3805.80",
+              "gain_or_loss": "72.35",
               "acquisition_date": "2019-11-10"
             },
             {
@@ -27,9 +27,13 @@
         }
       ],
       "disposal_count": 1,
-      "total_gain": "265.10",
+      "total_gain": "280.91",
       "total_loss": "0",
-      "net_gain": "265.10",
+      "net_gain": "280.91",
+      "gross_proceeds": "7768.80",
+      "total_allowable_cost": "7475.40",
+      "exempt_amount": "12000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -38,7 +42,121 @@
     {
       "ticker": "GB00B3TYHH97",
       "quantity": "20",
-      "total_cost": "3669.60"
+      "total_cost": "3685.41"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2018-08-29",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "184.65",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-03-15",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "181.56",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-05-31",
+      "ticker": "GB00B3TYHH97",
+      "action": "CAPRETURN",
+      "amount": "40",
+      "total_value": {
+        "amount": "149.75",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-05-31",
+      "ticker": "GB00B3TYHH97",
+      "action": "ACCUMULATION",
+      "amount": "40",
+      "total_value": {
+        "amount": "150.24",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-11-05",
+      "ticker": "GB00B3TYHH97",
+      "action": "SELL",
+      "amount": "40",
+      "price": {
+        "amount": "194.22",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-11-10",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "190.19",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-11-30",
+      "ticker": "GB00B3TYHH97",
+      "action": "CAPRETURN",
+      "amount": "20",
+      "total_value": {
+        "amount": "95.12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-11-30",
+      "ticker": "GB00B3TYHH97",
+      "action": "ACCUMULATION",
+      "amount": "20",
+      "total_value": {
+        "amount": "110.93",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

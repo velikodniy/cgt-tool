@@ -2,10 +2,10 @@
 
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
-2020/21     4           £161.30               £161.30               £0.00       £21,580.02  £12,300.00  £0.00
-2021/22     7           £722.16               £722.16               £0.00       £55,565.09  £12,300.00  £0.00
-2022/23     7           £2,191.77             £2,295.26             £103.49     £62,731.01  £12,300.00  £0.00
-2023/24     12          £3,056.36             £4,037.95             £981.60     £83,874.69  £6,000.00   £0.00
+2020/21     4           -£100.91              £0.00                 £100.91     £21,580.02  £12,300.00  £0.00
+2021/22     7           £335.38               £446.87               £111.50     £55,565.09  £12,300.00  £0.00
+2022/23     7           £2,086.88             £2,219.31             £132.43     £62,731.01  £12,300.00  £0.00
+2023/24     12          £3,111.33             £4,037.95             £926.62     £83,874.69  £6,000.00   £0.00
 2024/25     9           £9,493.67             £9,629.98             £136.30     £113,832.24 £3,000.00   £6,493.67
 
 Notes:
@@ -17,43 +17,43 @@ Notes:
 
 ## 2020/21
 
-1) SELL 235 ACME on 15/05/2020 - GAIN £27.35
+1) SELL 235 ACME on 15/05/2020 - LOSS £38.21
    Same Day: 235 shares
    Gross Proceeds: 235 × £20.118439198507234042553191489 = £4,727.83
    Net Proceeds: £4,727.83 - £0.08 fees = £4,727.75
-   Cost: £4,700.41
-   Result: £27.35
+   Cost: £4,765.96
+   Result: -£38.21
 
-2) SELL 235 ACME on 15/08/2020 - GAIN £47.02
+2) SELL 235 ACME on 15/08/2020 - LOSS £18.54
    Same Day: 235 shares
    Gross Proceeds: 235 × £21.913289349670212765957446809 = £5,149.62
    Net Proceeds: £5,149.62 - £0.08 fees = £5,149.54
-   Cost: £5,102.53
-   Result: £47.02
+   Cost: £5,168.08
+   Result: -£18.54
 
-3) SELL 235 ACME on 15/11/2020 - GAIN £38.70
+3) SELL 235 ACME on 15/11/2020 - LOSS £26.86
    Same Day: 235 shares
    Gross Proceeds: 235 × £24.196611714654893617021276596 = £5,686.20
    Net Proceeds: £5,686.20 - £0.08 fees = £5,686.13
-   Cost: £5,647.43
-   Result: £38.70
+   Cost: £5,712.98
+   Result: -£26.86
 
-4) SELL 235 ACME on 15/02/2021 - GAIN £48.24
+4) SELL 235 ACME on 15/02/2021 - LOSS £17.31
    Same Day: 235 shares
    Gross Proceeds: 235 × £25.601525821596170212765957447 = £6,016.36
    Net Proceeds: £6,016.36 - £0.07 fees = £6,016.29
-   Cost: £5,968.04
-   Result: £48.24
+   Cost: £6,033.60
+   Result: -£17.31
 
 
 ## 2021/22
 
-1) SELL 282 ACME on 15/05/2021 - GAIN £58.33
+1) SELL 282 ACME on 15/05/2021 - LOSS £20.33
    Same Day: 282 shares
    Gross Proceeds: 282 × £28.643216080402127659574468085 = £8,077.39
    Net Proceeds: £8,077.39 - £0.09 fees = £8,077.30
-   Cost: £8,018.97
-   Result: £58.33
+   Cost: £8,097.63
+   Result: -£20.33
 
 2) SELL 100 BETA on 10/06/2021 - GAIN £135.49
    Same Day: 100 shares
@@ -69,26 +69,26 @@ Notes:
    Cost: £1,553.00
    Result: £242.00
 
-4) SELL 282 ACME on 15/08/2021 - GAIN £47.64
+4) SELL 282 ACME on 15/08/2021 - LOSS £31.02
    Same Day: 282 shares
    Gross Proceeds: 282 × £32.799473453269148936170212766 = £9,249.45
    Net Proceeds: £9,249.45 - £0.09 fees = £9,249.36
-   Cost: £9,201.72
-   Result: £47.64
+   Cost: £9,280.39
+   Result: -£31.02
 
-5) SELL 494 ACME on 15/11/2021 - GAIN £101.78
+5) SELL 494 ACME on 15/11/2021 - LOSS £35.90
    Same Day: 494 shares
    Gross Proceeds: 494 × £36.1201592471951417004048583 = £17,843.36
    Net Proceeds: £17,843.36 - £0.14 fees = £17,843.21
-   Cost: £17,741.44
-   Result: £101.78
+   Cost: £17,879.12
+   Result: -£35.90
 
-6) SELL 329 ACME on 15/02/2022 - GAIN £67.53
+6) SELL 329 ACME on 15/02/2022 - LOSS £24.24
    Same Day: 329 shares
    Gross Proceeds: 329 × £35.145645315136778115501519757 = £11,562.92
    Net Proceeds: £11,562.92 - £0.10 fees = £11,562.81
-   Cost: £11,495.28
-   Result: £67.53
+   Cost: £11,587.06
+   Result: -£24.24
 
 7) SELL 100 BETA on 05/04/2022 - GAIN £69.38
    B&B: 100 shares from 06/04/2022
@@ -100,12 +100,12 @@ Notes:
 
 ## 2022/23
 
-1) SELL 376 ACME on 15/05/2022 - GAIN £75.95
+1) SELL 376 ACME on 15/05/2022 - LOSS £28.94
    Same Day: 376 shares
    Gross Proceeds: 376 × £32.112201103617287234042553191 = £12,074.19
    Net Proceeds: £12,074.19 - £0.12 fees = £12,074.06
-   Cost: £11,998.12
-   Result: £75.95
+   Cost: £12,103.00
+   Result: -£28.94
 
 2) SELL 200 BETA on 01/07/2022 - GAIN £312.78
    B&B: 200 shares from 20/07/2022
@@ -174,33 +174,33 @@ Notes:
    Cost: £11,671.58
    Result: -£36.63
 
-4) SELL 100 ACME on 01/09/2023 - LOSS £215.78
-   Section 104: 100 shares @ £28.24
+4) SELL 100 ACME on 01/09/2023 - LOSS £202.04
+   Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £26.126197450716 = £2,612.62
    Net Proceeds: £2,612.62 - £3.96 fees = £2,608.66
-   Cost: £2,824.44
-   Result: -£215.78
+   Cost: £2,810.70
+   Result: -£202.04
 
-5) SELL 100 ACME on 02/09/2023 - LOSS £199.95
-   Section 104: 100 shares @ £28.24
+5) SELL 100 ACME on 02/09/2023 - LOSS £186.20
+   Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £26.284538041327 = £2,628.45
    Net Proceeds: £2,628.45 - £3.96 fees = £2,624.50
-   Cost: £2,824.44
-   Result: -£199.95
+   Cost: £2,810.70
+   Result: -£186.20
 
-6) SELL 100 ACME on 03/09/2023 - LOSS £231.62
-   Section 104: 100 shares @ £28.24
+6) SELL 100 ACME on 03/09/2023 - LOSS £217.87
+   Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £25.967856860106 = £2,596.79
    Net Proceeds: £2,596.79 - £3.96 fees = £2,592.83
-   Cost: £2,824.44
-   Result: -£231.62
+   Cost: £2,810.70
+   Result: -£217.87
 
-7) SELL 100 ACME on 04/09/2023 - LOSS £176.20
-   Section 104: 100 shares @ £28.24
+7) SELL 100 ACME on 04/09/2023 - LOSS £162.45
+   Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £26.522048927242 = £2,652.20
    Net Proceeds: £2,652.20 - £3.96 fees = £2,648.25
-   Cost: £2,824.44
-   Result: -£176.20
+   Cost: £2,810.70
+   Result: -£162.45
 
 8) SELL 185 BETA on 15/10/2023 - GAIN £3,188.40
    Section 104: 185 shares @ £21.65
@@ -297,8 +297,7 @@ Notes:
    Result: -£47.37
 
 9) SELL 550 ACME on 10/12/2024 - GAIN £182.56
-   Same Day: 300 shares
-   Same Day: 250 shares
+   Same Day: 550 shares
    Gross Proceeds: 550 × £43.724242902887636363636363636 = £24,048.33
    Net Proceeds: £24,048.33 - £0.21 fees = £24,048.12
    Cost: £23,865.56
@@ -307,7 +306,7 @@ Notes:
 
 # HOLDINGS
 
-ACME: 8362 units at £31.01 avg cost
+ACME: 8362 units at £30.92 avg cost
 BETA: 175 units at £25.33 avg cost
 GAMA: 700 units at £6.14 avg cost
 

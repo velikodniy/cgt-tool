@@ -46,6 +46,10 @@
       "total_gain": "195.00",
       "total_loss": "0",
       "net_gain": "195.00",
+      "gross_proceeds": "1775.00",
+      "total_allowable_cost": "1580.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -55,6 +59,64 @@
       "ticker": "SNAP",
       "quantity": "130",
       "total_cost": "1300.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "SNAP",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "10.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-01",
+      "ticker": "SNAP",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "12.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-02",
+      "ticker": "SNAP",
+      "action": "BUY",
+      "amount": "80",
+      "price": {
+        "amount": "11.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-02",
+      "ticker": "SNAP",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "11.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

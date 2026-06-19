@@ -13,8 +13,8 @@
             {
               "rule": "Section104",
               "quantity": "50",
-              "allowable_cost": "515.00",
-              "gain_or_loss": "80.00"
+              "allowable_cost": "502.50",
+              "gain_or_loss": "92.50"
             }
           ]
         },
@@ -28,8 +28,8 @@
             {
               "rule": "Section104",
               "quantity": "50",
-              "allowable_cost": "515.00",
-              "gain_or_loss": "30.00"
+              "allowable_cost": "527.50",
+              "gain_or_loss": "17.50"
             }
           ]
         }
@@ -38,6 +38,10 @@
       "total_gain": "110.00",
       "total_loss": "0",
       "net_gain": "110.00",
+      "gross_proceeds": "1150",
+      "total_allowable_cost": "1030.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -47,6 +51,64 @@
       "ticker": "ACCFUND",
       "quantity": "0",
       "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-01",
+      "ticker": "ACCFUND",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-06-01",
+      "ticker": "ACCFUND",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-07-15",
+      "ticker": "ACCFUND",
+      "action": "ACCUMULATION",
+      "amount": "50",
+      "total_value": {
+        "amount": "25",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-12-01",
+      "ticker": "ACCFUND",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "11",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
     }
   ]
 }

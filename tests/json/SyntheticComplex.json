@@ -13,8 +13,8 @@
             {
               "rule": "SameDay",
               "quantity": "235",
-              "allowable_cost": "4700.41",
-              "gain_or_loss": "27.35",
+              "allowable_cost": "4765.96",
+              "gain_or_loss": "-38.21",
               "acquisition_date": "2020-05-15"
             }
           ]
@@ -29,8 +29,8 @@
             {
               "rule": "SameDay",
               "quantity": "235",
-              "allowable_cost": "5102.53",
-              "gain_or_loss": "47.02",
+              "allowable_cost": "5168.08",
+              "gain_or_loss": "-18.54",
               "acquisition_date": "2020-08-15"
             }
           ]
@@ -45,8 +45,8 @@
             {
               "rule": "SameDay",
               "quantity": "235",
-              "allowable_cost": "5647.43",
-              "gain_or_loss": "38.70",
+              "allowable_cost": "5712.98",
+              "gain_or_loss": "-26.86",
               "acquisition_date": "2020-11-15"
             }
           ]
@@ -61,17 +61,21 @@
             {
               "rule": "SameDay",
               "quantity": "235",
-              "allowable_cost": "5968.04",
-              "gain_or_loss": "48.24",
+              "allowable_cost": "6033.60",
+              "gain_or_loss": "-17.31",
               "acquisition_date": "2021-02-15"
             }
           ]
         }
       ],
       "disposal_count": 4,
-      "total_gain": "161.30",
-      "total_loss": "0",
-      "net_gain": "161.30",
+      "total_gain": "0",
+      "total_loss": "100.91",
+      "net_gain": "-100.91",
+      "gross_proceeds": "21580.02",
+      "total_allowable_cost": "21680.62",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -88,8 +92,8 @@
             {
               "rule": "SameDay",
               "quantity": "282",
-              "allowable_cost": "8018.97",
-              "gain_or_loss": "58.33",
+              "allowable_cost": "8097.63",
+              "gain_or_loss": "-20.33",
               "acquisition_date": "2021-05-15"
             }
           ]
@@ -135,8 +139,8 @@
             {
               "rule": "SameDay",
               "quantity": "282",
-              "allowable_cost": "9201.72",
-              "gain_or_loss": "47.64",
+              "allowable_cost": "9280.39",
+              "gain_or_loss": "-31.02",
               "acquisition_date": "2021-08-15"
             }
           ]
@@ -151,8 +155,8 @@
             {
               "rule": "SameDay",
               "quantity": "494",
-              "allowable_cost": "17741.44",
-              "gain_or_loss": "101.78",
+              "allowable_cost": "17879.12",
+              "gain_or_loss": "-35.90",
               "acquisition_date": "2021-11-15"
             }
           ]
@@ -167,8 +171,8 @@
             {
               "rule": "SameDay",
               "quantity": "329",
-              "allowable_cost": "11495.28",
-              "gain_or_loss": "67.53",
+              "allowable_cost": "11587.06",
+              "gain_or_loss": "-24.24",
               "acquisition_date": "2022-02-15"
             }
           ]
@@ -191,9 +195,13 @@
         }
       ],
       "disposal_count": 7,
-      "total_gain": "722.16",
-      "total_loss": "0",
-      "net_gain": "722.16",
+      "total_gain": "446.87",
+      "total_loss": "111.50",
+      "net_gain": "335.38",
+      "gross_proceeds": "55565.09",
+      "total_allowable_cost": "55216.97",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -210,8 +218,8 @@
             {
               "rule": "SameDay",
               "quantity": "376",
-              "allowable_cost": "11998.12",
-              "gain_or_loss": "75.95",
+              "allowable_cost": "12103.00",
+              "gain_or_loss": "-28.94",
               "acquisition_date": "2022-05-15"
             }
           ]
@@ -319,9 +327,13 @@
         }
       ],
       "disposal_count": 7,
-      "total_gain": "2295.26",
-      "total_loss": "103.49",
-      "net_gain": "2191.77",
+      "total_gain": "2219.31",
+      "total_loss": "132.43",
+      "net_gain": "2086.88",
+      "gross_proceeds": "62731.01",
+      "total_allowable_cost": "60618.38",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -386,8 +398,8 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "2824.44",
-              "gain_or_loss": "-215.78"
+              "allowable_cost": "2810.70",
+              "gain_or_loss": "-202.04"
             }
           ]
         },
@@ -401,8 +413,8 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "2824.44",
-              "gain_or_loss": "-199.95"
+              "allowable_cost": "2810.70",
+              "gain_or_loss": "-186.20"
             }
           ]
         },
@@ -416,8 +428,8 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "2824.44",
-              "gain_or_loss": "-231.62"
+              "allowable_cost": "2810.70",
+              "gain_or_loss": "-217.87"
             }
           ]
         },
@@ -431,8 +443,8 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "2824.44",
-              "gain_or_loss": "-176.20"
+              "allowable_cost": "2810.70",
+              "gain_or_loss": "-162.45"
             }
           ]
         },
@@ -517,8 +529,12 @@
       ],
       "disposal_count": 12,
       "total_gain": "4037.95",
-      "total_loss": "981.60",
-      "net_gain": "3056.36",
+      "total_loss": "926.62",
+      "net_gain": "3111.33",
+      "gross_proceeds": "83874.69",
+      "total_allowable_cost": "80720.34",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -657,16 +673,9 @@
           "matches": [
             {
               "rule": "SameDay",
-              "quantity": "300",
-              "allowable_cost": "13017.58",
-              "gain_or_loss": "131.89",
-              "acquisition_date": "2024-12-10"
-            },
-            {
-              "rule": "SameDay",
-              "quantity": "250",
-              "allowable_cost": "10847.98",
-              "gain_or_loss": "50.68",
+              "quantity": "550",
+              "allowable_cost": "23865.56",
+              "gain_or_loss": "182.56",
               "acquisition_date": "2024-12-10"
             }
           ]
@@ -676,6 +685,10 @@
       "total_gain": "9629.98",
       "total_loss": "136.30",
       "net_gain": "9493.67",
+      "gross_proceeds": "113832.24",
+      "total_allowable_cost": "104306.11",
+      "exempt_amount": "3000",
+      "taxable_gain": "6493.67",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -683,18 +696,1188 @@
   "holdings": [
     {
       "ticker": "ACME",
-      "quantity": "8362.000000000000000000000000",
-      "total_cost": "259278.84"
+      "quantity": "8362",
+      "total_cost": "258579.93"
     },
     {
       "ticker": "BETA",
-      "quantity": "175.00000000000000000000000000",
+      "quantity": "175",
       "total_cost": "4432.56"
     },
     {
       "ticker": "GAMA",
       "quantity": "700",
       "total_cost": "4298.93"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2020-05-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "25.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-05-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "235",
+      "price": {
+        "amount": "24.80",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-08-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "28.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-08-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "235",
+      "price": {
+        "amount": "27.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "32.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-11-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "235",
+      "price": {
+        "amount": "31.85",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-02-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "35.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-02-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "235",
+      "price": {
+        "amount": "34.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-06-01",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-09-15",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "55.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2020-07-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "1000",
+      "price": {
+        "amount": "5.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-12-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "5.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2021-05-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "600",
+      "price": {
+        "amount": "40.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-05-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "282",
+      "price": {
+        "amount": "39.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.12",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-08-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "600",
+      "price": {
+        "amount": "45.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-08-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "282",
+      "price": {
+        "amount": "44.85",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.12",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "600",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "150",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-11-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "494",
+      "price": {
+        "amount": "49.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.20",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-02-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "700",
+      "price": {
+        "amount": "48.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-02-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "329",
+      "price": {
+        "amount": "47.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.14",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-06-10",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "150",
+      "price": {
+        "amount": "60.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-06-10",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "62.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2021-09-01",
+      "ticker": "BETA",
+      "action": "SPLIT",
+      "ratio": "2"
+    },
+    {
+      "date": "2021-07-15",
+      "ticker": "GAMA",
+      "action": "SELL",
+      "amount": "300",
+      "price": {
+        "amount": "6.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2021-10-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "5.80",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "3",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2022-04-05",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "35.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-04-06",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "150",
+      "price": {
+        "amount": "34.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-05-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "800",
+      "price": {
+        "amount": "42.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-05-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "376",
+      "price": {
+        "amount": "41.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.16",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-06-15",
+      "ticker": "ACME",
+      "action": "CAPRETURN",
+      "amount": "1000",
+      "total_value": {
+        "amount": "2000",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-08-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "800",
+      "price": {
+        "amount": "38.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-08-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "376",
+      "price": {
+        "amount": "37.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.16",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "900",
+      "price": {
+        "amount": "35.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-11-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "423",
+      "price": {
+        "amount": "34.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.18",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-02-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "900",
+      "price": {
+        "amount": "30.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-02-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "423",
+      "price": {
+        "amount": "29.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.18",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-07-01",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "200",
+      "price": {
+        "amount": "40.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-07-20",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "38.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-10-01",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "150",
+      "price": {
+        "amount": "42.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-10-25",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "80",
+      "price": {
+        "amount": "40.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "4",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-09-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "400",
+      "price": {
+        "amount": "6.20",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-01-15",
+      "ticker": "GAMA",
+      "action": "SELL",
+      "amount": "500",
+      "price": {
+        "amount": "6.80",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-05-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1000",
+      "price": {
+        "amount": "28.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-05-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "470",
+      "price": {
+        "amount": "27.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.20",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-08-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1000",
+      "price": {
+        "amount": "32.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-08-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "470",
+      "price": {
+        "amount": "31.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.20",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-09-01",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "33.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-09-02",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "33.20",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-09-03",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "32.80",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-09-04",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "33.50",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1100",
+      "price": {
+        "amount": "36.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-11-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "517",
+      "price": {
+        "amount": "35.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.22",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-02-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1100",
+      "price": {
+        "amount": "40.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-02-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "517",
+      "price": {
+        "amount": "39.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.22",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-06-20",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "45.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-06-20",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "150",
+      "price": {
+        "amount": "46.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-06-20",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "80",
+      "price": {
+        "amount": "45.50",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "4",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-10-15",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "48.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "3",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-10-15",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "75",
+      "price": {
+        "amount": "48.50",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "4",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-10-15",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "60",
+      "price": {
+        "amount": "47.80",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "3",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-01-10",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "50.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-02-09",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "49.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-07-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "300",
+      "price": {
+        "amount": "7.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "6",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-12-01",
+      "ticker": "GAMA",
+      "action": "SELL",
+      "amount": "400",
+      "price": {
+        "amount": "7.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-04-15",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "52.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-05-16",
+      "ticker": "BETA",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "51.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-05-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1200",
+      "price": {
+        "amount": "44.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-05-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "564",
+      "price": {
+        "amount": "43.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.24",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-08-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1200",
+      "price": {
+        "amount": "48.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-08-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "564",
+      "price": {
+        "amount": "47.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.24",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-11-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "1300",
+      "price": {
+        "amount": "52.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-11-15",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "611",
+      "price": {
+        "amount": "51.90",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.26",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-10",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "55.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-10",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "300",
+      "price": {
+        "amount": "55.50",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.15",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-10",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "54.80",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-10",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "250",
+      "price": {
+        "amount": "55.20",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "0.12",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-09-01",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "200",
+      "price": {
+        "amount": "55.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-10-15",
+      "ticker": "BETA",
+      "action": "SELL",
+      "amount": "150",
+      "price": {
+        "amount": "56.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-06-01",
+      "ticker": "GAMA",
+      "action": "SELL",
+      "amount": "300",
+      "price": {
+        "amount": "8.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "6",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-08-01",
+      "ticker": "GAMA",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "7.80",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "4",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-11-01",
+      "ticker": "GAMA",
+      "action": "SELL",
+      "amount": "400",
+      "price": {
+        "amount": "8.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "8",
+        "currency": "GBP"
+      }
     }
   ]
 }

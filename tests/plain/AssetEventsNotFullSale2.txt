@@ -2,8 +2,8 @@
 
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
-2019/20     1           £28.33                £28.33                £0.00       £525.00     £12,000.00  £0.00
-2020/21     1           £253.33               £253.33               £0.00       £2,000.00   £12,300.00  £0.00
+2019/20     1           £25.00                £25.00                £0.00       £525.00     £12,000.00  £0.00
+2020/21     1           £256.00               £256.00               £0.00       £2,000.00   £12,300.00  £0.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
@@ -14,25 +14,25 @@ Notes:
 
 ## 2019/20
 
-1) SELL 5 FOOBAR on 01/09/2019 - GAIN £28.33
-   Section 104: 5 shares @ £99.33
+1) SELL 5 FOOBAR on 01/09/2019 - GAIN £25.00
+   Section 104: 5 shares @ £100
    Gross Proceeds: 5 × £105 = £525.00
-   Cost: £496.67
-   Result: £28.33
+   Cost: £500.00
+   Result: £25.00
 
 
 ## 2020/21
 
-1) SELL 20 FOOBAR on 01/07/2020 - GAIN £253.33
-   Section 104: 20 shares @ £87.33
+1) SELL 20 FOOBAR on 01/07/2020 - GAIN £256.00
+   Section 104: 20 shares @ £87.2
    Gross Proceeds: 20 × £100 = £2,000.00
-   Cost: £1,746.67
-   Result: £253.33
+   Cost: £1,744.00
+   Result: £256.00
 
 
 # HOLDINGS
 
-FOOBAR: 5 units at £87.33 avg cost
+FOOBAR: 5 units at £87.2 avg cost
 
 # TRANSACTIONS
 

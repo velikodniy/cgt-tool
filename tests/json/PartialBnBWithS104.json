@@ -30,6 +30,10 @@
       "total_gain": "319.00",
       "total_loss": "0",
       "net_gain": "319.00",
+      "gross_proceeds": "1500.00",
+      "total_allowable_cost": "1171.00",
+      "exempt_amount": "3000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -39,6 +43,50 @@
       "ticker": "ACME",
       "quantity": "40",
       "total_cost": "404.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10.00",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-06-01",
+      "ticker": "ACME",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "15.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10.00",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-06-15",
+      "ticker": "ACME",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "14.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5.00",
+        "currency": "GBP"
+      }
     }
   ]
 }

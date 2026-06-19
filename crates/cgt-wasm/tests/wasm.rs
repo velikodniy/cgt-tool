@@ -160,18 +160,17 @@ fn test_calculate_includes_exemption_and_taxable_gain() {
     let result = calculate_tax(dsl, Some(2024));
     match result {
         Ok(json) => {
-            // Verify enhanced fields are present
-            assert!(json.contains("exemption"), "Expected exemption field");
+            // Verify the per-year report fields are present
+            assert!(
+                json.contains("exempt_amount"),
+                "Expected exempt_amount field"
+            );
             assert!(json.contains("taxable_gain"), "Expected taxable_gain field");
             assert!(
-                json.contains("total_proceeds"),
-                "Expected total_proceeds field"
+                json.contains("gross_proceeds"),
+                "Expected gross_proceeds field"
             );
-            assert!(json.contains("total_cost"), "Expected total_cost field");
-            assert!(
-                json.contains("tax_liability"),
-                "Expected tax_liability field"
-            );
+            assert!(json.contains("net_gain"), "Expected net_gain field");
         }
         Err(e) => panic!("Failed to calculate: {:?}", e),
     }

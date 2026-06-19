@@ -23,6 +23,10 @@
       "total_gain": "968.02",
       "total_loss": "0",
       "net_gain": "968.02",
+      "gross_proceeds": "6000.00",
+      "total_allowable_cost": "5021.99",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -32,6 +36,36 @@
       "ticker": "PRECFUND",
       "quantity": "0",
       "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-15",
+      "ticker": "PRECFUND",
+      "action": "BUY",
+      "amount": "150",
+      "price": {
+        "amount": "33.33",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "22.49",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-11-20",
+      "ticker": "PRECFUND",
+      "action": "SELL",
+      "amount": "150",
+      "price": {
+        "amount": "40.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "9.99",
+        "currency": "GBP"
+      }
     }
   ]
 }

@@ -31,6 +31,10 @@
       "total_gain": "40.00",
       "total_loss": "0",
       "net_gain": "40.00",
+      "gross_proceeds": "240",
+      "total_allowable_cost": "200.00",
+      "exempt_amount": "11700",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -40,6 +44,70 @@
       "ticker": "FOO",
       "quantity": "10",
       "total_cost": "200"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2019-01-01",
+      "ticker": "FOO",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-02-01",
+      "ticker": "FOO",
+      "action": "SELL",
+      "amount": "20",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-02-10",
+      "ticker": "FOO",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-02-15",
+      "ticker": "FOO",
+      "action": "UNSPLIT",
+      "ratio": "2"
+    },
+    {
+      "date": "2019-02-20",
+      "ticker": "FOO",
+      "action": "BUY",
+      "amount": "5",
+      "price": {
+        "amount": "20",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

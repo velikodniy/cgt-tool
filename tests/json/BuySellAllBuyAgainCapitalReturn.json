@@ -23,6 +23,10 @@
       "total_gain": "1084.50",
       "total_loss": "0",
       "net_gain": "1084.50",
+      "gross_proceeds": "19422.00",
+      "total_allowable_cost": "18325.00",
+      "exempt_amount": "11700",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -49,6 +53,10 @@
       "total_gain": "0",
       "total_loss": "5.79",
       "net_gain": "-5.79",
+      "gross_proceeds": "7884.80",
+      "total_allowable_cost": "7878.09",
+      "exempt_amount": "12000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -58,6 +66,106 @@
       "ticker": "GB00B3TYHH97",
       "quantity": "0",
       "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2018-01-01",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "184.65",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-01-01",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "181.56",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-02-01",
+      "ticker": "GB00B3TYHH97",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "194.22",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-04-01",
+      "ticker": "GB00B3TYHH97",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "196.89",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-05-31",
+      "ticker": "GB00B3TYHH97",
+      "action": "CAPRETURN",
+      "amount": "40",
+      "total_value": {
+        "amount": "149.75",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-05-31",
+      "ticker": "GB00B3TYHH97",
+      "action": "ACCUMULATION",
+      "amount": "40",
+      "total_value": {
+        "amount": "150.24",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-06-01",
+      "ticker": "GB00B3TYHH97",
+      "action": "SELL",
+      "amount": "40",
+      "price": {
+        "amount": "197.12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
     }
   ]
 }

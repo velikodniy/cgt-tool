@@ -31,6 +31,10 @@
       "total_gain": "110.00",
       "total_loss": "0",
       "net_gain": "110.00",
+      "gross_proceeds": "600.00",
+      "total_allowable_cost": "490.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -40,6 +44,64 @@
       "ticker": "ABC",
       "quantity": "110",
       "total_cost": "1090.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-01",
+      "ticker": "ABC",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "12.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-01",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "11.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-10",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "9.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

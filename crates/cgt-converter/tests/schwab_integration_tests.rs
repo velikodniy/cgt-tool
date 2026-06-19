@@ -1,6 +1,6 @@
+use cgt::dsl::parse;
 use cgt_converter::BrokerConverter;
 use cgt_converter::schwab::{SchwabConverter, SchwabInput};
-use cgt_core::parser::parse_file;
 
 #[test]
 fn test_basic_buy_sell() {
@@ -145,7 +145,7 @@ fn test_converted_dividend_output_parses_as_dsl() {
     };
 
     let result = converter.convert(&input).unwrap();
-    let parse_result = parse_file(&result.cgt_content);
+    let parse_result = parse(&result.cgt_content);
 
     assert!(
         parse_result.is_ok(),

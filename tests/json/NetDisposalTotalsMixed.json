@@ -53,8 +53,8 @@
           "date": "2024-03-01",
           "ticker": "POOL",
           "quantity": "50",
-          "gross_proceeds": "300.00",
-          "proceeds": "300.00",
+          "gross_proceeds": "300",
+          "proceeds": "300",
           "matches": [
             {
               "rule": "SameDay",
@@ -67,15 +67,19 @@
               "rule": "Section104",
               "quantity": "30",
               "allowable_cost": "150",
-              "gain_or_loss": "30.00"
+              "gain_or_loss": "30"
             }
           ]
         }
       ],
       "disposal_count": 3,
-      "total_gain": "90.00",
+      "total_gain": "90",
       "total_loss": "0",
-      "net_gain": "90.00",
+      "net_gain": "90",
+      "gross_proceeds": "2300",
+      "total_allowable_cost": "2210",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -95,6 +99,162 @@
       "ticker": "ZERO",
       "quantity": "100",
       "total_cost": "1000"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "MIX",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "9",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-01-10",
+      "ticker": "MIX",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "11",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-01-10",
+      "ticker": "MIX",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-01-20",
+      "ticker": "MIX",
+      "action": "BUY",
+      "amount": "60",
+      "price": {
+        "amount": "8",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-01-01",
+      "ticker": "POOL",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "5",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-03-01",
+      "ticker": "POOL",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "7",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-03-01",
+      "ticker": "POOL",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "6",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-01-01",
+      "ticker": "ZERO",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-10",
+      "ticker": "ZERO",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-10",
+      "ticker": "ZERO",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-20",
+      "ticker": "ZERO",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "8",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

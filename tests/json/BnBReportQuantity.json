@@ -7,7 +7,7 @@
           "date": "2023-06-15",
           "ticker": "PARTBNB",
           "quantity": "100",
-          "gross_proceeds": "1500.00",
+          "gross_proceeds": "1500",
           "proceeds": "1490.00",
           "matches": [
             {
@@ -30,6 +30,10 @@
       "total_gain": "418.00",
       "total_loss": "0",
       "net_gain": "418.00",
+      "gross_proceeds": "1500",
+      "total_allowable_cost": "1072.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -39,6 +43,50 @@
       "ticker": "PARTBNB",
       "quantity": "30",
       "total_cost": "303.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-01",
+      "ticker": "PARTBNB",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-06-15",
+      "ticker": "PARTBNB",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "15",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-06-25",
+      "ticker": "PARTBNB",
+      "action": "BUY",
+      "amount": "30",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
     }
   ]
 }

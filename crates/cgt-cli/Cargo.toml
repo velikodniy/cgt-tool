@@ -8,11 +8,8 @@ name = "cgt-tool"
 path = "src/main.rs"
 
 [dependencies]
-cgt-core = { path = "../cgt-core" }
-cgt-format = { path = "../cgt-format" }
-cgt-formatter-plain = { path = "../cgt-formatter-plain" }
-cgt-formatter-pdf = { path = "../cgt-formatter-pdf" }
-cgt-money = { path = "../cgt-money" }
+cgt = { path = "../cgt" }
+cgt-pdf = { path = "../cgt-pdf" }
 cgt-converter = { path = "../cgt-converter" }
 clap = { version = "4.4", features = ["derive"] }
 anyhow = "1.0"

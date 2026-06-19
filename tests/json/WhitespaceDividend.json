@@ -23,6 +23,10 @@
       "total_gain": "140.00",
       "total_loss": "0",
       "net_gain": "140.00",
+      "gross_proceeds": "1200",
+      "total_allowable_cost": "1055.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -32,6 +36,50 @@
       "ticker": "SPACEY",
       "quantity": "0",
       "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-01",
+      "ticker": "SPACEY",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-06-15",
+      "ticker": "SPACEY",
+      "action": "ACCUMULATION",
+      "amount": "100",
+      "total_value": {
+        "amount": "50",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-12-01",
+      "ticker": "SPACEY",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
     }
   ]
 }

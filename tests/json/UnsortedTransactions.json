@@ -23,6 +23,10 @@
       "total_gain": "166.67",
       "total_loss": "0",
       "net_gain": "166.67",
+      "gross_proceeds": "1100.00",
+      "total_allowable_cost": "933.33",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -32,6 +36,50 @@
       "ticker": "AAPL",
       "quantity": "5",
       "total_cost": "466.67"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-03",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "10",
+      "price": {
+        "amount": "110.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-01-01",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "90.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-01-02",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "5",
+      "price": {
+        "amount": "100.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

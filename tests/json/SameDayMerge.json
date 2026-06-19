@@ -23,6 +23,10 @@
       "total_gain": "0",
       "total_loss": "18.83",
       "net_gain": "-18.83",
+      "gross_proceeds": "160",
+      "total_allowable_cost": "164.33",
+      "exempt_amount": "11700",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -32,6 +36,78 @@
       "ticker": "GB00B41YBW71",
       "quantity": "10",
       "total_cost": "82.17"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2018-08-28",
+      "ticker": "GB00B41YBW71",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "8",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2018-08-28",
+      "ticker": "GB00B41YBW71",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2018-08-28",
+      "ticker": "GB00B41YBW71",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "5",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2018-10-28",
+      "ticker": "GB00B41YBW71",
+      "action": "SELL",
+      "amount": "10",
+      "price": {
+        "amount": "9",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2018-10-28",
+      "ticker": "GB00B41YBW71",
+      "action": "SELL",
+      "amount": "10",
+      "price": {
+        "amount": "7",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "12.5",
+        "currency": "GBP"
+      }
     }
   ]
 }

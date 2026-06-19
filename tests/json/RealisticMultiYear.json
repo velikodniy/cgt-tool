@@ -53,6 +53,10 @@
       "total_gain": "691.79",
       "total_loss": "24825.90",
       "net_gain": "-24134.11",
+      "gross_proceeds": "10506.97",
+      "total_allowable_cost": "34619.98",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -156,6 +160,10 @@
       "total_gain": "2244.96",
       "total_loss": "7931.39",
       "net_gain": "-5686.43",
+      "gross_proceeds": "26260.66",
+      "total_allowable_cost": "31907.08",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -259,6 +267,10 @@
       "total_gain": "3968.11",
       "total_loss": "2409.49",
       "net_gain": "1558.63",
+      "gross_proceeds": "37164.47",
+      "total_allowable_cost": "35554.18",
+      "exempt_amount": "3000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -266,7 +278,7 @@
   "holdings": [
     {
       "ticker": "AAPL",
-      "quantity": "75.00000000000000000000000000",
+      "quantity": "75",
       "total_cost": "10146.47"
     },
     {
@@ -283,6 +295,526 @@
       "ticker": "MSFT",
       "quantity": "55",
       "total_cost": "15112.47"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2022-05-10",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "142.50",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-05-12",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "2250.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-05-15",
+      "ticker": "MSFT",
+      "action": "BUY",
+      "amount": "30",
+      "price": {
+        "amount": "265.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-07-20",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "25",
+      "price": {
+        "amount": "150.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-08-15",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "2100.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-09-01",
+      "ticker": "MSFT",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "255.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-11-10",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "30",
+      "price": {
+        "amount": "138.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2022-12-01",
+      "ticker": "GOOGL",
+      "action": "SELL",
+      "amount": "15",
+      "price": {
+        "amount": "95.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-01-15",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "135.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-02-10",
+      "ticker": "MSFT",
+      "action": "SELL",
+      "amount": "25",
+      "price": {
+        "amount": "280.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-03-20",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "105.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-04-15",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "15",
+      "price": {
+        "amount": "165.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-05-01",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "25",
+      "price": {
+        "amount": "172.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-05-20",
+      "ticker": "MSFT",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "320.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-06-15",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "125.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-06-15",
+      "ticker": "GOOGL",
+      "action": "SELL",
+      "amount": "30",
+      "price": {
+        "amount": "128.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-07-10",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "20",
+      "price": {
+        "amount": "190.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-07-25",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "192.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-10-01",
+      "ticker": "MSFT",
+      "action": "BUY",
+      "amount": "25",
+      "price": {
+        "amount": "330.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-11-15",
+      "ticker": "GOOGL",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "140.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2023-12-01",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "30",
+      "price": {
+        "amount": "188.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-01-10",
+      "ticker": "MSFT",
+      "action": "SELL",
+      "amount": "30",
+      "price": {
+        "amount": "375.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-02-15",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "40",
+      "price": {
+        "amount": "145.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-03-01",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "15",
+      "price": {
+        "amount": "175.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-04-15",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "25",
+      "price": {
+        "amount": "168.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-05-01",
+      "ticker": "MSFT",
+      "action": "SELL",
+      "amount": "25",
+      "price": {
+        "amount": "405.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-05-20",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "30",
+      "price": {
+        "amount": "175.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-06-10",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "195.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-06-10",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "40",
+      "price": {
+        "amount": "197.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-06-10",
+      "ticker": "AAPL",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "196.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-08-01",
+      "ticker": "GOOGL",
+      "action": "SELL",
+      "amount": "60",
+      "price": {
+        "amount": "170.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "15",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-08-20",
+      "ticker": "GOOGL",
+      "action": "BUY",
+      "amount": "60",
+      "price": {
+        "amount": "165.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-10-15",
+      "ticker": "AAPL",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "225.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "15",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-11-01",
+      "ticker": "MSFT",
+      "action": "BUY",
+      "amount": "20",
+      "price": {
+        "amount": "420.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-01",
+      "ticker": "GOOGL",
+      "action": "SELL",
+      "amount": "40",
+      "price": {
+        "amount": "185.00",
+        "currency": "USD"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "USD"
+      }
+    },
+    {
+      "date": "2024-12-15",
+      "ticker": "GB00B41YBW71",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "12.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "10",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-12-20",
+      "ticker": "GB00B41YBW71",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "13.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
     }
   ]
 }

@@ -13,16 +13,20 @@
             {
               "rule": "Section104",
               "quantity": "5",
-              "allowable_cost": "496.67",
-              "gain_or_loss": "28.33"
+              "allowable_cost": "500",
+              "gain_or_loss": "25"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "28.33",
+      "total_gain": "25",
       "total_loss": "0",
-      "net_gain": "28.33",
+      "net_gain": "25",
+      "gross_proceeds": "525",
+      "total_allowable_cost": "500",
+      "exempt_amount": "12000",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     },
@@ -39,16 +43,20 @@
             {
               "rule": "Section104",
               "quantity": "5",
-              "allowable_cost": "442.67",
-              "gain_or_loss": "57.33"
+              "allowable_cost": "436.00",
+              "gain_or_loss": "64.00"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "57.33",
+      "total_gain": "64.00",
       "total_loss": "0",
-      "net_gain": "57.33",
+      "net_gain": "64.00",
+      "gross_proceeds": "500",
+      "total_allowable_cost": "436.00",
+      "exempt_amount": "12300",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -57,7 +65,135 @@
     {
       "ticker": "FOOBAR",
       "quantity": "20",
-      "total_cost": "1770.67"
+      "total_cost": "1774.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2019-08-01",
+      "ticker": "FOOBAR",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "100",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2019-09-01",
+      "ticker": "FOOBAR",
+      "action": "SELL",
+      "amount": "5",
+      "price": {
+        "amount": "105",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-01-01",
+      "ticker": "FOOBAR",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "90",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-04-01",
+      "ticker": "FOOBAR",
+      "action": "ACCUMULATION",
+      "amount": "15",
+      "total_value": {
+        "amount": "30",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-04-01",
+      "ticker": "FOOBAR",
+      "action": "CAPRETURN",
+      "amount": "15",
+      "total_value": {
+        "amount": "50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-06-01",
+      "ticker": "FOOBAR",
+      "action": "BUY",
+      "amount": "10",
+      "price": {
+        "amount": "80",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2020-07-01",
+      "ticker": "FOOBAR",
+      "action": "SELL",
+      "amount": "5",
+      "price": {
+        "amount": "100",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2021-04-01",
+      "ticker": "FOOBAR",
+      "action": "ACCUMULATION",
+      "amount": "20",
+      "total_value": {
+        "amount": "40",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2021-04-01",
+      "ticker": "FOOBAR",
+      "action": "CAPRETURN",
+      "amount": "10",
+      "total_value": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
     }
   ]
 }

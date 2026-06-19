@@ -1,7 +1,5 @@
-use cgt_core::{Config, Disposal, calculator, parser, validate};
-use cgt_money::load_default_cache;
-use rust_decimal::Decimal;
-use serde::Serialize;
+use cgt::Config;
+use cgt::money::load_default_cache;
 use wasm_bindgen::prelude::*;
 
 mod utils;
@@ -40,31 +38,8 @@ pub fn init() {
 /// ```
 #[wasm_bindgen]
 pub fn parse_transactions(dsl: &str) -> Result<String, JsValue> {
-    let transactions = parser::parse_file(dsl).map_err(map_error)?;
+    let transactions = cgt::dsl::parse(dsl).map_err(map_error)?;
     serde_json::to_string_pretty(&transactions).map_err(map_error)
-}
-
-/// Tax year summary with calculated exemption and tax liability
-#[derive(Serialize)]
-struct TaxYear {
-    period: Option<String>,
-    year: Option<u16>,
-    disposals: Vec<Disposal>,
-    total_gain: String,
-    total_loss: String,
-    net_gain: String,
-    total_proceeds: String,
-    total_cost: String,
-    exemption: String,
-    taxable_gain: String,
-    tax_liability: String,
-}
-
-/// Tax report with all calculated fields
-#[derive(Serialize)]
-struct TaxReport {
-    tax_years: Vec<TaxYear>,
-    holdings: Vec<serde_json::Value>,
 }
 
 /// Calculate tax report from transaction DSL and return JSON representation.
@@ -74,7 +49,8 @@ struct TaxReport {
 /// * `tax_year` - Optional tax year start (e.g., 2024 for 2024/25). If null, includes all years.
 ///
 /// # Returns
-/// JSON representation of tax report with exemption, taxable_gain, tax_liability, and disposal details
+/// JSON representation of the tax report with per-year gross_proceeds,
+/// total_allowable_cost, exempt_amount, taxable_gain, and disposal details
 ///
 /// # Example
 /// ```javascript
@@ -84,71 +60,16 @@ struct TaxReport {
 /// `;
 /// const report = JSON.parse(calculate_tax(dsl, 2024));
 /// console.log(report.tax_years[0].total_gain);
-/// console.log(report.tax_years[0].exemption);
+/// console.log(report.tax_years[0].exempt_amount);
 /// console.log(report.tax_years[0].taxable_gain);
 /// ```
 #[wasm_bindgen]
 pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue> {
-    // Parse transactions
-    let transactions = parser::parse_file(dsl).map_err(map_error)?;
-
-    // Load bundled FX rates (embedded in WASM)
-    let fx_cache = load_default_cache().map_err(map_error)?;
-
-    // Load embedded config
+    let transactions = cgt::dsl::parse(dsl).map_err(map_error)?;
+    let fx = load_default_cache().map_err(map_error)?;
     let config = Config::embedded().map_err(map_error)?;
-
-    // Calculate tax report
-    let report = calculator::calculate(&transactions, tax_year, Some(&fx_cache), &config)
-        .map_err(map_error)?;
-
-    // Enhance with exemption and tax calculations
-    let tax_years: Vec<TaxYear> = report
-        .tax_years
-        .iter()
-        .map(|ty| {
-            let start_year = ty.period.start_year();
-            let exemption = ty.exempt_amount;
-            let gross_proceeds: Decimal = ty.disposals.iter().map(|d| d.gross_proceeds).sum();
-            let total_cost: Decimal = ty
-                .disposals
-                .iter()
-                .flat_map(|d| d.matches.iter())
-                .map(|m| m.allowable_cost)
-                .sum();
-            let taxable = (ty.net_gain - exemption).max(Decimal::ZERO);
-
-            // Tax liability calculation (simplified - set to zero for now)
-            let tax_liability = Decimal::ZERO;
-
-            TaxYear {
-                period: Some(cgt_format::format_tax_year(start_year)),
-                year: Some(start_year),
-                disposals: ty.disposals.clone(),
-                total_gain: ty.total_gain.to_string(),
-                total_loss: ty.total_loss.to_string(),
-                net_gain: ty.net_gain.to_string(),
-                total_proceeds: gross_proceeds.to_string(),
-                total_cost: total_cost.to_string(),
-                exemption: exemption.to_string(),
-                taxable_gain: taxable.to_string(),
-                tax_liability: tax_liability.to_string(),
-            }
-        })
-        .collect();
-
-    let holdings: Result<Vec<serde_json::Value>, _> = report
-        .holdings
-        .iter()
-        .map(|h| serde_json::to_value(h).map_err(map_error))
-        .collect();
-
-    let tax_report = TaxReport {
-        tax_years,
-        holdings: holdings?,
-    };
-
-    serde_json::to_string_pretty(&tax_report).map_err(map_error)
+    let report = cgt::calculate(&transactions, tax_year, Some(&fx), &config).map_err(map_error)?;
+    serde_json::to_string_pretty(&report).map_err(map_error)
 }
 
 /// Validate transaction DSL and return validation result as JSON.
@@ -172,7 +93,7 @@ pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue
 /// ```
 #[wasm_bindgen]
 pub fn validate_dsl(dsl: &str) -> Result<String, JsValue> {
-    let transactions = parser::parse_file(dsl).map_err(map_error)?;
-    let result = validate(&transactions);
+    let transactions = cgt::dsl::parse(dsl).map_err(map_error)?;
+    let result = cgt::validate(&transactions);
     serde_json::to_string_pretty(&result).map_err(map_error)
 }

@@ -13,19 +13,19 @@ Notes:
 
 ## 2023/24
 
-1) SELL 50 ACCFUND on 01/06/2023 - GAIN £80.00
-   Section 104: 50 shares @ £10.3
+1) SELL 50 ACCFUND on 01/06/2023 - GAIN £92.50
+   Section 104: 50 shares @ £10.05
    Gross Proceeds: 50 × £12 = £600.00
    Net Proceeds: £600.00 - £5.00 fees = £595.00
-   Cost: £515.00
-   Result: £80.00
+   Cost: £502.50
+   Result: £92.50
 
-2) SELL 50 ACCFUND on 01/12/2023 - GAIN £30.00
-   Section 104: 50 shares @ £10.3
+2) SELL 50 ACCFUND on 01/12/2023 - GAIN £17.50
+   Section 104: 50 shares @ £10.55
    Gross Proceeds: 50 × £11 = £550.00
    Net Proceeds: £550.00 - £5.00 fees = £545.00
-   Cost: £515.00
-   Result: £30.00
+   Cost: £527.50
+   Result: £17.50
 
 
 # HOLDINGS

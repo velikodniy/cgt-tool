@@ -1,9 +1,7 @@
 use anyhow::{Result, bail};
-use cgt_core::Transaction;
-use cgt_core::calculator::calculate;
-use cgt_core::parser::parse_file;
-use cgt_format::Formatter;
-use cgt_money::{RateFile, load_cache_with_overrides, load_default_cache};
+use cgt::calculate;
+use cgt::dsl::parse;
+use cgt::money::{RateFile, load_cache_with_overrides, load_default_cache};
 use clap::Parser;
 mod commands;
 use commands::{BrokerCommands, Commands, OutputFormat};
@@ -47,20 +45,45 @@ fn read_fx_folder(path: &std::path::Path) -> Result<Vec<RateFile>> {
     Ok(files)
 }
 
+/// Load the embedded configuration, then apply overrides from `./config.toml`
+/// and `~/.config/cgt-tool/config.toml` in that order. A malformed override
+/// file is a hard error.
+fn load_config() -> Result<cgt::Config> {
+    let mut config = cgt::Config::embedded()?;
+
+    let mut paths = vec![std::path::PathBuf::from("config.toml")];
+    if let Some(home) = std::env::var_os("HOME") {
+        paths.push(
+            std::path::PathBuf::from(home)
+                .join(".config")
+                .join("cgt-tool")
+                .join("config.toml"),
+        );
+    }
+
+    for path in paths {
+        if path.exists() {
+            config.apply_overrides_toml(&fs::read_to_string(&path)?)?;
+        }
+    }
+
+    Ok(config)
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
         Commands::Parse { files, schema } => {
             if *schema {
-                let schema = schema_for!(Vec<Transaction>);
+                let schema = schema_for!(Vec<cgt::Transaction>);
                 println!("{}", serde_json::to_string_pretty(&schema)?);
                 return Ok(());
             }
 
             if !files.is_empty() {
                 let content = read_and_concatenate_files(files)?;
-                let transactions = parse_file(&content)?;
+                let transactions = parse(&content)?;
                 let json = serde_json::to_string_pretty(&transactions)?;
                 println!("{}", json);
             }
@@ -82,15 +105,14 @@ fn main() -> Result<()> {
                 load_default_cache()?
             };
 
-            let transactions = parse_file(&content)?;
+            let transactions = parse(&content)?;
 
-            let config = cgt_core::Config::load_with_overrides()?;
+            let config = load_config()?;
             let report = calculate(&transactions, *year, Some(&fx_cache), &config)?;
 
             match format {
                 OutputFormat::Plain => {
-                    let formatter = cgt_formatter_plain::PlainFormatter;
-                    let content = formatter.format(&report)?;
+                    let content = cgt::format::plain::render(&report);
                     if let Some(path) = output {
                         fs::write(path, content)?;
                     } else {
@@ -106,8 +128,7 @@ fn main() -> Result<()> {
                     }
                 }
                 OutputFormat::Pdf => {
-                    let formatter = cgt_formatter_pdf::PdfFormatter;
-                    let pdf_bytes = formatter.format(&report)?;
+                    let pdf_bytes = cgt_pdf::render(&report)?;
                     let (output_path, is_default) = match output {
                         Some(p) => (p.clone(), false),
                         None => {

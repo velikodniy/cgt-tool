@@ -38,6 +38,10 @@
       "total_gain": "629.67",
       "total_loss": "0",
       "net_gain": "629.67",
+      "gross_proceeds": "5440.00",
+      "total_allowable_cost": "4605.33",
+      "exempt_amount": "11700",
+      "taxable_gain": "0",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
@@ -47,6 +51,64 @@
       "ticker": "LOBSTER",
       "quantity": "400",
       "total_cost": "1674.67"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2019-02-01",
+      "ticker": "LOBSTER",
+      "action": "SELL",
+      "amount": "400",
+      "price": {
+        "amount": "5.20",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "105",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2018-05-01",
+      "ticker": "LOBSTER",
+      "action": "SELL",
+      "amount": "700",
+      "price": {
+        "amount": "4.80",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "100",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2017-09-01",
+      "ticker": "LOBSTER",
+      "action": "BUY",
+      "amount": "500",
+      "price": {
+        "amount": "4.10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "80",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2014-04-01",
+      "ticker": "LOBSTER",
+      "action": "BUY",
+      "amount": "1000",
+      "price": {
+        "amount": "4.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "150",
+        "currency": "GBP"
+      }
     }
   ]
 }

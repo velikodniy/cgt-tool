@@ -23,6 +23,10 @@
       "total_gain": "90.00",
       "total_loss": "0",
       "net_gain": "90.00",
+      "gross_proceeds": "1100",
+      "total_allowable_cost": "1005.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
       "dividend_income": "50",
       "dividend_tax_paid": "5"
     }
@@ -32,6 +36,49 @@
       "ticker": "INCOMEFUND",
       "quantity": "0",
       "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-01",
+      "ticker": "INCOMEFUND",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-07-15",
+      "ticker": "INCOMEFUND",
+      "action": "DIVIDEND",
+      "total_value": {
+        "amount": "50",
+        "currency": "GBP"
+      },
+      "tax_paid": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-12-01",
+      "ticker": "INCOMEFUND",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "11",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
     }
   ]
 }
