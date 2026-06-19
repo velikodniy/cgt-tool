@@ -35,6 +35,19 @@ THRESHOLD = Decimal("1.00")
 # ACCUMULATION adjusts cost basis (no CGT impact); cgt-calc has no equivalent.
 UNSUPPORTED_OPS = {"SPLIT", "UNSPLIT", "CAPRETURN", "ACCUMULATION"}
 
+# Fixtures whose cgtcalc (mattjgalloway) discrepancy is expected, not a
+# regression. Each combines a same-day or Bed & Breakfast disposal with a
+# corporate action dated AFTER that disposal; cgtcalc mishandles the
+# interaction (it drops the B&B match or applies a retroactive same-day
+# offset), while cgt-tool follows HMRC CG51560 and TCGA92/S106A. These
+# values were adjudicated against the HMRC rules (docs adjudication
+# 2026-06-18); cgt-tool is authoritative here.
+KNOWN_CGTCALC_DIVERGENCES = {
+    "WithAssetEventsBB",
+    "WithAssetEventsSameDay",
+    "SyntheticComplex",
+}
+
 
 def has_unsupported_ops(cgt_file: Path) -> bool:
     """Return True if the .cgt file contains ops cgt-calc cannot handle."""
@@ -347,7 +360,9 @@ def validate_file(cgt_file: Path, verbose: bool = True) -> tuple[bool, str, str]
     """Validate a single .cgt file against external calculators.
 
     Returns (all_passed, cgt_calc_status, cgtcalc_status) where status is
-    one of: "ok", "diff", "skip", "error".
+    one of: "ok", "diff", "skip", "error", "known". "known" marks an
+    adjudicated cgtcalc divergence (see KNOWN_CGTCALC_DIVERGENCES) that is
+    reported but does not fail the run.
     """
     if verbose:
         print(f"\n{'=' * 60}")
@@ -401,7 +416,12 @@ def validate_file(cgt_file: Path, verbose: bool = True) -> tuple[bool, str, str]
             print(f"  SKIP (cgtcalc): {cgtcalc_result.error}")
     else:
         discrepancies = compare_results(cgt_result, cgtcalc_result)
-        if discrepancies:
+        if discrepancies and cgt_file.stem in KNOWN_CGTCALC_DIVERGENCES:
+            cgtcalc_status = "known"
+            print(f"  KNOWN DIVERGENCE (cgtcalc, adjudicated):")
+            for period, msg, diff in discrepancies:
+                print(f"    {period}: {msg} (diff: £{diff:.2f})")
+        elif discrepancies:
             cgtcalc_status = "diff"
             all_passed = False
             print(f"  DISCREPANCY (cgtcalc):")
@@ -425,8 +445,8 @@ def main():
     files = [Path(f) for f in sys.argv[1:]]
     all_passed = True
     summary = {
-        "cgt-calc": {"ok": 0, "diff": 0, "skip": 0, "error": 0},
-        "cgtcalc": {"ok": 0, "diff": 0, "skip": 0, "error": 0},
+        "cgt-calc": {"ok": 0, "diff": 0, "skip": 0, "error": 0, "known": 0},
+        "cgtcalc": {"ok": 0, "diff": 0, "skip": 0, "error": 0, "known": 0},
     }
 
     for f in files:
@@ -458,10 +478,10 @@ def main():
     print("=" * 60)
     print("Summary:")
     print(
-        f"  cgt-calc   -> ok: {summary['cgt-calc']['ok']}, diff: {summary['cgt-calc']['diff']}, skip: {summary['cgt-calc']['skip']}, error: {summary['cgt-calc']['error']}"
+        f"  cgt-calc   -> ok: {summary['cgt-calc']['ok']}, diff: {summary['cgt-calc']['diff']}, skip: {summary['cgt-calc']['skip']}, error: {summary['cgt-calc']['error']}, known: {summary['cgt-calc']['known']}"
     )
     print(
-        f"  cgtcalc    -> ok: {summary['cgtcalc']['ok']}, diff: {summary['cgtcalc']['diff']}, skip: {summary['cgtcalc']['skip']}, error: {summary['cgtcalc']['error']}"
+        f"  cgtcalc    -> ok: {summary['cgtcalc']['ok']}, diff: {summary['cgtcalc']['diff']}, skip: {summary['cgtcalc']['skip']}, error: {summary['cgtcalc']['error']}, known: {summary['cgtcalc']['known']}"
     )
 
     sys.exit(0 if all_passed else 1)

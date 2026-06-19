@@ -300,7 +300,10 @@ def main() -> int:
     parser.add_argument("--mode", choices=["compare", "parse", "sweep"],
                         default="compare")
     parser.add_argument("--old", required=True,
-                        help="oracle binary (or the only binary, in sweep)")
+                        help="oracle binary (or the only binary, in sweep). "
+                             "Post-rewrite the oracle is the last released "
+                             "cgt-tool binary; the in-repo target/oracle/cgt-tool "
+                             "is the pre-rewrite reference snapshot.")
     parser.add_argument("--new", help="candidate binary (compare/parse)")
     parser.add_argument("--allow", nargs="*", default=[],
                         choices=["rounding-policy", "leg-granularity"],
