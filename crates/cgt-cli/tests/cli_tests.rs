@@ -25,48 +25,25 @@ fn test_cli_parse_success() {
         .success();
 }
 
-/// Test cases - run without year filter to get all tax years
-const PLAIN_FORMAT_TESTS: &[&str] = &[
-    "CarryLoss",
-    "Simple",
-    "Blank",
-    "HMRCExample1",
-    "GainsAndLosses",
-    "MultipleMatches",
-    "SameDayMerge",
-    "SameDayMergeInterleaved",
-    "SimpleTwoSameDay",
-    "WithAssetEventsSameDay",
-    "WithSplitBB",
-    "WithSplitS104",
-    "WithUnsplitBB",
-    "WithUnsplitS104",
-    "BuySellAllBuyAgainCapitalReturn",
-    "WithAssetEvents",
-    "WithAssetEventsBB",
-    "WithAssetEventsMultipleYears",
-    "AssetEventsNotFullSale",
-    "AssetEventsNotFullSale2",
-    "UnsortedTransactions",
-    "MultiTickerBasic",
-    "MultiTickerSameDay",
-    "MultiTickerBedAndBreakfast",
-    "MultiTickerSplit",
-    "2024_2025_SpecialYear",
-    "RateSplit2024",
-    "AccumulationDividend",
-    "BnBReportQuantity",
-    "CapReturnEqualisation",
-    "DividendAfterFullDisposal",
-    "ExpensesRounding",
-    "WhitespaceDividend",
-    "SyntheticComplex",
-    "CashDividend",
-];
+/// Stems of every fixture in `tests/inputs`, sorted for deterministic ordering.
+fn fixture_stems() -> Vec<String> {
+    let mut stems: Vec<String> = fs::read_dir("../../tests/inputs")
+        .unwrap_or_else(|e| panic!("Failed to read tests/inputs: {}", e))
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| path.extension().is_some_and(|ext| ext == "cgt"))
+        .filter_map(|path| {
+            path.file_stem()
+                .and_then(|stem| stem.to_str())
+                .map(str::to_owned)
+        })
+        .collect();
+    stems.sort();
+    stems
+}
 
 #[test]
 fn test_plain_format_outputs() {
-    for name in PLAIN_FORMAT_TESTS {
+    for name in fixture_stems() {
         let input_path = format!("../../tests/inputs/{}.cgt", name);
         let expected_path = format!("../../tests/plain/{}.txt", name);
 
@@ -102,7 +79,7 @@ fn test_plain_format_outputs() {
 fn test_pdf_format_generates_valid_pdfs() {
     let temp_dir = std::env::temp_dir();
 
-    for name in PLAIN_FORMAT_TESTS {
+    for name in fixture_stems() {
         let input_path = format!("../../tests/inputs/{}.cgt", name);
         let output_path = temp_dir.join(format!("{}_test.pdf", name));
 
