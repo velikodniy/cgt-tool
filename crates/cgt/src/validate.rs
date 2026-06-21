@@ -172,6 +172,34 @@ fn check_trade_fields(
     }
 }
 
+/// Check that a SPLIT/UNSPLIT ratio is strictly positive.
+fn check_ratio(
+    result: &mut ValidationResult,
+    line: Option<usize>,
+    date: NaiveDate,
+    ticker: &str,
+    label: &str,
+    ratio: Decimal,
+) {
+    if ratio == Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!("{label} with zero ratio"),
+        });
+    }
+
+    if ratio < Decimal::ZERO {
+        result.errors.push(ValidationError {
+            line,
+            date,
+            ticker: ticker.to_string(),
+            message: format!("{label} with negative ratio: {ratio}"),
+        });
+    }
+}
+
 /// Validate a list of transactions before calculation.
 ///
 /// Checks for:
@@ -268,43 +296,11 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
             }
 
             Operation::Split { ratio } => {
-                if *ratio == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "SPLIT with zero ratio".to_string(),
-                    });
-                }
-
-                if *ratio < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("SPLIT with negative ratio: {}", ratio),
-                    });
-                }
+                check_ratio(&mut result, line, tx.date, &tx.ticker, "SPLIT", *ratio);
             }
 
             Operation::Unsplit { ratio } => {
-                if *ratio == Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "UNSPLIT with zero ratio".to_string(),
-                    });
-                }
-
-                if *ratio < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("UNSPLIT with negative ratio: {}", ratio),
-                    });
-                }
+                check_ratio(&mut result, line, tx.date, &tx.ticker, "UNSPLIT", *ratio);
             }
 
             Operation::Dividend { total_value, .. } => {
