@@ -67,6 +67,44 @@ fn test_zero_quantity_accumulation_is_accepted() {
 }
 
 #[test]
+fn test_same_date_split_and_trade_same_ticker_is_rejected() {
+    let txns = vec![
+        make_buy("2024-01-01", "ABC", 100, 10, 0),
+        make_split("2024-06-01", "ABC", 2),
+        make_sell("2024-06-01", "ABC", 50, 6, 0),
+    ];
+    let result = validate(&txns);
+    assert!(!result.is_valid());
+    assert!(
+        result.errors[0].message.contains("ambiguous"),
+        "got: {}",
+        result.errors[0].message
+    );
+}
+
+#[test]
+fn test_split_and_trade_different_ticker_same_date_is_allowed() {
+    let txns = vec![
+        make_buy("2024-01-01", "ABC", 100, 10, 0),
+        make_split("2024-06-01", "ABC", 2),
+        make_sell("2024-06-01", "XYZ", 50, 6, 0),
+    ];
+    let result = validate(&txns);
+    assert!(result.is_valid(), "different tickers must not collide");
+}
+
+#[test]
+fn test_split_and_trade_different_date_same_ticker_is_allowed() {
+    let txns = vec![
+        make_buy("2024-01-01", "ABC", 100, 10, 0),
+        make_split("2024-06-01", "ABC", 2),
+        make_sell("2024-06-02", "ABC", 50, 6, 0),
+    ];
+    let result = validate(&txns);
+    assert!(result.is_valid(), "different dates must not collide");
+}
+
+#[test]
 fn test_negative_quantity_accumulation_is_rejected() {
     let txns = vec![make_accumulation("2020-06-01", "FUND", -5, 10)];
     let result = validate::validate(&txns);

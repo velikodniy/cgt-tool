@@ -373,5 +373,45 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
         }
     }
 
+    check_reorganisation_collisions(&mut result, transactions);
+
     result
+}
+
+/// Reject a SPLIT/UNSPLIT on the same date as a BUY or SELL of the same ticker.
+///
+/// A split is a reorganisation of share capital (TCGA92/S127): not a disposal
+/// or acquisition, so it does not enter the same-day matching rules and HMRC
+/// gives no intra-day order relative to a trade on its effective date. The two
+/// readings (the trade in pre- or post-split shares) yield materially different
+/// gains, so the input is ambiguous and the user must date the trade before or
+/// after the split.
+fn check_reorganisation_collisions(result: &mut ValidationResult, transactions: &[Transaction]) {
+    let mut reorg_dates: HashMap<(NaiveDate, &str), Option<usize>> = HashMap::new();
+    for (i, tx) in transactions.iter().enumerate() {
+        if matches!(
+            tx.operation,
+            Operation::Split { .. } | Operation::Unsplit { .. }
+        ) {
+            reorg_dates
+                .entry((tx.date, tx.ticker.as_str()))
+                .or_insert(Some(i + 1));
+        }
+    }
+
+    for (i, tx) in transactions.iter().enumerate() {
+        if matches!(tx.operation, Operation::Buy { .. } | Operation::Sell { .. })
+            && reorg_dates.contains_key(&(tx.date, tx.ticker.as_str()))
+        {
+            result.errors.push(ValidationError {
+                line: Some(i + 1),
+                date: tx.date,
+                ticker: tx.ticker.clone(),
+                message: "trade on the same date as a SPLIT/UNSPLIT of the same ticker is \
+                          ambiguous (no defined order between the split and the trade); \
+                          date the trade before or after the split"
+                    .to_string(),
+            });
+        }
+    }
 }
