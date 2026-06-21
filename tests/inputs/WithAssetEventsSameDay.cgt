@@ -1,35 +1,69 @@
 # Test: WithAssetEventsSameDay
-# Purpose: Tests same-day buy+sell with asset events (CAPRETURN/ACCUMULATION)
+# Purpose: Tests a same-day buy+sell combined with capital returns and accumulation
+#          dividends adjusting the Section 104 cost base
 # Rules Tested: Same Day Rule (TCGA92/S105(1)), Section 104 Pooling, Capital Returns
+#               (CAPRETURN), Accumulation dividends (ACCUMULATION)
 # Complexity: High
-# Key Features: Same-day buy AND sell with capital returns - edge case
-# Expected Outcome: Net Gain £192.40
+# Key Features: Same-day buy AND sell, two corporate-action pairs, the later pair
+#               adjusts only the shares still held after the disposal
+# Expected Outcome: 2019/20 net gain £200.31 (Same-Day leg -£8.25 + Section 104 leg £208.56)
 #
 # Verification Status: Verified
-# Verified By: Manual calculation 2026-01-06
-# Verification Notes:
-#   Buy 1: 2018-08-29, 20 @ £184.65 + £12.5 = £3,705.50
-#   Buy 2: 2019-03-15, 20 @ £181.56 + £2 = £3,633.20
-#   Pool before events: 40 shares, £7,338.70
+# Verified By: Reconciled against golden output 2026-06-21
+# Verification Notes: Matches tests/json/WithAssetEventsSameDay.json and
+#                     tests/plain/WithAssetEventsSameDay.txt. See detailed verification below.
 #
-#   CAPRETURN 2019-05-31 (40 shares, £149.75): Apportioned across lots
-#   Buy 3: 2019-11-05, 20 @ £194.22 + £2 = £3,886.40 (not in pool yet)
+# === SECTION 104 POOL (pre-sale) ===
 #
-#   Sell 2019-11-05: 40 @ £194.22, £12.5 fees
-#   Gross proceeds: 40 × £194.22 = £7,768.80
-#   Net proceeds: £7,768.80 - £12.50 = £7,756.30
-#   Matching:
-#   - Same Day: 20 shares matched with Buy 3 (cost £3,886.40)
-#     Proceeds: £3,878.15, Loss: -£8.25
-#   - S104: 20 shares from pool (cost £3,677.50)
-#     Proceeds: £3,878.15, Gain: £200.65
-#   Total cost: £7,563.90
-#   Net Gain: £192.40 (£200.65 gain - £8.25 loss)
+#   Buy 1: 2018-08-29, 20 @ £184.65 + £12.50 fees = £3,705.50
+#   Buy 2: 2019-03-15, 20 @ £181.56 + £2.00 fees  = £3,633.20
+#   Pool: 40 shares, £7,338.70  (avg £183.4675/share)
+#   2019-05-31 CAPRETURN 40, £149.75 (reduces pool cost):   £7,338.70 - £149.75 = £7,188.95
+#   2019-05-31 ACCUMULATION 40, £150.24 (raises pool cost): £7,188.95 + £150.24 = £7,339.19
+#   Pool: 40 shares, £7,339.19  (avg £183.47975/share)
 #
-#   Holdings after: 20 shares @ £183.88 avg (£3,677.50 total)
+# === DISPOSAL: 2019-11-05 SELL 40 shares ===
 #
-#   CAPRETURN 2019-11-30 (20 shares, £95.12): Applied to remaining pool
-#   ACCUMULATION 2019-11-30 (20 shares, £110.93): No CGT impact
+# The 2019-11-05 BUY 20 is a same-day acquisition; it is matched to the sale and
+# never enters the Section 104 pool.
+# Gross proceeds: 40 × £194.22 = £7,768.80
+# Net proceeds:   £7,768.80 - £12.50 fees = £7,756.30
+# Each 20-share leg's net proceeds: 20 × £194.22 - (£12.50 × 20/40)
+#                                 = £3,884.40 - £6.25 = £3,878.15
+#
+# Matching order (CG51560): Same Day -> Bed & Breakfast -> Section 104
+#   Same Day:    20 shares matched to the 2019-11-05 buy
+#   Section 104: remaining 20 shares from the pool
+#
+# Same-Day leg (20 shares):
+#   Allowable cost = 20 × £194.22 + £2.00 = £3,886.40
+#   Loss = £3,878.15 - £3,886.40 = -£8.25
+#
+# Section 104 leg (20 shares):
+#   Unit cost = £7,339.19 / 40 = £183.47975/share
+#   Allowable cost = 20 × £183.47975 = £3,669.595  ->  £3,669.60
+#   Gain = £3,878.15 - £3,669.595 = £208.555  ->  £208.56
+#   Pool drained: 40 - 20 = 20 shares; £7,339.19 - £3,669.595 = £3,669.595
+#
+# === SECTION 104 POOL (post-sale) ===
+#
+# The later corporate actions adjust only the 20 shares still held. The same-day
+# and Section 104 shares disposed on 2019-11-05 have already left the pool
+# (CG51560; TCGA92/S110(8)(d)), so they take no part of these returns.
+#   2019-11-30 CAPRETURN 20, £95.12:     £3,669.595 - £95.12 = £3,574.475
+#   2019-11-30 ACCUMULATION 20, £110.93: £3,574.475 + £110.93 = £3,685.405  ->  £3,685.41
+#   Pool: 20 shares, £3,685.41  (avg £184.27/share)
+#
+# === FINAL RESULT (2019/20) ===
+#   Disposals: 1
+#   Gross proceeds: £7,768.80
+#   Net proceeds: £7,756.30
+#   Total allowable cost: £3,886.40 + £3,669.60 = £7,556.00
+#   Net gain: £208.56 - £8.25 = £200.31  (golden total_gain £200.31, total_loss £0)
+#   Annual exemption: £12,000.00  ->  Taxable gain: £0.00
+#   Final holding: 20 shares, £3,685.41 (avg £184.27/share)
+#   Rule: Same Day + Section 104
+#   Verification: matches golden output
 #
 2018-08-29 BUY GB00B3TYHH97 20 @ 184.65 FEES 12.5
 2019-03-15 BUY GB00B3TYHH97 20 @ 181.56 FEES 2

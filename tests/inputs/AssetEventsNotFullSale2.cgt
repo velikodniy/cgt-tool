@@ -6,7 +6,7 @@
 # Expected Outcome: Gain £25 (first sale), £256 (second sale)
 #
 # Verification Status: Verified
-# Verified By: Manual calculation 2025-12-08
+# Verified By: Reconciled against golden output 2026-06-21
 # Verification Notes:
 #   Same as AssetEventsNotFullSale until second sell:
 #
@@ -22,8 +22,9 @@
 #   Cost from pool: £1744.00 per JSON (25 shares @ £2180, avg £87.20/sh)
 #   Gain: £2000 - £1744.00 = £256.00 ✓
 #
-#   Remaining: 5 shares
-#   CAPRETURN £10 and ACCUMULATION on 5 shares
+#   Remaining: 5 shares, £436.00 (£2180 - £1744)
+#   2021-04-01 ACCUMULATION 5 (£10) then CAPRETURN 5 (£10) net to zero
+#   Final holding: 5 shares, £436.00 (avg £87.20/share)
 #
 2019-08-01 BUY FOOBAR 10 @ 100 FEES 0
 2019-09-01 SELL FOOBAR 5 @ 105 FEES 0

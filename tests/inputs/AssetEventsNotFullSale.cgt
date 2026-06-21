@@ -1,39 +1,48 @@
 # Test: AssetEventsNotFullSale
-# Purpose: Tests partial sales with capital returns affecting cost base
-# Rules Tested: Section 104 Pooling, Capital Return (CAPRETURN)
+# Purpose: Tests partial sales with capital returns and accumulation dividends
+#          adjusting the Section 104 cost base
+# Rules Tested: Section 104 Pooling, Capital Return (CAPRETURN), Accumulation
+#               dividends (ACCUMULATION)
 # Complexity: Medium
-# Key Features: Multiple partial sales, capital returns between sales
-# Expected Outcome: Gain £28 (first sale), £57 (second sale)
+# Key Features: Two partial sales in different tax years, corporate-action pairs
+#               between and after the sales
+# Expected Outcome: 2019/20 gain £25 (first sale), 2020/21 gain £64.00 (second sale)
 #
 # Verification Status: Verified
-# Verified By: Manual calculation 2025-12-08
-# Verification Notes:
-#   Buy 1: 10 × £100 + £0 = £1000
-#   Pool: 10 shares, £1000
+# Verified By: Reconciled against golden output 2026-06-21
+# Verification Notes: Matches tests/json/AssetEventsNotFullSale.json and
+#                     tests/plain/AssetEventsNotFullSale.txt. Figures are exact under
+#                     chronological replay: each disposal is priced off the pool as it
+#                     stood on the disposal date, so the 2021-04-01 corporate actions
+#                     do not leak back into the 2020-07-01 sale.
 #
-#   Sell 5 @ £105:
-#   Proceeds: £525
-#   Cost: 5/10 × £1000 = £500
-#   JSON shows £496.67 (possibly different rounding)
-#   Gain: £525 - £496.67 = £28.33 ≈ £28 ✓
+#   Buy 1: 2019-08-01, 10 @ £100 = £1,000.00
+#   Pool: 10 shares, £1,000.00
 #
-#   Pool after: 5 shares, remaining cost
+#   Sell 5 @ £105 (2019-09-01):
+#     Proceeds: 5 × £105 = £525.00
+#     Allowable cost: 5/10 × £1,000.00 = £500.00
+#     Gain: £525.00 - £500.00 = £25.00
+#   Pool: 5 shares, £500.00
 #
-#   Buy 2: 10 × £90 = £900
-#   Pool: 15 shares
+#   Buy 2: 2020-01-01, 10 @ £90 = £900.00
+#   Pool: 15 shares, £1,400.00
+#   2020-04-01 ACCUMULATION 15, £30 (raises pool cost): £1,400.00 + £30.00 = £1,430.00
+#   2020-04-01 CAPRETURN 15, £50 (reduces pool cost):   £1,430.00 - £50.00 = £1,380.00
+#   Pool: 15 shares, £1,380.00
 #
-#   CAPRETURN £50: Reduces pool cost
-#   ACCUMULATION £30: No CGT impact
+#   Buy 3: 2020-06-01, 10 @ £80 = £800.00
+#   Pool: 25 shares, £2,180.00  (avg £87.20/share)
 #
-#   Buy 3: 10 × £80 = £800
-#   Pool: 25 shares
+#   Sell 5 @ £100 (2020-07-01):
+#     Proceeds: 5 × £100 = £500.00
+#     Allowable cost: 5/25 × £2,180.00 = £436.00
+#     Gain: £500.00 - £436.00 = £64.00
+#   Pool: 20 shares, £1,744.00
 #
-#   Sell 5 @ £100:
-#   Proceeds: £500
-#   Cost from pool (proportional): £442.67 per JSON
-#   Gain: £500 - £442.67 = £57.33 ≈ £57 ✓
-#
-#   CAPRETURN £10 and ACCUMULATION on remaining 20 shares
+#   2021-04-01 ACCUMULATION 20, £40: £1,744.00 + £40.00 = £1,784.00
+#   2021-04-01 CAPRETURN 10, £10:    £1,784.00 - £10.00 = £1,774.00
+#   Final holding: 20 shares, £1,774.00 (avg £88.70/share)
 #
 2019-08-01 BUY FOOBAR 10 @ 100 FEES 0
 2019-09-01 SELL FOOBAR 5 @ 105 FEES 0
