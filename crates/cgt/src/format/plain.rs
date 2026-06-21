@@ -243,7 +243,7 @@ pub fn render(report: &TaxReport) -> String {
 }
 
 fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
-    let total_gain: Decimal = disposal.legs.iter().map(|m| m.gain_or_loss).sum();
+    let total_gain = disposal.total_gain();
     let gain_type = if total_gain >= Decimal::ZERO {
         "GAIN"
     } else {
@@ -324,7 +324,7 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
         );
     }
 
-    let total_cost: Decimal = disposal.legs.iter().map(|m| m.allowable_cost).sum();
+    let total_cost = disposal.total_allowable_cost();
     let _ = writeln!(out, "   Cost: {}", format_gbp(total_cost));
     let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
 }

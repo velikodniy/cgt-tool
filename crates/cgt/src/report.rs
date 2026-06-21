@@ -124,6 +124,18 @@ pub struct Disposal {
     pub legs: Vec<MatchLeg>,
 }
 
+impl Disposal {
+    /// Net gain or loss across all legs of this disposal.
+    pub fn total_gain(&self) -> Decimal {
+        self.legs.iter().map(|leg| leg.gain_or_loss).sum()
+    }
+
+    /// Total allowable cost across all legs of this disposal.
+    pub fn total_allowable_cost(&self) -> Decimal {
+        self.legs.iter().map(|leg| leg.allowable_cost).sum()
+    }
+}
+
 impl Serialize for Disposal {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

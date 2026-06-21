@@ -262,8 +262,8 @@ fn build_asset_event_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
 fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     let mut dict = Dict::new();
 
-    let total_gain: Decimal = disposal.legs.iter().map(|m| m.gain_or_loss).sum();
-    let total_cost: Decimal = disposal.legs.iter().map(|m| m.allowable_cost).sum();
+    let total_gain = disposal.total_gain();
+    let total_cost = disposal.total_allowable_cost();
 
     dict.insert("ticker".into(), disposal.ticker.clone().into_value());
     dict.insert("date".into(), date_dict(disposal.date).into_value());
