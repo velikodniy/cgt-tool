@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::Serialize;
 use serde::ser::SerializeStruct;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 
 /// Result of validating a transaction list.
@@ -387,21 +387,19 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
 /// gains, so the input is ambiguous and the user must date the trade before or
 /// after the split.
 fn check_reorganisation_collisions(result: &mut ValidationResult, transactions: &[Transaction]) {
-    let mut reorg_dates: HashMap<(NaiveDate, &str), Option<usize>> = HashMap::new();
-    for (i, tx) in transactions.iter().enumerate() {
+    let mut reorg_dates: HashSet<(NaiveDate, &str)> = HashSet::new();
+    for tx in transactions {
         if matches!(
             tx.operation,
             Operation::Split { .. } | Operation::Unsplit { .. }
         ) {
-            reorg_dates
-                .entry((tx.date, tx.ticker.as_str()))
-                .or_insert(Some(i + 1));
+            reorg_dates.insert((tx.date, tx.ticker.as_str()));
         }
     }
 
     for (i, tx) in transactions.iter().enumerate() {
         if matches!(tx.operation, Operation::Buy { .. } | Operation::Sell { .. })
-            && reorg_dates.contains_key(&(tx.date, tx.ticker.as_str()))
+            && reorg_dates.contains(&(tx.date, tx.ticker.as_str()))
         {
             result.errors.push(ValidationError {
                 line: Some(i + 1),
