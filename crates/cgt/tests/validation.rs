@@ -52,6 +52,18 @@ fn make_accumulation(date: &str, ticker: &str, amount: i64, total: i64) -> Trans
     }
 }
 
+fn make_capreturn(date: &str, ticker: &str, amount: i64, total: i64) -> Transaction {
+    Transaction {
+        date: date.parse().expect("valid date"),
+        ticker: ticker.to_string(),
+        operation: Operation::CapReturn {
+            amount: Decimal::from(amount),
+            total_value: CurrencyAmount::new(Decimal::from(total), Currency::GBP),
+            fees: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
+        },
+    }
+}
+
 #[test]
 fn test_zero_quantity_accumulation_is_accepted() {
     // A zero-quantity accumulation is a no-op (no units accrue), not an error.
@@ -79,6 +91,40 @@ fn test_same_date_split_and_trade_same_ticker_is_rejected() {
         result.errors[0].message.contains("ambiguous"),
         "got: {}",
         result.errors[0].message
+    );
+}
+
+#[test]
+fn test_same_date_split_and_accumulation_same_ticker_is_rejected() {
+    // An ACCUMULATION adds units, so its order relative to a same-date split
+    // changes the resulting holding and is just as ambiguous as a trade.
+    let txns = vec![
+        make_buy("2024-01-01", "ABC", 100, 10, 0),
+        make_split("2024-06-01", "ABC", 2),
+        make_accumulation("2024-06-01", "ABC", 40, 30),
+    ];
+    let result = validate(&txns);
+    assert!(!result.is_valid());
+    assert!(
+        result.errors[0].message.contains("ambiguous"),
+        "got: {}",
+        result.errors[0].message
+    );
+}
+
+#[test]
+fn test_same_date_split_and_capreturn_same_ticker_is_allowed() {
+    // A CAPRETURN changes no share count, so its order relative to a split is
+    // immaterial: it must not be rejected.
+    let txns = vec![
+        make_buy("2024-01-01", "ABC", 100, 10, 0),
+        make_split("2024-06-01", "ABC", 2),
+        make_capreturn("2024-06-01", "ABC", 200, 50),
+    ];
+    let result = validate(&txns);
+    assert!(
+        result.is_valid(),
+        "a capital return carries no split-ordering ambiguity"
     );
 }
 
