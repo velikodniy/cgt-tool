@@ -73,7 +73,7 @@ pub fn render(report: &TaxReport) -> String {
     }
 
     // SA108 note (CG51560): shown only when at least one disposal exists.
-    if !report.tax_years.is_empty() && report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
+    if report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
             "\nNotes:\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Proceeds = SA108 Box 21 (gross, before sale fees)"

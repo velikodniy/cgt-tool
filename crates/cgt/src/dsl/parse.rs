@@ -224,10 +224,8 @@ impl CgtParser {
     fn transaction_list(input: Node) -> ParseResult<Vec<Transaction>> {
         let mut transactions = Vec::new();
         for child in input.into_children() {
-            match child.as_rule() {
-                Rule::transaction => transactions.push(Self::transaction(child)?),
-                Rule::COMMENT | Rule::EOI => {}
-                _ => {}
+            if child.as_rule() == Rule::transaction {
+                transactions.push(Self::transaction(child)?);
             }
         }
         Ok(transactions)
