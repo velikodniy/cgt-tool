@@ -1,71 +1,101 @@
 # Test: WithAssetEventsBB
-# Purpose: Validates Bed & Breakfast rule with capital returns affecting cost base
-# Rules Tested: Bed & Breakfast, Capital Returns (CAPRETURN), Section 104 Pooling
+# Purpose: Validates Bed & Breakfast matching combined with capital returns and
+#          accumulation dividends adjusting the Section 104 cost base
+# Rules Tested: Bed & Breakfast, Capital Returns (CAPRETURN), Accumulation
+#               dividends (ACCUMULATION), Section 104 Pooling
 # Complexity: Complex
-# Key Features: Multi-year, capital returns reduce cost base, B&B match, dividends (no CGT impact)
-# Expected Outcome: Gain £265 (B&B match with capital return adjusted costs)
+# Key Features: Multi-year, CAPRETURN reduces pool cost, ACCUMULATION raises pool
+#               cost, B&B match against a post-sale buy, two corporate-action pairs
+# Expected Outcome: 2019/20 gain £280.91 (B&B leg £72.35 + Section 104 leg £208.56)
 #
 # Verification Status: Verified
-# Verified By: Manual calculation 2025-12-08
-# Verification Notes: See detailed verification below
+# Verified By: Reconciled against golden output 2026-06-21
+# Verification Notes: Matches tests/json/WithAssetEventsBB.json and
+#                     tests/plain/WithAssetEventsBB.txt. See detailed verification below.
 #
 # === DETAILED VERIFICATION ===
 #
 # CHRONOLOGICAL ORDER:
-# 1. 2018-08-29: BUY 20 @ £184.65 + £12.5 expenses
-# 2. 2019-03-15: BUY 20 @ £181.56 + £2 expenses
-# 3. 2019-05-31: CAPRETURN 40 shares, £149.75 total (reduces cost base)
-# 4. 2019-05-31: ACCUMULATION 40 shares, £150.24 (no CGT impact)
-# 5. 2019-11-05: SELL 40 @ £194.22 - £12.5 expenses
-# 6. 2019-11-10: BUY 20 @ £190.19 + £2 expenses (B&B - within 30 days of sale)
-# 7. 2019-11-30: CAPRETURN 20 shares, £95.12 total (reduces cost base)
-# 8. 2019-11-30: ACCUMULATION 20 shares, £110.93 (no CGT impact)
+# 1. 2018-08-29: BUY 20 @ £184.65 + £12.50 fees
+# 2. 2019-03-15: BUY 20 @ £181.56 + £2.00 fees
+# 3. 2019-05-31: CAPRETURN 40 shares, £149.75 total (reduces pool cost)
+# 4. 2019-05-31: ACCUMULATION 40 shares, £150.24 total (raises pool cost basis)
+# 5. 2019-11-05: SELL 40 @ £194.22 - £12.50 fees
+# 6. 2019-11-10: BUY 20 @ £190.19 + £2.00 fees (B&B - within 30 days after the sale)
+# 7. 2019-11-30: CAPRETURN 20 shares, £95.12 total (reduces pool cost)
+# 8. 2019-11-30: ACCUMULATION 20 shares, £110.93 total (raises pool cost basis)
 #
-# === SECTION 104 POOL CALCULATIONS ===
+# Note: ACCUMULATION is a reinvested distribution. It pays no cash and is not a
+# disposal, but it DOES increase the Section 104 cost basis (see spec.md
+# "Accumulation Dividends"), so both pairs must be tracked through the pool.
+#
+# === SECTION 104 POOL (pre-sale) ===
 #
 # Transaction 1: 2018-08-29 BUY 20 shares
-#   Cost: 20 × £184.65 + £12.5 = £3,705.50
+#   Cost: 20 × £184.65 + £12.50 = £3,705.50
 #   Pool: 20 shares, £3,705.50
 #
 # Transaction 2: 2019-03-15 BUY 20 shares
-#   Cost: 20 × £181.56 + £2 = £3,633.20
-#   Pool: 40 shares, £7,338.70
-#   Avg cost: £183.4675/share
+#   Cost: 20 × £181.56 + £2.00 = £3,633.20
+#   Pool: 40 shares, £7,338.70  (avg £183.4675/share)
 #
 # Transaction 3: 2019-05-31 CAPRETURN 40 shares, £149.75 total
-#   Capital return reduces pool cost: £7,338.70 - £149.75 = £7,188.95
+#   Pool cost -= £149.75: £7,338.70 - £149.75 = £7,188.95
 #   Pool: 40 shares, £7,188.95
-#   Avg cost: £179.724/share
 #
-# Transaction 4: 2019-05-31 ACCUMULATION - No CGT impact (not a disposal)
+# Transaction 4: 2019-05-31 ACCUMULATION 40 shares, £150.24 total
+#   Pool cost += £150.24: £7,188.95 + £150.24 = £7,339.19
+#   Pool: 40 shares, £7,339.19  (avg £183.47975/share)
 #
-# Transaction 5: 2019-11-05 SELL 40 shares
-#   Proceeds: 40 × £194.22 - £12.5 = £7,756.30
+# === DISPOSAL: 2019-11-05 SELL 40 shares ===
 #
-#   Check for B&B: Is there a buy within 30 days AFTER 2019-11-05?
-#   Yes! 2019-11-10 buy is 5 days after the sale
+# Gross proceeds: 40 × £194.22 = £7,768.80
+# Net proceeds:   £7,768.80 - £12.50 fees = £7,756.30
+# Each 20-share leg's net proceeds: 20 × £194.22 - (£12.50 × 20/40)
+#                                 = £3,884.40 - £6.25 = £3,878.15
 #
-# Transaction 6: 2019-11-10 BUY 20 shares (B&B match)
-#   Cost: 20 × £190.19 + £2 = £3,805.80
+# Matching order (CG51560): Same Day -> Bed & Breakfast -> Section 104
+#   Same Day:    none
+#   B&B:         20 shares matched to the 2019-11-10 buy (5 days after the sale)
+#   Section 104: remaining 20 shares from the pool
 #
-# === B&B MATCHING ===
+# B&B leg (20 shares):
+#   Priced off the raw target buy; a B&B-consumed share is never held at a later
+#   corporate action, so no cost offset applies.
+#   Allowable cost = 20 × £190.19 + £2.00 = £3,805.80
+#   Gain = £3,878.15 - £3,805.80 = £72.35
 #
-# The 2019-11-05 sale of 40 shares is matched:
-# - 20 shares via B&B with 2019-11-10 purchase
-# - 20 shares from Section 104 pool
+# Section 104 leg (20 shares):
+#   Priced off the live pool average at the disposal instant.
+#   Unit cost = £7,339.19 / 40 = £183.47975/share
+#   Allowable cost = 20 × £183.47975 = £3,669.595  ->  £3,669.60
+#   Gain = £3,878.15 - £3,669.595 = £208.555  ->  £208.56
+#   Pool drained: 40 - 20 = 20 shares; £7,339.19 - £3,669.595 = £3,669.595
 #
-# Final figures (from golden output):
-# - Disposal proceeds: £7,756.30
-# - Allowable cost: £7,491.30
-# - Gain: £265.00
+# === SECTION 104 POOL (post-sale) ===
 #
-# This fixture exercises CAPRETURN cost base adjustments plus B&B matching across multiple lots.
+# The B&B-matched 2019-11-10 buy is fully consumed by the match, so none of it
+# enters the pool (residue 0). The held 20 shares are the pool remainder.
 #
-# FINAL RESULT:
-#   Total Gain: £265
-#   Total Loss: £0
-#   Rule: Bed & Breakfast
-#   Verification: ✓ Matches expected output
+# Transaction 7: 2019-11-30 CAPRETURN 20 shares, £95.12 total
+#   Pool cost -= £95.12: £3,669.595 - £95.12 = £3,574.475
+#   Pool: 20 shares, £3,574.475
+#
+# Transaction 8: 2019-11-30 ACCUMULATION 20 shares, £110.93 total
+#   Pool cost += £110.93: £3,574.475 + £110.93 = £3,685.405  ->  £3,685.41
+#   Pool: 20 shares, £3,685.41  (avg £184.27/share)
+#
+# === FINAL RESULT (2019/20) ===
+#   Disposals: 1
+#   Gross proceeds: £7,768.80
+#   Net proceeds: £7,756.30
+#   Total allowable cost: £3,805.80 + £3,669.60 = £7,475.40
+#   Total gain: £72.35 + £208.56 = £280.91
+#   Total loss: £0
+#   Annual exemption: £12,000.00  ->  Taxable gain: £0.00
+#   Final holding: 20 shares, £3,685.41 (avg £184.27/share)
+#   Rule: Bed & Breakfast + Section 104
+#   Verification: matches golden output
 # === END DETAILED VERIFICATION ===
 #
 2018-08-29 BUY GB00B3TYHH97 20 @ 184.65 FEES 12.5
