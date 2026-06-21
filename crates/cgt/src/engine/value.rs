@@ -80,16 +80,7 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
     // pools at quantity zero).
     let mut disposals: Vec<PricedDisposal> = Vec::new();
 
-    let events = stream.events();
-    let mut day_start = 0;
-    while day_start < events.len() {
-        let date = events[day_start].date;
-        let day_len = events[day_start..]
-            .iter()
-            .take_while(|event| event.date == date)
-            .count();
-        let day = &events[day_start..day_start + day_len];
-
+    for day in stream.events().chunk_by(|a, b| a.date == b.date) {
         // The canonical order already groups value events first, then buys,
         // then sells, then splits. Walking the slice in order honours it.
         let mut day_buys: HashMap<&str, &Trade> = HashMap::new();
@@ -171,8 +162,6 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                 }
             }
         }
-
-        day_start += day_len;
     }
 
     let mut holdings: Vec<Holding> = pools

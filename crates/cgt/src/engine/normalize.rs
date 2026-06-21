@@ -130,15 +130,8 @@ pub(crate) fn normalize(
     raw.sort_by_key(|event| event.date);
 
     let mut events = Vec::new();
-    let mut day_start = 0;
-    while day_start < raw.len() {
-        let date = raw[day_start].date;
-        let day_len = raw[day_start..]
-            .iter()
-            .take_while(|event| event.date == date)
-            .count();
-        push_day(&mut events, &raw[day_start..day_start + day_len]);
-        day_start += day_len;
+    for day in raw.chunk_by(|a, b| a.date == b.date) {
+        push_day(&mut events, day);
     }
 
     Ok(EventStream { events })

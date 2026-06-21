@@ -88,16 +88,8 @@ pub(crate) struct MatchPlan {
 /// Build the quantity-only match plan for a normalized stream.
 pub(crate) fn plan(stream: &EventStream) -> Result<MatchPlan, CgtError> {
     let mut planner = Planner::new(stream);
-    let events = stream.events();
-    let mut day_start = 0;
-    while day_start < events.len() {
-        let date = events[day_start].date;
-        let day_len = events[day_start..]
-            .iter()
-            .take_while(|event| event.date == date)
-            .count();
-        planner.process_day(&events[day_start..day_start + day_len])?;
-        day_start += day_len;
+    for day in stream.events().chunk_by(|a, b| a.date == b.date) {
+        planner.process_day(day)?;
     }
     Ok(MatchPlan {
         disposals: planner.disposals,
