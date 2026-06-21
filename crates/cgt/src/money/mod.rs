@@ -14,7 +14,7 @@ pub use parser::{FxParseError, parse_monthly_rates};
 pub use types::{RateEntry, RateKey, RateSource};
 
 /// Bundled FX rates directory (embedded at compile time).
-/// Contains monthly XML files from HMRC for January 2015 through August 2025 (latest available).
+/// Contains monthly XML files from HMRC for January 2015 through June 2026 (latest available).
 pub static BUNDLED_RATES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/resources/rates");
 
 /// Load FX cache using only bundled rates.

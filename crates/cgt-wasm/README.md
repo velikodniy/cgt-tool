@@ -221,7 +221,7 @@ Currency defaults to GBP if omitted. All foreign currency amounts are automatica
 
 ## FX Rates
 
-All HMRC foreign exchange rates from January 2015 through August 2025 are embedded in the WASM binary. No external API calls or additional downloads are required.
+All HMRC foreign exchange rates from January 2015 through June 2026 are embedded in the WASM binary. No external API calls or additional downloads are required.
 
 ## Bundle Size
 

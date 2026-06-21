@@ -162,7 +162,7 @@ Foreign currency amounts are converted to GBP using HMRC monthly average exchang
 
 ### Bundled Rates
 
-Rates from January 2015 to August 2025 are embedded at compile time. No configuration required.
+Rates from January 2015 to June 2026 are embedded at compile time. No configuration required.
 
 ### Custom Rate Folder
 
