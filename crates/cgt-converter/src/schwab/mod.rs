@@ -360,8 +360,8 @@ fn process_transactions(
                 }
                 SchwabTransaction::StockSplit(split) => {
                     let SchwabStockSplit { common } = split;
-                    // Note: Schwab doesn't provide split ratio directly
-                    // Add as comment for user to fill in manually
+                    // Schwab omits the split ratio, so emit an UNSUPPORTED note
+                    // for the user to complete by hand.
                     let comment = format!(
                         "UNSUPPORTED: Stock split for {} on {} - please add SPLIT transaction manually with correct ratio",
                         common.symbol,

@@ -85,7 +85,7 @@ impl Default for CurrencyAmount {
     }
 }
 
-// Custom serialization - always serialize as object for consistency
+// Always serialize as an { amount, currency } object, never a bare number.
 impl Serialize for CurrencyAmount {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

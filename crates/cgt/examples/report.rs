@@ -1,4 +1,4 @@
-//! Equivalence shim: runs the new engine as a binary the harness can drive.
+//! Equivalence shim: runs the engine as a binary the harness can drive.
 //! Usage: report <file> --format json   |   parse <file>
 //!
 //! Mirrors the oracle CLI's argv and exit conventions: success prints pretty
