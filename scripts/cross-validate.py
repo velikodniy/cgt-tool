@@ -36,16 +36,19 @@ THRESHOLD = Decimal("1.00")
 UNSUPPORTED_OPS = {"SPLIT", "UNSPLIT", "CAPRETURN", "ACCUMULATION"}
 
 # Fixtures whose cgtcalc (mattjgalloway) discrepancy is expected, not a
-# regression. Each combines a same-day or Bed & Breakfast disposal with a
-# corporate action dated AFTER that disposal; cgtcalc mishandles the
-# interaction (it drops the B&B match or applies a retroactive same-day
-# offset), while cgt-tool follows HMRC CG51560 and TCGA92/S106A. These
-# values were adjudicated against the HMRC rules (docs adjudication
-# 2026-06-18); cgt-tool is authoritative here.
+# regression. Each has a same-day or Bed & Breakfast disposal followed by a
+# corporate action dated AFTER it. cgtcalc applies that later action as an
+# "offset" onto the already-disposed shares (its output literally prints
+# "offset of £15.81" — the post-disposal CAPRETURN+ACCUMULATION net), i.e. the
+# legacy retroactive-cost-leak. cgt-tool follows HMRC CG51560 (matched shares
+# leave the pool) and TCGA92/S110(8)(d) (a distribution adjusts only shares
+# still held), so the later action lands in the carried-forward holding, not
+# the disposed leg. Adjudicated against HMRC (docs adjudication 2026-06-18,
+# re-verified 2026-06-21); cgt-tool is authoritative. SyntheticComplex is not
+# listed here because it is multi-currency and so skipped for cgtcalc.
 KNOWN_CGTCALC_DIVERGENCES = {
     "WithAssetEventsBB",
     "WithAssetEventsSameDay",
-    "SyntheticComplex",
 }
 
 
@@ -65,11 +68,38 @@ def has_unsupported_ops(cgt_file: Path) -> bool:
     return False
 
 
+def has_foreign_currency(cgt_file: Path) -> bool:
+    """Return True if any disposal prices in a non-GBP currency.
+
+    cgtcalc is GBP-only and convert-to-cgtcalc.py strips the currency code, so
+    a foreign-currency fixture would be compared at face value against
+    cgt-tool's HMRC-FX-converted figures — a guaranteed false discrepancy.
+    Detect the optional 3-letter currency that follows the "@ <price>" token.
+    """
+    try:
+        content = cgt_file.read_text()
+    except OSError:
+        return False
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        match = re.search(r"@\s*[\d.]+\s+([A-Z]{3})\b", stripped)
+        if match and match.group(1) != "GBP":
+            return True
+    return False
+
+
 @dataclass
 class TaxYearResult:
     period: str
     gain: Decimal
     loss: Decimal
+    # Number of disposals cgtcalc reported for the year. cgtcalc rounds each
+    # disposal's gain/loss DOWN to whole pounds, so the per-year comparison
+    # tolerance is scaled by this count (0 = unknown, use the base threshold).
+    disposals: int = 0
 
 
 @dataclass
@@ -246,6 +276,11 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
             error="cgtcalc not found. Clone and build: git clone https://github.com/mattjgalloway/cgtcalc && cd cgtcalc && swift build -c release",
         )
 
+    if has_foreign_currency(cgt_file):
+        return CalculatorResult(
+            "cgtcalc", [], error="SKIP: foreign currency not supported by cgtcalc"
+        )
+
     # Convert to cgtcalc format
     script_dir = Path(__file__).parent
     convert_script = script_dir / "convert-to-cgtcalc.py"
@@ -281,26 +316,38 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
 
         Path(temp_path).unlink()
 
-        # Parse output - cgtcalc outputs summary per tax year
-        # Format: "Tax year 2023/24: Gain £1,234.56"
-        output = result.stdout
-        tax_results = []
+        output = result.stdout + result.stderr
 
+        # cgtcalc aborts on inputs it cannot model (e.g. multi-currency, or a
+        # CAPRETURN whose amount fails its internal validation). Surface that as
+        # an explicit limitation instead of silently parsing zero tax years and
+        # reporting a spurious match.
+        if result.returncode != 0 or "Error calculating CGT" in output:
+            reason = next(
+                (ln.strip() for ln in output.splitlines() if "Error" in ln),
+                f"cgtcalc exited {result.returncode}",
+            )
+            return CalculatorResult("cgtcalc", [], error=f"cgtcalc cannot process: {reason}")
+
+        # Parse cgtcalc's per-tax-year summary lines, e.g.:
+        #   2019/2020: Disposals = 1, proceeds = 7768, allowable costs = 7503,
+        #   total gains = 265, total losses = 0
+        # cgtcalc prints the period as YYYY/YYYY and rounds each disposal's
+        # gain/loss DOWN to whole pounds; normalise to cgt-tool's YYYY/YY form
+        # and read the per-year gain and loss separately.
+        tax_results = []
         for match in re.finditer(
-            r"Tax year (\d{4}/\d{2}):.*?Gain[:\s]*[£$]?([\d,.-]+)", output
+            r"(\d{4})/(\d{4}):.*?Disposals\s*=\s*(\d+).*?"
+            r"total gains?\s*=\s*([\d,.-]+).*?total losses?\s*=\s*([\d,.-]+)",
+            output,
         ):
-            period = match.group(1)
-            gain_str = match.group(2).replace(",", "")
-            gain = Decimal(gain_str) if gain_str else Decimal("0")
-            # cgtcalc shows net gain, negative = loss
-            if gain < 0:
-                tax_results.append(
-                    TaxYearResult(period=period, gain=Decimal("0"), loss=abs(gain))
-                )
-            else:
-                tax_results.append(
-                    TaxYearResult(period=period, gain=gain, loss=Decimal("0"))
-                )
+            period = f"{match.group(1)}/{match.group(2)[-2:]}"
+            disposals = int(match.group(3))
+            gain = Decimal(match.group(4).replace(",", "") or "0")
+            loss = Decimal(match.group(5).replace(",", "") or "0")
+            tax_results.append(
+                TaxYearResult(period=period, gain=gain, loss=loss, disposals=disposals)
+            )
 
         return CalculatorResult("cgtcalc", tax_results)
 
@@ -318,10 +365,16 @@ def compare_results(
     cgt_lookup = {r.period: r for r in cgt_tool.tax_years}
 
     for other_year in other.tax_years:
+        # cgtcalc floors each disposal's gain/loss to whole pounds, so the
+        # rounding noise grows with the number of disposals in the year. Scale
+        # the tolerance accordingly (other calculators report disposals=0 and
+        # keep the base threshold).
+        tol = THRESHOLD * other_year.disposals if other_year.disposals else THRESHOLD
+
         cgt_year = cgt_lookup.get(other_year.period)
         if not cgt_year:
             # cgt-tool missing this year
-            if other_year.gain > THRESHOLD or other_year.loss > THRESHOLD:
+            if other_year.gain > tol or other_year.loss > tol:
                 discrepancies.append(
                     (
                         other_year.period,
@@ -333,7 +386,7 @@ def compare_results(
 
         # Compare gains
         gain_diff = abs(cgt_year.gain - other_year.gain)
-        if gain_diff > THRESHOLD:
+        if gain_diff > tol:
             discrepancies.append(
                 (
                     other_year.period,
@@ -344,7 +397,7 @@ def compare_results(
 
         # Compare losses
         loss_diff = abs(cgt_year.loss - other_year.loss)
-        if loss_diff > THRESHOLD:
+        if loss_diff > tol:
             discrepancies.append(
                 (
                     other_year.period,
@@ -408,8 +461,10 @@ def validate_file(cgt_file: Path, verbose: bool = True) -> tuple[bool, str, str]
     if cgtcalc_result.error:
         cgtcalc_status = (
             "skip"
-            if cgtcalc_result.error.startswith("cgtcalc not found")
+            if cgtcalc_result.error.startswith("SKIP")
+            or cgtcalc_result.error.startswith("cgtcalc not found")
             or "No transactions" in cgtcalc_result.error
+            or cgtcalc_result.error.startswith("cgtcalc cannot process")
             else "error"
         )
         if verbose:
