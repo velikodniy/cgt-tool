@@ -1,0 +1,15 @@
+# Test: CapReturnDoesNotLeakToPriorSale
+# Purpose: a capital return cannot alter the cost of a disposal made before it
+# Rules Tested: Section 104 Pooling, Capital Return (TCGA92/S122)
+#
+#   Buy 100 @ £10 -> pool 100 shares, cost £1,000
+#   Sell 50 @ £12 (before the capital return):
+#     Cost: 50 x £10 = £500.00, Gain: £100.00
+#   Capital return £50 -> remaining pool cost £450 (50 shares)
+#   Sell 50 @ £12 (after the capital return):
+#     Cost: £450.00, Gain: £150.00
+#   The first sale's cost stays £500 - the later capital return does not leak back.
+2024-01-01 BUY LEAK 100 @ 10
+2024-06-01 SELL LEAK 50 @ 12
+2025-01-01 CAPRETURN LEAK 50 TOTAL 50 FEES 0
+2025-06-01 SELL LEAK 50 @ 12

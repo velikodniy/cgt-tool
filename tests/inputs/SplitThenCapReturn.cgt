@@ -1,0 +1,16 @@
+# Test: SplitThenCapReturn
+# Purpose: a stock split rescales the pool, a later capital return reduces its cost
+# Rules Tested: Section 104 Pooling, SPLIT, Capital Return (TCGA92/S122)
+#
+#   Buy 100 @ £10 + £5 fees -> pool 100 shares, cost £1,005
+#   Split 2:1 -> pool 200 shares, cost unchanged £1,005 (£5.025/share)
+#   Capital return £100 -> pool cost £905 (£4.525/share)
+#   Sell 80 @ £7 - £2 fees:
+#     Cost: 80 x £4.525 = £362.00
+#     Proceeds: 80 x £7 - £2 = £558.00
+#     Gain: £196.00
+#   Holding after: 120 shares, cost £543.00
+2023-01-01 BUY SPL 100 @ 10 FEES 5
+2023-03-01 SPLIT SPL RATIO 2
+2023-06-01 CAPRETURN SPL 200 TOTAL 100 FEES 0
+2023-09-01 SELL SPL 80 @ 7 FEES 2

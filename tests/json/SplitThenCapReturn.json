@@ -1,0 +1,91 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2023-09-01",
+          "ticker": "SPL",
+          "quantity": "80",
+          "gross_proceeds": "560",
+          "proceeds": "558",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "80",
+              "allowable_cost": "362.00",
+              "gain_or_loss": "196.00"
+            }
+          ]
+        }
+      ],
+      "disposal_count": 1,
+      "total_gain": "196.00",
+      "total_loss": "0",
+      "net_gain": "196.00",
+      "gross_proceeds": "560",
+      "total_allowable_cost": "362.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "SPL",
+      "quantity": "120",
+      "total_cost": "543.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2023-01-01",
+      "ticker": "SPL",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "5",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-03-01",
+      "ticker": "SPL",
+      "action": "SPLIT",
+      "ratio": "2"
+    },
+    {
+      "date": "2023-06-01",
+      "ticker": "SPL",
+      "action": "CAPRETURN",
+      "amount": "200",
+      "total_value": {
+        "amount": "100",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2023-09-01",
+      "ticker": "SPL",
+      "action": "SELL",
+      "amount": "80",
+      "price": {
+        "amount": "7",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "2",
+        "currency": "GBP"
+      }
+    }
+  ]
+}

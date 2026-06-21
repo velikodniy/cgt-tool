@@ -1,0 +1,36 @@
+# SUMMARY
+
+Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
+=========================================================================================================================
+2023/24     1           £196.00               £196.00               £0.00       £560.00     £6,000.00   £0.00
+
+Notes:
+- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2023/24
+
+1) SELL 80 SPL on 01/09/2023 - GAIN £196.00
+   Section 104: 80 shares @ £4.53
+   Gross Proceeds: 80 × £7 = £560.00
+   Net Proceeds: £560.00 - £2.00 fees = £558.00
+   Cost: £362.00
+   Result: £196.00
+
+
+# HOLDINGS
+
+SPL: 120 units at £4.53 avg cost
+
+# TRANSACTIONS
+
+01/01/2023 BUY 100 SPL @ £10 (£5 fees)
+01/09/2023 SELL 80 SPL @ £7 (£2 fees)
+
+# ASSET EVENTS
+
+01/03/2023 SPLIT SPL 2
+01/06/2023 CAPRETURN SPL 200 £100.00

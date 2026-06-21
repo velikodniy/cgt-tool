@@ -73,7 +73,7 @@ fn money(value: &Value, field: &str) -> Decimal {
 #[test]
 fn every_fixture_serde_equals_its_golden() {
     let names = fixture_names();
-    assert_eq!(names.len(), 46, "fixture count drifted: {}", names.len());
+    assert_eq!(names.len(), 48, "fixture count drifted: {}", names.len());
 
     for name in &names {
         let new = run_engine(name);

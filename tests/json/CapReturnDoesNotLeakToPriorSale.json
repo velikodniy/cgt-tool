@@ -1,0 +1,129 @@
+{
+  "tax_years": [
+    {
+      "period": "2024/25",
+      "disposals": [
+        {
+          "date": "2024-06-01",
+          "ticker": "LEAK",
+          "quantity": "50",
+          "gross_proceeds": "600",
+          "proceeds": "600",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "500",
+              "gain_or_loss": "100"
+            }
+          ]
+        }
+      ],
+      "disposal_count": 1,
+      "total_gain": "100",
+      "total_loss": "0",
+      "net_gain": "100",
+      "gross_proceeds": "600",
+      "total_allowable_cost": "500",
+      "exempt_amount": "3000",
+      "taxable_gain": "0",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
+    },
+    {
+      "period": "2025/26",
+      "disposals": [
+        {
+          "date": "2025-06-01",
+          "ticker": "LEAK",
+          "quantity": "50",
+          "gross_proceeds": "600",
+          "proceeds": "600",
+          "matches": [
+            {
+              "rule": "Section104",
+              "quantity": "50",
+              "allowable_cost": "450",
+              "gain_or_loss": "150"
+            }
+          ]
+        }
+      ],
+      "disposal_count": 1,
+      "total_gain": "150",
+      "total_loss": "0",
+      "net_gain": "150",
+      "gross_proceeds": "600",
+      "total_allowable_cost": "450",
+      "exempt_amount": "3000",
+      "taxable_gain": "0",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "LEAK",
+      "quantity": "0",
+      "total_cost": "0"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "LEAK",
+      "action": "BUY",
+      "amount": "100",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-06-01",
+      "ticker": "LEAK",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2025-01-01",
+      "ticker": "LEAK",
+      "action": "CAPRETURN",
+      "amount": "50",
+      "total_value": {
+        "amount": "50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2025-06-01",
+      "ticker": "LEAK",
+      "action": "SELL",
+      "amount": "50",
+      "price": {
+        "amount": "12",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    }
+  ]
+}
