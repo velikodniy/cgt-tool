@@ -59,6 +59,16 @@ Before the matching cascade, the system verifies the seller holds enough shares 
 - `tests/inputs/single_pass_ordering.cgt` → `tests/json/single_pass_ordering.json`
 - `tests/inputs/single_pass_fx.cgt` → `tests/json/single_pass_fx.json`
 
+### Error Precedence
+
+Errors are reported in a fixed order, reflecting the engine's plan-then-value pipeline:
+
+1. **Input validation** — malformed or ambiguous input is rejected first (e.g. a same-date SPLIT/UNSPLIT and trade of the same ticker).
+2. **Quantity / holding errors** (planning phase) — e.g. a disposal that exceeds the available holding (CG51590).
+3. **Valuation / basis errors** (valuation phase) — e.g. a capital return that exceeds remaining allowable basis (TCGA92/S122(2); CG57847).
+
+A quantity error is surfaced before any valuation error, because share quantities are planned before any leg is priced.
+
 ### Zero Sell Amount
 
 When a disposal has zero total sell amount, no match result is returned and the system proceeds to the next matching rule without division errors.
@@ -71,6 +81,12 @@ When a disposal has zero total sell amount, no match result is returned and the 
 
 - **SPLIT**: Multiply share quantity by the ratio; total cost basis unchanged.
 - **UNSPLIT**: Reverse of SPLIT.
+
+A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisition, so it never enters same-day matching.
+
+### Same-Date Split + Holding Change (Rejected)
+
+A SPLIT or UNSPLIT on the **same date** as a BUY, SELL, or ACCUMULATION of the **same ticker** is rejected as ambiguous input. A reorganisation is not a trade, and HMRC defines no intra-day order between a split and a same-date event that changes the holding; the two readings (the event applied before vs. after the split) give a materially different holding. CAPRETURN and DIVIDEND change no share count, so their order against a split is immaterial and they are not flagged. The user must date the event explicitly before or after the split.
 
 ### Capital Return (CAPRETURN)
 
@@ -88,11 +104,17 @@ Increases pool cost basis by the dividend amount, apportioned across lots in the
 
 Records ordinary cash dividend income. Does not affect Section 104 cost basis. Dividend income and tax paid are aggregated per tax year and reported in the summary.
 
-### Asset Events After Same-Day Buy/Sell
+### Asset Events After a Matched Disposal
 
-When a CAPRETURN or ACCUMULATION occurs after a date with both BUY and SELL for the same ticker, remaining shares are calculated using CGT matching rules per CG51560: same-day first (TCGA92/S105(1)), then B&B (TCGA92/S106A), then S104.
+A CAPRETURN or ACCUMULATION dated **after** a disposal that was matched by the Same Day or Bed & Breakfast rule adjusts the **carried-forward Section 104 holding**, not the already-disposed leg. Matched shares have left the pool (CG51560), so a later capital distribution can only reduce the cost of shares still held (TCGA92/S110(8)(d); CG57844). Because each disposal is priced from the pool as it stood on its own date, the later event never leaks back into the earlier disposal.
 
-**Golden file:** `tests/inputs/single_pass_corp_action.cgt` → `tests/json/single_pass_corp_action.json`
+When such an event follows a date carrying both a BUY and a SELL for the same ticker, the shares still held are determined by the matching cascade (CG51560): same-day first (TCGA92/S105(1)), then B&B (TCGA92/S106A), then S104. Only that remaining held quantity receives the adjustment.
+
+**Golden files:**
+
+- `tests/inputs/single_pass_corp_action.cgt` → `tests/json/single_pass_corp_action.json`
+- `tests/inputs/WithAssetEventsSameDay.cgt` → `tests/json/WithAssetEventsSameDay.json`
+- `tests/inputs/WithAssetEventsBB.cgt` → `tests/json/WithAssetEventsBB.json`
 
 ---
 
@@ -148,7 +170,7 @@ Rates from January 2015 to August 2025 are embedded at compile time. No configur
 
 ### Precision
 
-6 decimal places internally for FX calculations. Display rounds to 2 decimal places using midpoint-away-from-zero rounding.
+6 decimal places internally for FX calculations. Monetary output is rounded to 2 decimal places using midpoint-away-from-zero. This is the single rounding policy applied consistently across both JSON and plain-text output.
 
 ### Dual Display
 
@@ -174,7 +196,7 @@ When a currency/month rate is unavailable, the system fails with a clear error i
 | DIVIDEND      | `YYYY-MM-DD DIVIDEND TICKER TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]`              |
 | ACCUMULATION  | `YYYY-MM-DD ACCUMULATION TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]` |
 | CAPRETURN     | `YYYY-MM-DD CAPRETURN TICKER QUANTITY TOTAL VALUE [CURRENCY] [FEES AMOUNT [CURRENCY]]`   |
-| SPLIT/UNSPLIT | `YYYY-MM-DD SPLIT\|UNSPLIT TICKER RATIO VALUE`                                           |
+| SPLIT/UNSPLIT | `YYYY-MM-DD SPLIT\|UNSPLIT TICKER RATIO <ratio>`                                         |
 
 - FEES, TAX default to 0 when omitted.
 - Currency codes are optional ISO 4217; default is GBP.
@@ -246,7 +268,7 @@ Schwab dates: `MM/DD/YYYY`, `YYYY-MM-DD`, or `as of` notation. For `02/25/2021 a
 - **Tax years:** YYYY/YY (e.g., 2023/24).
 - **Foreign currency:** `£118.42 (150 USD)`.
 - **Unit prices:** Full precision, trailing zeros stripped (e.g., £4.6702).
-- **Rounding:** Midpoint-away-from-zero (£100.995 → £101.00).
+- **Rounding:** Midpoint-away-from-zero (£100.995 → £101.00); the same policy used for JSON output.
 - **Ordering:** Date ascending, then ticker ascending, using a shared canonical comparator.
 
 ### Report Sections
@@ -292,18 +314,18 @@ Tests are the source of truth. Never remove or modify tests without proving inco
 
 ### Key Edge Cases
 
-| Case                              | Expected Behavior                                                      |
-| --------------------------------- | ---------------------------------------------------------------------- |
-| Multi-currency same-day           | Same-day matching applies; both transactions converted to GBP          |
-| B&B boundary D+30                 | Matches (within 30 days)                                               |
-| B&B boundary D+31                 | Does not match; falls back to S104                                     |
-| Partial B&B + S104 fallback       | Sell 100, buy back 40 within 30 days → 40 B&B + 60 S104                |
-| Same-day buy-sell-buy             | All same-day transactions aggregated; net position determines matching |
-| Capital return exceeds basis      | Fails with error referencing TCGA92/S122 and CG57847                   |
-| Sell exceeds holdings             | Fails with validation error; no partial output                         |
-| Interleaved same-day reservation  | Aggregate date+ticker reservation; B&B uses post-reservation remainder |
-| Split then same-day sell          | Split applied before matching; disposal uses post-split quantities     |
-| Tax year boundary (5 Apr / 6 Apr) | Gains attributed to correct year                                       |
+| Case                                                          | Expected Behavior                                                      |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Multi-currency same-day                                       | Same-day matching applies; both transactions converted to GBP          |
+| B&B boundary D+30                                             | Matches (within 30 days)                                               |
+| B&B boundary D+31                                             | Does not match; falls back to S104                                     |
+| Partial B&B + S104 fallback                                   | Sell 100, buy back 40 within 30 days → 40 B&B + 60 S104                |
+| Same-day buy-sell-buy                                         | All same-day transactions aggregated; net position determines matching |
+| Capital return exceeds basis                                  | Fails with error referencing TCGA92/S122 and CG57847                   |
+| Sell exceeds holdings                                         | Fails with validation error; no partial output                         |
+| Interleaved same-day reservation                              | Aggregate date+ticker reservation; B&B uses post-reservation remainder |
+| Same-date SPLIT/UNSPLIT + BUY/SELL/ACCUMULATION (same ticker) | Rejected as ambiguous input (TCGA92/S127; no defined intra-day order)  |
+| Tax year boundary (5 Apr / 6 Apr)                             | Gains attributed to correct year                                       |
 
 ### Comprehensive Fixtures
 
