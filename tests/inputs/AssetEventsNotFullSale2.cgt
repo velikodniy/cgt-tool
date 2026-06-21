@@ -3,7 +3,7 @@
 # Rules Tested: Section 104 Pooling, Capital Return (CAPRETURN)
 # Complexity: Medium
 # Key Features: Similar to AssetEventsNotFullSale but with 20-share sale
-# Expected Outcome: Gain £28 (first sale), £253 (second sale)
+# Expected Outcome: Gain £25 (first sale), £256 (second sale)
 #
 # Verification Status: Verified
 # Verified By: Manual calculation 2025-12-08
@@ -11,7 +11,7 @@
 #   Same as AssetEventsNotFullSale until second sell:
 #
 #   Buy 1: 10 × £100 = £1000
-#   Sell 5 @ £105: Gain £28 (same calculation)
+#   Sell 5 @ £105: Gain £25 (same calculation)
 #
 #   Buy 2: 10 × £90 = £900
 #   CAPRETURN £50, ACCUMULATION £30
@@ -19,8 +19,8 @@
 #
 #   Sell 20 @ £100: (larger sale than variant 1)
 #   Proceeds: £2000
-#   Cost from pool: £1746.67 per JSON
-#   Gain: £2000 - £1746.67 = £253.33 ≈ £253 ✓
+#   Cost from pool: £1744.00 per JSON (25 shares @ £2180, avg £87.20/sh)
+#   Gain: £2000 - £1744.00 = £256.00 ✓
 #
 #   Remaining: 5 shares
 #   CAPRETURN £10 and ACCUMULATION on 5 shares
