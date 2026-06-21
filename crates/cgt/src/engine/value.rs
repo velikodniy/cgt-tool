@@ -141,6 +141,18 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
             }
         }
 
+        // Quantity each ticker's same-day disposals consume on this day, summed
+        // in stream order from the day's disposal legs. Computed once per day so
+        // the residue loop below is a lookup rather than a full-stream rescan.
+        let mut same_day_consumed: HashMap<&str, Decimal> = HashMap::new();
+        for event in day {
+            if let Some(disposal) = plan_by_sell.get(&event.id)
+                && let Some(leg) = &disposal.same_day
+            {
+                *same_day_consumed.entry(event.ticker.as_str()).or_default() += leg.quantity;
+            }
+        }
+
         // Residue of each day's buys (not consumed by same-day or reserved by
         // B&B) enters the pool after the day's sells are priced.
         for event in day {
@@ -150,8 +162,11 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                     .get(&event.id)
                     .copied()
                     .unwrap_or(Decimal::ZERO);
-                let same_day_consumed = same_day_consumed_for(event.id, &plan_by_sell, stream);
-                let residue = trade.quantity - reserved - same_day_consumed;
+                let consumed = same_day_consumed
+                    .get(event.ticker.as_str())
+                    .copied()
+                    .unwrap_or(Decimal::ZERO);
+                let residue = trade.quantity - reserved - consumed;
                 if residue > Decimal::ZERO {
                     // Residue cost mirrors the day buy's unit cost (path-
                     // dependent; divide-then-multiply preserved).
@@ -190,31 +205,6 @@ fn day_buy_unit_cost(trade: &Trade) -> Decimal {
     } else {
         Decimal::ZERO
     }
-}
-
-/// Total quantity of a buy consumed by same-day disposals on its own date.
-fn same_day_consumed_for(
-    buy: EventId,
-    plan_by_sell: &HashMap<EventId, &DisposalPlan>,
-    stream: &EventStream,
-) -> Decimal {
-    // A same-day buy and the same-day sells share a (date, ticker). Sum the
-    // same-day legs of every disposal on that date+ticker.
-    let Some(buy_event) = stream.get(buy) else {
-        return Decimal::ZERO;
-    };
-    let mut total = Decimal::ZERO;
-    for event in stream.events() {
-        if event.date != buy_event.date || event.ticker != buy_event.ticker {
-            continue;
-        }
-        if let Some(disposal) = plan_by_sell.get(&event.id)
-            && let Some(leg) = &disposal.same_day
-        {
-            total += leg.quantity;
-        }
-    }
-    total
 }
 
 /// Proportional disposal proceeds for a matched quantity. The fee proportion
