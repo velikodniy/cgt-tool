@@ -300,9 +300,7 @@ fn test_skipped_transactions() {
     );
 }
 
-// ===========================================
 // Date Format Integration Tests
-// ===========================================
 
 #[test]
 fn test_date_format_as_of_suffix() {
@@ -410,9 +408,7 @@ fn test_mixed_date_formats() {
     assert!(result.cgt_content.contains("2023-06-14 BUY FOO"));
 }
 
-// ===========================================
 // RSU Vesting Scenarios
-// ===========================================
 
 #[test]
 fn test_rsu_vest_and_sell_to_cover() {
@@ -595,9 +591,7 @@ fn test_rsu_vest_date_used_for_cgt_acquisition() {
     );
 }
 
-// ===========================================
 // Dividend Scenarios
-// ===========================================
 
 #[test]
 fn test_multiple_dividend_types() {
@@ -743,9 +737,7 @@ fn test_dividend_without_tax() {
     assert!(!result.cgt_content.contains("TAX"));
 }
 
-// ===========================================
 // Variable CSV Field Counts
-// ===========================================
 
 #[test]
 fn test_csv_with_extra_fields() {
@@ -817,9 +809,7 @@ fn test_csv_with_fewer_fields() {
     assert!(result.warnings.is_empty());
 }
 
-// ===========================================
 // Typical Full Workflow Test
-// ===========================================
 
 #[test]
 fn test_typical_monthly_activity() {
@@ -1034,9 +1024,7 @@ fn test_multi_year_transactions() {
     }
 }
 
-// ===========================================
 // RSU Vest Date for CGT Tests
-// ===========================================
 
 #[test]
 fn test_rsu_same_day_matching_with_vest_date() {

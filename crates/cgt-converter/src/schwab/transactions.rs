@@ -388,9 +388,7 @@ mod tests {
         assert_eq!(result, None);
     }
 
-    // ===========================================
     // Date Format Edge Cases
-    // ===========================================
 
     #[test]
     fn test_parse_date_with_as_of_single_digit_month() {
@@ -437,9 +435,7 @@ mod tests {
         assert!(parse_date("").is_err());
     }
 
-    // ===========================================
     // Amount Parsing Edge Cases
-    // ===========================================
 
     #[test]
     fn test_parse_amount_negative() {
