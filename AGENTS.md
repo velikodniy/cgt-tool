@@ -17,13 +17,14 @@ python3 scripts/cross-validate.py tests/inputs/*.cgt  # Cross-validation
 
 ```
 crates/
-├── cgt-core/              # Parsing, calculation, data model
-├── cgt-cli/               # CLI binary
-├── cgt-money/             # Currency and FX conversion
-├── cgt-formatter-plain/   # Plain text output
-├── cgt-formatter-pdf/     # PDF output (Typst)
-├── cgt-format/            # Output format trait
-└── cgt-converter/         # Broker CSV converters
+├── cgt/                   # Engine: money/FX, DSL parse+serialize, validation,
+│                          #   plan-then-value matching engine, report model,
+│                          #   plain-text renderer. IO-free, WASM-friendly.
+├── cgt-pdf/               # PDF renderer (embedded Typst); kept separate so
+│                          #   WASM never pulls in typst.
+├── cgt-cli/               # CLI binary (`cgt-tool`); owns file IO.
+├── cgt-wasm/              # WASM bindings for the web demo.
+└── cgt-converter/         # Broker CSV/JSON converters (Schwab).
 web/                       # WASM demo web interface
 tests/
 ├── inputs/                # .cgt test files (fixtures)
@@ -41,7 +42,7 @@ tests/
 ## Rules
 
 - Rust 2024 edition, `rust_decimal` for money, `chrono` for dates
-- `pest` grammar for DSL parsing (`cgt-core/src/parser.pest`)
+- `pest` grammar for DSL parsing (`crates/cgt/src/dsl/grammar.pest`)
 - IO-free core: calculation logic has no IO, is WASM-friendly
 - Bundled FX rates: HMRC rates embedded at compile time; runtime override via `--fx-folder`
 - Prefer immutable data and strict typing
@@ -52,8 +53,9 @@ tests/
 
 When modifying DSL grammar or transaction formats:
 
-- Update `crates/cgt-core/src/parser.pest` (grammar)
-- Update `crates/cgt-core/src/parser.rs` (parsing logic)
+- Update `crates/cgt/src/dsl/grammar.pest` (grammar)
+- Update `crates/cgt/src/dsl/parse.rs` (parsing logic)
+- Update `crates/cgt/src/dsl/serialize.rs` (serializer, if the round-trip changes)
 - Update `README.md` syntax documentation
 
 ## After Major Changes
@@ -67,6 +69,7 @@ When modifying matching rules, corporate actions, tax calculations, FX conversio
 ## Domain
 
 - **Matching order**: Same Day → Bed & Breakfast (30 days) → Section 104 Pool
+- **Matching logic**: lives in `crates/cgt/src/engine/` (`plan.rs` builds the quantity-only match plan; `value.rs` prices each leg by chronological replay)
 - **Tax year**: 6 April to 5 April (e.g., 2024/25 = 6 Apr 2024 – 5 Apr 2025)
 - **Reference**: `docs/tax-rules.md`, `docs/spec.md`, HMRC CG51500-CG51600
 
