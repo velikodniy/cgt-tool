@@ -13,91 +13,83 @@ pub fn serialize_transaction(tx: &Transaction) -> String {
             amount,
             price,
             fees,
-        } => {
-            let mut line = format!(
-                "{} BUY {} {} @ {}",
-                date,
+        } => with_optional(
+            format!(
+                "{date} BUY {} {amount} @ {}",
                 tx.ticker,
-                amount,
                 format_amount(price)
-            );
-            if !is_default(fees) {
-                line.push_str(&format!(" FEES {}", format_amount(fees)));
-            }
-            line
-        }
+            ),
+            "FEES",
+            fees,
+        ),
         Operation::Sell {
             amount,
             price,
             fees,
-        } => {
-            let mut line = format!(
-                "{} SELL {} {} @ {}",
-                date,
+        } => with_optional(
+            format!(
+                "{date} SELL {} {amount} @ {}",
                 tx.ticker,
-                amount,
                 format_amount(price)
-            );
-            if !is_default(fees) {
-                line.push_str(&format!(" FEES {}", format_amount(fees)));
-            }
-            line
-        }
+            ),
+            "FEES",
+            fees,
+        ),
         Operation::Dividend {
             total_value,
             tax_paid,
-        } => {
-            let mut line = format!(
-                "{} DIVIDEND {} TOTAL {}",
-                date,
+        } => with_optional(
+            format!(
+                "{date} DIVIDEND {} TOTAL {}",
                 tx.ticker,
                 format_amount(total_value)
-            );
-            if !is_default(tax_paid) {
-                line.push_str(&format!(" TAX {}", format_amount(tax_paid)));
-            }
-            line
-        }
+            ),
+            "TAX",
+            tax_paid,
+        ),
         Operation::Accumulation {
             amount,
             total_value,
             tax_paid,
-        } => {
-            let mut line = format!(
-                "{} ACCUMULATION {} {} TOTAL {}",
-                date,
+        } => with_optional(
+            format!(
+                "{date} ACCUMULATION {} {amount} TOTAL {}",
                 tx.ticker,
-                amount,
                 format_amount(total_value)
-            );
-            if !is_default(tax_paid) {
-                line.push_str(&format!(" TAX {}", format_amount(tax_paid)));
-            }
-            line
-        }
+            ),
+            "TAX",
+            tax_paid,
+        ),
         Operation::CapReturn {
             amount,
             total_value,
             fees,
-        } => {
-            let mut line = format!(
-                "{} CAPRETURN {} {} TOTAL {}",
-                date,
+        } => with_optional(
+            format!(
+                "{date} CAPRETURN {} {amount} TOTAL {}",
                 tx.ticker,
-                amount,
                 format_amount(total_value)
-            );
-            if !is_default(fees) {
-                line.push_str(&format!(" FEES {}", format_amount(fees)));
-            }
-            line
-        }
+            ),
+            "FEES",
+            fees,
+        ),
         Operation::Split { ratio } => {
             format!("{} SPLIT {} RATIO {}", date, tx.ticker, ratio)
         }
         Operation::Unsplit { ratio } => {
             format!("{} UNSPLIT {} RATIO {}", date, tx.ticker, ratio)
         }
+    }
+}
+
+/// Append a trailing ` KEYWORD <amount>` clause to a line, but only when the
+/// amount carries information (a non-default optional field). Default amounts
+/// are omitted so they reparse to the same default.
+fn with_optional(base: String, keyword: &str, amount: &CurrencyAmount) -> String {
+    if is_default(amount) {
+        base
+    } else {
+        format!("{base} {keyword} {}", format_amount(amount))
     }
 }
 
