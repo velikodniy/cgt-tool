@@ -478,5 +478,5 @@ Gains and losses are calculated and reported per tax year. The Section 104 pool 
 ---
 
 **Document Version:** 1.4
-**Last Updated:** 2026-02-23
+**Last Updated:** 2026-03-01
 **Source:** HMRC Capital Gains Manual (CG51500-CG51600), HMRC Employment-Related Securities Manual (ERSM20192)
