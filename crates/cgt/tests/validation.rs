@@ -243,7 +243,20 @@ fn test_sell_before_buy_warning() {
     // But not clean
     assert!(!result.is_clean());
     assert_eq!(result.warnings.len(), 1);
-    assert!(result.warnings[0].message.contains("no prior BUY"));
+    // The BUY exists (2020-06-01), just later, so the accurate message is
+    // "SELL before first BUY" — the old "no prior BUY" pinned the bug.
+    assert!(result.warnings[0].message.contains("SELL before first BUY"));
+}
+
+#[test]
+fn test_sell_listed_before_chronologically_earlier_buy_is_not_warned() {
+    // SELL appears first in input but its BUY is chronologically earlier: no
+    // spurious warning, because first-buy is computed over all transactions.
+    let txns = vec![
+        make_sell("2020-06-20", "AAPL", 50, 180, 10),
+        make_buy("2020-01-15", "AAPL", 100, 150, 10),
+    ];
+    assert!(validate(&txns).is_clean());
 }
 
 #[test]

@@ -216,8 +216,21 @@ fn check_ratio(
 pub fn validate(transactions: &[Transaction]) -> ValidationResult {
     let mut result = ValidationResult::default();
 
-    // Track first buy date per ticker for "sell before buy" warning
+    // Earliest BUY date per ticker over ALL transactions, so a SELL listed
+    // before its chronologically-earlier BUY is not falsely flagged.
     let mut first_buy: HashMap<&str, NaiveDate> = HashMap::new();
+    for tx in transactions {
+        if matches!(tx.operation, Operation::Buy { .. }) {
+            first_buy
+                .entry(tx.ticker.as_str())
+                .and_modify(|d| {
+                    if tx.date < *d {
+                        *d = tx.date;
+                    }
+                })
+                .or_insert(tx.date);
+        }
+    }
 
     for tx in transactions {
         let line = tx.line;
@@ -241,16 +254,6 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
                         fees,
                     },
                 );
-
-                // Track first buy date
-                first_buy
-                    .entry(&tx.ticker)
-                    .and_modify(|d| {
-                        if tx.date < *d {
-                            *d = tx.date;
-                        }
-                    })
-                    .or_insert(tx.date);
             }
 
             Operation::Sell {
