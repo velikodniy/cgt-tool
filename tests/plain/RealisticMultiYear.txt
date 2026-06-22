@@ -3,8 +3,8 @@
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
 2022/23     3           -£24,134.11           £691.79               £24,825.90  £10,506.97  £12,300.00  £0.00
-2023/24     6           -£5,686.43            £2,244.96             £7,931.39   £26,260.66  £6,000.00   £0.00
-2024/25     6           £1,558.63             £3,968.11             £2,409.49   £37,164.47  £3,000.00   £0.00
+2023/24     6           -£5,686.43            £2,244.96             £7,931.39   £26,260.67  £6,000.00   £0.00
+2024/25     6           £1,558.62             £3,968.11             £2,409.49   £37,164.47  £3,000.00   £0.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
@@ -68,7 +68,7 @@ Notes:
    Result: -£7,888.19
 
 5) SELL 30 MSFT on 10/01/2024 - GAIN £1,493.42
-   Section 104: 30 shares @ £246.37
+   Section 104: 30 shares @ £246.38
    Gross Proceeds: 30 × £296.41925539483 = £8,892.58
    Net Proceeds: £8,892.58 - £7.90 fees = £8,884.67
    Cost: £7,391.25

@@ -13,6 +13,7 @@ use super::plan::MatchPlan;
 use super::value::{LegRule, PricedDisposal, ValuedReport};
 use crate::config::Config;
 use crate::error::CgtError;
+use crate::format::round_money;
 use crate::model::{TaxPeriod, Transaction};
 use crate::report::{Disposal, Holding, MatchLeg, MatchRule, TaxReport, TaxYearSummary};
 
@@ -64,9 +65,13 @@ pub(crate) fn build(
     })
 }
 
-/// Map a priced disposal to the public model. Per-disposal proceeds sums are
-/// rounded to 10dp to absorb proportional-fee precision dust; leg costs and
-/// gains carry full precision.
+/// Map a priced disposal to the public model. Per-leg allowable cost and gain
+/// are rounded to 2dp here (the single money policy) so bucketing and the year
+/// totals derive from the same rounded figures every published identity foots
+/// against — `net_gain == total_gain - total_loss`, and year totals equal the
+/// sum of the displayed rows (HMRC SA108 rounds per disposal, then sums).
+/// Per-disposal proceeds sums stay at 10dp on the model so the unit-price
+/// display divides exact figures.
 fn map_disposal(priced: &PricedDisposal, quantity: Decimal) -> Disposal {
     let mut gross_proceeds = Decimal::ZERO;
     let mut proceeds = Decimal::ZERO;
@@ -77,8 +82,8 @@ fn map_disposal(priced: &PricedDisposal, quantity: Decimal) -> Disposal {
         legs.push(MatchLeg {
             rule: map_rule(leg.rule),
             quantity: leg.quantity,
-            allowable_cost: leg.allowable_cost,
-            gain_or_loss: leg.gain_or_loss,
+            allowable_cost: round_money(leg.allowable_cost),
+            gain_or_loss: round_money(leg.gain_or_loss),
             acquisition_date: leg.acquisition_date,
         });
     }
@@ -186,15 +191,19 @@ fn summarize(
     let mut gross_proceeds = Decimal::ZERO;
     let mut total_allowable_cost = Decimal::ZERO;
     for disposal in &disposals {
-        // Bucketing thresholds are load-bearing: a per-disposal net of exactly
-        // zero contributes to neither the gain nor the loss total.
+        // Legs carry 2dp-rounded gains and costs (map_disposal), so the net and
+        // the totals are exact at 2dp and cannot be flipped by sub-penny fee
+        // dust. Bucketing thresholds are load-bearing: a per-disposal net of
+        // exactly zero contributes to neither the gain nor the loss total.
         let net: Decimal = disposal.legs.iter().map(|leg| leg.gain_or_loss).sum();
         if net > Decimal::ZERO {
             total_gain += net;
         } else if net < Decimal::ZERO {
             total_loss += net.abs();
         }
-        gross_proceeds += disposal.gross_proceeds;
+        // Sum the rounded per-disposal proceeds so the year total foots against
+        // the displayed disposal rows.
+        gross_proceeds += round_money(disposal.gross_proceeds);
         total_allowable_cost += disposal
             .legs
             .iter()

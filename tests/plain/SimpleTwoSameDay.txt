@@ -2,7 +2,7 @@
 
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
-2018/19     2           -£39.73               £0.00                 £39.73      £93.40      £11,700.00  £0.00
+2018/19     2           -£39.72               £0.00                 £39.72      £93.40      £11,700.00  £0.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions

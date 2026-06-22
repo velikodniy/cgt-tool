@@ -82,6 +82,62 @@ fn every_fixture_serde_equals_its_golden() {
     }
 }
 
+/// Every year's published totals must foot against the rounded rows actually
+/// displayed (F8/F11): no sub-penny dust can flip a bucket or unbalance an
+/// identity, because the legs carry 2dp-rounded gains and costs.
+#[test]
+fn year_totals_foot_against_rounded_rows() {
+    for name in &fixture_names() {
+        let report = run_engine(name);
+        for year in report["tax_years"].as_array().expect("tax_years") {
+            let mut sum_gain = Decimal::ZERO;
+            let mut sum_loss = Decimal::ZERO;
+            let mut sum_proceeds = Decimal::ZERO;
+            let mut sum_cost = Decimal::ZERO;
+            for disposal in year["disposals"].as_array().expect("disposals") {
+                sum_proceeds += money(disposal, "gross_proceeds");
+                let mut disposal_net = Decimal::ZERO;
+                for leg in disposal["matches"].as_array().expect("matches") {
+                    sum_cost += money(leg, "allowable_cost");
+                    disposal_net += money(leg, "gain_or_loss");
+                }
+                if disposal_net > Decimal::ZERO {
+                    sum_gain += disposal_net;
+                } else if disposal_net < Decimal::ZERO {
+                    sum_loss += disposal_net.abs();
+                }
+            }
+            let total_gain = money(year, "total_gain");
+            let total_loss = money(year, "total_loss");
+            let net_gain = money(year, "net_gain");
+            let exempt = money(year, "exempt_amount");
+            let taxable = money(year, "taxable_gain");
+            assert_eq!(total_gain, sum_gain, "{name}: total_gain vs summed rows");
+            assert_eq!(total_loss, sum_loss, "{name}: total_loss vs summed rows");
+            assert_eq!(
+                net_gain,
+                total_gain - total_loss,
+                "{name}: net_gain identity"
+            );
+            assert_eq!(
+                taxable,
+                (net_gain - exempt).max(Decimal::ZERO),
+                "{name}: taxable_gain identity"
+            );
+            assert_eq!(
+                money(year, "gross_proceeds"),
+                sum_proceeds,
+                "{name}: year gross_proceeds vs summed disposal rows"
+            );
+            assert_eq!(
+                money(year, "total_allowable_cost"),
+                sum_cost,
+                "{name}: total_allowable_cost vs summed leg rows"
+            );
+        }
+    }
+}
+
 /// Disposal legs for the given date/ticker, as (rule, allowable_cost, gain).
 fn legs_on(report: &Value, date: &str, ticker: &str) -> Vec<(String, Decimal, Decimal)> {
     let mut out = Vec::new();
