@@ -6,7 +6,8 @@ Compares per-tax-year gains and losses from:
 - KapJI/capital-gains-calculator (Python, via uvx)
 - mattjgalloway/cgtcalc (Swift, built from source)
 
-Reports any discrepancy greater than £1 per tax year.
+Reports any per-tax-year discrepancy beyond a small tolerance (£1 base, +£0.50
+per cgtcalc disposal, capped at £5) that models cgtcalc's whole-pound rounding.
 
 Usage:
   python cross-validate.py tests/inputs/Simple.cgt
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -37,8 +39,26 @@ from cgt_parse import find_cgt_tool
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-# Discrepancy reporting threshold (£1 per tax year).
-THRESHOLD = Decimal("1.00")
+# Per-tax-year acceptance tolerance. cgtcalc truncates each disposal's gain/loss
+# DOWN to whole pounds, so the rounding noise accumulates one-directionally with
+# the disposal count but is bounded in practice. Model it as a small base plus
+# £0.50 per disposal with a hard cap, rather than the old unbounded
+# THRESHOLD * disposals which let a ~£11 divergence pass on a 12-disposal year.
+TOLERANCE_BASE = Decimal("1.00")
+TOLERANCE_PER_DISPOSAL = Decimal("0.50")
+TOLERANCE_HARD_CAP = Decimal("5.00")
+
+
+def year_tolerance(disposals: int) -> Decimal:
+    """Acceptance tolerance for one tax year, scaled by cgtcalc's disposal count.
+
+    Other calculators report ``disposals == 0`` and get the base tolerance.
+    """
+    if disposals <= 0:
+        return TOLERANCE_BASE
+    return min(
+        TOLERANCE_BASE + TOLERANCE_PER_DISPOSAL * disposals, TOLERANCE_HARD_CAP
+    )
 
 # Operations not supported by cgt-calc (KapJI) that would cause false diffs.
 # ACCUMULATION adjusts cost basis (no CGT impact); cgt-calc has no equivalent.
@@ -62,8 +82,15 @@ KNOWN_CGTCALC_DIVERGENCES = {
 
 # Matches an UNSUPPORTED_OPS token as a whole word anywhere on a DSL line.
 _UNSUPPORTED_OP_RE = re.compile(r"\b(" + "|".join(sorted(UNSUPPORTED_OPS)) + r")\b")
-# Matches the optional 3-letter currency code after an "@ <price>" token.
-_CURRENCY_RE = re.compile(r"@\s*[\d.]+\s+([A-Z]{3})\b")
+# Matches the optional 3-letter currency code following ANY money amount —
+# "@ <price> CCY", "TOTAL <value> CCY", "FEES <value> CCY", "TAX <value> CCY".
+# A currency code is a 3-letter uppercase token after a number; GBP (home) and
+# 3-letter DSL keywords that can follow a number/date are excluded.
+_CURRENCY_RE = re.compile(r"[\d.]+\s+([A-Z]{3})\b")
+_HOME_CURRENCY = "GBP"
+# 3-letter DSL keywords that can legitimately follow a number or trailing date
+# digit (BUY follows a date; TAX follows a money amount) and are not currencies.
+_NON_CURRENCY_TOKENS = {"GBP", "BUY", "TAX"}
 # A RAW CSV row begins with an ISO date: "YYYY-MM-DD,...".
 _RAW_DATE_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2}),")
 # cgt-calc prints "Capital gain: £X.XX" / "Capital loss: £X.XX".
@@ -106,6 +133,10 @@ class CalculatorResult:
     error: str | None = None
     # True when `error` is an expected limitation (reported as SKIP, not ERROR).
     skipped: bool = False
+    # True only when the authoritative oracle binary itself was not found, as
+    # opposed to a per-fixture applicability skip. A run that never compared the
+    # oracle is not a pass (see main).
+    oracle_missing: bool = False
 
 
 @dataclass
@@ -151,12 +182,14 @@ def has_foreign_currency(cgt_file: Path) -> bool:
 
     cgtcalc is GBP-only and convert-to-cgtcalc.py strips the currency code, so a
     foreign-currency fixture would be compared at face value against cgt-tool's
-    HMRC-FX-converted figures — a guaranteed false discrepancy.
+    HMRC-FX-converted figures — a guaranteed false discrepancy. Scans every money
+    amount (price, TOTAL, FEES, TAX), not just the "@ price" of a trade, so a
+    foreign-currency DIVIDEND/ACCUMULATION/CAPRETURN is not missed.
     """
     for line in significant_lines(cgt_file):
-        match = _CURRENCY_RE.search(line)
-        if match and match.group(1) != "GBP":
-            return True
+        for match in _CURRENCY_RE.finditer(line):
+            if match.group(1) not in _NON_CURRENCY_TOKENS:
+                return True
     return False
 
 
@@ -311,6 +344,7 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
             [],
             error="cgtcalc not found. Clone and build: git clone https://github.com/mattjgalloway/cgtcalc && cd cgtcalc && swift build -c release",
             skipped=True,
+            oracle_missing=True,
         )
     if has_foreign_currency(cgt_file):
         return CalculatorResult(
@@ -339,7 +373,18 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
                 "cgtcalc", [], error=f"cgtcalc cannot process: {reason}", skipped=True
             )
 
-        return CalculatorResult("cgtcalc", parse_cgtcalc_summary(output))
+        # A code-0 run whose summary the regex cannot parse must not be counted
+        # as a clean match: the per-year comparison would silently see zero
+        # cgtcalc years and report OK. The "Disposals" marker means cgtcalc DID
+        # compute disposals, so an empty parse is a parse gap, not an empty run.
+        parsed = parse_cgtcalc_summary(output)
+        if not parsed and "Disposals" in output:
+            return CalculatorResult(
+                "cgtcalc",
+                [],
+                error="cgtcalc summary present but unparsed (year-set unverifiable)",
+            )
+        return CalculatorResult("cgtcalc", parsed)
     except ConversionFailed as exc:
         return CalculatorResult("cgtcalc", [], error=f"Conversion failed: {exc}")
     except ConversionEmpty:
@@ -355,15 +400,11 @@ def compare_results(
 ) -> list[Discrepancy]:
     """Discrepancies between cgt-tool and another calculator, above tolerance."""
     by_period = {year.period: year for year in cgt_tool.tax_years}
+    other_periods = {year.period for year in other.tax_years}
     discrepancies: list[Discrepancy] = []
 
     for other_year in other.tax_years:
-        # cgtcalc rounds each disposal's gain/loss down to whole pounds, so the
-        # rounding noise grows with the disposal count; scale tolerance to suit.
-        # Other calculators report disposals=0 and keep the base threshold.
-        tolerance = (
-            THRESHOLD * other_year.disposals if other_year.disposals else THRESHOLD
-        )
+        tolerance = year_tolerance(other_year.disposals)
 
         cgt_year = by_period.get(other_year.period)
         if cgt_year is None:
@@ -390,6 +431,23 @@ def compare_results(
                         difference,
                     )
                 )
+
+    # A tax year cgt-tool reports but the reference does not. A nonzero gain or
+    # loss here means cgt-tool fabricated or mis-dated a year (e.g. an April-6
+    # boundary bug) the reference never produced, which the period-keyed loop
+    # above would otherwise never examine.
+    for cgt_year in cgt_tool.tax_years:
+        if cgt_year.period in other_periods:
+            continue
+        tolerance = year_tolerance(0)
+        if cgt_year.gain > tolerance or cgt_year.loss > tolerance:
+            discrepancies.append(
+                Discrepancy(
+                    cgt_year.period,
+                    f"missing in {other.name}",
+                    cgt_year.gain - cgt_year.loss,
+                )
+            )
 
     return discrepancies
 
@@ -429,11 +487,12 @@ def check_calculator(
     return Status.DIFF
 
 
-def validate_file(cgt_file: Path) -> tuple[bool, Status, Status]:
+def validate_file(cgt_file: Path) -> tuple[bool, Status, Status, bool]:
     """Validate one .cgt file against both external calculators.
 
-    Returns (all_passed, cgt_calc_status, cgtcalc_status). A KNOWN cgtcalc
-    divergence (see KNOWN_CGTCALC_DIVERGENCES) is reported but does not fail.
+    Returns (all_passed, cgt_calc_status, cgtcalc_status, cgtcalc_oracle_missing).
+    A KNOWN cgtcalc divergence (see KNOWN_CGTCALC_DIVERGENCES) is reported but
+    does not fail.
     """
     print(f"\n{'=' * 60}")
     print(f"Validating: {cgt_file.name}")
@@ -442,7 +501,7 @@ def validate_file(cgt_file: Path) -> tuple[bool, Status, Status]:
     cgt_result = run_cgt_tool(cgt_file)
     if cgt_result.error:
         print(f"  ERROR (cgt-tool): {cgt_result.error}")
-        return False, Status.ERROR, Status.ERROR
+        return False, Status.ERROR, Status.ERROR, False
 
     print(f"  cgt-tool: {len(cgt_result.tax_years)} tax year(s)")
     for year in cgt_result.tax_years:
@@ -451,12 +510,13 @@ def validate_file(cgt_file: Path) -> tuple[bool, Status, Status]:
     calc_status = check_calculator(
         cgt_result, run_cgt_calc(cgt_file), fixture=cgt_file, allow_known=False
     )
+    cgtcalc_result = run_cgtcalc(cgt_file)
     cgtcalc_status = check_calculator(
-        cgt_result, run_cgtcalc(cgt_file), fixture=cgt_file, allow_known=True
+        cgt_result, cgtcalc_result, fixture=cgt_file, allow_known=True
     )
 
     all_passed = Status.DIFF not in (calc_status, cgtcalc_status)
-    return all_passed, calc_status, cgtcalc_status
+    return all_passed, calc_status, cgtcalc_status, cgtcalc_result.oracle_missing
 
 
 def print_summary(summary: dict[str, dict[Status, int]]) -> None:
@@ -470,7 +530,7 @@ def print_summary(summary: dict[str, dict[Status, int]]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Validate cgt-tool output against external UK CGT calculators "
-        "(reports discrepancies greater than £1 per tax year).",
+        "(per-year tolerance: £1 base, +£0.50 per cgtcalc disposal, capped at £5).",
     )
     parser.add_argument(
         "files", nargs="+", type=Path, help=".cgt fixture(s) to validate"
@@ -478,6 +538,7 @@ def main() -> int:
     args = parser.parse_args()
 
     all_passed = True
+    oracle_missing = False
     summary: dict[str, dict[Status, int]] = {
         "cgt-calc": {status: 0 for status in Status},
         "cgtcalc": {status: 0 for status in Status},
@@ -488,10 +549,33 @@ def main() -> int:
             print(f"Error: File not found: {cgt_file}")
             all_passed = False
             continue
-        passed, calc_status, cgtcalc_status = validate_file(cgt_file)
+        passed, calc_status, cgtcalc_status, cgtcalc_oracle_missing = validate_file(
+            cgt_file
+        )
         all_passed = all_passed and passed
+        oracle_missing = oracle_missing or cgtcalc_oracle_missing
         summary["cgt-calc"][calc_status] += 1
         summary["cgtcalc"][cgtcalc_status] += 1
+
+    # The authoritative cross-check is absent of verification, not success: if
+    # cgtcalc never produced a comparable result because the binary was unbuilt,
+    # a green run is meaningless. Fail unless explicitly opted out for offline dev.
+    cgtcalc_compared = (
+        summary["cgtcalc"][Status.OK]
+        + summary["cgtcalc"][Status.DIFF]
+        + summary["cgtcalc"][Status.KNOWN]
+    )
+    require_cgtcalc = os.environ.get("CGT_REQUIRE_CGTCALC", "1") != "0"
+    if require_cgtcalc and oracle_missing and cgtcalc_compared == 0:
+        print("\n" + "=" * 60)
+        print(
+            "RESULT: cgtcalc oracle not built — nothing was cross-validated.\n"
+            "Build it (swift build -c release in a cgtcalc clone) or set "
+            "CGT_REQUIRE_CGTCALC=0 to allow offline runs."
+        )
+        print("=" * 60)
+        print_summary(summary)
+        return 1
 
     print("\n" + "=" * 60)
     if all_passed:
