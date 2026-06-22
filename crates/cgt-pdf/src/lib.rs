@@ -167,12 +167,7 @@ fn build_tax_years(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
 }
 
 fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), PdfError> {
-    let mut active: Vec<_> = report
-        .holdings
-        .iter()
-        .filter(|h| h.quantity > Decimal::ZERO)
-        .collect();
-    active.sort_by(|a, b| a.ticker.cmp(&b.ticker));
+    let active = report.active_holdings();
 
     let rows: Vec<Value> = active
         .iter()

@@ -93,12 +93,7 @@ pub fn render(report: &TaxReport) -> String {
 
     // HOLDINGS: only pools with a positive quantity, sorted by ticker.
     let _ = writeln!(out, "\n# HOLDINGS\n");
-    let mut active: Vec<_> = report
-        .holdings
-        .iter()
-        .filter(|h| h.quantity > Decimal::ZERO)
-        .collect();
-    active.sort_by(|a, b| a.ticker.cmp(&b.ticker));
+    let active = report.active_holdings();
     if active.is_empty() {
         let _ = writeln!(out, "NONE");
     } else {

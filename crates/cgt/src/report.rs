@@ -27,7 +27,8 @@ where
     serializer.serialize_str(&value.to_string())
 }
 
-/// HMRC share matching rule for a disposal leg.
+/// HMRC share matching rule for a disposal leg. Public wire enum, kept separate
+/// from the engine's internal `value::LegRule` by design.
 #[derive(Debug, Clone, PartialEq)]
 pub enum MatchRule {
     SameDay,
@@ -240,6 +241,20 @@ pub struct TaxReport {
     pub transactions: Option<Vec<Transaction>>,
     /// Non-fatal diagnostics (e.g. a tax year with no configured exemption).
     pub warnings: Vec<String>,
+}
+
+impl TaxReport {
+    /// Active holdings (positive quantity), sorted by ticker — the set both
+    /// renderers display.
+    pub fn active_holdings(&self) -> Vec<&Holding> {
+        let mut active: Vec<&Holding> = self
+            .holdings
+            .iter()
+            .filter(|h| h.quantity > Decimal::ZERO)
+            .collect();
+        active.sort_by(|a, b| a.ticker.cmp(&b.ticker));
+        active
+    }
 }
 
 impl Serialize for TaxReport {
