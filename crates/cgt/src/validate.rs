@@ -304,6 +304,15 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
 
             Operation::Unsplit { ratio } => {
                 check_ratio(&mut result, line, tx.date, &tx.ticker, "UNSPLIT", *ratio);
+                // A consolidation by a fractional ratio is meaningless.
+                if *ratio > Decimal::ZERO && ratio.fract() != Decimal::ZERO {
+                    result.errors.push(ValidationError {
+                        line,
+                        date: tx.date,
+                        ticker: tx.ticker.clone(),
+                        message: format!("UNSPLIT with non-integer ratio: {ratio}"),
+                    });
+                }
             }
 
             Operation::Dividend { total_value, .. } => {

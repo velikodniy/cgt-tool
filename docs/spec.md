@@ -80,7 +80,7 @@ When a disposal has zero total sell amount, no match result is returned and the 
 ### Stock Split / Unsplit
 
 - **SPLIT**: Multiply share quantity by the ratio; total cost basis unchanged.
-- **UNSPLIT**: Reverse of SPLIT.
+- **UNSPLIT**: Reverse of SPLIT. The ratio must be a positive integer and the holding must divide evenly by it; an indivisible consolidation fails (a consolidation must leave whole shares; CG51746).
 
 A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisition, so it never enters same-day matching.
 

@@ -84,6 +84,17 @@ pub enum CgtError {
     )]
     AccumulationWithoutHolding { ticker: String, date: NaiveDate },
 
+    #[error(
+        "UNSPLIT {ticker} on {date}: holding of {holding} is not divisible by ratio {ratio} \
+         (a consolidation must leave whole shares; CG51746)"
+    )]
+    UnsplitIndivisibleHolding {
+        ticker: String,
+        date: NaiveDate,
+        holding: Decimal,
+        ratio: Decimal,
+    },
+
     #[error("{0}")]
     Validation(ValidationErrors),
 }

@@ -174,6 +174,15 @@ impl<'s> Planner<'s> {
                     if let Some(pool) = self.pools.get_mut(&event.ticker)
                         && *ratio != Decimal::ZERO
                     {
+                        // A consolidation must leave whole shares (CG51746).
+                        if *pool % *ratio != Decimal::ZERO {
+                            return Err(CgtError::UnsplitIndivisibleHolding {
+                                ticker: event.ticker.clone(),
+                                date: event.date,
+                                holding: *pool,
+                                ratio: *ratio,
+                            });
+                        }
                         *pool /= *ratio;
                     }
                 }
@@ -890,6 +899,28 @@ mod tests {
             disposal.section_104.as_ref().map(|leg| leg.quantity),
             Some(dec!(2))
         );
+    }
+
+    #[test]
+    fn unsplit_indivisible_holding_errors() {
+        // 10 shares cannot consolidate 3-for-1 into whole shares (CG51746).
+        let err = plan_err(
+            "2024-01-01 BUY ABC 10 @ 10.00 GBP\n\
+             2024-06-01 UNSPLIT ABC RATIO 3\n",
+        );
+        assert!(matches!(
+            err,
+            CgtError::UnsplitIndivisibleHolding { ref ticker, .. } if ticker == "ABC"
+        ));
+    }
+
+    #[test]
+    fn unsplit_exact_holding_consolidates() {
+        let (_, match_plan) = stream_and_plan(
+            "2024-01-01 BUY ABC 12 @ 10.00 GBP\n\
+             2024-06-01 UNSPLIT ABC RATIO 3\n",
+        );
+        assert!(match_plan.disposals.is_empty());
     }
 
     #[test]

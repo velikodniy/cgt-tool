@@ -132,6 +132,26 @@ fn test_same_date_split_and_capreturn_same_ticker_is_allowed() {
 }
 
 #[test]
+fn test_unsplit_non_integer_ratio_is_rejected() {
+    let txns = vec![Transaction {
+        date: "2024-06-01".parse().expect("valid date"),
+        ticker: "ABC".to_string(),
+        operation: Operation::Unsplit {
+            ratio: Decimal::new(15, 1), // 1.5
+        },
+        line: None,
+    }];
+    let result = validate(&txns);
+    assert!(!result.is_valid());
+    assert!(
+        result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("non-integer ratio"))
+    );
+}
+
+#[test]
 fn test_split_and_trade_different_ticker_same_date_is_allowed() {
     let txns = vec![
         make_buy("2024-01-01", "ABC", 100, 10, 0),
