@@ -155,8 +155,7 @@
       "B&B: " + qty + " shares"
     }
   } else {
-    let unit = if item.quantity != 0 { item.allowable_cost / item.quantity } else { 0 }
-    "Section 104: " + qty + " shares @ " + fmt-money(unit)
+    "Section 104: " + qty + " shares @ " + fmt-money(item.unit_cost)
   }
 }
 
@@ -295,9 +294,9 @@
               columns: (auto, auto),
               gutter: 0.3em,
               align: (right, right),
-              [Gross Proceeds:], [#fmt-qty(disposal.quantity) #sym.times #fmt-money(disposal.gross_proceeds / disposal.quantity) = #fmt-money(disposal.gross_proceeds)],
-              ..if (disposal.gross_proceeds - disposal.proceeds) > 0 {
-                ([Net Proceeds:], [#fmt-money(disposal.gross_proceeds) #sym.minus #fmt-money(disposal.gross_proceeds - disposal.proceeds) = #fmt-money(disposal.proceeds)])
+              [Gross Proceeds:], [#fmt-qty(disposal.quantity) #sym.times #fmt-money(disposal.unit_price) = #fmt-money(disposal.gross_proceeds)],
+              ..if disposal.fees > 0 {
+                ([Net Proceeds:], [#fmt-money(disposal.gross_proceeds) #sym.minus #fmt-money(disposal.fees) = #fmt-money(disposal.proceeds)])
               } else { () },
               [Cost:], [#fmt-money(disposal.total_cost)],
               line(length: 100%, stroke: 0.35pt + border-color), line(length: 100%, stroke: 0.35pt + border-color),
@@ -334,7 +333,7 @@
       .map(row => (
         row.ticker,
         fmt-qty(row.quantity),
-        fmt-money(row.total_cost / row.quantity),
+        fmt-money(row.avg_cost),
       ))
       .flatten()
   )

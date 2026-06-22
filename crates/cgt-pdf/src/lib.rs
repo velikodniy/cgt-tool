@@ -4,6 +4,7 @@
 //! installation. Depends only on the engine crate so non-PDF builds never pull
 //! in Typst.
 
+use cgt::format::round_money;
 use cgt::model::{CurrencyAmount, Operation, Transaction};
 use cgt::report::{Disposal, MatchRule, TaxReport};
 use chrono::{Datelike, Local, NaiveDate};
@@ -37,6 +38,22 @@ fn decimal_to_f64(value: Decimal) -> Result<f64, PdfError> {
 
 fn decimal_to_value(value: Decimal) -> Result<Value, PdfError> {
     Ok(decimal_to_f64(value)?.into_value())
+}
+
+/// Money fields are rounded to 2dp in exact Decimal first, so the PDF matches
+/// the plain/JSON output instead of drifting through the f64 round-trip.
+fn money_to_value(value: Decimal) -> Result<Value, PdfError> {
+    decimal_to_value(round_money(value))
+}
+
+/// Per-share value `total / quantity`, rounded as money (0 when quantity is 0).
+fn unit_value(total: Decimal, quantity: Decimal) -> Result<Value, PdfError> {
+    let unit = if quantity.is_zero() {
+        Decimal::ZERO
+    } else {
+        total / quantity
+    };
+    money_to_value(unit)
 }
 
 fn date_dict(date: NaiveDate) -> Dict {
@@ -111,15 +128,15 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
             "disposal_count".into(),
             (year.disposal_count as i64).into_value(),
         );
-        row.insert("net_gain".into(), decimal_to_value(year.net_gain)?);
-        row.insert("total_gain".into(), decimal_to_value(year.total_gain)?);
-        row.insert("total_loss".into(), decimal_to_value(year.total_loss)?);
+        row.insert("net_gain".into(), money_to_value(year.net_gain)?);
+        row.insert("total_gain".into(), money_to_value(year.total_gain)?);
+        row.insert("total_loss".into(), money_to_value(year.total_loss)?);
         row.insert(
             "gross_proceeds".into(),
-            decimal_to_value(year.gross_proceeds)?,
+            money_to_value(year.gross_proceeds)?,
         );
-        row.insert("exemption".into(), decimal_to_value(year.exempt_amount)?);
-        row.insert("taxable".into(), decimal_to_value(year.taxable_gain)?);
+        row.insert("exemption".into(), money_to_value(year.exempt_amount)?);
+        row.insert("taxable".into(), money_to_value(year.taxable_gain)?);
         rows.push(row.into_value());
     }
     Ok(rows)
@@ -163,7 +180,8 @@ fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), PdfErro
             let mut row = Dict::new();
             row.insert("ticker".into(), h.ticker.clone().into_value());
             row.insert("quantity".into(), decimal_to_value(h.quantity)?);
-            row.insert("total_cost".into(), decimal_to_value(h.total_cost)?);
+            row.insert("total_cost".into(), money_to_value(h.total_cost)?);
+            row.insert("avg_cost".into(), unit_value(h.total_cost, h.quantity)?);
             Ok(row.into_value())
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
@@ -270,11 +288,20 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     dict.insert("quantity".into(), decimal_to_value(disposal.quantity)?);
     dict.insert(
         "gross_proceeds".into(),
-        decimal_to_value(disposal.gross_proceeds)?,
+        money_to_value(disposal.gross_proceeds)?,
     );
-    dict.insert("proceeds".into(), decimal_to_value(disposal.proceeds)?);
-    dict.insert("total_gain".into(), decimal_to_value(total_gain)?);
-    dict.insert("total_cost".into(), decimal_to_value(total_cost)?);
+    dict.insert("proceeds".into(), money_to_value(disposal.proceeds)?);
+    dict.insert("total_gain".into(), money_to_value(total_gain)?);
+    dict.insert("total_cost".into(), money_to_value(total_cost)?);
+    // Derived display figures, divided and rounded in exact Decimal.
+    dict.insert(
+        "unit_price".into(),
+        unit_value(disposal.gross_proceeds, disposal.quantity)?,
+    );
+    dict.insert(
+        "fees".into(),
+        money_to_value(disposal.gross_proceeds - disposal.proceeds)?,
+    );
 
     let matches: Vec<Value> = disposal
         .legs
@@ -283,7 +310,11 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
             let mut match_dict = Dict::new();
             match_dict.insert("rule".into(), match_rule_label(&m.rule).into_value());
             match_dict.insert("quantity".into(), decimal_to_value(m.quantity)?);
-            match_dict.insert("allowable_cost".into(), decimal_to_value(m.allowable_cost)?);
+            match_dict.insert("allowable_cost".into(), money_to_value(m.allowable_cost)?);
+            match_dict.insert(
+                "unit_cost".into(),
+                unit_value(m.allowable_cost, m.quantity)?,
+            );
             match_dict.insert(
                 "acquisition_date".into(),
                 optional_date_value(m.acquisition_date),
