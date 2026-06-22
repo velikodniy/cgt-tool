@@ -300,3 +300,11 @@ fn test_parse_capreturn_without_fees_clause() {
         panic!("Expected CapReturn operation");
     }
 }
+
+#[test]
+fn test_transaction_carries_real_source_line() {
+    // Line 1 is a comment, line 2 blank: the transaction is on source line 3.
+    let input = "# header\n\n2023-01-01 BUY AAPL 10 @ 150.00\n";
+    let transactions = parse(input).expect("parses");
+    assert_eq!(transactions[0].line, Some(3));
+}

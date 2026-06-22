@@ -135,6 +135,7 @@ mod tests {
             date: NaiveDate::from_ymd_opt(date.0, date.1, date.2).unwrap(),
             ticker: ticker.to_string(),
             operation: op,
+            line: None,
         }
     }
 

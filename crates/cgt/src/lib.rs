@@ -113,6 +113,7 @@ mod tests {
                 price: CurrencyAmount::default(),
                 fees: CurrencyAmount::default(),
             },
+            line: None,
         }];
 
         let err = calculate(&transactions, None, None, &config())

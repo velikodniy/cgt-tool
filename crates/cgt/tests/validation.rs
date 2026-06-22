@@ -15,6 +15,7 @@ fn make_buy(date: &str, ticker: &str, amount: i64, price: i64, fees: i64) -> Tra
             price: CurrencyAmount::new(Decimal::from(price), Currency::GBP),
             fees: CurrencyAmount::new(Decimal::from(fees), Currency::GBP),
         },
+        line: None,
     }
 }
 
@@ -27,6 +28,7 @@ fn make_sell(date: &str, ticker: &str, amount: i64, price: i64, fees: i64) -> Tr
             price: CurrencyAmount::new(Decimal::from(price), Currency::GBP),
             fees: CurrencyAmount::new(Decimal::from(fees), Currency::GBP),
         },
+        line: None,
     }
 }
 
@@ -37,6 +39,7 @@ fn make_split(date: &str, ticker: &str, ratio: i64) -> Transaction {
         operation: Operation::Split {
             ratio: Decimal::from(ratio),
         },
+        line: None,
     }
 }
 
@@ -49,6 +52,7 @@ fn make_accumulation(date: &str, ticker: &str, amount: i64, total: i64) -> Trans
             total_value: CurrencyAmount::new(Decimal::from(total), Currency::GBP),
             tax_paid: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
         },
+        line: None,
     }
 }
 
@@ -61,6 +65,7 @@ fn make_capreturn(date: &str, ticker: &str, amount: i64, total: i64) -> Transact
             total_value: CurrencyAmount::new(Decimal::from(total), Currency::GBP),
             fees: CurrencyAmount::new(Decimal::ZERO, Currency::GBP),
         },
+        line: None,
     }
 }
 

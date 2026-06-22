@@ -618,6 +618,7 @@ mod tests {
                 price: CurrencyAmount::default(),
                 fees: CurrencyAmount::default(),
             },
+            line: None,
         }];
         let stream = normalize(&transactions, None).expect("normalizes");
         let match_plan = plan(&stream).expect("plans without error");

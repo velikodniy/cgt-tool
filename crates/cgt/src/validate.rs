@@ -219,8 +219,8 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
     // Track first buy date per ticker for "sell before buy" warning
     let mut first_buy: HashMap<&str, NaiveDate> = HashMap::new();
 
-    for (i, tx) in transactions.iter().enumerate() {
-        let line = Some(i + 1);
+    for tx in transactions {
+        let line = tx.line;
 
         match &tx.operation {
             Operation::Buy {
@@ -396,14 +396,14 @@ fn check_reorganisation_collisions(result: &mut ValidationResult, transactions: 
         }
     }
 
-    for (i, tx) in transactions.iter().enumerate() {
+    for tx in transactions {
         if matches!(
             tx.operation,
             Operation::Buy { .. } | Operation::Sell { .. } | Operation::Accumulation { .. }
         ) && reorg_dates.contains(&(tx.date, tx.ticker.as_str()))
         {
             result.errors.push(ValidationError {
-                line: Some(i + 1),
+                line: tx.line,
                 date: tx.date,
                 ticker: tx.ticker.clone(),
                 message: "a BUY, SELL, or ACCUMULATION on the same date as a SPLIT/UNSPLIT of \

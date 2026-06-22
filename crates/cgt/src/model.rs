@@ -199,12 +199,22 @@ impl JsonSchema for TaxPeriod {
 
 /// A transaction with amounts in their original currency.
 /// Used for parsing and JSON I/O.
-#[derive(Debug, Clone, PartialEq, Serialize, JsonSchema)]
+#[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct Transaction {
     pub date: NaiveDate,
     pub ticker: String,
     #[serde(flatten)]
     pub operation: Operation<CurrencyAmount>,
+    /// 1-based source line, when parsed from DSL text. Diagnostics only:
+    /// not serialized and excluded from equality.
+    #[serde(skip)]
+    pub line: Option<usize>,
+}
+
+impl PartialEq for Transaction {
+    fn eq(&self, other: &Self) -> bool {
+        self.date == other.date && self.ticker == other.ticker && self.operation == other.operation
+    }
 }
 
 impl<'de> Deserialize<'de> for Transaction {
@@ -228,6 +238,7 @@ impl<'de> Deserialize<'de> for Transaction {
             date: raw.date,
             ticker: raw.ticker.to_uppercase(),
             operation,
+            line: None,
         })
     }
 }

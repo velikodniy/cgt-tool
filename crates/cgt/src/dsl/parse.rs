@@ -210,12 +210,14 @@ impl CgtParser {
     }
 
     fn transaction(input: Node) -> ParseResult<Transaction> {
+        let line = Some(input.as_span().start_pos().line_col().0);
         Ok(match_nodes!(input.into_children();
             [date(d), command((ticker, operation))] => {
                 Transaction {
                     date: d,
                     ticker,
                     operation,
+                    line,
                 }
             },
         ))
