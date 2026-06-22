@@ -100,20 +100,18 @@ fn test_same_date_split_and_trade_same_ticker_is_rejected() {
 }
 
 #[test]
-fn test_same_date_split_and_accumulation_same_ticker_is_rejected() {
-    // An ACCUMULATION adds units, so its order relative to a same-date split
-    // changes the resulting holding and is just as ambiguous as a trade.
+fn test_same_date_split_and_accumulation_same_ticker_is_allowed() {
+    // ACCUMULATION adjusts only cost (the engine discards its quantity), so it
+    // commutes with a same-date split and is not ambiguous. Restore the guard
+    // if ACCUMULATION ever becomes unit-issuing.
     let txns = vec![
         make_buy("2024-01-01", "ABC", 100, 10, 0),
         make_split("2024-06-01", "ABC", 2),
         make_accumulation("2024-06-01", "ABC", 40, 30),
     ];
-    let result = validate(&txns);
-    assert!(!result.is_valid());
     assert!(
-        result.errors[0].message.contains("ambiguous"),
-        "got: {}",
-        result.errors[0].message
+        validate(&txns).is_valid(),
+        "accumulation carries no split-ordering ambiguity"
     );
 }
 

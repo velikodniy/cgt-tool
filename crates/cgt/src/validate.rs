@@ -381,13 +381,11 @@ pub fn validate(transactions: &[Transaction]) -> ValidationResult {
 /// SELL, or ACCUMULATION) of the same ticker.
 ///
 /// A split is a reorganisation of share capital (TCGA92/S127): not a disposal
-/// or acquisition, so it does not enter the same-day matching rules and HMRC
-/// gives no intra-day order relative to a same-date event that changes the
-/// holding. A BUY/SELL in pre- or post-split shares, or an ACCUMULATION whose
-/// units accrue before or after the split, yields a materially different
-/// holding, so the input is ambiguous and the user must date the event before
-/// or after the split. CAPRETURN and DIVIDEND change no share count, so their
-/// order relative to the split is immaterial and they are not flagged.
+/// or acquisition, so it has no defined intra-day order against a same-date
+/// BUY or SELL in pre- or post-split shares, which would yield a materially
+/// different holding. That collision is rejected as ambiguous. ACCUMULATION,
+/// CAPRETURN, and DIVIDEND only adjust cost or income (not the share count),
+/// so they commute with a split and are not flagged.
 fn check_reorganisation_collisions(result: &mut ValidationResult, transactions: &[Transaction]) {
     let mut reorg_dates: HashSet<(NaiveDate, &str)> = HashSet::new();
     for tx in transactions {
@@ -400,19 +398,16 @@ fn check_reorganisation_collisions(result: &mut ValidationResult, transactions: 
     }
 
     for tx in transactions {
-        if matches!(
-            tx.operation,
-            Operation::Buy { .. } | Operation::Sell { .. } | Operation::Accumulation { .. }
-        ) && reorg_dates.contains(&(tx.date, tx.ticker.as_str()))
+        if matches!(tx.operation, Operation::Buy { .. } | Operation::Sell { .. })
+            && reorg_dates.contains(&(tx.date, tx.ticker.as_str()))
         {
             result.errors.push(ValidationError {
                 line: tx.line,
                 date: tx.date,
                 ticker: tx.ticker.clone(),
-                message: "a BUY, SELL, or ACCUMULATION on the same date as a SPLIT/UNSPLIT of \
-                          the same ticker is ambiguous (no defined order between the \
-                          reorganisation and the change in holding); date it before or after \
-                          the split"
+                message: "a BUY or SELL on the same date as a SPLIT/UNSPLIT of the same \
+                          ticker is ambiguous (no defined order between the reorganisation \
+                          and the change in holding); date it before or after the split"
                     .to_string(),
             });
         }

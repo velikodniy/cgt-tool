@@ -425,6 +425,20 @@ mod tests {
     }
 
     #[test]
+    fn same_date_split_and_accumulation_apply_deterministically() {
+        // Canonical order applies the accumulation (cost) before the split
+        // (quantity); the two commute.
+        let report = valued(
+            "2024-01-01 BUY ABC 100 @ 10.00 GBP\n\
+             2024-06-01 SPLIT ABC RATIO 2\n\
+             2024-06-01 ACCUMULATION ABC 100 TOTAL 50.00 GBP\n",
+        );
+        let pool = holding(&report, "ABC");
+        assert_eq!(pool.quantity, dec!(200));
+        assert_eq!(pool.total_cost, dec!(1050));
+    }
+
+    #[test]
     fn capital_return_exceeding_basis_errors() {
         // net = 150 - 0 exceeds the pool cost of 100; S122(2) does not apply.
         let err = value_err(

@@ -86,7 +86,7 @@ A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisit
 
 ### Same-Date Split + Holding Change (Rejected)
 
-A SPLIT or UNSPLIT on the **same date** as a BUY, SELL, or ACCUMULATION of the **same ticker** is rejected as ambiguous input. A reorganisation is not a trade, and HMRC defines no intra-day order between a split and a same-date event that changes the holding; the two readings (the event applied before vs. after the split) give a materially different holding. CAPRETURN and DIVIDEND change no share count, so their order against a split is immaterial and they are not flagged. The user must date the event explicitly before or after the split.
+A SPLIT or UNSPLIT on the **same date** as a BUY or SELL of the **same ticker** is rejected as ambiguous input. A reorganisation is not a trade, and HMRC defines no intra-day order between a split and a same-date trade that changes the holding; the two readings (the trade applied before vs. after the split) give a materially different holding. ACCUMULATION, CAPRETURN, and DIVIDEND only adjust cost or income (not the share count), so they commute with a split and are not flagged. The user must date the trade explicitly before or after the split.
 
 ### Capital Return (CAPRETURN)
 
@@ -316,18 +316,18 @@ Tests are the source of truth. Never remove or modify tests without proving inco
 
 ### Key Edge Cases
 
-| Case                                                          | Expected Behavior                                                      |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Multi-currency same-day                                       | Same-day matching applies; both transactions converted to GBP          |
-| B&B boundary D+30                                             | Matches (within 30 days)                                               |
-| B&B boundary D+31                                             | Does not match; falls back to S104                                     |
-| Partial B&B + S104 fallback                                   | Sell 100, buy back 40 within 30 days → 40 B&B + 60 S104                |
-| Same-day buy-sell-buy                                         | All same-day transactions aggregated; net position determines matching |
-| Capital return exceeds basis                                  | Fails with error referencing TCGA92/S122 and CG57847                   |
-| Sell exceeds holdings                                         | Fails with validation error; no partial output                         |
-| Interleaved same-day reservation                              | Aggregate date+ticker reservation; B&B uses post-reservation remainder |
-| Same-date SPLIT/UNSPLIT + BUY/SELL/ACCUMULATION (same ticker) | Rejected as ambiguous input (TCGA92/S127; no defined intra-day order)  |
-| Tax year boundary (5 Apr / 6 Apr)                             | Gains attributed to correct year                                       |
+| Case                                             | Expected Behavior                                                      |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| Multi-currency same-day                          | Same-day matching applies; both transactions converted to GBP          |
+| B&B boundary D+30                                | Matches (within 30 days)                                               |
+| B&B boundary D+31                                | Does not match; falls back to S104                                     |
+| Partial B&B + S104 fallback                      | Sell 100, buy back 40 within 30 days → 40 B&B + 60 S104                |
+| Same-day buy-sell-buy                            | All same-day transactions aggregated; net position determines matching |
+| Capital return exceeds basis                     | Fails with error referencing TCGA92/S122 and CG57847                   |
+| Sell exceeds holdings                            | Fails with validation error; no partial output                         |
+| Interleaved same-day reservation                 | Aggregate date+ticker reservation; B&B uses post-reservation remainder |
+| Same-date SPLIT/UNSPLIT + BUY/SELL (same ticker) | Rejected as ambiguous input (TCGA92/S127; no defined intra-day order)  |
+| Tax year boundary (5 Apr / 6 Apr)                | Gains attributed to correct year                                       |
 
 ### Comprehensive Fixtures
 
