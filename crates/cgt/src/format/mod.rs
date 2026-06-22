@@ -55,7 +55,7 @@ fn format_with_symbol_and_precision(value: Decimal, symbol: char, minor_units: u
         formatted_int
     };
 
-    if rounded.is_sign_negative() {
+    if rounded.is_sign_negative() && !rounded.is_zero() {
         format!("-{symbol}{formatted}")
     } else {
         format!("{symbol}{formatted}")
@@ -81,10 +81,20 @@ pub fn format_decimal_with_precision(value: Decimal, precision: u32) -> String {
     format!("{rounded:.precision$}", precision = precision as usize)
 }
 
-/// Round a decimal to 2dp midpoint-away-from-zero, consistent with
-/// [`format_gbp`]. Use when a rounded value is needed without the £ symbol.
-pub fn round_gbp(value: Decimal) -> Decimal {
-    value.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)
+/// The single money rounding policy: 2dp, midpoint rounded away from zero, with
+/// negative zero normalized to zero so serialized/rendered money never shows
+/// `-£0.00`. [`format_gbp`] and the report serializers route through this. Use
+/// wherever a rounded money value is needed. Load-bearing for output
+/// equivalence; `rust_decimal` is path-dependent.
+pub fn round_money(value: Decimal) -> Decimal {
+    let rounded = value.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero);
+    // Clear the sign of a negative zero (so money never renders "-£0.00")
+    // while preserving the 2dp scale (a zero total still serializes as "0.00").
+    if rounded.is_zero() {
+        rounded.abs()
+    } else {
+        rounded
+    }
 }
 
 /// Format a decimal, removing trailing zeros and a trailing decimal point.
@@ -147,8 +157,14 @@ mod tests {
     }
 
     #[test]
-    fn round_gbp_matches_format_gbp_policy() {
-        assert_eq!(round_gbp(dec!(12.345)), dec!(12.35));
-        assert_eq!(round_gbp(dec!(12.35)), dec!(12.35));
+    fn round_money_rounds_away_from_zero_and_normalizes_negative_zero() {
+        assert_eq!(round_money(dec!(12.345)), dec!(12.35));
+        assert_eq!(round_money(dec!(12.35)), dec!(12.35));
+        // F18: a sub-penny negative must not retain the sign bit.
+        assert!(!round_money(dec!(-0.001)).is_sign_negative());
+        assert_eq!(format_gbp(dec!(-0.004)), "£0.00");
+        assert_eq!(format_gbp(dec!(-0.001)), "£0.00");
+        // A genuine penny loss still shows its sign.
+        assert_eq!(format_gbp(dec!(-0.005)), "-£0.01");
     }
 }

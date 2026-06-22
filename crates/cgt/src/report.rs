@@ -2,17 +2,11 @@
 //! the engine; serializers apply the single money rounding policy.
 
 use chrono::NaiveDate;
-use rust_decimal::{Decimal, RoundingStrategy};
+use rust_decimal::Decimal;
 use serde::ser::{Serialize, SerializeSeq, SerializeStruct, Serializer};
 
+use crate::format::round_money;
 use crate::model::{TaxPeriod, Transaction};
-
-/// The single money rounding policy: 2dp, midpoint rounded away from zero.
-/// Applied only at serialization; the model carries raw [`Decimal`] precision.
-/// Load-bearing for output equivalence; `rust_decimal` is path-dependent.
-fn round_money(value: Decimal) -> Decimal {
-    value.round_dp_with_strategy(2, RoundingStrategy::MidpointAwayFromZero)
-}
 
 /// Serialize a money [`Decimal`] as a 2dp string under the single rounding
 /// policy. Decimals render as JSON strings (matching the currency convention),
