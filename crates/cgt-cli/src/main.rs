@@ -46,8 +46,9 @@ fn read_fx_folder(path: &std::path::Path) -> Result<Vec<RateFile>> {
 }
 
 /// Load the embedded configuration, then apply overrides from `./config.toml`
-/// and `~/.config/cgt-tool/config.toml` in that order. A malformed override
-/// file is a hard error.
+/// and `~/.config/cgt-tool/config.toml` in that order. An unreadable or
+/// malformed auto-discovered file is skipped with a warning, not a hard error,
+/// so a stray config in the working directory cannot abort the run.
 fn load_config() -> Result<cgt::Config> {
     let mut config = cgt::Config::embedded()?;
 
@@ -62,8 +63,17 @@ fn load_config() -> Result<cgt::Config> {
     }
 
     for path in paths {
-        if path.exists() {
-            config.apply_overrides_toml(&fs::read_to_string(&path)?)?;
+        if !path.exists() {
+            continue;
+        }
+        let outcome = match fs::read_to_string(&path) {
+            Ok(text) => config
+                .apply_overrides_toml(&text)
+                .map_err(|e| e.to_string()),
+            Err(e) => Err(e.to_string()),
+        };
+        if let Err(e) = outcome {
+            eprintln!("WARNING: skipping config override {}: {e}", path.display());
         }
     }
 
