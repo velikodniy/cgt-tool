@@ -79,6 +79,11 @@ pub enum CgtError {
         basis: Decimal,
     },
 
+    #[error(
+        "ACCUMULATION {ticker} on {date}: no holding to credit (not yet bought or fully disposed)"
+    )]
+    AccumulationWithoutHolding { ticker: String, date: NaiveDate },
+
     #[error("{0}")]
     Validation(ValidationErrors),
 }

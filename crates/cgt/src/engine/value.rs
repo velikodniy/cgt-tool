@@ -87,32 +87,41 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
         for event in day {
             match &event.kind {
                 EventKind::Accumulation { total_value, .. } => {
-                    if let Some(pool) = pools.get_mut(&event.ticker)
-                        && pool.quantity > Decimal::ZERO
-                    {
-                        // Held cost rises by the reinvested distribution
-                        // (TCGA92 basis adjustment).
-                        pool.cost += *total_value;
+                    // Reinvested distribution raises held cost (TCGA92).
+                    match pools.get_mut(&event.ticker) {
+                        Some(pool) if pool.quantity > Decimal::ZERO => {
+                            pool.cost += *total_value;
+                        }
+                        // Crediting a non-held position: error, don't drop it.
+                        _ if *total_value > Decimal::ZERO => {
+                            return Err(CgtError::AccumulationWithoutHolding {
+                                ticker: event.ticker.clone(),
+                                date: event.date,
+                            });
+                        }
+                        _ => {}
                     }
                 }
                 EventKind::CapitalReturn {
                     total_value, fees, ..
                 } => {
-                    if let Some(pool) = pools.get_mut(&event.ticker)
-                        && pool.quantity > Decimal::ZERO
-                    {
-                        let net = *total_value - *fees;
-                        if net > pool.cost {
-                            return Err(CgtError::CapitalReturnExceedsBasis {
-                                ticker: event.ticker.clone(),
-                                date: event.date,
-                                net,
-                                basis: pool.cost,
-                            });
-                        }
-                        // Small capital distribution reduces the pool cost
-                        // (TCGA92/S122(2), CG57844).
-                        pool.cost -= net;
+                    // Exceeds-basis must error at any quantity, even against a
+                    // drained or never-held holding (CG57847); read basis via
+                    // get so a never-held ticker errors without a phantom pool.
+                    let net = *total_value - *fees;
+                    let basis = pools
+                        .get(&event.ticker)
+                        .map_or(Decimal::ZERO, |pool| pool.cost);
+                    if net > basis {
+                        return Err(CgtError::CapitalReturnExceedsBasis {
+                            ticker: event.ticker.clone(),
+                            date: event.date,
+                            net,
+                            basis,
+                        });
+                    }
+                    if let Some(pool) = pools.get_mut(&event.ticker) {
+                        pool.cost -= net; // TCGA92/S122(2)
                     }
                 }
                 EventKind::Buy(trade) => {
@@ -430,6 +439,29 @@ mod tests {
                 basis,
                 ..
             } if ticker == "ABC" && net == dec!(150) && basis == dec!(100)
+        ));
+    }
+
+    #[test]
+    fn capital_return_after_full_disposal_errors() {
+        // Pool drained to zero basis: the return is no longer silently dropped.
+        let err = value_err(
+            "2024-01-01 BUY ABC 10 @ 10.00 GBP\n\
+             2024-02-01 SELL ABC 10 @ 12.00 GBP\n\
+             2024-03-01 CAPRETURN ABC 10 TOTAL 20.00 GBP\n",
+        );
+        assert!(matches!(
+            err,
+            CgtError::CapitalReturnExceedsBasis { basis, .. } if basis == dec!(0)
+        ));
+    }
+
+    #[test]
+    fn accumulation_without_holding_errors() {
+        let err = value_err("2024-01-01 ACCUMULATION ABC 5 TOTAL 10.00 GBP\n");
+        assert!(matches!(
+            err,
+            CgtError::AccumulationWithoutHolding { ref ticker, .. } if ticker == "ABC"
         ));
     }
 

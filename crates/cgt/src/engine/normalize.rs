@@ -239,6 +239,9 @@ fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) {
         }
     }
 
+    // Canonical value-event order (CAPRETURN, ACCUMULATION, DIVIDEND), so the
+    // stream does not depend on input row order.
+    leading.sort_by_key(|(_, kind)| value_event_rank(kind));
     for (ticker, kind) in leading {
         push_event(events, date, ticker, kind);
     }
@@ -250,6 +253,16 @@ fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) {
     }
     for (ticker, kind) in trailing {
         push_event(events, date, ticker, kind);
+    }
+}
+
+/// Canonical same-day order for value events (lower applies first).
+fn value_event_rank(kind: &EventKind) -> u8 {
+    match kind {
+        EventKind::CapitalReturn { .. } => 0,
+        EventKind::Accumulation { .. } => 1,
+        EventKind::Dividend { .. } => 2,
+        _ => 3,
     }
 }
 
@@ -424,12 +437,14 @@ mod tests {
              2024-03-15 CAPRETURN ABC 7 TOTAL 25.00 USD FEES 2.50 USD\n",
             Some(&cache),
         );
+        // Emitted in canonical order (CAPRETURN, ACCUMULATION, DIVIDEND),
+        // not the input order.
         let events = stream.events();
         assert_eq!(events.len(), 3);
         assert!(matches!(
             &events[0].kind,
-            EventKind::Dividend { total_value, tax_paid }
-                if *total_value == dec!(80) && *tax_paid == dec!(8)
+            EventKind::CapitalReturn { quantity, total_value, fees }
+                if *quantity == dec!(7) && *total_value == dec!(20) && *fees == dec!(2)
         ));
         assert!(matches!(
             &events[1].kind,
@@ -438,9 +453,24 @@ mod tests {
         ));
         assert!(matches!(
             &events[2].kind,
-            EventKind::CapitalReturn { quantity, total_value, fees }
-                if *quantity == dec!(7) && *total_value == dec!(20) && *fees == dec!(2)
+            EventKind::Dividend { total_value, tax_paid }
+                if *total_value == dec!(80) && *tax_paid == dec!(8)
         ));
+    }
+
+    #[test]
+    fn value_event_order_is_independent_of_input_order() {
+        let a = stream(
+            "2024-03-15 ACCUMULATION ABC 7 TOTAL 50.00 GBP TAX 0\n\
+             2024-03-15 CAPRETURN ABC 7 TOTAL 25.00 GBP FEES 0\n",
+            None,
+        );
+        let b = stream(
+            "2024-03-15 CAPRETURN ABC 7 TOTAL 25.00 GBP FEES 0\n\
+             2024-03-15 ACCUMULATION ABC 7 TOTAL 50.00 GBP TAX 0\n",
+            None,
+        );
+        assert_eq!(a.events(), b.events());
     }
 
     #[test]

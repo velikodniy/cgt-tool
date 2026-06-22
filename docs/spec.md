@@ -94,11 +94,13 @@ Reduces pool cost basis by the return amount.
 
 - Cost reduction is apportioned across all holding lots proportionally: each lot receives `adjustment × (lot_shares / total_holdings)`.
 - Lots acquired after the event date are unaffected.
-- If the return exceeds remaining allowable basis, calculation fails with an error referencing TCGA92/S122(2) and CG57847 (part-disposal under S122(1) or election under S122(4) is not currently supported).
+- If the return exceeds remaining allowable basis, calculation fails with an error referencing TCGA92/S122(2) and CG57847 (part-disposal under S122(1) or election under S122(4) is not currently supported). A return against a fully-disposed or never-held holding (basis zero) fails the same way rather than being silently dropped.
+
+Same-date value events on one ticker apply in a fixed canonical order — CAPRETURN, then ACCUMULATION, then DIVIDEND — so the result never depends on input row order.
 
 ### Accumulation Dividends (ACCUMULATION)
 
-Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN.
+Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN. A non-zero accumulation to a fully-disposed or never-held holding fails (no basis to credit).
 
 ### Cash Dividends (DIVIDEND)
 
