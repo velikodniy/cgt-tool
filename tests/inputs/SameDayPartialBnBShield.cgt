@@ -1,0 +1,32 @@
+# Test: SameDayPartialBnBShield
+# Purpose: Same Day shield survives an earlier disposal's PARTIAL B&B use
+# Rules Tested: Same Day, Bed & Breakfast, Section 104 Pooling
+# Complexity: Medium
+# Key Features: Two earlier disposals compete for one future buy whose same-day
+#               SELL must keep its S105(1) reservation regardless of how much
+#               the first earlier disposal actually B&B-matches.
+# Expected Outcome: The Feb 10 same-day SELL of 30 matches the Feb 10 buy at
+#                   £11 (not the S104 pool average). Pins TCGA92/S106A(9)/S105(1).
+#
+# Verification Notes:
+#   shield(Feb 10) = min(same-day SELL 30, same-day BUY 50) = 30, leaving 20 of
+#   the Feb 10 buy for B&B. Feb 1 (SELL 5) B&B-takes 5; Feb 3 (SELL 100)
+#   B&B-takes 15 and 85 from the S104 pool. The Feb 10 buy is left with exactly
+#   30 unreserved, which the Feb 10 same-day SELL claims in full.
+#
+#   Calculations:
+#     Initial pool: 200 @ £10 = £2000, avg £10/share
+#     Feb 1 SELL 5 @ £12:   5 B&B to Feb 10 @ £11 = £55 cost,  gain £5
+#     Feb 3 SELL 100 @ £12: 15 B&B to Feb 10 @ £11 = £165 cost, gain £15
+#                           85 S104 @ £10 = £850 cost,          gain £170
+#     Feb 10 SELL 30 @ £11.50: 30 Same Day to Feb 10 @ £11 = £330 cost, gain £15
+#     Holding after: 115 @ £10 = £1150 (Feb 10 buy fully matched, adds nothing)
+#     Total 2023/24 gain: £5 + £185 + £15 = £205
+
+2024-01-01 BUY ABC 200 @ 10.00 GBP
+
+2024-02-01 SELL ABC 5 @ 12.00 GBP
+2024-02-03 SELL ABC 100 @ 12.00 GBP
+
+2024-02-10 BUY ABC 50 @ 11.00 GBP
+2024-02-10 SELL ABC 30 @ 11.50 GBP

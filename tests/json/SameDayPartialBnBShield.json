@@ -1,0 +1,152 @@
+{
+  "tax_years": [
+    {
+      "period": "2023/24",
+      "disposals": [
+        {
+          "date": "2024-02-01",
+          "ticker": "ABC",
+          "quantity": "5",
+          "gross_proceeds": "60.00",
+          "proceeds": "60.00",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "5",
+              "allowable_cost": "55.00",
+              "gain_or_loss": "5.00",
+              "acquisition_date": "2024-02-10"
+            }
+          ]
+        },
+        {
+          "date": "2024-02-03",
+          "ticker": "ABC",
+          "quantity": "100",
+          "gross_proceeds": "1200.00",
+          "proceeds": "1200.00",
+          "matches": [
+            {
+              "rule": "BedAndBreakfast",
+              "quantity": "15",
+              "allowable_cost": "165.00",
+              "gain_or_loss": "15.00",
+              "acquisition_date": "2024-02-10"
+            },
+            {
+              "rule": "Section104",
+              "quantity": "85",
+              "allowable_cost": "850.00",
+              "gain_or_loss": "170.00"
+            }
+          ]
+        },
+        {
+          "date": "2024-02-10",
+          "ticker": "ABC",
+          "quantity": "30",
+          "gross_proceeds": "345.00",
+          "proceeds": "345.00",
+          "matches": [
+            {
+              "rule": "SameDay",
+              "quantity": "30",
+              "allowable_cost": "330.00",
+              "gain_or_loss": "15.00",
+              "acquisition_date": "2024-02-10"
+            }
+          ]
+        }
+      ],
+      "disposal_count": 3,
+      "total_gain": "205.00",
+      "total_loss": "0",
+      "net_gain": "205.00",
+      "gross_proceeds": "1605.00",
+      "total_allowable_cost": "1400.00",
+      "exempt_amount": "6000",
+      "taxable_gain": "0",
+      "dividend_income": "0",
+      "dividend_tax_paid": "0"
+    }
+  ],
+  "holdings": [
+    {
+      "ticker": "ABC",
+      "quantity": "115",
+      "total_cost": "1150.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "200",
+      "price": {
+        "amount": "10.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-01",
+      "ticker": "ABC",
+      "action": "SELL",
+      "amount": "5",
+      "price": {
+        "amount": "12.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-03",
+      "ticker": "ABC",
+      "action": "SELL",
+      "amount": "100",
+      "price": {
+        "amount": "12.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-10",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "50",
+      "price": {
+        "amount": "11.00",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-02-10",
+      "ticker": "ABC",
+      "action": "SELL",
+      "amount": "30",
+      "price": {
+        "amount": "11.50",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    }
+  ]
+}

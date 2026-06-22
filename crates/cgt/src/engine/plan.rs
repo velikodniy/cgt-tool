@@ -106,9 +106,6 @@ struct Planner<'s> {
     day_available: HashMap<String, Decimal>,
     /// B&B reservations against future merged buys (buy share scale).
     bnb_reservations: HashMap<EventId, Decimal>,
-    /// Same-day shields: per (date, ticker), sell quantity not yet protected
-    /// from B&B consumption of that date's buys (TCGA92/S106A(9)).
-    same_day_reservations: HashMap<(chrono::NaiveDate, String), Decimal>,
     disposals: Vec<DisposalPlan>,
 }
 
@@ -119,7 +116,6 @@ impl<'s> Planner<'s> {
             pools: HashMap::new(),
             day_available: HashMap::new(),
             bnb_reservations: HashMap::new(),
-            same_day_reservations: HashMap::new(),
             disposals: Vec::new(),
         }
     }
@@ -346,32 +342,25 @@ impl<'s> Planner<'s> {
 
     /// Quantity of a window buy available to B&B after earlier B&B
     /// reservations and the Same Day shield for the buy's date.
-    fn available_for_bnb(&mut self, buy_event: &Event, buy_quantity: Decimal) -> Decimal {
+    fn available_for_bnb(&self, buy_event: &Event, buy_quantity: Decimal) -> Decimal {
         let already_reserved = self
             .bnb_reservations
             .get(&buy_event.id)
             .copied()
             .unwrap_or(Decimal::ZERO);
-        let available_before_same_day = buy_quantity - already_reserved;
-        if available_before_same_day <= Decimal::ZERO {
-            return Decimal::ZERO;
-        }
-
-        // Same Day priority over B&B (TCGA92/S106A(9), S105(1)): per
-        // (date, ticker), reserve the total same-day sell quantity once,
-        // then decrement as B&B consumes buys on that date. With true
-        // aggregation that total is the merged sell event's quantity.
-        let total_same_day_sells = sell_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
-        let reservation_remaining = self
-            .same_day_reservations
-            .entry((buy_event.date, buy_event.ticker.clone()))
-            .or_insert(total_same_day_sells);
-
-        let reserve_now =
-            available_before_same_day.min((*reservation_remaining).max(Decimal::ZERO));
-        *reservation_remaining -= reserve_now;
-
-        available_before_same_day - reserve_now
+        // Same Day priority over B&B (TCGA92/S106A(9), subject to S105(1)): the
+        // buy-date's own same-day SELL claims min(same-day sell, same-day buy)
+        // of that date's acquisitions before any earlier disposal's B&B can
+        // reach them. The shield is a fixed quantity, identical for every
+        // earlier disposal and never consumed by B&B, so the same-day match is
+        // always satisfiable regardless of disposal count or partial use. The
+        // min() also caps the reservation at the quantity actually acquired
+        // (docs/spec.md: a same-day sell exceeding the acquisition reserves only
+        // what was bought).
+        let same_day_sells = sell_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
+        let same_day_buys = buy_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
+        let shield = same_day_sells.min(same_day_buys);
+        (buy_quantity - already_reserved - shield).max(Decimal::ZERO)
     }
 }
 
@@ -384,6 +373,20 @@ fn sell_quantity_on(stream: &EventStream, date: chrono::NaiveDate, ticker: &str)
         .filter(|event| event.date == date && event.ticker == ticker)
         .filter_map(|event| match &event.kind {
             EventKind::Sell(trade) => Some(trade.quantity),
+            _ => None,
+        })
+        .sum()
+}
+
+/// Total buy quantity for (date, ticker) — the same-day acquisitions the Same
+/// Day shield is capped at.
+fn buy_quantity_on(stream: &EventStream, date: chrono::NaiveDate, ticker: &str) -> Decimal {
+    stream
+        .events()
+        .iter()
+        .filter(|event| event.date == date && event.ticker == ticker)
+        .filter_map(|event| match &event.kind {
+            EventKind::Buy(trade) => Some(trade.quantity),
             _ => None,
         })
         .sum()
@@ -758,6 +761,83 @@ mod tests {
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-02-10", "ABC")),
             Some(&dec!(40))
+        );
+    }
+
+    #[test]
+    fn partial_first_use_does_not_strip_same_day_shield() {
+        // F1 repro: an earlier disposal that only partially uses its B&B
+        // reservation must not strip the Same Day shield protecting the
+        // buy-date's own same-day SELL. shield(Feb10) = min(sell 30, buy 50) =
+        // 30, leaving 20 of the Feb10 buy for B&B from the two earlier sells.
+        let (stream, match_plan) = stream_and_plan(
+            "2024-01-01 BUY ABC 200 @ 10.00 GBP\n\
+             2024-02-01 SELL ABC 5 @ 12.00 GBP\n\
+             2024-02-03 SELL ABC 100 @ 12.00 GBP\n\
+             2024-02-10 BUY ABC 50 @ 11.00 GBP\n\
+             2024-02-10 SELL ABC 30 @ 11.50 GBP\n",
+        );
+        assert_eq!(match_plan.disposals.len(), 3);
+
+        let feb1 = &match_plan.disposals[0];
+        assert_eq!(feb1.bed_and_breakfast.len(), 1);
+        assert_eq!(feb1.bed_and_breakfast[0].quantity_at_sell_scale, dec!(5));
+        assert!(feb1.section_104.is_none());
+
+        let feb3 = &match_plan.disposals[1];
+        assert_eq!(feb3.bed_and_breakfast.len(), 1);
+        assert_eq!(feb3.bed_and_breakfast[0].quantity_at_sell_scale, dec!(15));
+        assert_eq!(
+            feb3.section_104.as_ref().map(|leg| leg.quantity),
+            Some(dec!(85))
+        );
+
+        // The protected same-day SELL claims the full 30 against the Feb10 buy,
+        // not the S104 pool (the bug matched it from the pool at average cost).
+        let feb10 = &match_plan.disposals[2];
+        assert_eq!(
+            feb10.same_day.as_ref().map(|leg| leg.quantity),
+            Some(dec!(30))
+        );
+        assert!(feb10.bed_and_breakfast.is_empty());
+        assert!(feb10.section_104.is_none());
+
+        assert_eq!(
+            match_plan
+                .bnb_reservations
+                .get(&buy_id(&stream, "2024-02-10", "ABC")),
+            Some(&dec!(20))
+        );
+    }
+
+    #[test]
+    fn same_day_buy_below_sell_caps_shield_at_buy() {
+        // docs/spec.md: a same-day SELL exceeding the same-day acquisition
+        // reserves only what was bought, so an earlier disposal's B&B sees
+        // nothing of that buy. shield = min(sell 30, buy 20) = 20.
+        let (_, match_plan) = stream_and_plan(
+            "2024-01-01 BUY ABC 100 @ 10.00 GBP\n\
+             2024-02-01 SELL ABC 50 @ 12.00 GBP\n\
+             2024-02-10 BUY ABC 20 @ 11.00 GBP\n\
+             2024-02-10 SELL ABC 30 @ 11.50 GBP\n",
+        );
+        assert_eq!(match_plan.disposals.len(), 2);
+        // The Feb10 buy of 20 is fully shielded, so Feb1 falls entirely to S104.
+        let feb1 = &match_plan.disposals[0];
+        assert!(feb1.bed_and_breakfast.is_empty());
+        assert_eq!(
+            feb1.section_104.as_ref().map(|leg| leg.quantity),
+            Some(dec!(50))
+        );
+        // Feb10 same-day claims min(sell 30, buy 20) = 20; remaining 10 from S104.
+        let feb10 = &match_plan.disposals[1];
+        assert_eq!(
+            feb10.same_day.as_ref().map(|leg| leg.quantity),
+            Some(dec!(20))
+        );
+        assert_eq!(
+            feb10.section_104.as_ref().map(|leg| leg.quantity),
+            Some(dec!(10))
         );
     }
 
