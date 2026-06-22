@@ -56,7 +56,8 @@ fn load_cache_merges_folder_over_bundled() {
         modified: None,
         xml: SAMPLE_XML.to_string(),
     }])
-    .unwrap();
+    .unwrap()
+    .cache;
 
     // Folder-provided rates for March 2025 should be present
     let eur = cache.get(Currency::EUR, 2025, 3).unwrap();

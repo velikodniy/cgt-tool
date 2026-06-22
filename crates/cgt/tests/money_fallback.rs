@@ -36,7 +36,8 @@ fn folder_rate_overrides_bundled_for_same_month() {
         modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(1)),
         xml: folder_xml.to_string(),
     }])
-    .unwrap();
+    .unwrap()
+    .cache;
 
     // Folder rate should override bundled for EUR Dec 2024
     let eur = cache.get(Currency::EUR, 2024, 12).unwrap();
@@ -61,7 +62,8 @@ fn folder_adds_rates_for_missing_months() {
         modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(2)),
         xml: FOLDER_XML.to_string(),
     }])
-    .unwrap();
+    .unwrap()
+    .cache;
 
     // Jan 2025 EUR should come from folder (bundled covers 2015-2025)
     let eur = cache.get(Currency::EUR, 2025, 1).unwrap();
@@ -97,8 +99,43 @@ fn missing_rate_returns_none() {
 }
 
 #[test]
+fn empty_override_file_warns_but_keeps_bundled() {
+    // A rate for a currency the tool does not recognise is skipped, leaving the
+    // override with no usable rates.
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<exchangeRateMonthList Period="01/Jan/2025 to 31/Jan/2025">
+  <exchangeRate>
+    <countryName>Nowhere</countryName>
+    <countryCode>ZZ</countryCode>
+    <currencyName>Fictional</currencyName>
+    <currencyCode>ZZZ</currencyCode>
+    <rateNew>1.2500</rateNew>
+  </exchangeRate>
+</exchangeRateMonthList>
+"#;
+    let outcome = load_cache_with_overrides(vec![RateFile {
+        name: PathBuf::from("2025-01.xml"),
+        modified: Some(SystemTime::UNIX_EPOCH + Duration::from_secs(3)),
+        xml: xml.to_string(),
+    }])
+    .unwrap();
+    assert!(
+        outcome
+            .warnings
+            .iter()
+            .any(|w| w.contains("no usable rates")),
+        "an empty override must warn: {:?}",
+        outcome.warnings
+    );
+    assert!(
+        outcome.cache.get(Currency::USD, 2024, 12).is_some(),
+        "bundled rates remain available"
+    );
+}
+
+#[test]
 fn empty_folder_uses_bundled_only() {
-    let cache = load_cache_with_overrides(Vec::new()).unwrap();
+    let cache = load_cache_with_overrides(Vec::new()).unwrap().cache;
 
     // Should still have bundled rates
     assert!(

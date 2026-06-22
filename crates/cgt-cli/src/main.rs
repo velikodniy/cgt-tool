@@ -111,7 +111,11 @@ fn main() -> Result<()> {
             // Load FX cache (bundled by default, override if folder provided)
             let fx_cache = if let Some(folder) = fx_folder {
                 let folder_files = read_fx_folder(folder)?;
-                load_cache_with_overrides(folder_files)?
+                let outcome = load_cache_with_overrides(folder_files)?;
+                for warning in &outcome.warnings {
+                    eprintln!("WARNING: {warning}");
+                }
+                outcome.cache
             } else {
                 load_default_cache()?
             };

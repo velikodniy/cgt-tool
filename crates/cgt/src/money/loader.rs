@@ -27,6 +27,15 @@ pub struct RateFile {
     pub xml: String,
 }
 
+/// The loaded FX cache plus any non-fatal warnings (e.g. an override file that
+/// contributed no usable rates). The core is IO-free, so it returns warnings
+/// for the caller to surface rather than printing them.
+#[derive(Debug)]
+pub struct FxLoadOutcome {
+    pub cache: FxCache,
+    pub warnings: Vec<String>,
+}
+
 fn expected_year_month_from_path(path: &Path) -> Result<(i32, u32), FxLoaderError> {
     let stem = path.file_stem().and_then(|s| s.to_str()).ok_or_else(|| {
         FxLoaderError::InvalidFileName {
@@ -90,8 +99,9 @@ fn load_bundled_dir(dir: &Dir<'_>) -> Result<Vec<crate::money::types::RateEntry>
 pub fn load_cache_with_folder_files(
     bundled_dir: &Dir<'_>,
     folder_files: impl IntoIterator<Item = RateFile>,
-) -> Result<FxCache, FxLoaderError> {
+) -> Result<FxLoadOutcome, FxLoaderError> {
     let mut cache = FxCache::new();
+    let mut warnings = Vec::new();
 
     // Bundled first
     let bundled_entries = load_bundled_dir(bundled_dir)?;
@@ -115,10 +125,13 @@ pub fn load_cache_with_folder_files(
                 source,
             }
         })?;
+        if entries.is_empty() {
+            warnings.push(format!("FX override {name} contributed no usable rates"));
+        }
         cache.extend(entries);
     }
 
-    Ok(cache)
+    Ok(FxLoadOutcome { cache, warnings })
 }
 
 /// Load FX cache using only bundled rates.

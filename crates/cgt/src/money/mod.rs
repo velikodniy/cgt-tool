@@ -9,7 +9,9 @@ use include_dir::{Dir, include_dir};
 pub use amount::{CurrencyAmount, FxConversionError};
 pub use cache::FxCache;
 pub use iso_currency::Currency;
-pub use loader::{FxLoaderError, RateFile, load_bundled_cache, load_cache_with_folder_files};
+pub use loader::{
+    FxLoadOutcome, FxLoaderError, RateFile, load_bundled_cache, load_cache_with_folder_files,
+};
 pub use parser::{FxParseError, parse_monthly_rates};
 pub use types::{RateEntry, RateKey, RateSource};
 
@@ -25,6 +27,6 @@ pub fn load_default_cache() -> Result<FxCache, FxLoaderError> {
 /// Load FX cache using bundled rates plus folder XMLs provided by the caller.
 pub fn load_cache_with_overrides(
     folder_files: impl IntoIterator<Item = RateFile>,
-) -> Result<FxCache, FxLoaderError> {
+) -> Result<FxLoadOutcome, FxLoaderError> {
     load_cache_with_folder_files(&BUNDLED_RATES_DIR, folder_files)
 }
