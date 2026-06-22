@@ -16,5 +16,9 @@ exchange_rates.csv
 # Design docs (local only)
 docs/plans/
 
+# Python
+__pycache__/
+*.pyc
+
 # macOS
 .DS_Store
