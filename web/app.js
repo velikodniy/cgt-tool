@@ -98,8 +98,8 @@ function toggleYearInput() {
 }
 
 function formatCurrency(amount) {
-  if (!amount) return "£0.00";
   const num = parseFloat(amount);
+  if (!Number.isFinite(num)) return "£0.00";
   return "£" + num.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -165,7 +165,8 @@ const ReportBuilder = {
         : match.rule === "BedAndBreakfast"
           ? "bed-breakfast"
           : "section-104";
-    const costPerShare = parseFloat(match.allowable_cost) / parseFloat(match.quantity);
+    const legQuantity = parseFloat(match.quantity);
+    const costPerShare = legQuantity !== 0 ? parseFloat(match.allowable_cost) / legQuantity : 0;
 
     return `
             <div class="match-item">
@@ -289,13 +290,17 @@ const ReportBuilder = {
   },
 
   holdings: (holdings) => {
-    if (!holdings || holdings.length === 0) return "";
+    // Mirror the Rust renderers: only active (quantity > 0) holdings, by ticker.
+    const active = (holdings || [])
+      .filter((h) => parseFloat(h.quantity) > 0)
+      .sort((a, b) => a.ticker.localeCompare(b.ticker));
+    if (active.length === 0) return "";
 
-    const rows = holdings
+    const rows = active
       .map((h) => {
         const totalCost = parseFloat(h.total_cost);
         const quantity = parseFloat(h.quantity);
-        const avgCost = totalCost / quantity;
+        const avgCost = quantity !== 0 ? totalCost / quantity : 0;
         return `
                 <tr>
                     <td><strong>${escapeHtml(h.ticker)}</strong></td>
@@ -354,7 +359,8 @@ function generateReport() {
     state.isProcessing = true;
     showLoading(true);
 
-    const year = yearCheckbox.checked && taxYear ? parseInt(taxYear, 10) : null;
+    const parsedYear = parseInt(taxYear, 10);
+    const year = yearCheckbox.checked && Number.isInteger(parsedYear) ? parsedYear : null;
     const result = window.wasmCalculateTax(input, year);
     const data = JSON.parse(result);
 
@@ -404,7 +410,8 @@ function calculateTax() {
     state.isProcessing = true;
     showLoading(true);
 
-    const year = yearCheckbox.checked && taxYear ? parseInt(taxYear, 10) : null;
+    const parsedYear = parseInt(taxYear, 10);
+    const year = yearCheckbox.checked && Number.isInteger(parsedYear) ? parsedYear : null;
     const result = window.wasmCalculateTax(input, year);
     const parsed = JSON.parse(result);
     output.classList.remove("html-mode");
