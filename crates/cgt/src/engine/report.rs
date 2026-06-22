@@ -43,9 +43,10 @@ pub(crate) fn build(
 
     let dividends = aggregate_dividends(stream)?;
 
+    let mut warnings = Vec::new();
     let tax_years = match tax_year_start {
-        Some(year) => build_single_year(year, &disposals, &dividends, config)?,
-        None => build_all_years(disposals, &dividends, config)?,
+        Some(year) => build_single_year(year, &disposals, &dividends, config, &mut warnings)?,
+        None => build_all_years(disposals, &dividends, config, &mut warnings)?,
     };
 
     let holdings = valued
@@ -62,6 +63,7 @@ pub(crate) fn build(
         tax_years,
         holdings,
         transactions,
+        warnings,
     })
 }
 
@@ -138,6 +140,7 @@ fn build_single_year(
     disposals: &[Disposal],
     dividends: &BTreeMap<u16, DividendTotals>,
     config: &Config,
+    warnings: &mut Vec<String>,
 ) -> Result<Vec<TaxYearSummary>, CgtError> {
     let start_year = u16::try_from(year).map_err(|_| CgtError::InvalidDateYear { year })?;
     let period = TaxPeriod::new(start_year)?;
@@ -149,7 +152,7 @@ fn build_single_year(
         .filter(|disposal| disposal.date >= start && disposal.date <= end)
         .cloned()
         .collect();
-    let summary = summarize(period, in_year, dividends, config)?;
+    let summary = summarize(period, in_year, dividends, config, warnings)?;
     Ok(vec![summary])
 }
 
@@ -159,6 +162,7 @@ fn build_all_years(
     disposals: Vec<Disposal>,
     dividends: &BTreeMap<u16, DividendTotals>,
     config: &Config,
+    warnings: &mut Vec<String>,
 ) -> Result<Vec<TaxYearSummary>, CgtError> {
     let mut grouped: BTreeMap<u16, Vec<Disposal>> = BTreeMap::new();
     for disposal in disposals {
@@ -171,7 +175,13 @@ fn build_all_years(
     let mut summaries = Vec::with_capacity(grouped.len());
     for (start_year, year_disposals) in grouped {
         let period = TaxPeriod::new(start_year)?;
-        summaries.push(summarize(period, year_disposals, dividends, config)?);
+        summaries.push(summarize(
+            period,
+            year_disposals,
+            dividends,
+            config,
+            warnings,
+        )?);
     }
     Ok(summaries)
 }
@@ -182,6 +192,7 @@ fn summarize(
     mut disposals: Vec<Disposal>,
     dividends: &BTreeMap<u16, DividendTotals>,
     config: &Config,
+    warnings: &mut Vec<String>,
 ) -> Result<TaxYearSummary, CgtError> {
     // Stable sort by (date, ticker): the input order of equal keys is kept.
     disposals.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
@@ -212,7 +223,16 @@ fn summarize(
     }
 
     let net_gain = total_gain - total_loss;
-    let exempt_amount = config.get_exemption(period.start_year())?;
+    let exempt_amount = match config.get_exemption(period.start_year()) {
+        Ok(amount) => amount,
+        Err(_) if config.allow_missing_exemption => {
+            warnings.push(format!(
+                "{period}: no configured exemption; applying no allowance"
+            ));
+            Decimal::ZERO
+        }
+        Err(e) => return Err(e),
+    };
     let taxable_gain = (net_gain - exempt_amount).max(Decimal::ZERO);
 
     let dividend = dividends.get(&period.start_year());

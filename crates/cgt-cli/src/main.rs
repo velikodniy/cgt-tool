@@ -104,6 +104,7 @@ fn main() -> Result<()> {
             format,
             output,
             fx_folder,
+            allow_missing_exemption,
         } => {
             let content = read_and_concatenate_files(files)?;
 
@@ -117,8 +118,12 @@ fn main() -> Result<()> {
 
             let transactions = parse(&content)?;
 
-            let config = load_config()?;
+            let mut config = load_config()?;
+            config.allow_missing_exemption = *allow_missing_exemption;
             let report = calculate(&transactions, *year, Some(&fx_cache), &config)?;
+            for warning in &report.warnings {
+                eprintln!("WARNING: {warning}");
+            }
 
             match format {
                 OutputFormat::Plain => {

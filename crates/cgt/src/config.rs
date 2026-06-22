@@ -25,6 +25,9 @@ struct RawConfig {
 pub struct Config {
     /// Tax exemption amounts by year.
     pub exemptions: HashMap<u16, Decimal>,
+    /// When set, a tax year with no configured exemption gets no allowance
+    /// (with a warning) instead of aborting the whole report.
+    pub allow_missing_exemption: bool,
 }
 
 impl Config {
@@ -53,7 +56,10 @@ impl Config {
                 .map_err(|_| format!("invalid exemption year key: '{key}'"))?;
             exemptions.insert(year, value);
         }
-        Ok(Self { exemptions })
+        Ok(Self {
+            exemptions,
+            ..Self::default()
+        })
     }
 
     /// Merge exemption overrides from a TOML string (later calls win).

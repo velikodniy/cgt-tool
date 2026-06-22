@@ -48,6 +48,11 @@ pub enum Commands {
         /// missing from provided files, falls back to bundled rates with a warning.
         #[arg(long, value_name = "PATH")]
         fx_folder: Option<PathBuf>,
+
+        /// Apply no allowance (with a warning) to a tax year that has no
+        /// configured exemption, instead of aborting the whole report.
+        #[arg(long)]
+        allow_missing_exemption: bool,
     },
     /// Convert broker export files to CGT DSL format
     Convert {

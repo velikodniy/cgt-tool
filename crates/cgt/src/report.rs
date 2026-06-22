@@ -231,13 +231,15 @@ impl Serialize for TaxYearSummary {
     }
 }
 
-/// The complete CGT report: per-year summaries, final holdings, and an
-/// optional echo of the input transactions.
+/// The complete CGT report: per-year summaries, final holdings, an optional
+/// echo of the input transactions, and any non-fatal warnings.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TaxReport {
     pub tax_years: Vec<TaxYearSummary>,
     pub holdings: Vec<Holding>,
     pub transactions: Option<Vec<Transaction>>,
+    /// Non-fatal diagnostics (e.g. a tax year with no configured exemption).
+    pub warnings: Vec<String>,
 }
 
 impl Serialize for TaxReport {
@@ -245,12 +247,18 @@ impl Serialize for TaxReport {
     where
         S: Serializer,
     {
-        let len = if self.transactions.is_some() { 3 } else { 2 };
+        let mut len = if self.transactions.is_some() { 3 } else { 2 };
+        if !self.warnings.is_empty() {
+            len += 1;
+        }
         let mut report = serializer.serialize_struct("TaxReport", len)?;
         report.serialize_field("tax_years", &self.tax_years)?;
         report.serialize_field("holdings", &self.holdings)?;
         if let Some(transactions) = &self.transactions {
             report.serialize_field("transactions", transactions)?;
+        }
+        if !self.warnings.is_empty() {
+            report.serialize_field("warnings", &self.warnings)?;
         }
         report.end()
     }
@@ -301,6 +309,7 @@ mod tests {
                 total_cost: dec!(1774.005),
             }],
             transactions: None,
+            warnings: Vec::new(),
         }
     }
 
