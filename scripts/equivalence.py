@@ -41,6 +41,12 @@ MONEY_LEAVES = {
     "total_cost", "cost", "gain",
 }
 
+# Match rules whose legs carry an acquisition date. For these the date is read
+# fail-closed (a missing/renamed field raises ShapeError) so a sum-preserving
+# re-attribution of matched lots cannot compare IDENTICAL. Section104 legs
+# legitimately have no acquisition date (pooled), so absence is allowed there.
+DATED_RULES = {"SameDay", "BedAndBreakfast"}
+
 
 class ShapeError(Exception):
     """Report JSON lacks a recognizable report structure."""
@@ -113,9 +119,16 @@ def view(report: dict) -> dict:
                 r["cost"] += dec(get_first(m, "allowable_cost", "cost"))
                 r["gain"] += dec(get_first(m, "gain_or_loss", "gain"))
                 r["legs"] += 1
-                acq = m.get("acquisition_date", m.get("acq_date"))
-                if acq:
-                    dates.setdefault(rule, set()).add(str(acq))
+                if rule in DATED_RULES:
+                    # Fail closed: a dropped/renamed date field on a dated rule
+                    # must raise, not silently empty the attribution set.
+                    dates.setdefault(rule, set()).add(
+                        str(get_first(m, "acquisition_date", "acq_date"))
+                    )
+                else:
+                    acq = m.get("acquisition_date", m.get("acq_date"))
+                    if acq:
+                        dates.setdefault(rule, set()).add(str(acq))
             for rule, r in rules.items():
                 r["dates"] = ",".join(sorted(dates.get(rule, set())))
             entry["rules"] = rules
@@ -195,13 +208,19 @@ def safe_view(report: dict, label: str) -> tuple[dict | None, str | None]:
 
 def mode_compare(args) -> int:
     failures = 0
+    compared = 0
     totals: dict[str, int] = {}
     for fixture in fixtures(args.fixtures):
         old_code, old_rep = report_json(args.old, fixture)
         new_code, new_rep = report_json(args.new, fixture)
         if old_code != 0 or new_code != 0:
             if old_code != 0 and new_code != 0:
+                # Both binaries erroring verifies nothing: a broken/missing
+                # oracle would otherwise make the whole run pass. Fail unless
+                # explicitly allowlisted.
                 print(f"BOTH-ERROR  {fixture.name}")
+                if not args.allow_both_error:
+                    failures += 1
             else:
                 print(f"SEMANTIC    {fixture.name}: exit codes "
                       f"old={old_code} new={new_code}")
@@ -213,6 +232,7 @@ def mode_compare(args) -> int:
             print(f"SEMANTIC    {fixture.name}: {old_err or new_err}")
             failures += 1
             continue
+        compared += 1
         diffs = diff_views(old_view, new_view)
         if not diffs:
             print(f"IDENTICAL   {fixture.name}")
@@ -224,26 +244,40 @@ def mode_compare(args) -> int:
             print(f"  [{bucket}] {path}: {old} -> {new}")
             if bucket not in args.allow:
                 failures += 1
+    if compared == 0:
+        # No fixture produced a comparable result on both sides — absence of
+        # verification is not success, regardless of the allowlist.
+        print("ERROR       no fixtures were successfully compared")
+        failures += 1
     print(f"\nbucket totals: {totals or 'none'}")
     return 1 if failures else 0
 
 
 def mode_parse(args) -> int:
     failures = 0
+    compared = 0
     for fixture in fixtures(args.fixtures):
         old = run([args.old, "parse", str(fixture)])
         new = run([args.new, "parse", str(fixture)])
         if (old[0], new[0]) != (0, 0):
-            status = "BOTH-ERROR" if old[0] and new[0] else "MISMATCH"
-            print(f"{status}  {fixture.name}")
-            failures += status == "MISMATCH"
+            if old[0] and new[0]:
+                print(f"BOTH-ERROR  {fixture.name}")
+                if not args.allow_both_error:
+                    failures += 1
+            else:
+                print(f"MISMATCH    {fixture.name}")
+                failures += 1
             continue
+        compared += 1
         if json.loads(old[1], parse_float=Decimal) == \
                 json.loads(new[1], parse_float=Decimal):
             print(f"IDENTICAL   {fixture.name}")
         else:
             print(f"MISMATCH    {fixture.name}")
             failures += 1
+    if compared == 0:
+        print("ERROR       no fixtures were successfully compared")
+        failures += 1
     return 1 if failures else 0
 
 
@@ -308,6 +342,9 @@ def main() -> int:
     parser.add_argument("--allow", nargs="*", default=[],
                         choices=["rounding-policy", "leg-granularity"],
                         help="buckets that do not fail the run")
+    parser.add_argument("--allow-both-error", action="store_true",
+                        help="do not fail when BOTH binaries error on a fixture "
+                             "(default: BOTH-ERROR is a failure)")
     parser.add_argument("--max-diffs", type=int, default=20)
     parser.add_argument("fixtures", nargs="*")
     args = parser.parse_args()
