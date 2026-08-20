@@ -3051,9 +3051,9 @@ dependencies = [
 
 [[package]]
 name = "typst-as-lib"
-version = "0.15.0"
+version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cbd5eba134b28c26d1148b0646c09a4f9026a50e4b1a3a3a61beecb1c571b17"
+checksum = "2fc16ea97aecd6bbc7273f33a511b2366e9d513e18c446b73d12a6607e98602e"
 dependencies = [
  "chrono",
  "comemo",
