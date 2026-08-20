@@ -9,12 +9,9 @@ release/
 *.log
 .env*
 
-# Private data (not for repo)
+# Private data
 /examples/
 exchange_rates.csv
-
-# Design docs (local only)
-docs/plans/
 
 # Python
 __pycache__/
