@@ -158,7 +158,7 @@ jobs:
           merge-multiple: true
       - name: Create GitHub Release (with annotation)
         if: steps.tag-message.outputs.has-annotation == 'true' && inputs.body == ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ steps.tag-message.outputs.title }}
@@ -169,7 +169,7 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
       - name: Create GitHub Release (with custom body)
         if: inputs.body != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
@@ -180,7 +180,7 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-rc') || contains(env.RELEASE_TAG, '-beta') || contains(env.RELEASE_TAG, '-alpha') }}
       - name: Create GitHub Release (fallback)
         if: steps.tag-message.outputs.has-annotation != 'true' && inputs.body == ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           files: |
