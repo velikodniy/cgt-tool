@@ -1,5 +1,5 @@
 use cgt::Config;
-use cgt::money::load_default_cache;
+use cgt::money::FxRates;
 use wasm_bindgen::prelude::*;
 
 mod utils;
@@ -66,7 +66,7 @@ pub fn parse_transactions(dsl: &str) -> Result<String, JsValue> {
 #[wasm_bindgen]
 pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue> {
     let transactions = cgt::dsl::parse(dsl).map_err(map_error)?;
-    let fx = load_default_cache().map_err(map_error)?;
+    let fx = FxRates::bundled();
     let config = Config::embedded().map_err(map_error)?;
     let report = cgt::calculate(&transactions, tax_year, Some(&fx), &config).map_err(map_error)?;
     serde_json::to_string_pretty(&report).map_err(map_error)

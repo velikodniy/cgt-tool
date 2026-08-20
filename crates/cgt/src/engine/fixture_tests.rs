@@ -15,11 +15,11 @@ use rust_decimal_macros::dec;
 
 use super::normalize::{EventId, EventKind, EventStream, normalize};
 use super::plan::{DisposalPlan, MatchPlan, plan};
-use crate::money::FxCache;
+use crate::money::FxRates;
 
-fn fx_cache() -> &'static FxCache {
-    static CACHE: OnceLock<FxCache> = OnceLock::new();
-    CACHE.get_or_init(|| crate::money::load_default_cache().expect("bundled FX rates load"))
+fn fx_rates() -> &'static FxRates {
+    static RATES: OnceLock<FxRates> = OnceLock::new();
+    RATES.get_or_init(FxRates::bundled)
 }
 
 fn fixtures_dir() -> PathBuf {
@@ -46,7 +46,7 @@ fn stream_and_plan(name: &str) -> (EventStream, MatchPlan) {
         fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()));
     let transactions =
         crate::dsl::parse(&content).unwrap_or_else(|e| panic!("{name}: parse failed: {e}"));
-    let stream = normalize(&transactions, Some(fx_cache()))
+    let stream = normalize(&transactions, Some(fx_rates()))
         .unwrap_or_else(|e| panic!("{name}: normalize failed: {e}"));
     let match_plan = plan(&stream).unwrap_or_else(|e| panic!("{name}: plan failed: {e}"));
     (stream, match_plan)

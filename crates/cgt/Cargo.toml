@@ -14,9 +14,8 @@ chrono = { version = "0.4", features = ["serde", "clock"] }
 thiserror = "2"
 schemars = { version = "0.8", features = ["rust_decimal", "chrono"] }
 toml = "0.8"
-include_dir = "0.7"
 iso_currency = "0.5"
-quick-xml = { version = "0.36", features = ["serialize"] }
+hmrc-rates = "0.3"
 
 [lints]
 workspace = true

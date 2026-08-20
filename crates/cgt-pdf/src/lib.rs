@@ -364,7 +364,7 @@ mod tests {
     fn report_for(name: &str) -> cgt::TaxReport {
         let content = std::fs::read_to_string(fixture(name)).expect("fixture readable");
         let transactions = cgt::dsl::parse(&content).expect("fixture parses");
-        let fx = cgt::money::load_default_cache().expect("bundled FX cache loads");
+        let fx = cgt::money::FxRates::bundled();
         let config = Config::embedded().expect("embedded config loads");
         calculate(&transactions, None, Some(&fx), &config).expect("report builds")
     }

@@ -14,11 +14,11 @@ use rust_decimal::Decimal;
 use serde_json::Value;
 
 use crate::config::Config;
-use crate::money::FxCache;
+use crate::money::FxRates;
 
-fn fx_cache() -> &'static FxCache {
-    static CACHE: OnceLock<FxCache> = OnceLock::new();
-    CACHE.get_or_init(|| crate::money::load_default_cache().expect("bundled FX rates load"))
+fn fx_rates() -> &'static FxRates {
+    static RATES: OnceLock<FxRates> = OnceLock::new();
+    RATES.get_or_init(FxRates::bundled)
 }
 
 fn config() -> Config {
@@ -51,7 +51,7 @@ fn run_engine(name: &str) -> Value {
     let content = fs::read_to_string(&path).expect("read fixture");
     let transactions = crate::dsl::parse(&content).expect("fixture parses");
     let report =
-        crate::calculate(&transactions, None, Some(fx_cache()), &config()).expect("report builds");
+        crate::calculate(&transactions, None, Some(fx_rates()), &config()).expect("report builds");
     serde_json::to_value(&report).expect("report serializes")
 }
 

@@ -30,7 +30,7 @@ fn run(args: &[String]) -> Result<String, String> {
     match cmd {
         "parse" => serde_json::to_string_pretty(&transactions).map_err(|e| e.to_string()),
         "report" => {
-            let fx = cgt::money::load_default_cache().map_err(|e| e.to_string())?;
+            let fx = cgt::money::FxRates::bundled();
             let config = cgt::Config::embedded().map_err(|e| e.to_string())?;
             let report = cgt::calculate(&transactions, None, Some(&fx), &config)
                 .map_err(|e| e.to_string())?;

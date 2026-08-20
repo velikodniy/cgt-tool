@@ -1,7 +1,7 @@
 //! Currency amount type for monetary values with currency information.
 
-use crate::money::cache::FxCache;
-use chrono::{Datelike, NaiveDate};
+use crate::money::fx::FxRates;
+use chrono::NaiveDate;
 use iso_currency::Currency;
 use rust_decimal::Decimal;
 use schemars::JsonSchema;
@@ -43,24 +43,12 @@ impl CurrencyAmount {
     }
 
     /// Convert this amount to GBP using FX rates for the given date.
-    pub fn to_gbp(
-        &self,
-        date: NaiveDate,
-        fx_cache: &FxCache,
-    ) -> Result<Decimal, FxConversionError> {
+    pub fn to_gbp(&self, date: NaiveDate, rates: &FxRates) -> Result<Decimal, FxConversionError> {
         if self.is_gbp() {
             return Ok(self.amount);
         }
 
-        let rate_entry = fx_cache
-            .get(self.currency, date.year(), date.month())
-            .ok_or(FxConversionError::MissingRate {
-                currency: self.currency.code().to_string(),
-                year: date.year(),
-                month: date.month(),
-            })?;
-
-        Ok(self.amount / rate_entry.rate_per_gbp)
+        rates.to_gbp(self.amount, self.currency, date)
     }
 
     /// Get the currency's minor units (decimal places for display).

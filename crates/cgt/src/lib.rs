@@ -15,7 +15,7 @@ pub use config::Config;
 pub use error::CgtError;
 pub use format::plain;
 pub use model::{Operation, TaxPeriod, Transaction};
-pub use money::FxCache;
+pub use money::FxRates;
 pub use report::{Disposal, Holding, MatchLeg, MatchRule, TaxReport, TaxYearSummary};
 pub use validate::{ValidationError, ValidationResult, ValidationWarning, validate};
 
@@ -24,7 +24,7 @@ pub use validate::{ValidationError, ValidationResult, ValidationWarning, validat
 /// Validation runs first; invalid input is rejected with
 /// [`CgtError::Validation`] (warnings are not fatal). `tax_year_start` filters
 /// to a single tax year when `Some`; `None` reports every disposal year.
-/// `fx_cache` supplies FX rates for non-GBP amounts.
+/// `fx_rates` supplies FX rates for non-GBP amounts.
 ///
 /// # Errors
 /// Returns [`CgtError`] for validation failures, missing FX rates, unmatched
@@ -32,7 +32,7 @@ pub use validate::{ValidationError, ValidationResult, ValidationWarning, validat
 pub fn calculate(
     transactions: &[Transaction],
     tax_year_start: Option<i32>,
-    fx_cache: Option<&FxCache>,
+    fx_rates: Option<&FxRates>,
     config: &Config,
 ) -> Result<TaxReport, CgtError> {
     let validation = validate::validate(transactions);
@@ -41,7 +41,7 @@ pub fn calculate(
             validation.errors,
         )));
     }
-    let stream = engine::normalize::normalize(transactions, fx_cache)?;
+    let stream = engine::normalize::normalize(transactions, fx_rates)?;
     let plan = engine::plan::plan(&stream)?;
     let valued = engine::value::value(&stream, &plan)?;
     engine::report::build(

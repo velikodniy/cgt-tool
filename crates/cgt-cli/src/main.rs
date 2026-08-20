@@ -1,7 +1,7 @@
 use anyhow::{Result, bail};
 use cgt::calculate;
 use cgt::dsl::parse;
-use cgt::money::{RateFile, load_cache_with_overrides, load_default_cache};
+use cgt::money::FxRates;
 use clap::Parser;
 mod commands;
 use commands::{BrokerCommands, Commands, OutputFormat};
@@ -24,25 +24,6 @@ fn read_and_concatenate_files(files: &[std::path::PathBuf]) -> Result<String> {
         contents.push(content);
     }
     Ok(contents.join("\n"))
-}
-
-fn read_fx_folder(path: &std::path::Path) -> Result<Vec<RateFile>> {
-    let mut files = Vec::new();
-    for entry in fs::read_dir(path)? {
-        let entry = entry?;
-        let file_path = entry.path();
-        if file_path.extension().and_then(|e| e.to_str()) != Some("xml") {
-            continue;
-        }
-        let xml = fs::read_to_string(&file_path)?;
-        let modified = fs::metadata(&file_path).and_then(|m| m.modified()).ok();
-        files.push(RateFile {
-            name: file_path,
-            modified,
-            xml,
-        });
-    }
-    Ok(files)
 }
 
 /// Load the embedded configuration, then apply overrides from `./config.toml`
@@ -103,28 +84,17 @@ fn main() -> Result<()> {
             year,
             format,
             output,
-            fx_folder,
             allow_missing_exemption,
         } => {
             let content = read_and_concatenate_files(files)?;
 
-            // Load FX cache (bundled by default, override if folder provided)
-            let fx_cache = if let Some(folder) = fx_folder {
-                let folder_files = read_fx_folder(folder)?;
-                let outcome = load_cache_with_overrides(folder_files)?;
-                for warning in &outcome.warnings {
-                    eprintln!("WARNING: {warning}");
-                }
-                outcome.cache
-            } else {
-                load_default_cache()?
-            };
+            let fx_rates = FxRates::bundled();
 
             let transactions = parse(&content)?;
 
             let mut config = load_config()?;
             config.allow_missing_exemption = *allow_missing_exemption;
-            let report = calculate(&transactions, *year, Some(&fx_cache), &config)?;
+            let report = calculate(&transactions, *year, Some(&fx_rates), &config)?;
             for warning in &report.warnings {
                 eprintln!("WARNING: {warning}");
             }

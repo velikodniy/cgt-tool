@@ -11,7 +11,7 @@ use rust_decimal::Decimal;
 
 use crate::error::CgtError;
 use crate::model::{Operation, Transaction};
-use crate::money::{CurrencyAmount, FxCache};
+use crate::money::{CurrencyAmount, FxRates};
 
 /// Position of an event in its [`EventStream`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -113,7 +113,7 @@ struct RawEvent {
 /// Normalize parsed transactions into the engine's event stream.
 pub(crate) fn normalize(
     transactions: &[Transaction],
-    fx_cache: Option<&FxCache>,
+    fx_rates: Option<&FxRates>,
 ) -> Result<EventStream, CgtError> {
     let mut raw = transactions
         .iter()
@@ -121,7 +121,7 @@ pub(crate) fn normalize(
             Ok(RawEvent {
                 date: tx.date,
                 ticker: tx.ticker.clone(),
-                kind: kind_to_gbp(&tx.operation, tx.date, fx_cache)?,
+                kind: kind_to_gbp(&tx.operation, tx.date, fx_rates)?,
             })
         })
         .collect::<Result<Vec<_>, CgtError>>()?;
@@ -142,7 +142,7 @@ pub(crate) fn normalize(
 fn kind_to_gbp(
     operation: &Operation<CurrencyAmount>,
     date: NaiveDate,
-    fx_cache: Option<&FxCache>,
+    fx_rates: Option<&FxRates>,
 ) -> Result<EventKind, CgtError> {
     match operation {
         Operation::Buy {
@@ -151,8 +151,8 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Buy(Trade {
             quantity: *amount,
-            price: amount_to_gbp(price, date, fx_cache)?,
-            fees: amount_to_gbp(fees, date, fx_cache)?,
+            price: amount_to_gbp(price, date, fx_rates)?,
+            fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Sell {
             amount,
@@ -160,15 +160,15 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Sell(Trade {
             quantity: *amount,
-            price: amount_to_gbp(price, date, fx_cache)?,
-            fees: amount_to_gbp(fees, date, fx_cache)?,
+            price: amount_to_gbp(price, date, fx_rates)?,
+            fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Dividend {
             total_value,
             tax_paid,
         } => Ok(EventKind::Dividend {
-            total_value: amount_to_gbp(total_value, date, fx_cache)?,
-            tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
+            total_value: amount_to_gbp(total_value, date, fx_rates)?,
+            tax_paid: amount_to_gbp(tax_paid, date, fx_rates)?,
         }),
         Operation::Accumulation {
             amount,
@@ -176,8 +176,8 @@ fn kind_to_gbp(
             tax_paid,
         } => Ok(EventKind::Accumulation {
             quantity: *amount,
-            total_value: amount_to_gbp(total_value, date, fx_cache)?,
-            tax_paid: amount_to_gbp(tax_paid, date, fx_cache)?,
+            total_value: amount_to_gbp(total_value, date, fx_rates)?,
+            tax_paid: amount_to_gbp(tax_paid, date, fx_rates)?,
         }),
         Operation::CapReturn {
             amount,
@@ -185,8 +185,8 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::CapitalReturn {
             quantity: *amount,
-            total_value: amount_to_gbp(total_value, date, fx_cache)?,
-            fees: amount_to_gbp(fees, date, fx_cache)?,
+            total_value: amount_to_gbp(total_value, date, fx_rates)?,
+            fees: amount_to_gbp(fees, date, fx_rates)?,
         }),
         Operation::Split { ratio } => Ok(EventKind::Split { ratio: *ratio }),
         Operation::Unsplit { ratio } => Ok(EventKind::Unsplit { ratio: *ratio }),
@@ -194,22 +194,22 @@ fn kind_to_gbp(
 }
 
 /// Convert an amount to GBP: GBP passes through without consulting the
-/// cache; for non-GBP amounts a missing cache or missing rate is a
-/// `MissingFxRate` error naming the currency and the transaction's month.
+/// rate provider; for non-GBP amounts missing rates produce a `MissingFxRate`
+/// error naming the currency and transaction month.
 fn amount_to_gbp(
     amount: &CurrencyAmount,
     date: NaiveDate,
-    fx_cache: Option<&FxCache>,
+    fx_rates: Option<&FxRates>,
 ) -> Result<Decimal, CgtError> {
     if amount.is_gbp() {
         return Ok(amount.amount);
     }
-    let cache = fx_cache.ok_or_else(|| CgtError::MissingFxRate {
+    let rates = fx_rates.ok_or_else(|| CgtError::MissingFxRate {
         currency: amount.code().to_string(),
         year: date.year(),
         month: date.month(),
     })?;
-    Ok(amount.to_gbp(date, cache)?)
+    Ok(amount.to_gbp(date, rates)?)
 }
 
 /// Aggregate one day's raw events and append them in canonical order.
@@ -307,23 +307,15 @@ mod tests {
 
     use super::{EventKind, EventStream, normalize};
     use crate::error::CgtError;
-    use crate::money::{Currency, FxCache, RateEntry, RateKey, RateSource};
+    use crate::money::{Currency, FxRates};
 
-    fn stream(input: &str, fx_cache: Option<&FxCache>) -> EventStream {
+    fn stream(input: &str, fx_rates: Option<&FxRates>) -> EventStream {
         let transactions = crate::dsl::parse(input).expect("test DSL parses");
-        normalize(&transactions, fx_cache).expect("test input normalizes")
+        normalize(&transactions, fx_rates).expect("test input normalizes")
     }
 
-    fn usd_cache(year: i32, month: u32, rate_per_gbp: Decimal) -> FxCache {
-        let mut cache = FxCache::new();
-        cache.insert(RateEntry {
-            key: RateKey::new(Currency::USD, year, month),
-            rate_per_gbp,
-            source: RateSource::Bundled { period: None },
-            minor_units: 2,
-            symbol: None,
-        });
-        cache
+    fn usd_rates(year: i32, month: u32, units_per_gbp: Decimal) -> FxRates {
+        FxRates::fixed([(Currency::USD, year, month, units_per_gbp)])
     }
 
     #[test]
@@ -430,12 +422,12 @@ mod tests {
 
     #[test]
     fn value_events_pass_through_with_fx_conversion() {
-        let cache = usd_cache(2024, 3, dec!(1.25));
+        let rates = usd_rates(2024, 3, dec!(1.25));
         let stream = stream(
             "2024-03-15 DIVIDEND ABC TOTAL 100.00 USD TAX 10.00 USD\n\
              2024-03-15 ACCUMULATION ABC 7 TOTAL 50.00 USD TAX 2.50 USD\n\
              2024-03-15 CAPRETURN ABC 7 TOTAL 25.00 USD FEES 2.50 USD\n",
-            Some(&cache),
+            Some(&rates),
         );
         // Emitted in canonical order (CAPRETURN, ACCUMULATION, DIVIDEND),
         // not the input order.
@@ -475,10 +467,10 @@ mod tests {
 
     #[test]
     fn usd_trade_converts_at_monthly_rate() {
-        let cache = usd_cache(2024, 3, dec!(1.25));
+        let rates = usd_rates(2024, 3, dec!(1.25));
         let stream = stream(
             "2024-03-15 BUY ABC 10 @ 150.00 USD FEES 5.00 USD\n",
-            Some(&cache),
+            Some(&rates),
         );
         let EventKind::Buy(buy) = &stream.events()[0].kind else {
             panic!("expected buy event");
@@ -489,8 +481,8 @@ mod tests {
     }
 
     #[test]
-    fn gbp_amounts_bypass_fx_cache() {
-        // GBP must pass through even with NO cache at all.
+    fn gbp_amounts_bypass_fx_rates() {
+        // GBP amounts do not require an FX rate provider.
         let stream = stream(
             "2024-03-15 BUY ABC 10 @ 150.00 GBP FEES 5.00 GBP\n\
              2024-03-16 DIVIDEND ABC TOTAL 10.00 GBP\n",
@@ -500,10 +492,10 @@ mod tests {
     }
 
     #[test]
-    fn missing_fx_rate_without_cache_names_currency_and_month() {
+    fn missing_fx_rate_without_rates_names_currency_and_month() {
         let transactions =
             crate::dsl::parse("2024-03-15 BUY ABC 10 @ 150.00 USD\n").expect("parses");
-        let err = normalize(&transactions, None).expect_err("must fail without cache");
+        let err = normalize(&transactions, None).expect_err("must fail without rates");
         assert!(matches!(
             err,
             CgtError::MissingFxRate { ref currency, year: 2024, month: 3 } if currency == "USD"
@@ -511,12 +503,11 @@ mod tests {
     }
 
     #[test]
-    fn missing_fx_rate_with_cache_missing_month_names_currency_and_month() {
-        // Cache exists but lacks the transaction's month.
-        let cache = usd_cache(2024, 2, dec!(1.25));
+    fn missing_fx_rate_with_rates_missing_month_names_currency_and_month() {
+        let rates = usd_rates(2024, 2, dec!(1.25));
         let transactions =
             crate::dsl::parse("2024-03-15 BUY ABC 10 @ 150.00 USD\n").expect("parses");
-        let err = normalize(&transactions, Some(&cache)).expect_err("must fail for missing month");
+        let err = normalize(&transactions, Some(&rates)).expect_err("must fail for missing month");
         assert!(matches!(
             err,
             CgtError::MissingFxRate { ref currency, year: 2024, month: 3 } if currency == "USD"
