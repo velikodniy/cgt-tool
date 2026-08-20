@@ -15,13 +15,13 @@ graph TD
 
 ## Crates
 
-| Crate           | Purpose                                                                                                                                                                                                                                 |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Crate           | Purpose                                                                                                                                                                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cgt`           | The engine: `CurrencyAmount`/FX rates (bundled by `hmrc-rates`), DSL parse + serialize (pest grammar), input validation, the plan-then-value matching engine, the `TaxReport` model, and the plain-text renderer. IO-free and WASM-friendly. |
-| `cgt-pdf`       | PDF renderer using an embedded Typst engine with bundled fonts. Separate from `cgt` so WASM builds never pull in typst.                                                                                                                 |
-| `cgt-cli`       | CLI binary (`cgt-tool`). Owns all file IO: reads `.cgt` inputs, selects the output format, writes results.                                                                                                                              |
-| `cgt-wasm`      | WASM bindings exposing the engine to the browser/Node demo in `web/`.                                                                                                                                                                   |
-| `cgt-converter` | Broker CSV/JSON to DSL converters (Schwab transactions and equity awards). String-in, string-out; no filesystem IO.                                                                                                                     |
+| `cgt-pdf`       | PDF renderer using an embedded Typst engine with bundled fonts. Separate from `cgt` so WASM builds never pull in typst.                                                                                                                      |
+| `cgt-cli`       | CLI binary (`cgt-tool`). Owns all file IO: reads `.cgt` inputs, selects the output format, writes results.                                                                                                                                   |
+| `cgt-wasm`      | WASM bindings exposing the engine to the browser/Node demo in `web/`.                                                                                                                                                                        |
+| `cgt-converter` | Broker CSV/JSON to DSL converters (Schwab transactions and equity awards). String-in, string-out; no filesystem IO.                                                                                                                          |
 
 ## Design Principles
 
