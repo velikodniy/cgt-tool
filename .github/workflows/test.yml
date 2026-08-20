@@ -23,7 +23,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - uses: j178/prek-action@v1
+      - uses: j178/prek-action@v2
   # Run all tests
   test:
     name: Test
