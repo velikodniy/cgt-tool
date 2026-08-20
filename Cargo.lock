@@ -1126,9 +1126,9 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hmrc-rates"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0ef56d5c2f042edae541fa7885cf95e418ec218b140f16ce44eba6269923172"
+checksum = "df4e5acf13b361e2ec12c411af0385a636c57b448f1781dfcac9d0bcaa7727b0"
 dependencies = [
  "chrono",
  "csv",
