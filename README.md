@@ -118,23 +118,12 @@ SPLIT:       <date> SPLIT|UNSPLIT <ticker> RATIO <ratio>
 ## Currency and FX rates
 
 - GBP is the default currency. Add ISO 4217 codes after amounts to use foreign currencies.
-- The tool uses HMRC monthly average exchange rates for UK tax calculations.
-- Bundled FX rates are updated regularly in releases to track the latest HMRC data.
+- The tool uses HMRC monthly exchange rates for UK tax calculations.
+- Rates are provided by the [`hmrc-rates`](https://crates.io/crates/hmrc-rates)
+  crate, compiled in at build time. Dependabot opens pull requests for new
+  `hmrc-rates` versions; the standard CI workflow verifies them before review.
 
 FX rates source: [UK Trade Tariff Exchange Rates](https://www.trade-tariff.service.gov.uk/exchange_rates)
-
-Use a custom folder with newer or missing rates:
-
-```bash
-cgt-tool report transactions.cgt --year 2024 --fx-folder ./my-rates
-```
-
-Download rates:
-
-```bash
-./scripts/download-fx-rates.sh
-./scripts/download-fx-rates.sh ./my-rates
-```
 
 ## Broker conversion details
 

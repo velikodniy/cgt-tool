@@ -158,17 +158,13 @@ Per TCGA92/S38 (CG15150, CG15250):
 
 ## FX Conversion
 
-### HMRC Monthly Average Rates
+### HMRC Monthly Rates
 
-Foreign currency amounts are converted to GBP using HMRC monthly average exchange rates for the transaction month.
+Foreign currency amounts are converted to GBP using HMRC monthly exchange rates for the transaction month.
 
 ### Bundled Rates
 
-Rates from January 2015 to June 2026 are embedded at compile time. No configuration required.
-
-### Custom Rate Folder
-
-`--fx-folder` loads rates from XML files (`YYYY-MM.xml` or `monthly_xml_YYYY-MM.xml`). Custom rates take precedence over bundled when both exist.
+Rates are provided by the [`hmrc-rates`](https://crates.io/crates/hmrc-rates) crate (HMRC monthly series, February 2014 onward), compiled in at build time. No configuration required. Lookups are strict: a month with no published rate for the currency is a `MissingFxRate` error, never a silent fallback.
 
 ### Precision
 
@@ -184,7 +180,7 @@ Amounts without a currency code are treated as GBP. No conversion is performed.
 
 ### Missing Rate Errors
 
-When a currency/month rate is unavailable, the system fails with a clear error identifying the missing currency and month, with guidance on resolution. The `has_currency` check queries actual cache contents (not a hardcoded range).
+When a currency/month rate is unavailable, strict `FxRates` lookup fails with a `MissingFxRate` error identifying the currency and month. Install a `cgt-tool` release containing a newer `hmrc-rates` version when the required month has been published.
 
 ---
 

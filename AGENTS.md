@@ -44,7 +44,7 @@ tests/
 - Rust 2024 edition, `rust_decimal` for money, `chrono` for dates
 - `pest` grammar for DSL parsing (`crates/cgt/src/dsl/grammar.pest`)
 - IO-free core: calculation logic has no IO, is WASM-friendly
-- Bundled FX rates: HMRC rates embedded at compile time; runtime override via `--fx-folder`
+- Bundled FX rates: HMRC monthly rates from the `hmrc-rates` crate, compiled in at build time
 - Prefer immutable data and strict typing
 - Unix newlines, standard Rust naming
 - No long separator lines in comments (e.g., `// ====...` or `// ----...`)

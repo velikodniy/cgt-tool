@@ -6,7 +6,7 @@ WebAssembly bindings for the UK Capital Gains Tax (CGT) calculator. This package
 
 - **Client-side computation**: All calculations run in the browser - your financial data never leaves your machine
 - **JSON output**: Structured data for easy integration with web applications
-- **Embedded FX rates**: All HMRC foreign exchange rates bundled (no external dependencies)
+- **Embedded FX rates**: HMRC monthly exchange rates bundled by `hmrc-rates` (no runtime dependencies)
 - **TypeScript support**: Auto-generated type definitions for type-safe development
 - **HMRC-compliant**: Implements official UK tax rules for share matching and calculations
 
@@ -217,11 +217,11 @@ YYYY-MM-DD CAPRETURN <TICKER> <AMOUNT_PER_SHARE> [CURRENCY]
 2024-12-01 SPLIT AAPL 4 FOR 1
 ```
 
-Currency defaults to GBP if omitted. All foreign currency amounts are automatically converted to GBP using bundled HMRC exchange rates.
+Currency defaults to GBP if omitted. All foreign currency amounts are automatically converted to GBP using bundled HMRC monthly exchange rates.
 
 ## FX Rates
 
-All HMRC foreign exchange rates from January 2015 through June 2026 are embedded in the WASM binary. No external API calls or additional downloads are required.
+The HMRC monthly rate history from February 2014 through the latest `hmrc-rates` release is embedded in the WASM binary. No external API calls or additional downloads are required.
 
 ## Bundle Size
 

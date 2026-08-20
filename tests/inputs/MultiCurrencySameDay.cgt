@@ -18,7 +18,7 @@
 #   Same day rule applies: sale matches with same-day purchase.
 #   USD purchase needs FX conversion using June 2024 GBP/USD rate.
 #
-# Note: FX rates are bundled in cgt-money. June 2024 USD rate is ~1.27 GBP.
+# Note: FX rates come from the hmrc-rates crate. June 2024 rate is ~1.27 USD per GBP.
 # Buy cost in GBP: 100 × $150 / 1.27 ≈ £11,811.02
 # Sell proceeds: 100 × £120 = £12,000
 # Expected gain: ~£188.98
