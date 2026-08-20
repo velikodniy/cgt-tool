@@ -74,7 +74,7 @@ jobs:
           pattern: artifacts/${{ matrix.asset_name }}
           suffix: sha256
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: binaries-${{ matrix.target }}
           path: |
@@ -115,7 +115,7 @@ jobs:
           pattern: cgt-tool-wasm-${{ env.RELEASE_TAG }}.tgz
           suffix: sha256
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: wasm-package
           path: |
