@@ -14,7 +14,7 @@ chrono = { version = "0.4", features = ["serde", "clock"] }
 thiserror = "2"
 schemars = { version = "0.8", features = ["rust_decimal", "chrono"] }
 toml = "0.9"
-iso_currency = "0.5"
+iso_currency = "0.7"
 hmrc-rates = "0.3"
 
 [lints]
