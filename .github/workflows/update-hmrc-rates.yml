@@ -10,11 +10,13 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
   update:
     name: Update hmrc-rates
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -28,15 +30,22 @@ jobs:
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
 
-      - name: Update hmrc-rates
+      - name: Update hmrc-rates and version
         id: update
         run: |
           cargo update --package hmrc-rates
           if git diff --quiet -- Cargo.lock; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          current_version="$(sed -n 's/^version = "\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)"$/\1/p' Cargo.toml)"
+          IFS=. read -r major minor patch <<< "$current_version"
+          new_version="${major}.${minor}.$((patch + 1))"
+          sed -i "s/^version = \"${current_version}\"$/version = \"${new_version}\"/" Cargo.toml
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "version=${new_version}" >> "$GITHUB_OUTPUT"
 
       - name: Check
         if: steps.update.outputs.changed == 'true'
@@ -56,15 +65,21 @@ jobs:
         working-directory: crates/cgt-wasm
         run: wasm-pack test --node
 
-      - name: Commit and push
+      - name: Commit, tag, and release
         if: steps.update.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.update.outputs.version }}
         run: |
-          test "$(git diff --name-only)" = "Cargo.lock"
+          test -z "$(git diff --name-only | grep -vE '^(Cargo.lock|Cargo.toml)$' || true)"
+          test "$(git diff --name-only | wc -l | tr -d ' ')" = "2"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Cargo.lock
-          git -c core.hooksPath=/dev/null commit -m "chore: update hmrc-rates"
+          git add Cargo.toml Cargo.lock
+          git -c core.hooksPath=/dev/null commit -m "chore: update hmrc-rates and bump version to ${VERSION}"
+          git tag -a "v${VERSION}" -m "v${VERSION} - Update HMRC rates"
+
           gh auth setup-git
-          git -c core.hooksPath=/dev/null push origin HEAD:main
+          git -c core.hooksPath=/dev/null push --atomic origin HEAD:main "v${VERSION}"
+          gh workflow run release.yml --ref "v${VERSION}" -f tag="v${VERSION}"
