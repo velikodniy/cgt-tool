@@ -10,9 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: write
   contents: write
-  pull-requests: write
 
 jobs:
   update:
@@ -24,138 +22,49 @@ jobs:
           persist-credentials: false
 
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1
+        with:
+          components: rustfmt, clippy
+          target: wasm32-unknown-unknown
 
-      - name: Update lockfile
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+
+      - name: Update hmrc-rates
         id: update
-        shell: bash
         run: |
-          set -euo pipefail
-
-          lockfile_version() {
-            python3 - <<'PY'
-          import tomllib
-
-          with open("Cargo.lock", "rb") as lockfile:
-              packages = tomllib.load(lockfile)["package"]
-
-          versions = [
-              package["version"]
-              for package in packages
-              if package["name"] == "hmrc-rates"
-          ]
-          if len(versions) != 1:
-              raise SystemExit(
-                  f"expected one hmrc-rates package in Cargo.lock, found {len(versions)}"
-              )
-          print(versions[0])
-          PY
-          }
-
-          old_version="$(lockfile_version)"
-          cargo update --package "hmrc-rates@${old_version}"
-          new_version="$(lockfile_version)"
-
-          if [[ "$old_version" == "$new_version" ]]; then
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "hmrc-rates is already current at ${old_version}."
-            exit 0
+          cargo update --package hmrc-rates
+          if git diff --quiet -- Cargo.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-          python3 - "$old_version" "$new_version" <<'PY'
-          import re
-          import sys
+      - name: Check
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
 
-          old_version, new_version = sys.argv[1:]
-          pattern = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
-          old_match = pattern.fullmatch(old_version)
-          new_match = pattern.fullmatch(new_version)
-          if old_match is None or new_match is None:
-              raise SystemExit("hmrc-rates versions must use stable major.minor.patch form")
+      - name: Test
+        if: steps.update.outputs.changed == 'true'
+        run: cargo test --all
 
-          old_parts = tuple(map(int, old_match.groups()))
-          new_parts = tuple(map(int, new_match.groups()))
-          if old_parts[:2] != new_parts[:2] or new_parts[2] <= old_parts[2]:
-              raise SystemExit(
-                  f"refusing non-patch hmrc-rates update: {old_version} -> {new_version}"
-              )
-          PY
+      - uses: jetli/wasm-pack-action@0d096b08b4e5a7de8c28de67e11e945404e9eefa # v0.4.0
+        if: steps.update.outputs.changed == 'true'
 
-          changed_files="$(git diff --name-only)"
-          if [[ "$changed_files" != "Cargo.lock" ]]; then
-            echo "Unexpected files changed by cargo update:" >&2
-            printf '%s\n' "$changed_files" >&2
-            exit 1
-          fi
+      - name: Test WASM
+        if: steps.update.outputs.changed == 'true'
+        working-directory: crates/cgt-wasm
+        run: wasm-pack test --node
 
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-          echo "old_version=${old_version}" >> "$GITHUB_OUTPUT"
-          echo "new_version=${new_version}" >> "$GITHUB_OUTPUT"
-
-      - name: Create pull request
-        if: steps.update.outputs.updated == 'true'
-        id: pull_request
-        shell: bash
+      - name: Commit and push
+        if: steps.update.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          NEW_VERSION: ${{ steps.update.outputs.new_version }}
         run: |
-          set -euo pipefail
-
-          branch="automation/hmrc-rates-${NEW_VERSION}"
-          existing_url="$(
-            gh pr list \
-              --head "$branch" \
-              --state open \
-              --json url \
-              --jq '.[0].url // empty'
-          )"
-
-          if [[ -n "$existing_url" ]]; then
-            echo "branch=${branch}" >> "$GITHUB_OUTPUT"
-            echo "url=${existing_url}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
-            echo "Branch ${branch} exists without an open pull request." >&2
-            echo "Delete the branch before retrying the update." >&2
-            exit 1
-          fi
-
-          gh auth setup-git
+          test "$(git diff --name-only)" = "Cargo.lock"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch --create "$branch"
           git add Cargo.lock
-          git commit --message "chore: update hmrc-rates to ${NEW_VERSION}"
-          git push origin "$branch"
-
-          pr_url="$(
-            gh pr create \
-              --base main \
-              --head "$branch" \
-              --title "chore: update hmrc-rates to ${NEW_VERSION}" \
-              --body "Automated patch update of the HMRC rates bundled with cgt-tool."
-          )"
-
-          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
-          echo "url=${pr_url}" >> "$GITHUB_OUTPUT"
-
-      - name: Run required checks
-        if: steps.update.outputs.updated == 'true'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ steps.pull_request.outputs.branch }}
-        run: gh workflow run test.yml --ref "$BRANCH"
-
-      - name: Enable auto-merge
-        if: steps.update.outputs.updated == 'true'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_URL: ${{ steps.pull_request.outputs.url }}
-        run: |
-          if [[ "$(gh pr view "$PR_URL" --json autoMergeRequest --jq '.autoMergeRequest != null')" == "false" ]]; then
-            gh pr merge --auto --squash "$PR_URL"
-          fi
+          git -c core.hooksPath=/dev/null commit -m "chore: update hmrc-rates"
+          gh auth setup-git
+          git -c core.hooksPath=/dev/null push origin HEAD:main
