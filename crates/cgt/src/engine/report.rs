@@ -37,8 +37,8 @@ pub(crate) fn build(
         .disposals
         .iter()
         .zip(plan.disposals.iter())
-        .map(|(priced, planned)| map_disposal(priced, planned.matched_quantity()))
-        .collect();
+        .map(|(priced, planned)| Ok(map_disposal(priced, planned.matched_quantity()?)))
+        .collect::<Result<_, CgtError>>()?;
 
     let dividends = aggregate_dividends(stream)?;
 

@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use rust_decimal::Decimal;
 
 use super::normalize::{Event, EventId, EventKind, EventStream, Trade};
+use super::quantity::Quantity;
 use crate::error::CgtError;
 
 /// B&B window: acquisitions 1..=30 days after the disposal (CG51560).
@@ -19,7 +20,7 @@ const BNB_WINDOW_DAYS: i64 = 30;
 /// Same-day matched quantity for one disposal.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct SameDayLeg {
-    pub(crate) quantity: Decimal,
+    pub(crate) quantity: Quantity,
 }
 
 /// Bed & Breakfast matched quantity for one disposal, tied to its buy event.
@@ -32,15 +33,15 @@ pub(crate) struct BnbLeg {
     pub(crate) buy: EventId,
     pub(crate) acquisition_date: chrono::NaiveDate,
     /// Quantity in the disposal's share scale (before window splits).
-    pub(crate) quantity_at_sell_scale: Decimal,
+    pub(crate) quantity_at_sell_scale: Quantity,
     /// Quantity in the acquisition's share scale (after window splits).
-    pub(crate) quantity_at_buy_scale: Decimal,
+    pub(crate) quantity_at_buy_scale: Quantity,
 }
 
 /// Section 104 matched quantity for one disposal.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Section104Leg {
-    pub(crate) quantity: Decimal,
+    pub(crate) quantity: Quantity,
 }
 
 /// Quantity plan for one merged disposal. Rule priority is structural:
@@ -57,21 +58,18 @@ pub(crate) struct DisposalPlan {
 
 impl DisposalPlan {
     /// Total matched quantity at the disposal's share scale.
-    pub(crate) fn matched_quantity(&self) -> Decimal {
-        let same_day = self
-            .same_day
-            .as_ref()
-            .map_or(Decimal::ZERO, |leg| leg.quantity);
-        let bnb: Decimal = self
-            .bed_and_breakfast
-            .iter()
-            .map(|leg| leg.quantity_at_sell_scale)
-            .sum();
-        let section_104 = self
-            .section_104
-            .as_ref()
-            .map_or(Decimal::ZERO, |leg| leg.quantity);
-        same_day + bnb + section_104
+    pub(crate) fn matched_quantity(&self) -> Result<Decimal, CgtError> {
+        let mut total = Quantity::default();
+        if let Some(leg) = &self.same_day {
+            total.add(&leg.quantity);
+        }
+        for leg in &self.bed_and_breakfast {
+            total.add(&leg.quantity_at_sell_scale);
+        }
+        if let Some(leg) = &self.section_104 {
+            total.add(&leg.quantity);
+        }
+        total.decimal()
     }
 }
 
@@ -82,7 +80,7 @@ pub(crate) struct MatchPlan {
     pub(crate) disposals: Vec<DisposalPlan>,
     /// Per merged buy event: total quantity (at the buy's share scale)
     /// reserved by B&B matches from earlier disposals.
-    pub(crate) bnb_reservations: HashMap<EventId, Decimal>,
+    pub(crate) bnb_reservations: HashMap<EventId, Quantity>,
 }
 
 /// Build the quantity-only match plan for a normalized stream.
@@ -100,12 +98,12 @@ pub(crate) fn plan(stream: &EventStream) -> Result<MatchPlan, CgtError> {
 struct Planner<'s> {
     stream: &'s EventStream,
     /// Per-ticker Section 104 pool quantity.
-    pools: HashMap<String, Decimal>,
+    pools: HashMap<String, Quantity>,
     /// Day ledger for the day in progress: per ticker, merged buy quantity
     /// still available after B&B reservations and same-day consumption.
-    day_available: HashMap<String, Decimal>,
+    day_available: HashMap<String, Quantity>,
     /// B&B reservations against future merged buys (buy share scale).
-    bnb_reservations: HashMap<EventId, Decimal>,
+    bnb_reservations: HashMap<EventId, Quantity>,
     disposals: Vec<DisposalPlan>,
 }
 
@@ -131,8 +129,8 @@ impl<'s> Planner<'s> {
                 let reserved = self
                     .bnb_reservations
                     .get(&event.id)
-                    .copied()
-                    .unwrap_or(Decimal::ZERO);
+                    .cloned()
+                    .unwrap_or_default();
                 if reserved > trade.quantity {
                     // Defensive: B&B never reserves more than a buy's quantity.
                     return Err(CgtError::BnbReservationExceedsBuy {
@@ -140,8 +138,9 @@ impl<'s> Planner<'s> {
                         date: event.date,
                     });
                 }
-                self.day_available
-                    .insert(event.ticker.clone(), trade.quantity - reserved);
+                let mut available = Quantity::from(trade.quantity);
+                available.subtract(&reserved);
+                self.day_available.insert(event.ticker.clone(), available);
             }
         }
 
@@ -155,10 +154,13 @@ impl<'s> Planner<'s> {
             if let EventKind::Buy(_) = &event.kind {
                 let leftover = self
                     .day_available
-                    .insert(event.ticker.clone(), Decimal::ZERO)
-                    .unwrap_or(Decimal::ZERO);
-                if leftover > Decimal::ZERO {
-                    *self.pools.entry(event.ticker.clone()).or_default() += leftover;
+                    .insert(event.ticker.clone(), Quantity::default())
+                    .unwrap_or_default();
+                if leftover.is_positive() {
+                    self.pools
+                        .entry(event.ticker.clone())
+                        .or_default()
+                        .add(&leftover);
                 }
             }
         }
@@ -167,7 +169,7 @@ impl<'s> Planner<'s> {
             match &event.kind {
                 EventKind::Split { ratio } => {
                     if let Some(pool) = self.pools.get_mut(&event.ticker) {
-                        *pool *= *ratio;
+                        *pool = pool.multiplied(&Quantity::from(*ratio));
                     }
                 }
                 EventKind::Unsplit { ratio } => {
@@ -175,15 +177,20 @@ impl<'s> Planner<'s> {
                         && *ratio != Decimal::ZERO
                     {
                         // A consolidation must leave whole shares (CG51746).
-                        if *pool % *ratio != Decimal::ZERO {
+                        let consolidated = pool.divided(&Quantity::from(*ratio)).ok_or(
+                            CgtError::ArithmeticOverflow {
+                                operation: "share consolidation".into(),
+                            },
+                        )?;
+                        if !consolidated.is_integer() {
                             return Err(CgtError::UnsplitIndivisibleHolding {
                                 ticker: event.ticker.clone(),
                                 date: event.date,
-                                holding: *pool,
+                                holding: pool.decimal()?,
                                 ratio: *ratio,
                             });
                         }
-                        *pool /= *ratio;
+                        *pool = consolidated;
                     }
                 }
                 _ => {}
@@ -205,26 +212,27 @@ impl<'s> Planner<'s> {
         let ledger_held = self
             .day_available
             .get(sell.ticker.as_str())
-            .copied()
-            .unwrap_or(Decimal::ZERO);
+            .cloned()
+            .unwrap_or_default();
         let pool_held = self
             .pools
             .get(sell.ticker.as_str())
-            .copied()
-            .unwrap_or(Decimal::ZERO);
-        let total_held = ledger_held + pool_held;
-        if trade.quantity > total_held {
+            .cloned()
+            .unwrap_or_default();
+        let mut total_held = ledger_held.clone();
+        total_held.add(&pool_held);
+        if total_held < trade.quantity {
             return Err(CgtError::DisposalExceedsHolding {
                 ticker: sell.ticker.clone(),
                 date: sell.date,
                 attempted: trade.quantity,
-                held: total_held,
-                ledger: ledger_held,
-                pool: pool_held,
+                held: total_held.decimal()?,
+                ledger: ledger_held.decimal()?,
+                pool: pool_held.decimal()?,
             });
         }
 
-        let mut remaining = trade.quantity;
+        let mut remaining = Quantity::from(trade.quantity);
         let mut disposal = DisposalPlan {
             sell: sell.id,
             same_day: None,
@@ -233,31 +241,32 @@ impl<'s> Planner<'s> {
         };
 
         // 1. Same Day (TCGA92/S105(1)).
-        if ledger_held > Decimal::ZERO {
-            let matched = remaining.min(ledger_held);
-            self.day_available
-                .insert(sell.ticker.clone(), ledger_held - matched);
+        if ledger_held.is_positive() {
+            let matched = remaining.clone().min(ledger_held.clone());
+            let mut available = ledger_held;
+            available.subtract(&matched);
+            self.day_available.insert(sell.ticker.clone(), available);
+            remaining.subtract(&matched);
             disposal.same_day = Some(SameDayLeg { quantity: matched });
-            remaining -= matched;
         }
 
         // 2. Bed & Breakfast (TCGA92/S106A).
-        self.match_bed_and_breakfast(sell, &mut remaining, &mut disposal);
+        self.match_bed_and_breakfast(sell, &mut remaining, &mut disposal)?;
 
         // 3. Section 104 remainder.
-        if remaining > Decimal::ZERO
+        if remaining.is_positive()
             && let Some(pool) = self.pools.get_mut(sell.ticker.as_str())
-            && *pool > Decimal::ZERO
+            && pool.is_positive()
         {
-            let matched = remaining.min(*pool);
-            *pool -= matched;
-            remaining -= matched;
+            let matched = remaining.clone().min(pool.clone());
+            pool.subtract(&matched);
+            remaining.subtract(&matched);
             disposal.section_104 = Some(Section104Leg { quantity: matched });
         }
 
         // Post-cascade exhaustiveness errors. Defensive: the pre-cascade
         // check makes these unreachable.
-        if remaining > Decimal::ZERO {
+        if remaining.is_positive() {
             if remaining == trade.quantity {
                 return Err(CgtError::NoPriorAcquisitions {
                     ticker: sell.ticker.clone(),
@@ -269,8 +278,8 @@ impl<'s> Planner<'s> {
                 ticker: sell.ticker.clone(),
                 date: sell.date,
                 attempted: trade.quantity,
-                matched: trade.quantity - remaining,
-                unmatched: remaining,
+                matched: trade.quantity - remaining.decimal()?,
+                unmatched: remaining.decimal()?,
             });
         }
 
@@ -284,14 +293,14 @@ impl<'s> Planner<'s> {
     fn match_bed_and_breakfast(
         &mut self,
         sell: &Event,
-        remaining: &mut Decimal,
+        remaining: &mut Quantity,
         disposal: &mut DisposalPlan,
-    ) {
+    ) -> Result<(), CgtError> {
         let stream = self.stream;
-        let mut cumulative_ratio_effect = Decimal::ONE;
+        let mut cumulative_ratio_effect = Quantity::from(Decimal::ONE);
 
         for event in stream.after(sell.id) {
-            if *remaining <= Decimal::ZERO {
+            if !remaining.is_positive() {
                 break;
             }
             let days_diff = (event.date - sell.date).num_days();
@@ -308,15 +317,20 @@ impl<'s> Planner<'s> {
             }
             match &event.kind {
                 EventKind::Split { ratio } => {
-                    cumulative_ratio_effect *= *ratio;
+                    cumulative_ratio_effect =
+                        cumulative_ratio_effect.multiplied(&Quantity::from(*ratio));
                 }
                 EventKind::Unsplit { ratio } => {
                     if *ratio != Decimal::ZERO {
-                        cumulative_ratio_effect /= *ratio;
+                        cumulative_ratio_effect = cumulative_ratio_effect
+                            .divided(&Quantity::from(*ratio))
+                            .ok_or(CgtError::ArithmeticOverflow {
+                                operation: "split ratio conversion".into(),
+                            })?;
                     }
                 }
                 EventKind::Buy(buy) => {
-                    if cumulative_ratio_effect == Decimal::ZERO {
+                    if cumulative_ratio_effect.is_zero() {
                         // A zero SPLIT ratio leaves nothing to map back to
                         // the sell's scale; validation rejects non-positive
                         // ratios, so this is unreachable for validated
@@ -324,16 +338,22 @@ impl<'s> Planner<'s> {
                         continue;
                     }
                     let available_at_buy_time = self.available_for_bnb(event, buy.quantity);
-                    if available_at_buy_time <= Decimal::ZERO {
+                    if !available_at_buy_time.is_positive() {
                         continue;
                     }
-                    // The operation order is load-bearing for output
-                    // equivalence (rust_decimal is path-dependent): divide
-                    // availability into the sell scale BEFORE the min, then
-                    // multiply back; affects fractional-share rounding.
-                    let available_at_sell_time = available_at_buy_time / cumulative_ratio_effect;
-                    let matched_at_sell = (*remaining).min(available_at_sell_time);
-                    let matched_at_buy = matched_at_sell * cumulative_ratio_effect;
+                    // Keep both share scales exact until the public decimal boundary.
+                    let available_at_sell_time = available_at_buy_time
+                        .divided(&cumulative_ratio_effect)
+                        .ok_or(CgtError::ArithmeticOverflow {
+                            operation: "split ratio conversion".into(),
+                        })?;
+                    let matched_at_sell = remaining.clone().min(available_at_sell_time);
+                    let matched_at_buy = matched_at_sell.multiplied(&cumulative_ratio_effect);
+                    remaining.subtract(&matched_at_sell);
+                    self.bnb_reservations
+                        .entry(event.id)
+                        .or_default()
+                        .add(&matched_at_buy);
 
                     disposal.bed_and_breakfast.push(BnbLeg {
                         buy: event.id,
@@ -341,22 +361,21 @@ impl<'s> Planner<'s> {
                         quantity_at_sell_scale: matched_at_sell,
                         quantity_at_buy_scale: matched_at_buy,
                     });
-                    *remaining -= matched_at_sell;
-                    *self.bnb_reservations.entry(event.id).or_default() += matched_at_buy;
                 }
                 _ => {}
             }
         }
+        Ok(())
     }
 
     /// Quantity of a window buy available to B&B after earlier B&B
     /// reservations and the Same Day shield for the buy's date.
-    fn available_for_bnb(&self, buy_event: &Event, buy_quantity: Decimal) -> Decimal {
+    fn available_for_bnb(&self, buy_event: &Event, buy_quantity: Decimal) -> Quantity {
         let already_reserved = self
             .bnb_reservations
             .get(&buy_event.id)
-            .copied()
-            .unwrap_or(Decimal::ZERO);
+            .cloned()
+            .unwrap_or_default();
         // Same Day priority over B&B (TCGA92/S106A(9), subject to S105(1)): the
         // buy-date's own same-day SELL claims min(same-day sell, same-day buy)
         // of that date's acquisitions before any earlier disposal's B&B can
@@ -369,7 +388,9 @@ impl<'s> Planner<'s> {
         let same_day_sells = sell_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
         let same_day_buys = buy_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
         let shield = same_day_sells.min(same_day_buys);
-        (buy_quantity - already_reserved - shield).max(Decimal::ZERO)
+        let mut available = Quantity::from(buy_quantity - shield);
+        available.subtract(&already_reserved);
+        available.max(Quantity::default())
     }
 }
 
@@ -409,6 +430,7 @@ mod tests {
 
     use super::{MatchPlan, plan};
     use crate::engine::normalize::{EventId, EventKind, EventStream, normalize};
+    use crate::engine::quantity::Quantity;
     use crate::error::CgtError;
     use crate::model::{Operation, Transaction};
     use crate::money::CurrencyAmount;
@@ -463,10 +485,13 @@ mod tests {
         assert_eq!(disposal.sell, sell_id(&stream, "2024-06-01", "ABC"));
         assert!(disposal.same_day.is_none());
         assert_eq!(
-            disposal.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(4))
+            disposal
+                .section_104
+                .as_ref()
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(4)))
         );
-        assert_eq!(disposal.matched_quantity(), dec!(4));
+        assert_eq!(disposal.matched_quantity().ok(), Some(dec!(4)));
         assert!(match_plan.bnb_reservations.is_empty());
     }
 
@@ -480,12 +505,15 @@ mod tests {
         assert_eq!(match_plan.disposals.len(), 1);
         let disposal = &match_plan.disposals[0];
         assert_eq!(
-            disposal.same_day.as_ref().map(|leg| leg.quantity),
-            Some(dec!(5))
+            disposal.same_day.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(5)))
         );
         assert_eq!(
-            disposal.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(3))
+            disposal
+                .section_104
+                .as_ref()
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(3)))
         );
     }
 
@@ -499,8 +527,8 @@ mod tests {
         assert_eq!(match_plan.disposals.len(), 1);
         let disposal = &match_plan.disposals[0];
         assert_eq!(
-            disposal.same_day.as_ref().map(|leg| leg.quantity),
-            Some(dec!(5))
+            disposal.same_day.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(5)))
         );
         assert!(disposal.section_104.is_none());
     }
@@ -568,15 +596,15 @@ mod tests {
             match_plan.disposals[0]
                 .section_104
                 .as_ref()
-                .map(|leg| leg.quantity),
-            Some(dec!(5))
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(5)))
         );
         assert_eq!(
             match_plan.disposals[1]
                 .section_104
                 .as_ref()
-                .map(|leg| leg.quantity),
-            Some(dec!(10))
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(10)))
         );
     }
 
@@ -592,8 +620,8 @@ mod tests {
             match_plan.disposals[0]
                 .section_104
                 .as_ref()
-                .map(|leg| leg.quantity),
-            Some(dec!(5))
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(5)))
         );
     }
 
@@ -610,8 +638,8 @@ mod tests {
             match_plan.disposals[0]
                 .section_104
                 .as_ref()
-                .map(|leg| leg.quantity),
-            Some(dec!(10))
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(10)))
         );
     }
 
@@ -658,13 +686,13 @@ mod tests {
             match_plan
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-07-01", "ACME")),
-            Some(&dec!(100))
+            Some(&Quantity::from(dec!(100)))
         );
         let august = &match_plan.disposals[1];
         assert!(august.bed_and_breakfast.is_empty());
         assert_eq!(
-            august.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(100))
+            august.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(100)))
         );
     }
 
@@ -680,8 +708,11 @@ mod tests {
         let disposal = &match_plan.disposals[0];
         assert!(disposal.bed_and_breakfast.is_empty());
         assert_eq!(
-            disposal.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(100))
+            disposal
+                .section_104
+                .as_ref()
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(100)))
         );
         assert!(match_plan.bnb_reservations.is_empty());
     }
@@ -730,13 +761,13 @@ mod tests {
         assert_eq!(feb1.bed_and_breakfast.len(), 1);
         assert_eq!(feb1.bed_and_breakfast[0].quantity_at_sell_scale, dec!(20));
         assert_eq!(
-            feb1.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(40))
+            feb1.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(40)))
         );
         let feb2 = &match_plan.disposals[1];
         assert_eq!(
-            feb2.same_day.as_ref().map(|leg| leg.quantity),
-            Some(dec!(30))
+            feb2.same_day.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(30)))
         );
         assert!(feb2.bed_and_breakfast.is_empty());
         assert!(feb2.section_104.is_none());
@@ -744,7 +775,7 @@ mod tests {
             match_plan
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-02-02", "SNAP")),
-            Some(&dec!(20))
+            Some(&Quantity::from(dec!(20)))
         );
     }
 
@@ -763,14 +794,14 @@ mod tests {
         let second = &match_plan.disposals[1];
         assert_eq!(second.bed_and_breakfast[0].quantity_at_sell_scale, dec!(10));
         assert_eq!(
-            second.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(20))
+            second.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(20)))
         );
         assert_eq!(
             match_plan
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-02-10", "ABC")),
-            Some(&dec!(40))
+            Some(&Quantity::from(dec!(40)))
         );
     }
 
@@ -798,16 +829,16 @@ mod tests {
         assert_eq!(feb3.bed_and_breakfast.len(), 1);
         assert_eq!(feb3.bed_and_breakfast[0].quantity_at_sell_scale, dec!(15));
         assert_eq!(
-            feb3.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(85))
+            feb3.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(85)))
         );
 
         // The protected same-day SELL claims the full 30 against the Feb10 buy,
         // not the S104 pool (the bug matched it from the pool at average cost).
         let feb10 = &match_plan.disposals[2];
         assert_eq!(
-            feb10.same_day.as_ref().map(|leg| leg.quantity),
-            Some(dec!(30))
+            feb10.same_day.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(30)))
         );
         assert!(feb10.bed_and_breakfast.is_empty());
         assert!(feb10.section_104.is_none());
@@ -816,7 +847,7 @@ mod tests {
             match_plan
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-02-10", "ABC")),
-            Some(&dec!(20))
+            Some(&Quantity::from(dec!(20)))
         );
     }
 
@@ -836,18 +867,18 @@ mod tests {
         let feb1 = &match_plan.disposals[0];
         assert!(feb1.bed_and_breakfast.is_empty());
         assert_eq!(
-            feb1.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(50))
+            feb1.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(50)))
         );
         // Feb10 same-day claims min(sell 30, buy 20) = 20; remaining 10 from S104.
         let feb10 = &match_plan.disposals[1];
         assert_eq!(
-            feb10.same_day.as_ref().map(|leg| leg.quantity),
-            Some(dec!(20))
+            feb10.same_day.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(20)))
         );
         assert_eq!(
-            feb10.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(10))
+            feb10.section_104.as_ref().map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(10)))
         );
     }
 
@@ -867,17 +898,21 @@ mod tests {
         assert_eq!(leg.quantity_at_buy_scale, dec!(8));
         assert_eq!(
             leg.quantity_at_buy_scale,
-            leg.quantity_at_sell_scale * dec!(2)
+            leg.quantity_at_sell_scale
+                .multiplied(&Quantity::from(dec!(2)))
         );
         assert_eq!(
-            disposal.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(6))
+            disposal
+                .section_104
+                .as_ref()
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(6)))
         );
         assert_eq!(
             match_plan
                 .bnb_reservations
                 .get(&buy_id(&stream, "2024-02-20", "ABC")),
-            Some(&dec!(8))
+            Some(&Quantity::from(dec!(8)))
         );
     }
 
@@ -896,8 +931,11 @@ mod tests {
         assert_eq!(leg.quantity_at_sell_scale, dec!(8));
         assert_eq!(leg.quantity_at_buy_scale, dec!(4));
         assert_eq!(
-            disposal.section_104.as_ref().map(|leg| leg.quantity),
-            Some(dec!(2))
+            disposal
+                .section_104
+                .as_ref()
+                .map(|leg| leg.quantity.clone()),
+            Some(Quantity::from(dec!(2)))
         );
     }
 

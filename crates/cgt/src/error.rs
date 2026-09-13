@@ -9,6 +9,9 @@ use crate::money::FxConversionError;
 
 #[derive(Debug, Error)]
 pub enum CgtError {
+    #[error("Arithmetic exceeds the supported decimal range during {operation}")]
+    ArithmeticOverflow { operation: String },
+
     #[error("Parsing error: {0}")]
     ParseError(Box<pest::error::Error<crate::dsl::Rule>>),
 

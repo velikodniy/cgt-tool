@@ -3,6 +3,7 @@
 
 pub(crate) mod normalize;
 pub(crate) mod plan;
+mod quantity;
 pub(crate) mod report;
 pub(crate) mod value;
 

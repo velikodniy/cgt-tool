@@ -4,6 +4,7 @@
 //! QUANTITIES and event structure only; monetary values are pinned by the
 //! golden-file tests.
 
+use super::quantity::Quantity;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -108,14 +109,14 @@ fn same_day_reservation_fixture_plan() {
     assert_eq!(leg.quantity_at_sell_scale, dec!(30));
     assert_eq!(leg.quantity_at_buy_scale, dec!(30));
     assert_eq!(
-        feb1.section_104.as_ref().map(|leg| leg.quantity),
-        Some(dec!(70))
+        feb1.section_104.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(70)))
     );
 
     let feb2 = disposal(&match_plan, &stream, "2024-02-02", "SNAP");
     assert_eq!(
-        feb2.same_day.as_ref().map(|leg| leg.quantity),
-        Some(dec!(50))
+        feb2.same_day.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(50)))
     );
     assert!(feb2.bed_and_breakfast.is_empty());
     assert!(feb2.section_104.is_none());
@@ -124,7 +125,7 @@ fn same_day_reservation_fixture_plan() {
         match_plan
             .bnb_reservations
             .get(&event_id(&stream, "2024-02-02", "SNAP", true)),
-        Some(&dec!(30))
+        Some(&Quantity::from(dec!(30)))
     );
 }
 
@@ -149,15 +150,15 @@ fn future_consumption_fixture_plan() {
     let june = disposal(&match_plan, &stream, "2024-06-01", "ABC");
     assert!(june.bed_and_breakfast.is_empty());
     assert_eq!(
-        june.section_104.as_ref().map(|leg| leg.quantity),
-        Some(dec!(10))
+        june.section_104.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(10)))
     );
 
     assert_eq!(
         match_plan
             .bnb_reservations
             .get(&event_id(&stream, "2024-02-10", "ABC", true)),
-        Some(&dec!(5))
+        Some(&Quantity::from(dec!(5)))
     );
 }
 
@@ -176,14 +177,14 @@ fn bnb_split_fixture_plan_maps_ratio() {
     assert_eq!(leg.quantity_at_sell_scale, dec!(2));
     assert_eq!(leg.quantity_at_buy_scale, dec!(4));
     assert_eq!(
-        feb.section_104.as_ref().map(|leg| leg.quantity),
-        Some(dec!(3))
+        feb.section_104.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(3)))
     );
     assert_eq!(
         match_plan
             .bnb_reservations
             .get(&event_id(&stream, "2024-02-20", "ABC", true)),
-        Some(&dec!(4))
+        Some(&Quantity::from(dec!(4)))
     );
 }
 
@@ -206,8 +207,8 @@ fn bnb_boundary_fixture_plan() {
     let august = disposal(&match_plan, &stream, "2024-08-01", "ACME");
     assert!(august.bed_and_breakfast.is_empty());
     assert_eq!(
-        august.section_104.as_ref().map(|leg| leg.quantity),
-        Some(dec!(100))
+        august.section_104.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(100)))
     );
 }
 
@@ -229,8 +230,8 @@ fn interleaved_same_day_fixture_aggregates_to_single_events() {
     assert!(sell.same_day.is_none());
     assert!(sell.bed_and_breakfast.is_empty());
     assert_eq!(
-        sell.section_104.as_ref().map(|leg| leg.quantity),
-        Some(dec!(20))
+        sell.section_104.as_ref().map(|leg| leg.quantity.clone()),
+        Some(Quantity::from(dec!(20)))
     );
     assert!(match_plan.bnb_reservations.is_empty());
 }
@@ -288,13 +289,12 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
             );
         };
         if let Some(leg) = &disposal.same_day {
-            assert!(leg.quantity > Decimal::ZERO, "{name}: zero same-day leg");
+            assert!(leg.quantity.is_positive(), "{name}: zero same-day leg");
         }
         let mut previous_buy: Option<usize> = None;
         for leg in &disposal.bed_and_breakfast {
             assert!(
-                leg.quantity_at_sell_scale > Decimal::ZERO
-                    && leg.quantity_at_buy_scale > Decimal::ZERO,
+                leg.quantity_at_sell_scale.is_positive() && leg.quantity_at_buy_scale.is_positive(),
                 "{name}: zero B&B leg"
             );
             let buy_event = stream
@@ -324,11 +324,11 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
             previous_buy = Some(leg.buy.index());
         }
         if let Some(leg) = &disposal.section_104 {
-            assert!(leg.quantity > Decimal::ZERO, "{name}: zero S104 leg");
+            assert!(leg.quantity.is_positive(), "{name}: zero S104 leg");
         }
         assert_eq!(
-            disposal.matched_quantity(),
-            sell_trade.quantity,
+            disposal.matched_quantity().ok(),
+            Some(sell_trade.quantity),
             "{name}: disposal on {} not exactly covered by legs",
             sell_event.date
         );
@@ -337,10 +337,13 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
     // Each buy's recorded B&B reservation equals the sum of every disposal
     // leg that draws on that buy, measured at the buy's share scale. Buys with
     // no B&B leg carry no reservation entry.
-    let mut reserved_by_legs: HashMap<EventId, Decimal> = HashMap::new();
+    let mut reserved_by_legs: HashMap<EventId, Quantity> = HashMap::new();
     for disposal in &match_plan.disposals {
         for leg in &disposal.bed_and_breakfast {
-            *reserved_by_legs.entry(leg.buy).or_default() += leg.quantity_at_buy_scale;
+            reserved_by_legs
+                .entry(leg.buy)
+                .or_default()
+                .add(&leg.quantity_at_buy_scale);
         }
     }
     assert_eq!(
@@ -357,7 +360,7 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
     }
 
     // Replay: reservations bounded by buys; day ledger and pool never negative.
-    let mut pools: HashMap<&str, Decimal> = HashMap::new();
+    let mut pools: HashMap<&str, Quantity> = HashMap::new();
     let events = stream.events();
     let mut day_start = 0;
     while day_start < events.len() {
@@ -368,20 +371,22 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
             .count();
         let day = &events[day_start..day_start + day_len];
 
-        let mut available: HashMap<&str, Decimal> = HashMap::new();
+        let mut available: HashMap<&str, Quantity> = HashMap::new();
         for event in day {
             if let EventKind::Buy(trade) = &event.kind {
                 let reserved = match_plan
                     .bnb_reservations
                     .get(&event.id)
-                    .copied()
-                    .unwrap_or(Decimal::ZERO);
+                    .cloned()
+                    .unwrap_or_default();
                 assert!(
-                    reserved >= Decimal::ZERO && reserved <= trade.quantity,
-                    "{name}: B&B reservations ({reserved}) exceed buy ({}) on {day_date}",
+                    reserved >= Quantity::default() && reserved <= trade.quantity,
+                    "{name}: B&B reservations ({reserved:?}) exceed buy ({}) on {day_date}",
                     trade.quantity
                 );
-                available.insert(event.ticker.as_str(), trade.quantity - reserved);
+                let mut quantity = Quantity::from(trade.quantity);
+                quantity.subtract(&reserved);
+                available.insert(event.ticker.as_str(), quantity);
             }
         }
         for event in day {
@@ -399,18 +404,18 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
                         available.get_mut(event.ticker.as_str()).unwrap_or_else(|| {
                             panic!("{name}: same-day leg without same-day buy on {day_date}")
                         });
-                    *day_quantity -= leg.quantity;
+                    day_quantity.subtract(&leg.quantity);
                     assert!(
-                        *day_quantity >= Decimal::ZERO,
+                        *day_quantity >= Quantity::default(),
                         "{name}: day ledger overdrawn for {} on {day_date}",
                         event.ticker
                     );
                 }
                 if let Some(leg) = &disposal.section_104 {
                     let pool = pools.entry(event.ticker.as_str()).or_default();
-                    *pool -= leg.quantity;
+                    pool.subtract(&leg.quantity);
                     assert!(
-                        *pool >= Decimal::ZERO,
+                        *pool >= Quantity::default(),
                         "{name}: pool overdrawn for {} on {day_date}",
                         event.ticker
                     );
@@ -421,21 +426,26 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
             if let EventKind::Buy(_) = &event.kind
                 && let Some(leftover) = available.remove(event.ticker.as_str())
             {
-                *pools.entry(event.ticker.as_str()).or_default() += leftover;
+                pools
+                    .entry(event.ticker.as_str())
+                    .or_default()
+                    .add(&leftover);
             }
         }
         for event in day {
             match &event.kind {
                 EventKind::Split { ratio } => {
                     if let Some(pool) = pools.get_mut(event.ticker.as_str()) {
-                        *pool *= *ratio;
+                        *pool = pool.multiplied(&Quantity::from(*ratio));
                     }
                 }
                 EventKind::Unsplit { ratio } => {
                     if let Some(pool) = pools.get_mut(event.ticker.as_str())
                         && *ratio != Decimal::ZERO
                     {
-                        *pool /= *ratio;
+                        let result = pool.divided(&Quantity::from(*ratio));
+                        assert!(result.is_some());
+                        *pool = result.unwrap_or_default();
                     }
                 }
                 _ => {}
@@ -445,8 +455,8 @@ fn check_conservation(name: &str, stream: &EventStream, match_plan: &MatchPlan) 
     }
     for (ticker, quantity) in pools {
         assert!(
-            quantity >= Decimal::ZERO,
-            "{name}: final pool negative for {ticker}: {quantity}"
+            quantity >= Quantity::default(),
+            "{name}: final pool negative for {ticker}: {quantity:?}"
         );
     }
 }

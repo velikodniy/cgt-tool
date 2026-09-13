@@ -84,6 +84,10 @@ When a disposal has zero total sell amount, no match result is returned and the 
 
 A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisition, so it never enters same-day matching.
 
+The planner stores quantities as exact fractions until it produces public decimal values. Splits preserve exact quantities across the 30-day matching window. The acquisition or disposal that limits a match retains its exact quantity. Repeating fractions cannot consume a same-day reservation or create a false fractional holding.
+
+`SplitThirds.cgt` retains 26 shares. `UnsplitThirds.cgt` retains two shares after its final consolidation.
+
 ### Same-Date Split + Holding Change (Rejected)
 
 A SPLIT or UNSPLIT on the **same date** as a BUY or SELL of the **same ticker** is rejected as ambiguous input. A reorganisation is not a trade, and HMRC defines no intra-day order between a split and a same-date trade that changes the holding; the two readings (the trade applied before vs. after the split) give a materially different holding. ACCUMULATION, CAPRETURN, and DIVIDEND only adjust cost or income (not the share count), so they commute with a split and are not flagged. The user must date the trade explicitly before or after the split.

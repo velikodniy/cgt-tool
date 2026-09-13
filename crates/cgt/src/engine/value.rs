@@ -14,6 +14,7 @@ use rust_decimal::Decimal;
 
 use super::normalize::{Event, EventId, EventKind, EventStream, Trade};
 use super::plan::{DisposalPlan, MatchPlan};
+use super::quantity::Quantity;
 use crate::error::CgtError;
 
 /// HMRC share matching rule for a priced leg.
@@ -62,7 +63,7 @@ pub(crate) struct ValuedReport {
 
 #[derive(Debug, Clone, Default)]
 struct Pool {
-    quantity: Decimal,
+    quantity: Quantity,
     cost: Decimal,
 }
 
@@ -90,7 +91,7 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                 EventKind::Accumulation { total_value, .. } => {
                     // Reinvested distribution raises held cost (TCGA92).
                     match pools.get_mut(&event.ticker) {
-                        Some(pool) if pool.quantity > Decimal::ZERO => {
+                        Some(pool) if pool.quantity.is_positive() => {
                             pool.cost += *total_value;
                         }
                         // Crediting a non-held position: error, don't drop it.
@@ -138,14 +139,18 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                 EventKind::Dividend { .. } => {}
                 EventKind::Split { ratio } => {
                     if let Some(pool) = pools.get_mut(&event.ticker) {
-                        pool.quantity *= *ratio;
+                        pool.quantity = pool.quantity.multiplied(&Quantity::from(*ratio));
                     }
                 }
                 EventKind::Unsplit { ratio } => {
                     if let Some(pool) = pools.get_mut(&event.ticker)
                         && *ratio != Decimal::ZERO
                     {
-                        pool.quantity /= *ratio;
+                        pool.quantity = pool.quantity.divided(&Quantity::from(*ratio)).ok_or(
+                            CgtError::ArithmeticOverflow {
+                                operation: "share consolidation".into(),
+                            },
+                        )?;
                     }
                 }
             }
@@ -154,12 +159,15 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
         // Quantity each ticker's same-day disposals consume on this day, summed
         // in stream order from the day's disposal legs. Computed once per day so
         // the residue loop below is a lookup rather than a full-stream rescan.
-        let mut same_day_consumed: HashMap<&str, Decimal> = HashMap::new();
+        let mut same_day_consumed: HashMap<&str, Quantity> = HashMap::new();
         for event in day {
             if let Some(disposal) = plan_by_sell.get(&event.id)
                 && let Some(leg) = &disposal.same_day
             {
-                *same_day_consumed.entry(event.ticker.as_str()).or_default() += leg.quantity;
+                same_day_consumed
+                    .entry(event.ticker.as_str())
+                    .or_default()
+                    .add(&leg.quantity);
             }
         }
 
@@ -170,20 +178,22 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                 let reserved = plan
                     .bnb_reservations
                     .get(&event.id)
-                    .copied()
-                    .unwrap_or(Decimal::ZERO);
+                    .cloned()
+                    .unwrap_or_default();
                 let consumed = same_day_consumed
                     .get(event.ticker.as_str())
-                    .copied()
-                    .unwrap_or(Decimal::ZERO);
-                let residue = trade.quantity - reserved - consumed;
-                if residue > Decimal::ZERO {
+                    .cloned()
+                    .unwrap_or_default();
+                let mut residue = Quantity::from(trade.quantity);
+                residue.subtract(&reserved);
+                residue.subtract(&consumed);
+                if residue.is_positive() {
                     // Residue cost mirrors the day buy's unit cost (path-
                     // dependent; divide-then-multiply preserved).
                     let unit = day_buy_unit_cost(trade);
                     let pool = pools.entry(event.ticker.clone()).or_default();
-                    pool.quantity += residue;
-                    pool.cost += residue * unit;
+                    pool.quantity.add(&residue);
+                    pool.cost += residue.decimal()? * unit;
                 }
             }
         }
@@ -191,12 +201,14 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
 
     let mut holdings: Vec<Holding> = pools
         .into_iter()
-        .map(|(ticker, pool)| Holding {
-            ticker,
-            quantity: pool.quantity,
-            total_cost: pool.cost,
+        .map(|(ticker, pool)| {
+            Ok(Holding {
+                ticker,
+                quantity: pool.quantity.decimal()?,
+                total_cost: pool.cost,
+            })
         })
-        .collect();
+        .collect::<Result<_, CgtError>>()?;
     holdings.sort_by(|a, b| a.ticker.cmp(&b.ticker));
 
     Ok(ValuedReport {
@@ -263,11 +275,12 @@ fn price_disposal(
                     attempted: sell_qty,
                 })?;
         let unit = day_buy_unit_cost(buy);
-        let cost = leg.quantity * unit;
-        let (gross, net) = proceeds(leg.quantity, sell_qty, sell_price, sell_fees);
+        let quantity = leg.quantity.decimal()?;
+        let cost = quantity * unit;
+        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
         legs.push(PricedLeg {
             rule: LegRule::SameDay,
-            quantity: leg.quantity,
+            quantity,
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
@@ -295,11 +308,12 @@ fn price_disposal(
             });
         };
         let unit = day_buy_unit_cost(buy);
-        let cost = bnb.quantity_at_buy_scale * unit;
-        let (gross, net) = proceeds(bnb.quantity_at_sell_scale, sell_qty, sell_price, sell_fees);
+        let cost = bnb.quantity_at_buy_scale.decimal()? * unit;
+        let quantity = bnb.quantity_at_sell_scale.decimal()?;
+        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
         legs.push(PricedLeg {
             rule: LegRule::BedAndBreakfast,
-            quantity: bnb.quantity_at_sell_scale,
+            quantity,
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
@@ -319,18 +333,19 @@ fn price_disposal(
                     date: sell.date,
                     attempted: sell_qty,
                 })?;
-        let unit = if pool.quantity != Decimal::ZERO {
-            pool.cost / pool.quantity
+        let unit = if !pool.quantity.is_zero() {
+            pool.cost / pool.quantity.decimal()?
         } else {
             Decimal::ZERO
         };
-        let cost = leg.quantity * unit;
-        pool.quantity -= leg.quantity;
+        let quantity = leg.quantity.decimal()?;
+        let cost = quantity * unit;
+        pool.quantity.subtract(&leg.quantity);
         pool.cost -= cost;
-        let (gross, net) = proceeds(leg.quantity, sell_qty, sell_price, sell_fees);
+        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
         legs.push(PricedLeg {
             rule: LegRule::Section104,
-            quantity: leg.quantity,
+            quantity,
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
