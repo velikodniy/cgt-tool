@@ -116,7 +116,7 @@ pub fn format_date(date: NaiveDate) -> String {
 pub fn format_tax_year(start_year: u16) -> String {
     TaxPeriod::new(start_year)
         .map(|period| period.to_string())
-        .unwrap_or_else(|_| format!("{}/{:02}", start_year, (start_year + 1) % 100))
+        .unwrap_or_else(|_| format!("{}/{:02}", start_year, (u32::from(start_year) + 1) % 100))
 }
 
 #[cfg(test)]

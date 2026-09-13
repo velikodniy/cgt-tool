@@ -166,6 +166,8 @@ Per TCGA92/S38 (CG15150, CG15250):
 
 Match values stay precise in the Rust report model. Each disposal rounds its total cost and gain once, after all matches are added. Annual totals sum those rounded disposal totals.
 
+Arithmetic outside the supported decimal range returns an error that names the calculation and its transaction when applicable. This includes trade totals, pool adjustments, foreign exchange, report totals, and derived unit values. A nonzero share quantity that rounds to decimal zero also returns an error. Tax years must fall within 1900 through 2100, and exemptions must be nonnegative. The missing-exemption flag does not suppress an invalid exemption.
+
 Displayed match values use differences between consecutive rounded totals, so their sums equal the disposal totals. Independently rounded proceeds, costs, and gains can differ by one penny. A nonzero `rounding_adjustment` explains that display difference in JSON, plain text, and PDF, without changing the calculated gain.
 
 ---

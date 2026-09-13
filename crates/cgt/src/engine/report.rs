@@ -14,6 +14,7 @@ use crate::config::Config;
 use crate::error::CgtError;
 use crate::format::round_money;
 use crate::model::{TaxPeriod, Transaction};
+use crate::money::checked;
 use crate::report::{Disposal, Holding, MatchLeg, MatchRule, TaxReport, TaxYearSummary};
 
 /// Build the public report from the Phase 2 valuation, the match plan, the
@@ -37,7 +38,7 @@ pub(crate) fn build(
         .disposals
         .iter()
         .zip(plan.disposals.iter())
-        .map(|(priced, planned)| Ok(map_disposal(priced, planned.matched_quantity()?)))
+        .map(|(priced, planned)| map_disposal(priced, planned.matched_quantity()?))
         .collect::<Result<_, CgtError>>()?;
 
     let dividends = aggregate_dividends(stream)?;
@@ -51,12 +52,19 @@ pub(crate) fn build(
     let holdings = valued
         .holdings
         .iter()
-        .map(|holding| Holding {
-            ticker: holding.ticker.clone(),
-            quantity: holding.quantity,
-            total_cost: holding.total_cost,
+        .map(|holding| {
+            check_unit_value(
+                holding.total_cost,
+                holding.quantity,
+                format!("unit cost of the final {} holding", holding.ticker),
+            )?;
+            Ok(Holding {
+                ticker: holding.ticker.clone(),
+                quantity: holding.quantity,
+                total_cost: holding.total_cost,
+            })
         })
-        .collect();
+        .collect::<Result<_, CgtError>>()?;
 
     Ok(TaxReport {
         tax_years,
@@ -68,13 +76,30 @@ pub(crate) fn build(
 
 /// Preserve precise values in the public model. Disposal totals and displayed
 /// match legs apply the shared rounding policy after aggregation.
-fn map_disposal(priced: &PricedDisposal, quantity: Decimal) -> Disposal {
+fn map_disposal(priced: &PricedDisposal, quantity: Decimal) -> Result<Disposal, CgtError> {
+    let context = format!("{} on {}", priced.ticker, priced.date);
     let mut gross_proceeds = Decimal::ZERO;
     let mut proceeds = Decimal::ZERO;
+    let mut cost = Decimal::ZERO;
+    let mut gain = Decimal::ZERO;
     let mut legs = Vec::with_capacity(priced.legs.len());
     for leg in &priced.legs {
-        gross_proceeds += leg.gross_proceeds;
-        proceeds += leg.net_proceeds;
+        gross_proceeds = checked(
+            gross_proceeds.checked_add(leg.gross_proceeds),
+            format!("gross proceeds for {context}"),
+        )?;
+        proceeds = checked(
+            proceeds.checked_add(leg.net_proceeds),
+            format!("net proceeds for {context}"),
+        )?;
+        cost = checked(
+            cost.checked_add(leg.allowable_cost),
+            format!("allowable cost for {context}"),
+        )?;
+        gain = checked(
+            gain.checked_add(leg.gain_or_loss),
+            format!("gain or loss for {context}"),
+        )?;
         legs.push(MatchLeg {
             rule: map_rule(leg.rule),
             quantity: leg.quantity,
@@ -83,14 +108,46 @@ fn map_disposal(priced: &PricedDisposal, quantity: Decimal) -> Disposal {
             acquisition_date: leg.acquisition_date,
         });
     }
-    Disposal {
+    checked(
+        gross_proceeds.checked_sub(proceeds),
+        format!("sale fees for {context}"),
+    )?;
+    let displayed_net = checked(
+        round_money(proceeds).checked_sub(round_money(cost)),
+        format!("displayed net proceeds less cost for {context}"),
+    )?;
+    checked(
+        round_money(gain).checked_sub(displayed_net),
+        format!("rounding adjustment for {context}"),
+    )?;
+    check_unit_value(
+        gross_proceeds,
+        quantity,
+        format!("unit price for {context}"),
+    )?;
+    let disposal = Disposal {
         date: priced.date,
         ticker: priced.ticker.clone(),
         quantity,
         gross_proceeds,
         proceeds,
         legs,
+    };
+    for leg in disposal.display_legs() {
+        check_unit_value(
+            leg.allowable_cost,
+            leg.quantity,
+            format!("displayed match unit cost for {context}"),
+        )?;
     }
+    Ok(disposal)
+}
+
+fn check_unit_value(total: Decimal, quantity: Decimal, operation: String) -> Result<(), CgtError> {
+    if !quantity.is_zero() {
+        checked(total.checked_div(quantity), operation)?;
+    }
+    Ok(())
 }
 
 fn map_rule(rule: LegRule) -> MatchRule {
@@ -121,8 +178,20 @@ fn aggregate_dividends(stream: &EventStream) -> Result<BTreeMap<u16, DividendTot
                 income: Decimal::ZERO,
                 tax_paid: Decimal::ZERO,
             });
-            entry.income += *total_value;
-            entry.tax_paid += *tax_paid;
+            entry.income = checked(
+                entry.income.checked_add(*total_value),
+                format!(
+                    "dividend income for {period} at {} on {}",
+                    event.ticker, event.date
+                ),
+            )?;
+            entry.tax_paid = checked(
+                entry.tax_paid.checked_add(*tax_paid),
+                format!(
+                    "dividend tax for {period} at {} on {}",
+                    event.ticker, event.date
+                ),
+            )?;
         }
     }
     Ok(totals)
@@ -199,20 +268,35 @@ fn summarize(
         // Round the complete disposal before assigning its gain or loss bucket.
         let net = disposal.total_gain();
         if net > Decimal::ZERO {
-            total_gain += net;
+            total_gain = checked(
+                total_gain.checked_add(net),
+                format!("total gains for {period}"),
+            )?;
         } else if net < Decimal::ZERO {
-            total_loss += net.abs();
+            total_loss = checked(
+                total_loss.checked_add(net.abs()),
+                format!("total losses for {period}"),
+            )?;
         }
         // Sum the rounded per-disposal proceeds so the year total foots against
         // the displayed disposal rows.
-        gross_proceeds += round_money(disposal.gross_proceeds);
-        total_allowable_cost += disposal.total_allowable_cost();
+        gross_proceeds = checked(
+            gross_proceeds.checked_add(round_money(disposal.gross_proceeds)),
+            format!("gross proceeds for {period}"),
+        )?;
+        total_allowable_cost = checked(
+            total_allowable_cost.checked_add(disposal.total_allowable_cost()),
+            format!("allowable cost for {period}"),
+        )?;
     }
 
-    let net_gain = total_gain - total_loss;
+    let net_gain = checked(
+        total_gain.checked_sub(total_loss),
+        format!("net gain for {period}"),
+    )?;
     let exempt_amount = match config.get_exemption(period.start_year()) {
         Ok(amount) => amount,
-        Err(_) if config.allow_missing_exemption => {
+        Err(CgtError::UnsupportedExemptionYear(_)) if config.allow_missing_exemption => {
             warnings.push(format!(
                 "{period}: no configured exemption; applying no allowance"
             ));
@@ -220,7 +304,14 @@ fn summarize(
         }
         Err(e) => return Err(e),
     };
-    let taxable_gain = (net_gain - exempt_amount).max(Decimal::ZERO);
+    let taxable_gain = if net_gain > exempt_amount {
+        checked(
+            net_gain.checked_sub(exempt_amount),
+            format!("taxable gain for {period}"),
+        )?
+    } else {
+        Decimal::ZERO
+    };
 
     let dividend = dividends.get(&period.start_year());
     let dividend_income = dividend.map_or(Decimal::ZERO, |d| d.income);

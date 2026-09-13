@@ -42,19 +42,24 @@ impl FxRates {
         currency: Currency,
         date: NaiveDate,
     ) -> Result<Decimal, FxConversionError> {
-        match &self.0 {
-            // `hmrc_rates` accepts a `NaiveDate` directly and divides
-            // `amount / units_per_gbp`, matching HMRC's units-per-GBP figures.
+        let units_per_gbp = match &self.0 {
             Backend::Bundled(rates) => rates
                 .monthly_rate(currency.code(), date)
-                .map(|rate| rate.to_gbp(amount))
-                .map_err(|_| missing_rate(currency, date)),
+                .map(|rate| rate.units_per_gbp())
+                .map_err(|_| missing_rate(currency, date))?,
             #[cfg(test)]
             Backend::Fixed(map) => map
                 .get(&(currency.code().to_string(), date.year(), date.month()))
-                .map(|units_per_gbp| amount / units_per_gbp)
-                .ok_or_else(|| missing_rate(currency, date)),
-        }
+                .copied()
+                .ok_or_else(|| missing_rate(currency, date))?,
+        };
+        amount
+            .checked_div(units_per_gbp)
+            .ok_or_else(|| FxConversionError::ArithmeticOverflow {
+                currency: currency.code().to_string(),
+                year: date.year(),
+                month: date.month(),
+            })
     }
 }
 

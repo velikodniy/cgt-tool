@@ -71,15 +71,30 @@ impl Quantity {
             .ok_or_else(|| CgtError::ArithmeticOverflow {
                 operation: "allocation with zero quantity".into(),
             })?;
-        share.multiplied(&Self::from(amount)).decimal()
+        share.multiplied(&Self::from(amount)).decimal_value()
     }
 
     /// Convert only at a decimal API boundary, using midpoint-away-from-zero.
     pub(crate) fn decimal(&self) -> Result<Decimal, CgtError> {
+        let value = self.decimal_value()?;
+        if value.is_zero() && !self.is_zero() {
+            return Err(CgtError::ArithmeticOverflow {
+                operation: "share quantity below supported decimal precision".into(),
+            });
+        }
+        Ok(value)
+    }
+
+    fn decimal_value(&self) -> Result<Decimal, CgtError> {
         let negative = self.0.is_negative();
         let numerator = self.0.numer().abs();
         let denominator = self.0.denom();
         let max = BigInt::from(Decimal::MAX.mantissa());
+        if numerator > &max * denominator {
+            return Err(CgtError::ArithmeticOverflow {
+                operation: "decimal conversion".into(),
+            });
+        }
         for scale in (0..=28).rev() {
             let scaled = &numerator * BigInt::from(10_u8).pow(scale);
             let mut mantissa = &scaled / denominator;

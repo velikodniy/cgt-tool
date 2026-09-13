@@ -186,14 +186,15 @@ impl<'de> Deserialize<'de> for TaxPeriod {
             .parse()
             .map_err(|_| serde::de::Error::custom(format!("invalid end year: '{}'", parts[1])))?;
 
-        let expected_end = (start + 1) % 100;
+        let period = TaxPeriod::new(start).map_err(serde::de::Error::custom)?;
+        let expected_end = period.end_year() % 100;
         if end_short != expected_end {
             return Err(serde::de::Error::custom(format!(
                 "tax years must be consecutive: '{s}' should end with '{expected_end:02}', not '{end_short:02}'"
             )));
         }
 
-        TaxPeriod::new(start).map_err(serde::de::Error::custom)
+        Ok(period)
     }
 }
 

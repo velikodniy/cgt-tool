@@ -54,6 +54,10 @@ impl Config {
             let year = key
                 .parse::<u16>()
                 .map_err(|_| format!("invalid exemption year key: '{key}'"))?;
+            crate::TaxPeriod::new(year).map_err(|error| error.to_string())?;
+            if value < Decimal::ZERO {
+                return Err(format!("exemption for {year} must not be negative"));
+            }
             exemptions.insert(year, value);
         }
         Ok(Self {
@@ -95,9 +99,17 @@ impl Config {
     /// * `Ok(Decimal)` - The exemption amount for that tax year
     /// * `Err(CgtError::UnsupportedExemptionYear)` - If the year is not in the configuration
     pub fn get_exemption(&self, year: u16) -> Result<Decimal, CgtError> {
-        self.exemptions
+        crate::TaxPeriod::new(year)?;
+        let amount = self
+            .exemptions
             .get(&year)
             .copied()
-            .ok_or(CgtError::UnsupportedExemptionYear(year))
+            .ok_or(CgtError::UnsupportedExemptionYear(year))?;
+        if amount < Decimal::ZERO {
+            return Err(CgtError::ConfigError(format!(
+                "exemption for {year} must not be negative"
+            )));
+        }
+        Ok(amount)
     }
 }

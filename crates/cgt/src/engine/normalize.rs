@@ -11,7 +11,7 @@ use rust_decimal::Decimal;
 
 use crate::error::CgtError;
 use crate::model::{Operation, Transaction};
-use crate::money::{CurrencyAmount, FxRates};
+use crate::money::{CurrencyAmount, FxRates, checked};
 
 /// Position of an event in its [`EventStream`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -125,7 +125,8 @@ pub(crate) fn normalize(
             Ok(RawEvent {
                 date: tx.date,
                 ticker: tx.ticker.clone(),
-                kind: kind_to_gbp(&tx.operation, tx.date, fx_rates)?,
+                kind: kind_to_gbp(&tx.operation, tx.date, fx_rates)
+                    .map_err(|error| error.at_transaction(&tx.ticker, tx.date))?,
             })
         })
         .collect::<Result<Vec<_>, CgtError>>()?;
@@ -135,7 +136,7 @@ pub(crate) fn normalize(
 
     let mut events = Vec::new();
     for day in raw.chunk_by(|a, b| a.date == b.date) {
-        push_day(&mut events, day);
+        push_day(&mut events, day)?;
     }
 
     Ok(EventStream { events })
@@ -155,7 +156,10 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Buy(Trade {
             quantity: *amount,
-            gross: *amount * amount_to_gbp(price, date, fx_rates)?,
+            gross: checked(
+                amount.checked_mul(amount_to_gbp(price, date, fx_rates)?),
+                "trade gross total",
+            )?,
             fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Sell {
@@ -164,7 +168,10 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Sell(Trade {
             quantity: *amount,
-            gross: *amount * amount_to_gbp(price, date, fx_rates)?,
+            gross: checked(
+                amount.checked_mul(amount_to_gbp(price, date, fx_rates)?),
+                "trade gross total",
+            )?,
             fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Dividend {
@@ -217,9 +224,9 @@ fn amount_to_gbp(
 }
 
 /// Aggregate one day's raw events and append them in canonical order.
-fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) {
+fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) -> Result<(), CgtError> {
     let Some(first) = day.first() else {
-        return;
+        return Ok(());
     };
     let date = first.date;
 
@@ -230,8 +237,10 @@ fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) {
 
     for event in day {
         match &event.kind {
-            EventKind::Buy(trade) => merge_into(&mut buys, &event.ticker, trade),
-            EventKind::Sell(trade) => merge_into(&mut sells, &event.ticker, trade),
+            EventKind::Buy(trade) => merge_into(&mut buys, &event.ticker, trade)
+                .map_err(|error| error.at_transaction(&event.ticker, date))?,
+            EventKind::Sell(trade) => merge_into(&mut sells, &event.ticker, trade)
+                .map_err(|error| error.at_transaction(&event.ticker, date))?,
             EventKind::Split { .. } | EventKind::Unsplit { .. } => {
                 trailing.push((event.ticker.clone(), event.kind.clone()));
             }
@@ -258,6 +267,7 @@ fn push_day(events: &mut Vec<Event>, day: &[RawEvent]) {
     for (ticker, kind) in trailing {
         push_event(events, date, ticker, kind);
     }
+    Ok(())
 }
 
 /// Canonical same-day order for value events (lower applies first).
@@ -271,21 +281,33 @@ fn value_event_rank(kind: &EventKind) -> u8 {
 }
 
 /// Fold a trade into its ticker's bucket, preserving first-occurrence order.
-fn merge_into(side: &mut Vec<(String, Trade)>, ticker: &str, trade: &Trade) {
+fn merge_into(
+    side: &mut Vec<(String, Trade)>,
+    ticker: &str,
+    trade: &Trade,
+) -> Result<(), CgtError> {
     match side
         .iter_mut()
         .find(|(existing, _)| existing.as_str() == ticker)
     {
-        Some((_, existing)) => merge_trades(existing, trade),
+        Some((_, existing)) => merge_trades(existing, trade)?,
         None => side.push((ticker.to_string(), trade.clone())),
     }
+    Ok(())
 }
 
 /// Aggregate exact monetary totals without an intermediate unit price.
-fn merge_trades(current: &mut Trade, next: &Trade) {
-    current.gross += next.gross;
-    current.quantity += next.quantity;
-    current.fees += next.fees;
+fn merge_trades(current: &mut Trade, next: &Trade) -> Result<(), CgtError> {
+    current.gross = checked(
+        current.gross.checked_add(next.gross),
+        "same-day gross total",
+    )?;
+    current.quantity = checked(
+        current.quantity.checked_add(next.quantity),
+        "same-day quantity total",
+    )?;
+    current.fees = checked(current.fees.checked_add(next.fees), "same-day fee total")?;
+    Ok(())
 }
 
 fn push_event(events: &mut Vec<Event>, date: NaiveDate, ticker: String, kind: EventKind) {

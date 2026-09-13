@@ -112,6 +112,17 @@ pub enum CgtError {
     Validation(ValidationErrors),
 }
 
+impl CgtError {
+    pub(crate) fn at_transaction(self, ticker: &str, date: NaiveDate) -> Self {
+        match self {
+            Self::ArithmeticOverflow { operation } => Self::ArithmeticOverflow {
+                operation: format!("{operation} for {ticker} on {date}"),
+            },
+            error => error,
+        }
+    }
+}
+
 /// One or more input validation errors, rendered one per line.
 #[derive(Debug)]
 pub struct ValidationErrors(pub Vec<crate::validate::ValidationError>);
@@ -147,6 +158,13 @@ impl From<FxConversionError> for CgtError {
                 currency,
                 year,
                 month,
+            },
+            FxConversionError::ArithmeticOverflow {
+                currency,
+                year,
+                month,
+            } => CgtError::ArithmeticOverflow {
+                operation: format!("{currency} conversion in {year}-{month:02}"),
             },
         }
     }

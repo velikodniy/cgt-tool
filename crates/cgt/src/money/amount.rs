@@ -11,6 +11,14 @@ use thiserror::Error;
 /// Error during FX conversion to GBP.
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum FxConversionError {
+    #[error(
+        "FX conversion for {currency} in {year}-{month:02} exceeds the supported decimal range"
+    )]
+    ArithmeticOverflow {
+        currency: String,
+        year: i32,
+        month: u32,
+    },
     #[error("Missing FX rate for {currency} in {year}-{month:02}")]
     MissingRate {
         currency: String,

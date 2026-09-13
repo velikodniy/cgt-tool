@@ -16,6 +16,7 @@ use super::normalize::{Event, EventId, EventKind, EventStream, Trade};
 use super::plan::{DisposalPlan, MatchPlan};
 use super::quantity::Quantity;
 use crate::error::CgtError;
+use crate::money::checked;
 
 /// HMRC share matching rule for a priced leg.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +77,7 @@ impl Pool {
             quantity.proportion_of(&self.quantity, self.cost)?
         };
         self.quantity.subtract(quantity);
-        self.cost -= cost;
+        self.cost = checked(self.cost.checked_sub(cost), "cost allocation")?;
         Ok(cost)
     }
 }
@@ -95,18 +96,24 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
         .iter()
         .filter_map(|event| {
             if let EventKind::Buy(trade) = &event.kind {
-                Some((
-                    event.id,
-                    Pool {
-                        quantity: Quantity::from(trade.quantity),
-                        cost: trade.gross + trade.fees,
-                    },
-                ))
+                Some(
+                    checked(trade.gross.checked_add(trade.fees), "acquisition cost")
+                        .map_err(|error| error.at_transaction(&event.ticker, event.date))
+                        .map(|cost| {
+                            (
+                                event.id,
+                                Pool {
+                                    quantity: Quantity::from(trade.quantity),
+                                    cost,
+                                },
+                            )
+                        }),
+                )
             } else {
                 None
             }
         })
-        .collect();
+        .collect::<Result<_, CgtError>>()?;
     // First-seen ticker order is irrelevant: holdings are sorted by ticker on
     // output, and every ticker that ever pooled is reported (including drained
     // pools at quantity zero).
@@ -123,7 +130,11 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                     // Reinvested distribution raises held cost (TCGA92).
                     match pools.get_mut(&event.ticker) {
                         Some(pool) if pool.quantity.is_positive() => {
-                            pool.cost += *total_value;
+                            pool.cost =
+                                checked(pool.cost.checked_add(*total_value), "accumulation basis")
+                                    .map_err(|error| {
+                                        error.at_transaction(&event.ticker, event.date)
+                                    })?;
                         }
                         // Crediting a non-held position: error, don't drop it.
                         _ if *total_value > Decimal::ZERO => {
@@ -141,7 +152,8 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                     // Exceeds-basis must error at any quantity, even against a
                     // drained or never-held holding (CG57847); read basis via
                     // get so a never-held ticker errors without a phantom pool.
-                    let net = *total_value - *fees;
+                    let net = checked(total_value.checked_sub(*fees), "capital return net amount")
+                        .map_err(|error| error.at_transaction(&event.ticker, event.date))?;
                     let basis = pools
                         .get(&event.ticker)
                         .map_or(Decimal::ZERO, |pool| pool.cost);
@@ -154,7 +166,8 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                         });
                     }
                     if let Some(pool) = pools.get_mut(&event.ticker) {
-                        pool.cost -= net; // TCGA92/S122(2)
+                        pool.cost = checked(pool.cost.checked_sub(net), "capital return basis")
+                            .map_err(|error| error.at_transaction(&event.ticker, event.date))?; // TCGA92/S122(2)
                     }
                 }
                 EventKind::Buy(_) => {
@@ -169,7 +182,8 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                             &mut pools,
                             &mut buy_costs,
                             &day_buys,
-                        )?;
+                        )
+                        .map_err(|error| error.at_transaction(&event.ticker, event.date))?;
                         disposals.push(priced);
                     }
                 }
@@ -202,7 +216,11 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
             {
                 let pool = pools.entry(event.ticker.clone()).or_default();
                 pool.quantity.add(&residue.quantity);
-                pool.cost += residue.cost;
+                pool.cost = checked(
+                    pool.cost.checked_add(residue.cost),
+                    "pooled acquisition cost",
+                )
+                .map_err(|error| error.at_transaction(&event.ticker, event.date))?;
             }
         }
     }
@@ -232,7 +250,13 @@ fn proceeds(
     fees: &mut Pool,
 ) -> Result<(Decimal, Decimal), CgtError> {
     let gross = gross.take(quantity)?;
-    Ok((gross, gross - fees.take(quantity)?))
+    Ok((
+        gross,
+        checked(
+            gross.checked_sub(fees.take(quantity)?),
+            "net disposal proceeds",
+        )?,
+    ))
 }
 
 /// Price every leg of one disposal. The plan's leg quantities drive pricing;
@@ -283,7 +307,7 @@ fn price_disposal(
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
-            gain_or_loss: net - cost,
+            gain_or_loss: checked(net.checked_sub(cost), "disposal gain or loss")?,
             acquisition_date: Some(sell.date),
         });
     }
@@ -312,7 +336,7 @@ fn price_disposal(
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
-            gain_or_loss: net - cost,
+            gain_or_loss: checked(net.checked_sub(cost), "disposal gain or loss")?,
             acquisition_date: Some(bnb.acquisition_date),
         });
     }
@@ -336,7 +360,7 @@ fn price_disposal(
             allowable_cost: cost,
             gross_proceeds: gross,
             net_proceeds: net,
-            gain_or_loss: net - cost,
+            gain_or_loss: checked(net.checked_sub(cost), "disposal gain or loss")?,
             acquisition_date: None,
         });
     }
