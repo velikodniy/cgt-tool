@@ -63,89 +63,11 @@
   str(start-year) + "/" + pad2(end-short)
 }
 
-#let fmt-fixed(value, digits: 2) = {
-  let rounded = calc.round(value, digits: digits)
-  if digits == 0 {
-    str(rounded)
-  } else {
-    let text = str(rounded)
-    if text.contains(".") {
-      let parts = text.split(".")
-      let int = parts.at(0)
-      let frac = parts.at(1, default: "")
-      let frac-fixed = if frac.len() < digits {
-        frac + ("0" * (digits - frac.len()))
-      } else if frac.len() > digits {
-        frac.slice(0, digits)
-      } else {
-        frac
-      }
-      int + "." + frac-fixed
-    } else {
-      text + "." + ("0" * digits)
-    }
-  }
-}
-
-#let trim-zeros(text) = {
-  if text.contains(".") {
-    let parts = text.split(".")
-    let frac = parts.at(1, default: "")
-    let trimmed = frac.trim("0", at: end)
-    if trimmed.len() == 0 {
-      parts.at(0)
-    } else {
-      parts.at(0) + "." + trimmed
-    }
-  } else {
-    text
-  }
-}
-
-#let fmt-qty(value) = trim-zeros(fmt-fixed(value, digits: 6))
-
-#let group-int(text) = {
-  let len = text.len()
-  if len <= 3 {
-    text
-  } else {
-    let head = calc.rem(len, 3)
-    let start = if head == 0 { 3 } else { head }
-    let parts = (text.slice(0, start),)
-    for i in range(start, len, step: 3) {
-      parts.push(text.slice(i, i + 3))
-    }
-    parts.join(",")
-  }
-}
-
-#let fmt-money(value) = {
-  let sign = if value < 0 { sym.minus } else { "" }
-  let abs = calc.abs(value)
-  let fixed = fmt-fixed(abs, digits: 2)
-  let parts = fixed.split(".")
-  let int = group-int(parts.at(0))
-  let frac = parts.at(1, default: "00")
-  sign + "£" + int + "." + frac
-}
-
-#let fmt-currency(amount, code) = if code == "GBP" {
-  fmt-money(amount)
-} else {
-  let sign = if amount < 0 { sym.minus } else { "" }
-  let abs = calc.abs(amount)
-  let fixed = fmt-fixed(abs, digits: 2)
-  let parts = fixed.split(".")
-  let int = group-int(parts.at(0))
-  let frac = parts.at(1, default: "00")
-  sign + code + " " + int + "." + frac
-}
-
-#let gain-label(value) = if value >= 0 { "GAIN" } else { "LOSS" }
-#let gain-color(value) = if value >= 0 { gain-green } else { loss-red }
+#let gain-label(is-gain) = if is-gain { "GAIN" } else { "LOSS" }
+#let gain-color(is-gain) = if is-gain { gain-green } else { loss-red }
 
 #let match-text(item) = {
-  let qty = fmt-qty(item.quantity)
+  let qty = item.quantity
   if item.rule == "SAME_DAY" {
     "Same Day: " + qty + " shares"
   } else if item.rule == "BED_AND_BREAKFAST" {
@@ -155,7 +77,7 @@
       "B&B: " + qty + " shares"
     }
   } else {
-    "Section 104: " + qty + " shares @ " + fmt-money(item.unit_cost)
+    "Section 104: " + qty + " shares @ " + item.unit_cost
   }
 }
 
@@ -210,12 +132,12 @@
     .map(row => (
       fmt-tax-year(row.start_year),
       str(row.disposal_count),
-      fmt-money(row.net_gain),
-      fmt-money(row.total_gain),
-      fmt-money(row.total_loss),
-      fmt-money(row.gross_proceeds),
-      fmt-money(row.exemption),
-      fmt-money(row.taxable),
+      row.net_gain,
+      row.total_gain,
+      row.total_loss,
+      row.gross_proceeds,
+      row.exemption,
+      row.taxable,
     ))
     .flatten()
 )
@@ -241,8 +163,8 @@
   ] else [
     #for (i, disposal) in year.disposals.enumerate() [
       #let is-last = i == year.disposals.len() - 1
-      #let result-color = gain-color(disposal.total_gain)
-      #let gain-text = gain-label(disposal.total_gain)
+      #let result-color = gain-color(disposal.is_gain)
+      #let gain-text = gain-label(disposal.is_gain)
 
       #box(
         stroke: none,
@@ -255,12 +177,12 @@
           [
             #text(weight: "bold")[#(i + 1). #disposal.ticker]
             #h(0.6em)
-            #text(fill: text-muted)[#fmt-qty(disposal.quantity) shares]
+            #text(fill: text-muted)[#disposal.quantity shares]
             #h(1em)
             #text(fill: text-muted)[Sold #fmt-date(disposal.date)]
           ],
           [
-            #text(weight: "bold", fill: result-color)[#gain-text #fmt-money(calc.abs(disposal.total_gain))]
+            #text(weight: "bold", fill: result-color)[#gain-text #disposal.gain_magnitude]
           ]
         )
         #v(0.25em)
@@ -294,13 +216,13 @@
               columns: (auto, auto),
               gutter: 0.3em,
               align: (right, right),
-              [Gross Proceeds:], [#fmt-qty(disposal.quantity) #sym.times #fmt-money(disposal.unit_price) = #fmt-money(disposal.gross_proceeds)],
-              ..if disposal.fees > 0 {
-                ([Net Proceeds:], [#fmt-money(disposal.gross_proceeds) #sym.minus #fmt-money(disposal.fees) = #fmt-money(disposal.proceeds)])
+              [Gross Proceeds:], [#disposal.quantity #sym.times #disposal.unit_price = #disposal.gross_proceeds],
+              ..if disposal.has_fees {
+                ([Net Proceeds:], [#disposal.gross_proceeds #sym.minus #disposal.fees = #disposal.proceeds])
               } else { () },
-              [Cost:], [#fmt-money(disposal.total_cost)],
+              [Cost:], [#disposal.total_cost],
               line(length: 100%, stroke: 0.35pt + border-color), line(length: 100%, stroke: 0.35pt + border-color),
-              [*Result:*], [#text(weight: "bold", fill: result-color)[#fmt-money(disposal.total_gain)]]
+              [*Result:*], [#text(weight: "bold", fill: result-color)[#disposal.total_gain]]
             )
           ]
         )
@@ -332,8 +254,8 @@
     ..data.holdings_rows
       .map(row => (
         row.ticker,
-        fmt-qty(row.quantity),
-        fmt-money(row.avg_cost),
+        row.quantity,
+        row.avg_cost,
       ))
       .flatten()
   )
@@ -359,9 +281,9 @@
         fmt-date(row.date),
         row.type,
         row.ticker,
-        fmt-qty(row.quantity),
-        fmt-currency(row.price.amount, row.price.currency),
-        fmt-currency(row.fees.amount, row.fees.currency),
+        row.quantity,
+        row.price,
+        row.fees,
       ))
       .flatten()
   )
@@ -385,11 +307,11 @@
         fmt-date(row.date),
         row.type,
         row.ticker,
-        if row.amount == none { "-" } else { fmt-qty(row.amount) },
+        if row.amount == none { "-" } else { row.amount },
         if row.value == none {
           "-"
         } else {
-          fmt-currency(row.value.amount, row.value.currency)
+          row.value
         },
       ))
       .flatten()

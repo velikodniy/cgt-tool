@@ -4,14 +4,14 @@
 //! installation. Depends only on the engine crate so non-PDF builds never pull
 //! in Typst.
 
-use cgt::format::round_money;
+use cgt::format::{format_currency_amount, format_decimal_trimmed, format_gbp, format_price};
 use cgt::model::{CurrencyAmount, Operation, Transaction};
 use cgt::report::{Disposal, MatchRule, TaxReport};
 use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
-use rust_decimal::prelude::ToPrimitive;
 use thiserror::Error;
 use typst::foundations::{Dict, IntoValue, Value};
+use typst::layout::PagedDocument;
 use typst_as_lib::TypstEngine;
 
 static TEMPLATE: &str = include_str!("templates/report.typ");
@@ -22,8 +22,8 @@ static ROBOTO_BOLD: &[u8] = include_bytes!("../fonts/Roboto-Bold.ttf");
 
 #[derive(Debug, Error)]
 pub enum PdfError {
-    #[error("PDF generation failed: failed to convert Decimal to float")]
-    DecimalToFloat,
+    #[error("PDF generation failed: unit value exceeds the supported range")]
+    UnitValueOverflow,
 
     #[error("PDF generation failed: Typst compilation failed: {0}")]
     TypstCompilation(String),
@@ -32,28 +32,28 @@ pub enum PdfError {
     PdfExport(String),
 }
 
-fn decimal_to_f64(value: Decimal) -> Result<f64, PdfError> {
-    value.to_f64().ok_or(PdfError::DecimalToFloat)
-}
-
 fn decimal_to_value(value: Decimal) -> Result<Value, PdfError> {
-    Ok(decimal_to_f64(value)?.into_value())
+    Ok(format_decimal_trimmed(value).into_value())
 }
 
-/// Money fields are rounded to 2dp in exact Decimal first, so the PDF matches
-/// the plain/JSON output instead of drifting through the f64 round-trip.
+/// Format money before passing it to Typst so no value passes through f64.
 fn money_to_value(value: Decimal) -> Result<Value, PdfError> {
-    decimal_to_value(round_money(value))
+    Ok(format_gbp(value).into_value())
+}
+
+fn unit_amount(total: Decimal, quantity: Decimal) -> Result<Decimal, PdfError> {
+    if quantity.is_zero() {
+        Ok(Decimal::ZERO)
+    } else {
+        total
+            .checked_div(quantity)
+            .ok_or(PdfError::UnitValueOverflow)
+    }
 }
 
 /// Per-share value `total / quantity`, rounded as money (0 when quantity is 0).
 fn unit_value(total: Decimal, quantity: Decimal) -> Result<Value, PdfError> {
-    let unit = if quantity.is_zero() {
-        Decimal::ZERO
-    } else {
-        total / quantity
-    };
-    money_to_value(unit)
+    money_to_value(unit_amount(total, quantity)?)
 }
 
 fn date_dict(date: NaiveDate) -> Dict {
@@ -71,12 +71,8 @@ fn optional_date_value(date: Option<NaiveDate>) -> Value {
     }
 }
 
-// CurrencyAmount exposes a public `amount` field and an inherent `code()` method.
 fn currency_amount_value(amount: &CurrencyAmount) -> Result<Value, PdfError> {
-    let mut dict = Dict::new();
-    dict.insert("amount".into(), decimal_to_value(amount.amount)?);
-    dict.insert("currency".into(), amount.code().to_string().into_value());
-    Ok(dict.into_value())
+    Ok(format_currency_amount(amount).into_value())
 }
 
 fn match_rule_label(rule: &MatchRule) -> &'static str {
@@ -207,8 +203,8 @@ fn build_transaction_rows(transactions: &[Transaction]) -> Result<(bool, Vec<Val
         row.insert("type".into(), op_type.into_value());
         row.insert("ticker".into(), transaction.ticker.clone().into_value());
         row.insert("quantity".into(), decimal_to_value(amount)?);
-        row.insert("price".into(), currency_amount_value(price)?);
-        row.insert("fees".into(), currency_amount_value(fees)?);
+        row.insert("price".into(), format_price(price).into_value());
+        row.insert("fees".into(), format_price(fees).into_value());
         rows.push((transaction.date, transaction.ticker.clone(), row));
     }
 
@@ -287,11 +283,20 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     );
     dict.insert("proceeds".into(), money_to_value(disposal.proceeds)?);
     dict.insert("total_gain".into(), money_to_value(total_gain)?);
+    dict.insert("gain_magnitude".into(), money_to_value(total_gain.abs())?);
+    dict.insert("is_gain".into(), (total_gain >= Decimal::ZERO).into_value());
     dict.insert("total_cost".into(), money_to_value(total_cost)?);
-    // Derived display figures, divided and rounded in exact Decimal.
     dict.insert(
         "unit_price".into(),
-        unit_value(disposal.gross_proceeds, disposal.quantity)?,
+        format!(
+            "£{}",
+            format_decimal_trimmed(unit_amount(disposal.gross_proceeds, disposal.quantity)?)
+        )
+        .into_value(),
+    );
+    dict.insert(
+        "has_fees".into(),
+        (disposal.gross_proceeds > disposal.proceeds).into_value(),
     );
     dict.insert(
         "fees".into(),
@@ -325,9 +330,17 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
 /// Render a PDF report from calculated tax data.
 ///
 /// # Errors
-/// Returns [`PdfError`] if a decimal cannot be converted, or if Typst
+/// Returns [`PdfError`] if a unit value exceeds the supported range, or if Typst
 /// compilation or PDF export fails.
 pub fn render(report: &TaxReport) -> Result<Vec<u8>, PdfError> {
+    let doc = compile(report)?;
+    let pdf = typst_pdf::pdf(&doc, &typst_pdf::PdfOptions::default())
+        .map_err(|e| PdfError::PdfExport(format!("{e:?}")))?;
+
+    Ok(pdf)
+}
+
+fn compile(report: &TaxReport) -> Result<PagedDocument, PdfError> {
     let data = build_template_data(report)?;
 
     let engine = TypstEngine::builder()
@@ -336,21 +349,71 @@ pub fn render(report: &TaxReport) -> Result<Vec<u8>, PdfError> {
         .build();
 
     let compiled = engine.compile_with_input(data);
-    let doc = compiled
+    compiled
         .output
-        .map_err(|e| PdfError::TypstCompilation(e.to_string()))?;
-
-    let pdf = typst_pdf::pdf(&doc, &typst_pdf::PdfOptions::default())
-        .map_err(|e| PdfError::PdfExport(format!("{e:?}")))?;
-
-    Ok(pdf)
+        .map_err(|e| PdfError::TypstCompilation(e.to_string()))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::render;
+    use super::{compile, render};
     use cgt::{Config, calculate};
     use std::path::{Path, PathBuf};
+    use typst::layout::{Frame, FrameItem};
+
+    fn append_frame_text(frame: &Frame, text: &mut String) {
+        for (_, item) in frame.items() {
+            match item {
+                FrameItem::Text(item) => {
+                    text.push_str(&item.text);
+                    text.push(' ');
+                }
+                FrameItem::Group(item) => append_frame_text(&item.frame, text),
+                _ => {}
+            }
+        }
+    }
+
+    fn rendered_text(dsl: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let transactions = cgt::dsl::parse(dsl)?;
+        let config = Config::embedded()?;
+        let report = calculate(&transactions, None, None, &config)?;
+        let document = compile(&report)?;
+        let mut text = String::new();
+        for page in &document.pages {
+            append_frame_text(&page.frame, &mut text);
+        }
+        Ok(text.split_whitespace().collect::<Vec<_>>().join(" "))
+    }
+
+    #[test]
+    fn rendered_quantities_and_unit_prices_keep_their_precision()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let text = rendered_text(
+            "2024-01-01 BUY TINY 0.0000001 @ 10000000\n\
+             2024-06-01 SELL TINY 0.0000001 @ 20000000\n\
+             2024-01-01 BUY UNIT 100 @ 1.001\n\
+             2024-06-01 SELL UNIT 100 @ 1.005\n",
+        )?;
+        assert!(text.contains("0.0000001 shares"), "{text}");
+        assert!(text.contains("100 × £1.005 = £100.50"), "{text}");
+        assert!(text.contains("£1.001"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_money_keeps_pennies_above_float_precision() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let text = rendered_text(
+            "2024-01-01 BUY LARGE 1 @ 9007199254740992.01\n\
+             2024-06-01 SELL LARGE 1 @ 9007199254740992.99\n\
+             2024-06-01 DIVIDEND LARGE TOTAL 1.005\n",
+        )?;
+        assert!(text.contains("£9,007,199,254,740,992.99"), "{text}");
+        assert!(text.contains("£0.98"), "{text}");
+        assert!(text.contains("£1.01"), "{text}");
+        Ok(())
+    }
 
     fn fixture(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
