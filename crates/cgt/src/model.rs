@@ -30,7 +30,6 @@ fn deserialize_operation_value(
     normalize_operation_action(&mut value)?;
     let operation: Operation<CurrencyAmount> =
         serde_json::from_value(value).map_err(|e| format!("invalid transaction: {e}"))?;
-    validate_operation(&operation)?;
     Ok(operation)
 }
 
@@ -46,42 +45,6 @@ fn normalize_operation_action(value: &mut serde_json::Value) -> Result<(), Strin
         other => other.to_string(),
     };
     *action = serde_json::Value::String(normalized);
-    Ok(())
-}
-
-fn validate_operation(operation: &Operation<CurrencyAmount>) -> Result<(), String> {
-    match operation {
-        Operation::Buy { amount, .. } => validate_positive(*amount, "amount", "BUY"),
-        Operation::Sell { amount, .. } => validate_positive(*amount, "amount", "SELL"),
-        Operation::Dividend { .. } => Ok(()),
-        Operation::Accumulation { amount, .. } if amount.is_zero() => Ok(()),
-        Operation::Accumulation { amount, .. } => {
-            validate_positive(*amount, "amount", "ACCUMULATION")
-        }
-        Operation::CapReturn { amount, .. } => validate_positive(*amount, "amount", "CAPRETURN"),
-        Operation::Split { ratio } => validate_positive_ratio(*ratio, "SPLIT"),
-        Operation::Unsplit { ratio } => validate_positive_ratio(*ratio, "UNSPLIT"),
-    }
-}
-
-/// Validate that an amount is positive.
-fn validate_positive(amount: Decimal, field: &str, action: &str) -> Result<(), String> {
-    if amount <= Decimal::ZERO {
-        return Err(format!(
-            "{action} action: '{field}' must be positive (got {amount}). \
-             Negative amounts are not supported."
-        ));
-    }
-    Ok(())
-}
-
-/// Validate that a ratio is positive.
-fn validate_positive_ratio(ratio: Decimal, action: &str) -> Result<(), String> {
-    if ratio <= Decimal::ZERO {
-        return Err(format!(
-            "{action} action: 'ratio' must be positive (got {ratio})"
-        ));
-    }
     Ok(())
 }
 
@@ -249,12 +212,19 @@ impl<'de> Deserialize<'de> for Transaction {
         let operation: Operation<CurrencyAmount> =
             deserialize_operation_value(raw.operation).map_err(serde::de::Error::custom)?;
 
-        Ok(Transaction {
+        let transaction = Transaction {
             date: raw.date,
             ticker: raw.ticker.to_uppercase(),
             operation,
             line: None,
-        })
+        };
+        if let Some(error) = crate::validate::transaction_errors(&transaction)
+            .into_iter()
+            .next()
+        {
+            return Err(serde::de::Error::custom(error));
+        }
+        Ok(transaction)
     }
 }
 

@@ -3,8 +3,7 @@
 //! This module provides pre-calculation validation to catch invalid inputs
 //! before processing, providing clear error messages.
 
-use crate::model::{Operation, Transaction};
-use crate::money::CurrencyAmount;
+use crate::model::{Operation, Transaction, is_valid_ticker};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::Serialize;
@@ -109,285 +108,133 @@ impl fmt::Display for ValidationWarning {
     }
 }
 
-/// Fields for a trade-like operation (Buy, Sell, CapReturn) to be validated.
-struct TradeFields<'a> {
-    action: &'a str,
-    amount: Decimal,
-    price: &'a CurrencyAmount,
-    price_label: &'a str,
-    fees: &'a CurrencyAmount,
-}
-
-/// Check quantity, price, and fees fields common to Buy, Sell, and CapReturn.
-fn check_trade_fields(
-    result: &mut ValidationResult,
-    line: Option<usize>,
-    date: NaiveDate,
-    ticker: &str,
-    fields: &TradeFields<'_>,
-) {
-    if fields.amount == Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!("{} with zero quantity", fields.action),
-        });
-    }
-
-    if fields.amount < Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!(
-                "{} with negative quantity: {}",
-                fields.action, fields.amount
-            ),
-        });
-    }
-
-    if fields.price.amount < Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!(
-                "{} with negative {}: {}",
-                fields.action, fields.price_label, fields.price.amount
-            ),
-        });
-    }
-
-    if fields.fees.amount < Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!(
-                "{} with negative fees: {}",
-                fields.action, fields.fees.amount
-            ),
-        });
+fn nonnegative(errors: &mut Vec<String>, action: &str, field: &str, value: Decimal) {
+    if value < Decimal::ZERO {
+        errors.push(format!("{action} with negative {field}: {value}"));
     }
 }
 
-/// Check that a SPLIT/UNSPLIT ratio is strictly positive.
-fn check_ratio(
-    result: &mut ValidationResult,
-    line: Option<usize>,
-    date: NaiveDate,
-    ticker: &str,
-    label: &str,
-    ratio: Decimal,
-) {
-    if ratio == Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!("{label} with zero ratio"),
-        });
+fn positive(errors: &mut Vec<String>, action: &str, field: &str, value: Decimal) {
+    if value.is_zero() {
+        errors.push(format!("{action} with zero {field}"));
     }
-
-    if ratio < Decimal::ZERO {
-        result.errors.push(ValidationError {
-            line,
-            date,
-            ticker: ticker.to_string(),
-            message: format!("{label} with negative ratio: {ratio}"),
-        });
-    }
+    nonnegative(errors, action, field, value);
 }
 
-/// Validate a list of transactions before calculation.
-///
-/// Checks for:
-/// - Zero-quantity transactions
-/// - Negative prices and expenses
-/// - Zero/negative split ratios
-/// - Sells before any buys (warning)
-///
-/// # Arguments
-/// * `transactions` - The transactions to validate
-///
-/// # Returns
-/// A `ValidationResult` containing any errors and warnings found.
+/// Validate one transaction without applying rules that depend on other records.
+pub(crate) fn transaction_errors(transaction: &Transaction) -> Vec<ValidationError> {
+    let mut errors = Vec::new();
+    if !is_valid_ticker(&transaction.ticker) {
+        errors.push("Invalid ticker symbol".to_string());
+    }
+    match &transaction.operation {
+        Operation::Buy {
+            amount,
+            price,
+            fees,
+        }
+        | Operation::Sell {
+            amount,
+            price,
+            fees,
+        } => {
+            let action = if matches!(transaction.operation, Operation::Buy { .. }) {
+                "BUY"
+            } else {
+                "SELL"
+            };
+            positive(&mut errors, action, "quantity", *amount);
+            nonnegative(&mut errors, action, "price", price.amount);
+            nonnegative(&mut errors, action, "fees", fees.amount);
+        }
+        Operation::Dividend {
+            total_value,
+            tax_paid,
+        } => {
+            nonnegative(&mut errors, "DIVIDEND", "total value", total_value.amount);
+            nonnegative(&mut errors, "DIVIDEND", "tax", tax_paid.amount);
+        }
+        Operation::Accumulation {
+            amount,
+            total_value,
+            tax_paid,
+        } => {
+            // Zero quantity remains a no-op. Negative fields are invalid.
+            nonnegative(&mut errors, "ACCUMULATION", "quantity", *amount);
+            nonnegative(
+                &mut errors,
+                "ACCUMULATION",
+                "total value",
+                total_value.amount,
+            );
+            nonnegative(&mut errors, "ACCUMULATION", "tax", tax_paid.amount);
+        }
+        Operation::CapReturn {
+            amount,
+            total_value,
+            fees,
+        } => {
+            positive(&mut errors, "CAPRETURN", "quantity", *amount);
+            nonnegative(&mut errors, "CAPRETURN", "total value", total_value.amount);
+            nonnegative(&mut errors, "CAPRETURN", "fees", fees.amount);
+        }
+        Operation::Split { ratio } => positive(&mut errors, "SPLIT", "ratio", *ratio),
+        Operation::Unsplit { ratio } => {
+            positive(&mut errors, "UNSPLIT", "ratio", *ratio);
+            if *ratio > Decimal::ZERO && !ratio.fract().is_zero() {
+                errors.push(format!("UNSPLIT with non-integer ratio: {ratio}"));
+            }
+        }
+    }
+    errors
+        .into_iter()
+        .map(|message| ValidationError {
+            line: transaction.line,
+            date: transaction.date,
+            ticker: transaction.ticker.clone(),
+            message,
+        })
+        .collect()
+}
+
+/// Validate transaction fields, cross-record conflicts, and sale history.
+/// Errors prevent calculation. Warnings retain the source location.
 pub fn validate(transactions: &[Transaction]) -> ValidationResult {
     let mut result = ValidationResult::default();
-
-    // Earliest BUY date per ticker over ALL transactions, so a SELL listed
-    // before its chronologically-earlier BUY is not falsely flagged.
     let mut first_buy: HashMap<&str, NaiveDate> = HashMap::new();
-    for tx in transactions {
-        if matches!(tx.operation, Operation::Buy { .. }) {
+    for transaction in transactions {
+        if matches!(transaction.operation, Operation::Buy { .. }) {
             first_buy
-                .entry(tx.ticker.as_str())
-                .and_modify(|d| {
-                    if tx.date < *d {
-                        *d = tx.date;
-                    }
-                })
-                .or_insert(tx.date);
+                .entry(transaction.ticker.as_str())
+                .and_modify(|date| *date = (*date).min(transaction.date))
+                .or_insert(transaction.date);
         }
     }
-
-    for tx in transactions {
-        let line = tx.line;
-
-        match &tx.operation {
-            Operation::Buy {
-                amount,
-                price,
-                fees,
-            } => {
-                check_trade_fields(
-                    &mut result,
-                    line,
-                    tx.date,
-                    &tx.ticker,
-                    &TradeFields {
-                        action: "BUY",
-                        amount: *amount,
-                        price,
-                        price_label: "price",
-                        fees,
-                    },
-                );
-            }
-
-            Operation::Sell {
-                amount,
-                price,
-                fees,
-            } => {
-                check_trade_fields(
-                    &mut result,
-                    line,
-                    tx.date,
-                    &tx.ticker,
-                    &TradeFields {
-                        action: "SELL",
-                        amount: *amount,
-                        price,
-                        price_label: "price",
-                        fees,
-                    },
-                );
-
-                // Check for sell before buy (warning)
-                if let Some(&first_buy_date) = first_buy.get(tx.ticker.as_str()) {
-                    if tx.date < first_buy_date {
-                        result.warnings.push(ValidationWarning {
-                            line,
-                            date: tx.date,
-                            ticker: tx.ticker.clone(),
-                            message: format!(
-                                "SELL before first BUY (first buy: {})",
-                                first_buy_date
-                            ),
-                        });
-                    }
-                } else {
-                    result.warnings.push(ValidationWarning {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: "SELL with no prior BUY for this ticker".to_string(),
-                    });
-                }
-            }
-
-            Operation::Split { ratio } => {
-                check_ratio(&mut result, line, tx.date, &tx.ticker, "SPLIT", *ratio);
-            }
-
-            Operation::Unsplit { ratio } => {
-                check_ratio(&mut result, line, tx.date, &tx.ticker, "UNSPLIT", *ratio);
-                // A consolidation by a fractional ratio is meaningless.
-                if *ratio > Decimal::ZERO && ratio.fract() != Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("UNSPLIT with non-integer ratio: {ratio}"),
-                    });
-                }
-            }
-
-            Operation::Dividend { total_value, .. } => {
-                if total_value.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!(
-                            "DIVIDEND with negative total value: {}",
-                            total_value.amount
-                        ),
-                    });
-                }
-            }
-
-            Operation::Accumulation {
-                amount,
-                total_value,
-                ..
-            } => {
-                // A zero-quantity accumulation is a no-op: no units accrue, so
-                // it neither matches nor adjusts a pool. Only a negative
-                // quantity is invalid.
-                if *amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!("ACCUMULATION with negative quantity: {}", amount),
-                    });
-                }
-
-                if total_value.amount < Decimal::ZERO {
-                    result.errors.push(ValidationError {
-                        line,
-                        date: tx.date,
-                        ticker: tx.ticker.clone(),
-                        message: format!(
-                            "ACCUMULATION with negative total value: {}",
-                            total_value.amount
-                        ),
-                    });
-                }
-            }
-
-            Operation::CapReturn {
-                amount,
-                total_value,
-                fees,
-            } => {
-                check_trade_fields(
-                    &mut result,
-                    line,
-                    tx.date,
-                    &tx.ticker,
-                    &TradeFields {
-                        action: "CAPRETURN",
-                        amount: *amount,
-                        price: total_value,
-                        price_label: "total value",
-                        fees,
-                    },
-                );
+    for transaction in transactions {
+        result.errors.extend(transaction_errors(transaction));
+        if matches!(transaction.operation, Operation::Sell { .. }) {
+            let message = match first_buy.get(transaction.ticker.as_str()) {
+                Some(first_buy_date) if transaction.date < *first_buy_date => Some(format!(
+                    "SELL before first BUY (first buy: {first_buy_date})"
+                )),
+                None => Some("SELL with no prior BUY for this ticker".to_string()),
+                Some(_) => None,
+            };
+            if let Some(message) = message {
+                result.warnings.push(ValidationWarning {
+                    line: transaction.line,
+                    date: transaction.date,
+                    ticker: transaction.ticker.clone(),
+                    message,
+                });
             }
         }
     }
-
     check_reorganisation_collisions(&mut result, transactions);
-
     result
 }
 
-/// Reject a SPLIT/UNSPLIT on the same date as a holding-changing event (BUY,
-/// SELL, or ACCUMULATION) of the same ticker.
+/// Reject a SPLIT/UNSPLIT on the same date as a BUY or SELL of the same ticker.
 ///
 /// A split is a reorganisation of share capital (TCGA92/S127): not a disposal
 /// or acquisition, so it has no defined intra-day order against a same-date
