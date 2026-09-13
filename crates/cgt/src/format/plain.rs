@@ -310,11 +310,13 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
     );
 
     if sell_fees > Decimal::ZERO {
+        // Allocate display pennies so gross proceeds minus fees equals net proceeds.
+        let displayed_fees = round_money(disposal.gross_proceeds) - round_money(disposal.proceeds);
         let _ = writeln!(
             out,
             "   Net Proceeds: {} - {} fees = {}",
             format_gbp(disposal.gross_proceeds),
-            format_gbp(sell_fees),
+            format_gbp(displayed_fees),
             format_gbp(disposal.proceeds)
         );
     }

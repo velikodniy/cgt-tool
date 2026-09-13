@@ -35,7 +35,8 @@
     {
       "ticker": "FUND",
       "quantity": "9",
-      "total_cost": "90"
+      "total_cost": "90",
+      "average_cost": "10"
     }
   ],
   "transactions": [

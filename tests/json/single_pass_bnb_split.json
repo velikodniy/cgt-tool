@@ -42,7 +42,8 @@
     {
       "ticker": "ABC",
       "quantity": "14",
-      "total_cost": "700.00"
+      "total_cost": "700.00",
+      "average_cost": "50.00"
     }
   ],
   "transactions": [

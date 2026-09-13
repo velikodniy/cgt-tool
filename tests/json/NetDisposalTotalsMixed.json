@@ -88,17 +88,20 @@
     {
       "ticker": "MIX",
       "quantity": "100",
-      "total_cost": "900"
+      "total_cost": "900",
+      "average_cost": "9"
     },
     {
       "ticker": "POOL",
       "quantity": "70",
-      "total_cost": "350"
+      "total_cost": "350",
+      "average_cost": "5"
     },
     {
       "ticker": "ZERO",
       "quantity": "100",
-      "total_cost": "1000"
+      "total_cost": "1000",
+      "average_cost": "10"
     }
   ],
   "transactions": [

@@ -35,7 +35,8 @@
     {
       "ticker": "GB00B41YBW71",
       "quantity": "10",
-      "total_cost": "82.17"
+      "total_cost": "82.17",
+      "average_cost": "8.216666666666666666666666667"
     }
   ],
   "transactions": [

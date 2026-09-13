@@ -703,17 +703,20 @@
     {
       "ticker": "ACME",
       "quantity": "8362",
-      "total_cost": "258579.93"
+      "total_cost": "258579.93",
+      "average_cost": "30.923215562612306444978600515"
     },
     {
       "ticker": "BETA",
       "quantity": "175",
-      "total_cost": "4432.56"
+      "total_cost": "4432.56",
+      "average_cost": "25.328934843649187721187814114"
     },
     {
       "ticker": "GAMA",
       "quantity": "700",
-      "total_cost": "4298.93"
+      "total_cost": "4298.93",
+      "average_cost": "6.1413352272727272727272727274"
     }
   ],
   "transactions": [

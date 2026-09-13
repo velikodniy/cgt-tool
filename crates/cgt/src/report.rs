@@ -19,9 +19,8 @@ where
     serializer.serialize_str(&round_money(*value).to_string())
 }
 
-/// Serialize a quantity [`Decimal`] as its exact string. Quantities are not
-/// rounded; share counts are exact.
-fn serialize_quantity<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
+/// Serialize an exact decimal string for quantities and unit values.
+fn serialize_decimal<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -42,7 +41,7 @@ pub enum MatchRule {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MatchLeg {
     pub rule: MatchRule,
-    #[serde(serialize_with = "serialize_quantity")]
+    #[serde(serialize_with = "serialize_decimal")]
     pub quantity: Decimal,
     #[serde(serialize_with = "serialize_money")]
     pub allowable_cost: Decimal,
@@ -58,7 +57,7 @@ struct MoneyField(#[serde(serialize_with = "serialize_money")] Decimal);
 
 #[derive(Serialize)]
 #[serde(transparent)]
-struct QuantityField(#[serde(serialize_with = "serialize_quantity")] Decimal);
+struct ExactDecimal(#[serde(serialize_with = "serialize_decimal")] Decimal);
 
 /// One disposal: all legs for a single merged sell event.
 #[derive(Debug, Clone, PartialEq)]
@@ -125,7 +124,7 @@ impl Serialize for Disposal {
         let mut disposal = serializer.serialize_struct("Disposal", fields)?;
         disposal.serialize_field("date", &self.date)?;
         disposal.serialize_field("ticker", &self.ticker)?;
-        disposal.serialize_field("quantity", &QuantityField(self.quantity))?;
+        disposal.serialize_field("quantity", &ExactDecimal(self.quantity))?;
         disposal.serialize_field("gross_proceeds", &MoneyField(self.gross_proceeds))?;
         disposal.serialize_field("proceeds", &MoneyField(self.proceeds))?;
         // The legs are emitted under `matches` (the equivalence harness reads
@@ -139,13 +138,34 @@ impl Serialize for Disposal {
 }
 
 /// Final Section 104 pool state for a ticker after the whole replay.
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Holding {
     pub ticker: String,
-    #[serde(serialize_with = "serialize_quantity")]
     pub quantity: Decimal,
-    #[serde(serialize_with = "serialize_money")]
     pub total_cost: Decimal,
+}
+
+impl Serialize for Holding {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let average_cost = if self.quantity.is_zero() {
+            Decimal::ZERO
+        } else {
+            self.total_cost.checked_div(self.quantity).ok_or_else(|| {
+                <S::Error as serde::ser::Error>::custom(
+                    "Holding average cost exceeds decimal range",
+                )
+            })?
+        };
+        let mut holding = serializer.serialize_struct("Holding", 4)?;
+        holding.serialize_field("ticker", &self.ticker)?;
+        holding.serialize_field("quantity", &ExactDecimal(self.quantity))?;
+        holding.serialize_field("total_cost", &MoneyField(self.total_cost))?;
+        holding.serialize_field("average_cost", &ExactDecimal(average_cost))?;
+        holding.end()
+    }
 }
 
 /// Per-tax-year summary of disposals and dividend income.

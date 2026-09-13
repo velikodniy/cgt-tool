@@ -43,7 +43,7 @@ Notes:
 1) SELL 25 AAPL on 01/05/2023 - GAIN £533.48
    Section 104: 25 shares @ £116.49
    Gross Proceeds: 25 × £138.15261044176706827309236948 = £3,453.82
-   Net Proceeds: £3,453.82 - £8.03 fees = £3,445.78
+   Net Proceeds: £3,453.82 - £8.04 fees = £3,445.78
    Cost: £2,912.30
    Result: £533.48
 
@@ -58,7 +58,7 @@ Notes:
 3) SELL 20 AAPL on 10/07/2023 - LOSS £43.20
    B&B: 20 shares from 25/07/2023
    Gross Proceeds: 20 × £149.23028589381087024819352812 = £2,984.61
-   Net Proceeds: £2,984.61 - £7.85 fees = £2,976.75
+   Net Proceeds: £2,984.61 - £7.86 fees = £2,976.75
    Cost: £3,019.95
    Result: -£43.20
 
@@ -72,7 +72,7 @@ Notes:
 5) SELL 30 MSFT on 10/01/2024 - GAIN £1,493.42
    Section 104: 30 shares @ £246.38
    Gross Proceeds: 30 × £296.41925539483044818591415697 = £8,892.58
-   Net Proceeds: £8,892.58 - £7.90 fees = £8,884.67
+   Net Proceeds: £8,892.58 - £7.91 fees = £8,884.67
    Cost: £7,391.25
    Result: £1,493.42
 

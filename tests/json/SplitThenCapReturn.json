@@ -35,7 +35,8 @@
     {
       "ticker": "SPL",
       "quantity": "120",
-      "total_cost": "543"
+      "total_cost": "543",
+      "average_cost": "4.525"
     }
   ],
   "transactions": [

@@ -43,7 +43,8 @@
     {
       "ticker": "FOO",
       "quantity": "40",
-      "total_cost": "200"
+      "total_cost": "200",
+      "average_cost": "5"
     }
   ],
   "transactions": [

@@ -1,0 +1,27 @@
+{
+  "tax_years": [],
+  "holdings": [
+    {
+      "ticker": "FRACTION",
+      "quantity": "0.1",
+      "total_cost": "10.00",
+      "average_cost": "100.005"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "FRACTION",
+      "action": "BUY",
+      "amount": "0.1",
+      "price": {
+        "amount": "100.005",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    }
+  ]
+}

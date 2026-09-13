@@ -50,7 +50,8 @@
     {
       "ticker": "ABC",
       "quantity": "2",
-      "total_cost": "0.03"
+      "total_cost": "0.03",
+      "average_cost": "0.015"
     }
   ],
   "transactions": [

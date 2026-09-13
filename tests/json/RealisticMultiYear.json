@@ -282,22 +282,26 @@
     {
       "ticker": "AAPL",
       "quantity": "75",
-      "total_cost": "10146.47"
+      "total_cost": "10146.47",
+      "average_cost": "135.28628407229430147887570787"
     },
     {
       "ticker": "GB00B41YBW71",
       "quantity": "50",
-      "total_cost": "630.00"
+      "total_cost": "630.00",
+      "average_cost": "12.60"
     },
     {
       "ticker": "GOOGL",
       "quantity": "115",
-      "total_cost": "23706.81"
+      "total_cost": "23706.81",
+      "average_cost": "206.14618426558673217215217643"
     },
     {
       "ticker": "MSFT",
       "quantity": "55",
-      "total_cost": "15112.47"
+      "total_cost": "15112.47",
+      "average_cost": "274.7721695029226964954668288"
     }
   ],
   "transactions": [

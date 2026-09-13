@@ -34,7 +34,7 @@ Notes:
 3) SELL 235 ACME on 15/11/2020 - LOSS £26.86
    Same Day: 235 shares
    Gross Proceeds: 235 × £24.196611714654713970979260047 = £5,686.20
-   Net Proceeds: £5,686.20 - £0.08 fees = £5,686.13
+   Net Proceeds: £5,686.20 - £0.07 fees = £5,686.13
    Cost: £5,712.98
    Rounding adjustment: -£0.01
    Result: -£26.86
@@ -81,7 +81,7 @@ Notes:
 5) SELL 494 ACME on 15/11/2021 - LOSS £35.90
    Same Day: 494 shares
    Gross Proceeds: 494 × £36.120159247195077813970322113 = £17,843.36
-   Net Proceeds: £17,843.36 - £0.14 fees = £17,843.21
+   Net Proceeds: £17,843.36 - £0.15 fees = £17,843.21
    Cost: £17,879.12
    Rounding adjustment: £0.01
    Result: -£35.90
@@ -89,7 +89,7 @@ Notes:
 6) SELL 329 ACME on 15/02/2022 - LOSS £24.24
    Same Day: 329 shares
    Gross Proceeds: 329 × £35.145645315136840560569374128 = £11,562.92
-   Net Proceeds: £11,562.92 - £0.10 fees = £11,562.81
+   Net Proceeds: £11,562.92 - £0.11 fees = £11,562.81
    Cost: £11,587.06
    Rounding adjustment: £0.01
    Result: -£24.24
@@ -97,7 +97,7 @@ Notes:
 7) SELL 100 BETA on 05/04/2022 - GAIN £69.38
    B&B: 100 shares from 06/04/2022
    Gross Proceeds: 100 × £26.491068725401150469270360279 = £2,649.11
-   Net Proceeds: £2,649.11 - £3.78 fees = £2,645.32
+   Net Proceeds: £2,649.11 - £3.79 fees = £2,645.32
    Cost: £2,575.94
    Result: £69.38
 
@@ -107,7 +107,7 @@ Notes:
 1) SELL 376 ACME on 15/05/2022 - LOSS £28.94
    Same Day: 376 shares
    Gross Proceeds: 376 × £32.112201103617412630288166769 = £12,074.19
-   Net Proceeds: £12,074.19 - £0.12 fees = £12,074.06
+   Net Proceeds: £12,074.19 - £0.13 fees = £12,074.06
    Cost: £12,103.00
    Result: -£28.94
 
@@ -150,7 +150,7 @@ Notes:
 7) SELL 423 ACME on 15/02/2023 - LOSS £34.28
    Same Day: 423 shares
    Gross Proceeds: 423 × £24.128469980632666236281471917 = £10,206.34
-   Net Proceeds: £10,206.34 - £0.15 fees = £10,206.20
+   Net Proceeds: £10,206.34 - £0.14 fees = £10,206.20
    Cost: £10,240.48
    Result: -£34.28
 
@@ -188,7 +188,7 @@ Notes:
 5) SELL 100 ACME on 02/09/2023 - LOSS £186.20
    Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £26.284538041326894149315176946 = £2,628.45
-   Net Proceeds: £2,628.45 - £3.96 fees = £2,624.50
+   Net Proceeds: £2,628.45 - £3.95 fees = £2,624.50
    Cost: £2,810.70
    Result: -£186.20
 
@@ -202,7 +202,7 @@ Notes:
 7) SELL 100 ACME on 04/09/2023 - LOSS £162.45
    Section 104: 100 shares @ £28.11
    Gross Proceeds: 100 × £26.522048927242498614519832159 = £2,652.20
-   Net Proceeds: £2,652.20 - £3.96 fees = £2,648.25
+   Net Proceeds: £2,652.20 - £3.95 fees = £2,648.25
    Cost: £2,810.70
    Result: -£162.45
 
@@ -230,7 +230,7 @@ Notes:
 11) SELL 100 BETA on 10/01/2024 - GAIN £83.06
    B&B: 100 shares from 09/02/2024
    Gross Proceeds: 100 × £39.522567385977393091455220931 = £3,952.26
-   Net Proceeds: £3,952.26 - £3.95 fees = £3,948.30
+   Net Proceeds: £3,952.26 - £3.96 fees = £3,948.30
    Cost: £3,865.25
    Rounding adjustment: £0.01
    Result: £83.06
@@ -238,7 +238,7 @@ Notes:
 12) SELL 517 ACME on 15/02/2024 - LOSS £40.91
    Same Day: 517 shares
    Gross Proceeds: 517 × £31.442080378250591016548463358 = £16,255.56
-   Net Proceeds: £16,255.56 - £0.17 fees = £16,255.38
+   Net Proceeds: £16,255.56 - £0.18 fees = £16,255.38
    Cost: £16,296.30
    Rounding adjustment: £0.01
    Result: -£40.91

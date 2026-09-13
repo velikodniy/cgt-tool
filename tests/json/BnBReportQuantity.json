@@ -42,7 +42,8 @@
     {
       "ticker": "PARTBNB",
       "quantity": "30",
-      "total_cost": "303"
+      "total_cost": "303",
+      "average_cost": "10.10"
     }
   ],
   "transactions": [

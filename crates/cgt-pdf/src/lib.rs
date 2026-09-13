@@ -322,7 +322,10 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     );
     dict.insert(
         "fees".into(),
-        money_to_value(disposal.gross_proceeds - disposal.proceeds)?,
+        money_to_value(
+            cgt::format::round_money(disposal.gross_proceeds)
+                - cgt::format::round_money(disposal.proceeds),
+        )?,
     );
 
     let matches: Vec<Value> = disposal
@@ -465,6 +468,19 @@ mod tests {
         let text = rendered_text("2024-06-01 DIVIDEND A TOTAL 0 TAX 1\n")?;
         assert!(text.contains("Dividend income 2024/25: £0.00"), "{text}");
         assert!(text.contains("tax paid: £1.00"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_sale_fees_reconcile_displayed_proceeds() -> Result<(), Box<dyn std::error::Error>> {
+        let text = rendered_text(
+            "2024-01-01 BUY FEE 1 @ 0.5\n\
+             2024-06-01 SELL FEE 1 @ 1.004 FEES 0.005\n",
+        )?;
+        assert!(
+            text.contains("Net Proceeds: £1.00 − £0.00 = £1.00"),
+            "{text}"
+        );
         Ok(())
     }
 

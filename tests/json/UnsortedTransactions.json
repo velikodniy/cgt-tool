@@ -35,7 +35,8 @@
     {
       "ticker": "AAPL",
       "quantity": "5",
-      "total_cost": "466.67"
+      "total_cost": "466.67",
+      "average_cost": "93.33333333333333333333333334"
     }
   ],
   "transactions": [
