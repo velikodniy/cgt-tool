@@ -1,0 +1,5 @@
+# Zero-quantity accumulation leaves the purchase cost and income unchanged.
+# The sale costs £10 and gains £10. Nine shares retain £90 of cost.
+2024-01-01 BUY FUND 10 @ 10
+2024-06-01 ACCUMULATION FUND 0 TOTAL 20 TAX 3
+2024-09-01 SELL FUND 1 @ 20

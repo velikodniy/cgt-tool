@@ -117,6 +117,9 @@ pub(crate) fn normalize(
 ) -> Result<EventStream, CgtError> {
     let mut raw = transactions
         .iter()
+        .filter(|tx| {
+            !matches!(&tx.operation, Operation::Accumulation { amount, .. } if amount.is_zero())
+        })
         .map(|tx| {
             Ok(RawEvent {
                 date: tx.date,

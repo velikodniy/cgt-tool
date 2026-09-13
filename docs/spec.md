@@ -102,6 +102,8 @@ Same-date value events on one ticker apply in a fixed canonical order — CAPRET
 
 Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN. A non-zero accumulation to a fully-disposed or never-held holding fails (no basis to credit).
 
+A zero-quantity ACCUMULATION has no effect on cost, income, or tax paid. It needs no holding or exchange rate. DSL and JSON inputs accept this no-op consistently.
+
 ### Cash Dividends (DIVIDEND)
 
 Records ordinary cash dividend income. Does not affect Section 104 cost basis. Dividend income and tax paid are aggregated per tax year and reported in the summary.

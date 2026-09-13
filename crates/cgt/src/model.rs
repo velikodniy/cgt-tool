@@ -41,6 +41,7 @@ fn validate_operation(operation: &Operation<CurrencyAmount>) -> Result<(), Strin
         Operation::Buy { amount, .. } => validate_positive(*amount, "amount", "BUY"),
         Operation::Sell { amount, .. } => validate_positive(*amount, "amount", "SELL"),
         Operation::Dividend { .. } => Ok(()),
+        Operation::Accumulation { amount, .. } if amount.is_zero() => Ok(()),
         Operation::Accumulation { amount, .. } => {
             validate_positive(*amount, "amount", "ACCUMULATION")
         }

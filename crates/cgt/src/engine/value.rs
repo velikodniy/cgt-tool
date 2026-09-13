@@ -86,6 +86,7 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
         let mut day_buys: HashMap<&str, &Trade> = HashMap::new();
         for event in day {
             match &event.kind {
+                EventKind::Accumulation { quantity, .. } if quantity.is_zero() => {}
                 EventKind::Accumulation { total_value, .. } => {
                     // Reinvested distribution raises held cost (TCGA92).
                     match pools.get_mut(&event.ticker) {
