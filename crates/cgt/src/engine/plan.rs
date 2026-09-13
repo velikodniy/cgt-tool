@@ -325,7 +325,7 @@ impl<'s> Planner<'s> {
         let stream = self.stream;
         let mut cumulative_ratio_effect = Quantity::from(Decimal::ONE);
 
-        for event in stream.after(sell.id) {
+        for event in stream.after_for_ticker(sell) {
             if !remaining.is_positive() {
                 break;
             }
@@ -337,9 +337,6 @@ impl<'s> Planner<'s> {
             if days_diff > BNB_WINDOW_DAYS {
                 // Date-sorted stream: nothing later can be in the window.
                 break;
-            }
-            if event.ticker != sell.ticker {
-                continue;
             }
             match &event.kind {
                 EventKind::Split { ratio } => {
@@ -411,41 +408,11 @@ impl<'s> Planner<'s> {
         // min() also caps the reservation at the quantity actually acquired
         // (docs/spec.md: a same-day sell exceeding the acquisition reserves only
         // what was bought).
-        let same_day_sells = sell_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
-        let same_day_buys = buy_quantity_on(self.stream, buy_event.date, &buy_event.ticker);
-        let shield = same_day_sells.min(same_day_buys);
+        let shield = self.stream.same_day_sold(buy_event).min(buy_quantity);
         let mut available = Quantity::from(buy_quantity - shield);
         available.subtract(&already_reserved);
         available.max(Quantity::default())
     }
-}
-
-/// Total sell quantity for (date, ticker) — the Same Day claim that shields
-/// that date's buys from B&B.
-fn sell_quantity_on(stream: &EventStream, date: chrono::NaiveDate, ticker: &str) -> Decimal {
-    stream
-        .events()
-        .iter()
-        .filter(|event| event.date == date && event.ticker == ticker)
-        .filter_map(|event| match &event.kind {
-            EventKind::Sell(trade) => Some(trade.quantity),
-            _ => None,
-        })
-        .sum()
-}
-
-/// Total buy quantity for (date, ticker) — the same-day acquisitions the Same
-/// Day shield is capped at.
-fn buy_quantity_on(stream: &EventStream, date: chrono::NaiveDate, ticker: &str) -> Decimal {
-    stream
-        .events()
-        .iter()
-        .filter(|event| event.date == date && event.ticker == ticker)
-        .filter_map(|event| match &event.kind {
-            EventKind::Buy(trade) => Some(trade.quantity),
-            _ => None,
-        })
-        .sum()
 }
 
 #[cfg(test)]

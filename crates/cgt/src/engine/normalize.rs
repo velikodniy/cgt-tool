@@ -6,6 +6,8 @@
 //! single acquisition and a single disposal (CG51560), and the holding
 //! check downstream applies to the merged day total.
 
+use std::collections::HashMap;
+
 use chrono::{Datelike, NaiveDate};
 use rust_decimal::Decimal;
 
@@ -19,7 +21,7 @@ pub(crate) struct EventId(usize);
 
 impl EventId {
     /// Index into the stream's event list. Only the tests inspect raw
-    /// positions; the engine addresses events through `after`/`get`.
+    /// positions; the engine addresses events through the stream's indexes.
     #[cfg(test)]
     pub(crate) fn index(self) -> usize {
         self.0
@@ -86,20 +88,62 @@ pub(crate) struct Event {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct EventStream {
     events: Vec<Event>,
+    events_by_ticker: HashMap<String, Vec<EventId>>,
+    day_sells: HashMap<NaiveDate, HashMap<String, Decimal>>,
 }
 
 impl EventStream {
+    fn new(events: Vec<Event>) -> Self {
+        let mut events_by_ticker: HashMap<String, Vec<EventId>> = HashMap::new();
+        let mut day_sells: HashMap<NaiveDate, HashMap<String, Decimal>> = HashMap::new();
+        for event in &events {
+            events_by_ticker
+                .entry(event.ticker.clone())
+                .or_default()
+                .push(event.id);
+            if let EventKind::Sell(trade) = &event.kind {
+                // Normalization emits one sell per date and ticker.
+                day_sells
+                    .entry(event.date)
+                    .or_default()
+                    .insert(event.ticker.clone(), trade.quantity);
+            }
+        }
+        Self {
+            events,
+            events_by_ticker,
+            day_sells,
+        }
+    }
+
     pub(crate) fn events(&self) -> &[Event] {
         &self.events
     }
 
-    /// Events strictly after `id`, in stream order.
-    pub(crate) fn after(&self, id: EventId) -> &[Event] {
-        self.events.get(id.0 + 1..).unwrap_or_default()
+    /// Later events for the same ticker, preserving corporate-action order.
+    pub(crate) fn after_for_ticker<'a>(
+        &'a self,
+        event: &Event,
+    ) -> impl Iterator<Item = &'a Event> + use<'a> {
+        let ids = self
+            .events_by_ticker
+            .get(&event.ticker)
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let start = ids.partition_point(|id| *id <= event.id);
+        ids[start..].iter().filter_map(|id| self.get(*id))
     }
 
-    /// Event by id for invariant assertions.
-    #[cfg(test)]
+    /// Merged sell quantity for this event's date and ticker.
+    pub(crate) fn same_day_sold(&self, event: &Event) -> Decimal {
+        self.day_sells
+            .get(&event.date)
+            .and_then(|sells| sells.get(&event.ticker))
+            .copied()
+            .unwrap_or_default()
+    }
+
+    /// Event by its stable stream position.
     pub(crate) fn get(&self, id: EventId) -> Option<&Event> {
         self.events.get(id.0)
     }
@@ -139,7 +183,7 @@ pub(crate) fn normalize(
         push_day(&mut events, day)?;
     }
 
-    Ok(EventStream { events })
+    Ok(EventStream::new(events))
 }
 
 /// Convert one operation to GBP: every monetary field converts at the
