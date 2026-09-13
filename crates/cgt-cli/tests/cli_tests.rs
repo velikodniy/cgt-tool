@@ -332,3 +332,26 @@ fn test_pdf_overwrite_protection() {
     let _ = fs::remove_file(&input_file);
     let _ = fs::remove_file(&existing_pdf);
 }
+#[test]
+fn web_example_generates_a_report() -> Result<(), Box<dyn std::error::Error>> {
+    let source = include_str!("../../../web/app.js");
+    let (_, example) = source
+        .split_once("const example = `")
+        .ok_or("Web example is missing")?;
+    let (example, _) = example
+        .split_once("`;")
+        .ok_or("Web example is incomplete")?;
+    let transactions = cgt::dsl::parse(example)?;
+    let config = cgt::Config::embedded()?;
+    let rates = cgt::FxRates::bundled();
+    let report = cgt::calculate(&transactions, None, Some(&rates), &config)?;
+
+    assert_eq!(report.tax_years.len(), 2);
+    assert!(
+        report
+            .tax_years
+            .iter()
+            .all(|year| !year.disposals.is_empty())
+    );
+    Ok(())
+}
