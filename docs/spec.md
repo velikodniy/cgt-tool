@@ -156,6 +156,10 @@ Per TCGA92/S38 (CG15150, CG15250):
 
 `gain_or_loss = net_proceeds − allowable_cost`, where `net_proceeds = gross_proceeds − sale_expenses`.
 
+Match values stay precise in the Rust report model. Each disposal rounds its total cost and gain once, after all matches are added. Annual totals sum those rounded disposal totals.
+
+Displayed match values use differences between consecutive rounded totals, so their sums equal the disposal totals. Independently rounded proceeds, costs, and gains can differ by one penny. A nonzero `rounding_adjustment` explains that display difference in JSON, plain text, and PDF, without changing the calculated gain.
+
 ---
 
 ## FX Conversion

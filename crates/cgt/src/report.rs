@@ -120,14 +120,46 @@ pub struct Disposal {
 }
 
 impl Disposal {
-    /// Net gain or loss across all legs of this disposal.
+    /// Net gain or loss, rounded after all precise match values are added.
     pub fn total_gain(&self) -> Decimal {
-        self.legs.iter().map(|leg| leg.gain_or_loss).sum()
+        round_money(self.legs.iter().map(|leg| leg.gain_or_loss).sum())
     }
 
-    /// Total allowable cost across all legs of this disposal.
+    /// Allowable cost, rounded after all precise match costs are added.
     pub fn total_allowable_cost(&self) -> Decimal {
-        self.legs.iter().map(|leg| leg.allowable_cost).sum()
+        round_money(self.legs.iter().map(|leg| leg.allowable_cost).sum())
+    }
+
+    /// Rounded match values whose sums equal the rounded disposal totals.
+    /// Each leg receives the difference between consecutive rounded totals.
+    pub fn display_legs(&self) -> Vec<MatchLeg> {
+        let mut exact_cost = Decimal::ZERO;
+        let mut exact_gain = Decimal::ZERO;
+        let mut displayed_cost = Decimal::ZERO;
+        let mut displayed_gain = Decimal::ZERO;
+        self.legs
+            .iter()
+            .map(|leg| {
+                exact_cost += leg.allowable_cost;
+                exact_gain += leg.gain_or_loss;
+                let next_cost = round_money(exact_cost);
+                let next_gain = round_money(exact_gain);
+                let display = MatchLeg {
+                    allowable_cost: next_cost - displayed_cost,
+                    gain_or_loss: next_gain - displayed_gain,
+                    ..leg.clone()
+                };
+                displayed_cost = next_cost;
+                displayed_gain = next_gain;
+                display
+            })
+            .collect()
+    }
+
+    /// Display-only difference from independently rounded proceeds and cost.
+    /// This value does not change the calculated gain or tax totals.
+    pub fn rounding_adjustment(&self) -> Decimal {
+        self.total_gain() - (round_money(self.proceeds) - self.total_allowable_cost())
     }
 }
 
@@ -136,7 +168,9 @@ impl Serialize for Disposal {
     where
         S: Serializer,
     {
-        let mut disposal = serializer.serialize_struct("Disposal", 6)?;
+        let rounding_adjustment = self.rounding_adjustment();
+        let fields = if rounding_adjustment.is_zero() { 6 } else { 7 };
+        let mut disposal = serializer.serialize_struct("Disposal", fields)?;
         disposal.serialize_field("date", &self.date)?;
         disposal.serialize_field("ticker", &self.ticker)?;
         disposal.serialize_field("quantity", &MoneyField(self.quantity, false))?;
@@ -144,7 +178,13 @@ impl Serialize for Disposal {
         disposal.serialize_field("proceeds", &MoneyField(self.proceeds, true))?;
         // The legs are emitted under `matches` (the equivalence harness reads
         // `matches` or `legs`; this matches the existing wire vocabulary).
-        disposal.serialize_field("matches", &Legs(&self.legs))?;
+        disposal.serialize_field("matches", &Legs(&self.display_legs()))?;
+        if !rounding_adjustment.is_zero() {
+            disposal.serialize_field(
+                "rounding_adjustment",
+                &MoneyField(rounding_adjustment, true),
+            )?;
+        }
         disposal.end()
     }
 }

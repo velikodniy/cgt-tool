@@ -15,7 +15,7 @@ Notes:
 
 1) SELL 10 ABC on 01/02/2024 - GAIN £76.37
    Section 104: 10 shares @ £79.05
-   Gross Proceeds: 10 × £86.68242710796 = £866.82
+   Gross Proceeds: 10 × £86.68242710795902285263987392 = £866.82
    Cost: £790.45
    Result: £76.37
 

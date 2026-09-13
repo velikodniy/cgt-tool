@@ -213,6 +213,10 @@ const ReportBuilder = {
                     <span class="metric-label">Allowable Cost</span>
                     <span class="metric-value">${formatCurrency(totalCost)}</span>
                 </div>
+                ${disp.rounding_adjustment ? `<div class="metric-item">
+                    <span class="metric-label">Rounding adjustment</span>
+                    <span class="metric-value">${formatCurrency(disp.rounding_adjustment)}</span>
+                </div>` : ""}
                 <div class="metric-item">
                     <span class="metric-label">Gain/Loss</span>
                     <span class="metric-value ${gainLossClass}">${formatCurrency(gainLoss)}</span>

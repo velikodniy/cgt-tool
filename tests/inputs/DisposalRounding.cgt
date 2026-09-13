@@ -1,0 +1,6 @@
+# Exact disposal cost is £0.045 and gain is £0.015.
+# Rounded cost is £0.05 and gain is £0.02, with a £0.01 display adjustment.
+2024-01-01 BUY ABC 3 @ 0.015
+2024-06-01 SELL ABC 3 @ 0.02
+2024-06-02 BUY ABC 1 @ 0.015
+2024-06-03 BUY ABC 1 @ 0.015

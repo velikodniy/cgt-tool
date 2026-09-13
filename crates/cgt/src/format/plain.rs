@@ -256,7 +256,7 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
         format_gbp(total_gain.abs())
     );
 
-    for m in &disposal.legs {
+    for m in disposal.display_legs() {
         match m.rule {
             MatchRule::SameDay => {
                 let _ = writeln!(
@@ -321,5 +321,9 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
 
     let total_cost = disposal.total_allowable_cost();
     let _ = writeln!(out, "   Cost: {}", format_gbp(total_cost));
+    let adjustment = disposal.rounding_adjustment();
+    if !adjustment.is_zero() {
+        let _ = writeln!(out, "   Rounding adjustment: {}", format_gbp(adjustment));
+    }
     let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
 }

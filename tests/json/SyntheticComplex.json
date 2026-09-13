@@ -49,7 +49,8 @@
               "gain_or_loss": "-26.86",
               "acquisition_date": "2020-11-15"
             }
-          ]
+          ],
+          "rounding_adjustment": "-0.01"
         },
         {
           "date": "2021-02-15",
@@ -143,7 +144,8 @@
               "gain_or_loss": "-31.02",
               "acquisition_date": "2021-08-15"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         },
         {
           "date": "2021-11-15",
@@ -159,7 +161,8 @@
               "gain_or_loss": "-35.90",
               "acquisition_date": "2021-11-15"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         },
         {
           "date": "2022-02-15",
@@ -175,7 +178,8 @@
               "gain_or_loss": "-24.24",
               "acquisition_date": "2022-02-15"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         },
         {
           "date": "2022-04-05",
@@ -273,7 +277,7 @@
             {
               "rule": "Section104",
               "quantity": "70",
-              "allowable_cost": "1469.01",
+              "allowable_cost": "1469.02",
               "gain_or_loss": "1122.34"
             }
           ]
@@ -331,7 +335,7 @@
       "total_loss": "132.43",
       "net_gain": "2086.88",
       "gross_proceeds": "62731.01",
-      "total_allowable_cost": "60618.38",
+      "total_allowable_cost": "60618.39",
       "exempt_amount": "12300",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -508,7 +512,8 @@
               "gain_or_loss": "83.06",
               "acquisition_date": "2024-02-09"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         },
         {
           "date": "2024-02-15",
@@ -524,7 +529,8 @@
               "gain_or_loss": "-40.91",
               "acquisition_date": "2024-02-15"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         }
       ],
       "disposal_count": 12,

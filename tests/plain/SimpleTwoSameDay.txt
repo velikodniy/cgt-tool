@@ -18,6 +18,7 @@ Notes:
    Gross Proceeds: 10 × £4.6702 = £46.70
    Net Proceeds: £46.70 - £12.50 fees = £34.20
    Cost: £54.07
+   Rounding adjustment: £0.01
    Result: -£19.86
 
 2) SELL 10 FOO on 28/08/2018 - LOSS £19.86
@@ -25,6 +26,7 @@ Notes:
    Gross Proceeds: 10 × £4.6702 = £46.70
    Net Proceeds: £46.70 - £12.50 fees = £34.20
    Cost: £54.07
+   Rounding adjustment: £0.01
    Result: -£19.86
 
 

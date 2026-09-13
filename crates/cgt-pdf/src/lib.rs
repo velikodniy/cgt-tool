@@ -286,6 +286,12 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     dict.insert("gain_magnitude".into(), money_to_value(total_gain.abs())?);
     dict.insert("is_gain".into(), (total_gain >= Decimal::ZERO).into_value());
     dict.insert("total_cost".into(), money_to_value(total_cost)?);
+    let adjustment = disposal.rounding_adjustment();
+    dict.insert(
+        "has_rounding_adjustment".into(),
+        (!adjustment.is_zero()).into_value(),
+    );
+    dict.insert("rounding_adjustment".into(), money_to_value(adjustment)?);
     dict.insert(
         "unit_price".into(),
         format!(
@@ -304,7 +310,7 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
     );
 
     let matches: Vec<Value> = disposal
-        .legs
+        .display_legs()
         .iter()
         .map(|m| {
             let mut match_dict = Dict::new();
@@ -398,6 +404,15 @@ mod tests {
         assert!(text.contains("0.0000001 shares"), "{text}");
         assert!(text.contains("100 × £1.005 = £100.50"), "{text}");
         assert!(text.contains("£1.001"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_disposal_explains_independent_rounding() -> Result<(), Box<dyn std::error::Error>> {
+        let text = rendered_text(include_str!("../../../tests/inputs/DisposalRounding.cgt"))?;
+        assert!(text.contains("Rounding adjustment"), "{text}");
+        assert!(text.contains("£0.01"), "{text}");
+        assert!(text.contains("£0.02"), "{text}");
         Ok(())
     }
 

@@ -17,7 +17,8 @@
               "gain_or_loss": "-19.86",
               "acquisition_date": "2018-08-28"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         }
       ],
       "disposal_count": 1,
@@ -48,7 +49,8 @@
               "gain_or_loss": "-19.86",
               "acquisition_date": "2019-09-20"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         }
       ],
       "disposal_count": 1,
@@ -78,7 +80,8 @@
               "allowable_cost": "54.07",
               "gain_or_loss": "-19.86"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         }
       ],
       "disposal_count": 1,

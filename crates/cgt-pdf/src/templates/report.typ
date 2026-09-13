@@ -221,6 +221,9 @@
                 ([Net Proceeds:], [#disposal.gross_proceeds #sym.minus #disposal.fees = #disposal.proceeds])
               } else { () },
               [Cost:], [#disposal.total_cost],
+              ..if disposal.has_rounding_adjustment {
+                ([Rounding adjustment:], [#disposal.rounding_adjustment])
+              } else { () },
               line(length: 100%, stroke: 0.35pt + border-color), line(length: 100%, stroke: 0.35pt + border-color),
               [*Result:*], [#text(weight: "bold", fill: result-color)[#disposal.total_gain]]
             )

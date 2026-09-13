@@ -23,7 +23,8 @@
               "allowable_cost": "3669.60",
               "gain_or_loss": "208.56"
             }
-          ]
+          ],
+          "rounding_adjustment": "0.01"
         }
       ],
       "disposal_count": 1,

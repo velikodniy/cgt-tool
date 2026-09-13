@@ -19,6 +19,7 @@ Notes:
    Gross Proceeds: 40 × £194.22 = £7,768.80
    Net Proceeds: £7,768.80 - £12.50 fees = £7,756.30
    Cost: £7,475.40
+   Rounding adjustment: £0.01
    Result: £280.91
 
 

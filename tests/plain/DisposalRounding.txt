@@ -1,0 +1,35 @@
+# SUMMARY
+
+Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
+=========================================================================================================================
+2024/25     1           £0.02                 £0.02                 £0.00       £0.06       £3,000.00   £0.00
+
+Notes:
+- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2024/25
+
+1) SELL 3 ABC on 01/06/2024 - GAIN £0.02
+   B&B: 1 shares from 02/06/2024
+   B&B: 1 shares from 03/06/2024
+   Section 104: 1 shares @ £0.02
+   Gross Proceeds: 3 × £0.02 = £0.06
+   Cost: £0.05
+   Rounding adjustment: £0.01
+   Result: £0.02
+
+
+# HOLDINGS
+
+ABC: 2 units at £0.02 avg cost
+
+# TRANSACTIONS
+
+01/01/2024 BUY 3 ABC @ £0.015 (£0 fees)
+01/06/2024 SELL 3 ABC @ £0.02 (£0 fees)
+02/06/2024 BUY 1 ABC @ £0.015 (£0 fees)
+03/06/2024 BUY 1 ABC @ £0.015 (£0 fees)
