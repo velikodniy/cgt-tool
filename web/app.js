@@ -145,7 +145,7 @@ const ReportBuilder = {
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
-            <div class="note info">💡 <strong>Note:</strong> Proceeds = SA108 Box 21 (gross, before sale fees)</div>
+            <div class="note info">💡 <strong>Note:</strong> Proceeds = SA108 Box 21 (gross, before sale fees). Taxable gain is before losses brought forward and other reliefs.</div>
             <h3 style="margin: 30px 0 10px 0; color: var(--color-text);">Tax Year Details</h3>
         `;
   },

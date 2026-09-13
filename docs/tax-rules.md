@@ -12,6 +12,16 @@ When you sell shares, HMRC requires you to match them with shares you acquired i
 
 This hierarchy applies to disposals from 6 April 2008 onwards.
 
+## Scope and assumptions
+
+The input represents one owner in one ownership capacity. The tool assumes that the UK residence conditions for the 30-day rule apply. HMRC distinguishes ownership capacity and residence at the later acquisition date. See [CG51560](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg51560).
+
+Include all earlier acquisitions and transactions through 30 days after each reported sale. The tool cannot identify a missing acquisition from an incomplete history. It rejects short sales and consolidations that leave fractional actual shares.
+
+`CAPRETURN` applies a reduction of the cost basis. The tool does not assess whether the distribution qualifies as small. HMRC normally accepts a distribution at or below 5% of the holding value, or £3,000. Other cases depend on their facts. See [CG57835](https://www.gov.uk/hmrc-internal-manuals/capital-gains-manual/cg57835).
+
+The report calculates gains before losses brought forward and other reliefs. It does not calculate the final tax bill.
+
 ---
 
 ## Rule 1: Same Day Matching
@@ -71,19 +81,20 @@ When a same-day buy and sell occurs with an existing pool holding, the Same Day 
 **Transactions:**
 
 - 31 May 2023: Capital return of £149.75 (reduces pool cost)
-- 5 November 2023: Buy 20 shares at £194.22 (cost £3,888.40)
+- 5 November 2023: Buy 20 shares at £194.22 (cost £3,884.40)
 - 5 November 2023: Sell 40 shares at £194.22 (proceeds £7,768.80)
 
 **Matching:**
 
-1. **Same Day**: 20 shares matched against 5 November purchase (cost £3,888.40)
-2. **Section 104**: 20 shares matched from pool (cost £3,677.50 after capital return adjustment)
+1. **Same Day**: 20 shares matched against 5 November purchase (cost £3,884.40)
+2. **Section 104**: 20 shares matched from the pool at `(£7,338.70 − £149.75) / 2 = £3,594.475`
 
 **Result:**
 
-- Same Day match: Small loss (proceeds slightly less than cost after fees)
-- Section 104 match: Gain (original pool cost was lower)
-- 20 shares remain in pool
+- Same Day gain: £3,884.40 − £3,884.40 = £0
+- Section 104 gain: £3,884.40 − £3,594.475 = £289.925
+- Disposal gain after rounding: £289.93
+- Remaining pool: 20 shares with cost £3,594.475
 
 ---
 
@@ -363,7 +374,9 @@ When an accumulation fund reinvests dividends, the `ACCUMULATION` keyword record
 - This is because the dividend is "notionally" reinvested, acquiring additional value
 - The increase is apportioned across lots based on shares held at dividend date
 
-Ordinary cash dividends use the `DIVIDEND` keyword instead. Cash dividends do not affect the CGT cost basis; they are reported as income.
+A positive-quantity accumulation also contributes its distribution and tax paid to the annual income summary. A zero-quantity accumulation has no effect. HMRC treats taxable notional distributions as income and additional allowable expenditure. See [HS284, accumulation units](https://www.gov.uk/government/publications/shares-and-capital-gains-tax-hs284-self-assessment-helpsheet/hs284-shares-and-capital-gains-tax-2025#accumulation-units).
+
+Ordinary cash dividends use `DIVIDEND`. They contribute to income without changing the CGT cost basis.
 
 **Example:**
 
@@ -374,11 +387,9 @@ Ordinary cash dividends use the `DIVIDEND` keyword instead. Cash dividends do no
 
 ### Carried Losses
 
-Losses can be carried forward indefinitely to offset against future gains. Important points:
+Same-year losses reduce gains before the annual exemption. Claimed unused losses from earlier years reduce gains only to the exemption, with the remainder carried forward. A claim normally has a four-year deadline after the disposal tax year. See [HMRC loss guidance](https://www.gov.uk/capital-gains-tax/losses).
 
-- Losses must be reported within 4 years of the tax year they occurred
-- Use losses efficiently to preserve the Annual Exempt Amount
-- Losses cannot create or increase a refund
+The tool applies same-year losses and the exemption. It does not track claims, losses used elsewhere, or losses brought forward. The `taxable_gain` field therefore excludes those later adjustments.
 
 ---
 

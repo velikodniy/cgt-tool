@@ -126,7 +126,7 @@
     text(size: 8pt)[*Losses*#super("2")],
     text(size: 8pt)[*Proceeds*#super("3")],
     text(size: 8pt)[*Exemption*],
-    text(size: 8pt)[*Taxable gain*],
+    text(size: 8pt)[*Taxable gain*#super("4")],
   ),
   ..data.summary_rows
     .map(row => (
@@ -154,6 +154,7 @@
     [Disposals groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions],
     [Gains and losses are net per disposal after matching rules (CG51560) and align with SA108 Boxes 23 and 24],
     [Proceeds = SA108 Box 21 (gross, before sale fees)],
+    [Taxable gain is before losses brought forward and other reliefs],
   )
 ]
 

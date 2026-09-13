@@ -187,6 +187,7 @@ pub struct TaxYearSummary {
     #[serde(serialize_with = "serialize_money")]
     pub exempt_amount: Decimal,
     #[serde(serialize_with = "serialize_money")]
+    /// Gain after same-year losses and exemption, before earlier losses or other reliefs.
     pub taxable_gain: Decimal,
     #[serde(serialize_with = "serialize_money")]
     pub dividend_income: Decimal,

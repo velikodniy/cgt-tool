@@ -1,5 +1,5 @@
 # Test: CarryLoss
-# Purpose: Validates loss crystallization and potential carry-forward across tax years
+# Purpose: Reports annual gains and losses without applying earlier-year losses
 # Rules Tested: Same Day matching across multiple years
 # Complexity: Complex
 # Key Features: First year loss (£1000), subsequent years gains, same-day matching
@@ -59,17 +59,16 @@
 #   2018/19: Gain £1000
 #   2019/20: Gain £19000
 #
-# Loss Carry Forward:
-#   The £1000 loss from 2017/18 can be carried forward to offset
-#   against the £1000 gain in 2018/19, resulting in net £0 taxable gain.
-#   The £19000 gain in 2019/20 would then be fully taxable.
+# Losses brought forward:
+#   The tool reports each year separately and applies no earlier-year losses.
+#   Taxable gains before that relief are £0, £0, and £7000.
+#   A claimed, unused £1000 loss remains available in 2018/19 because the
+#   £1000 gain is below that year's £11700 annual exemption.
+#   In 2019/20, it can reduce £19000 minus the £12000 exemption to £6000.
+#   Source: https://www.gov.uk/capital-gains-tax/losses
 #
-# FINAL RESULT (from JSON - tax_year: 2017):
-#   Total Gain: £0 (as reported in JSON)
-#   Total Loss: £1000 (the first year loss)
-#   Net Gain: -£1000
-#   Note: JSON shows results for tax_year 2017 (2017/18) only
-#   Verification: ✓ Matches expected output
+# JSON reports all three tax years, with total gains £0, £1000, and £19000.
+# Total losses are £1000, £0, and £0. These values do not apply earlier losses.
 # === END DETAILED VERIFICATION ===
 #
 2020-01-01 SELL GB00B41YBW71 1 @ 20000 FEES 0

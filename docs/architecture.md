@@ -36,17 +36,29 @@ graph TD
 The engine runs a fixed pipeline:
 
 1. **Parse** — DSL text into typed transactions (pest grammar in `dsl/grammar.pest`).
-2. **Validate** — reject malformed or ambiguous input before any calculation (e.g. a SPLIT/UNSPLIT on the same date as a BUY, SELL, or ACCUMULATION of the same ticker).
+2. **Validate** — reject malformed or ambiguous input before any calculation (e.g. a SPLIT/UNSPLIT on the same date as a BUY or SELL of the same ticker).
 3. **Normalize** — convert foreign amounts to GBP via HMRC monthly rates, group transactions by day, and aggregate same-day same-ticker lots.
 4. **Plan** — a single chronological pass builds a *quantity-only* match plan: same-day, then Bed & Breakfast (with reservations and split-ratio mapping across intervening reorganisations), then Section 104. No money is touched here.
 5. **Value** — a second chronological pass replays the timeline to price each planned leg against the pool as it stood on the disposal date.
-6. **Report** — assemble the `TaxReport`.
+6. **Report** — assemble the `TaxReport`, apply annual exemptions, and collect cash and accumulation income.
 
 Separating quantity planning from valuation is what structurally prevents the retroactive-cost-leak: because each disposal is priced from the pool state at its own date, a corporate action dated *after* a disposal can never alter a leg that already occurred. A CAPRETURN or ACCUMULATION following a matched disposal adjusts only the carried-forward Section 104 holding, not the disposed leg.
 
+Normalization retains quantity, gross total, and fees for each trade. Valuation tracks the unused cost of each acquisition and pool. The final allocation receives the complete remainder. Unit prices are derived for output.
+
+The planner uses exact fractions for share quantities and split ratios. It tracks actual shares separately from the tax pool. A sale always reduces actual shares, even when a later acquisition supplies its tax basis. Decimal boundaries return errors for unsupported magnitudes or share precision.
+
+The normalized stream indexes events by ticker and sale quantities by date and ticker. The planner uses those indexes for future matches and same-day reservations. Index memory grows with the number of events.
+
+## Shared Input Rules
+
+DSL parsing produces typed transactions and source locations. One semantic validator serves calculation, JSON deserialization, and explicit validation. Cross-record rules remain separate from rules for a single transaction.
+
+The broker converter retains signed amounts and source records until reconciliation finishes. Resolved records become core transactions and use the core serializer. Award lookup retains all candidates and rejects ambiguity. Conversion does not read the clock.
+
 ## Single Report Model
 
-All outputs project from one `TaxReport` value. The plain-text renderer (in `cgt`), the PDF renderer (`cgt-pdf`), and the JSON serialization all read the same model, so the three formats cannot drift.
+All outputs read the same `TaxReport` model. The model retains precise match values, and each disposal rounds its complete cost and gain once. Named serializers separate monetary totals from exact quantities. Displayed match values receive explicit rounding remainders. Tests compare JSON, plain text, compiled PDF text, and browser output.
 
 ## Testing Strategy
 

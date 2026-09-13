@@ -216,6 +216,12 @@ See [`crates/cgt-wasm/README.md`](crates/cgt-wasm/README.md) and [`web/`](web/) 
 
 For detailed CGT matching rules, see [`docs/tax-rules.md`](docs/tax-rules.md).
 
+The report applies same-year losses and the annual exemption. Its taxable gain excludes losses brought forward and other reliefs. The tool does not calculate the tax bill.
+
+Use a separate input history for each owner and ownership capacity. The matching model assumes that the UK residence conditions for the 30-day rule apply. Include earlier acquisitions and transactions through 30 days after each reported sale.
+
+`CAPRETURN` assumes that a reduction of the cost basis is the correct treatment. The tool does not assess the distribution against the small-distribution limits. See the [documented tax limits](docs/tax-rules.md#scope-and-assumptions).
+
 ## Acknowledgments
 
 Tests and ideas reused from [cgtcalc](https://github.com/mattjgalloway/cgtcalc) made this project possible.

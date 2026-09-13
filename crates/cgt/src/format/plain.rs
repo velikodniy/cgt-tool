@@ -76,7 +76,7 @@ pub fn render(report: &TaxReport) -> String {
     if report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
         let _ = writeln!(
             out,
-            "\nNotes:\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Proceeds = SA108 Box 21 (gross, before sale fees)"
+            "\nNotes:\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Taxable gain is before losses brought forward and other reliefs"
         );
     }
 

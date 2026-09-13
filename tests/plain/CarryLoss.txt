@@ -10,6 +10,7 @@ Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
 - Gains/Losses are net per disposal after matching rules (CG51560)
 - Proceeds = SA108 Box 21 (gross, before sale fees)
+- Taxable gain is before losses brought forward and other reliefs
 
 # TAX YEAR DETAILS
 

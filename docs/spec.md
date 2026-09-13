@@ -184,7 +184,7 @@ Rates are provided by the [`hmrc-rates`](https://crates.io/crates/hmrc-rates) cr
 
 ### Precision
 
-6 decimal places internally for FX calculations. Monetary output is rounded to 2 decimal places using midpoint-away-from-zero. This is the single rounding policy applied consistently across both JSON and plain-text output.
+Foreign exchange calculations retain the available decimal precision. Monetary output rounds to two decimal places, with midpoints away from zero. JSON, plain text, PDF, and browser output use this policy. Quantities and unit prices retain their available precision.
 
 ### Dual Display
 
@@ -227,7 +227,7 @@ The first character must be an ASCII letter or digit. Later characters can also 
 
 ### Error Messages
 
-Parse failures report line number, problematic value, and expected format.
+Parse failures report line number, problematic value, and expected format. Parsing checks syntax. A shared validator checks transaction fields for JSON input, direct Rust input, and calculation. It retains source locations and applies cross-record conflict rules before calculation.
 
 ---
 
@@ -247,6 +247,8 @@ Parses Charles Schwab JSON exports (`BrokerageTransactions` array).
 - Unknown actions are captured as comments in the output, not as errors.
 - Wire Sent, Wire Received, Credit Interest, and similar cash movements are skipped.
 - Skipped transaction count is included in a header comment.
+- Output is deterministic and contains no conversion timestamp.
+- Resolved records use core transaction types and the core DSL serializer.
 
 ### Schwab Awards Parser
 
@@ -255,7 +257,8 @@ Parses Schwab Equity Awards JSON to obtain Fair Market Value and vest dates for 
 - Reads `VestFairMarketValue` with `VestDate`; falls back to `FairMarketValuePrice` and parent `Date`.
 - Symbol lookup is case-insensitive.
 - Non-vesting actions (Wire Transfer, Tax Withholding, Tax Reversal, Forced Disbursement) with empty details are accepted without error.
-- Unknown actions with empty details fail with an error.
+- Unknown actions with empty details are skipped.
+- Vesting actions need valid award details.
 
 ### RSU Vest Dates (CG14250, ERSM20192)
 
@@ -263,15 +266,21 @@ The RSU vest date (from the awards file) is the CGT acquisition date, not the se
 
 - Same Day rule matches sales on vest date with vest-date acquisitions.
 - B&B window is calculated from vest date, not settlement date.
-- FMV 7-day lookback: if settlement date does not exactly match awards, search up to 7 days back. Returns both FMV and the matched vest date.
+- Conversion first matches the parent deposit date, symbol, and available quantity.
+- Without a linked deposit, conversion searches vest dates within the previous seven days.
+- Different matching vest dates or values produce an ambiguity error. Original candidates remain available, including entries with conflicting values on one date.
 
 ### Dividend + Withholding Merging
 
-When a Cash Dividend and NRA Withholding occur on the same date for the same symbol, they are merged into a single `DIVIDEND <ticker> TOTAL <value> [<currency>] TAX <amount> [<currency>]` line (no quantity).
+Dividend and withholding records need a valid string amount. Reconciliation preserves signs and groups records by effective date and symbol. Negative dividend corrections reduce positive credits, and unresolved corrections return an error. Positive withholding adjustments reduce withheld tax. Unmatched or symbol-less withholding produces a warning.
+
+Resolved income uses `DIVIDEND <ticker> TOTAL <value> [<currency>] TAX <amount> [<currency>]`, without a quantity.
+
+Sale cancellations match the date, symbol, quantity, price, and available fees. If missing fees leave different candidate sales, conversion returns an ambiguity error. A cancellation removes only one matching sale.
 
 ### Date Format Handling
 
-Schwab dates: `MM/DD/YYYY`, `YYYY-MM-DD`, or `as of` notation. For `02/25/2021 as of 02/21/2021`, the "as of" date is used.
+Schwab dates use `MM/DD/YYYY` or `as of` notation. For `02/25/2021 as of 02/21/2021`, the "as of" date is used.
 
 ---
 
@@ -298,6 +307,7 @@ Per tax year: disposal count (grouped per CG51560), net gain, total gains (befor
 - Disposals footnote: grouped per CG51560.
 - Proceeds footnote: corresponds to SA108 Box 21 "Disposal proceeds".
 - Gains/Losses footnote: net allowable per SA108 after matching rules.
+- Taxable gain footnote: after same-year losses and the exemption, before losses brought forward and other reliefs.
 
 ### Proceeds Breakdown
 
@@ -305,11 +315,12 @@ For each disposal:
 
 - With fees: `<qty> × £<unit_price> = £<gross>` then `£<gross> - £<fees> fees = £<net>`.
 - Without fees: `<qty> × £<unit_price> = £<gross>` (fees line omitted).
+- Displayed fees equal rounded gross proceeds minus rounded net proceeds, so the displayed equation reconciles.
 - Same-day merge: weighted average unit price = total_gross_proceeds / total_quantity.
 
 ### Holdings Display
 
-Lists remaining holdings with ticker, quantity, and average cost. Shows "NONE" if empty.
+Lists remaining holdings with ticker, quantity, and average cost. Shows "NONE" if empty. Holding JSON includes `average_cost`, derived from the exact pool cost before `total_cost` rounds. The browser uses that value to preserve fractional-share cost precision.
 
 ### PDF-Specific
 
@@ -350,7 +361,11 @@ Tests are the source of truth. Never remove or modify tests without proving inco
 
 ### Cross-Validation
 
-`scripts/cross-validate.py` compares results against external calculators (cgtcalc by mattjgalloway, cgt-calc). Discrepancies > £1 per tax year are reported as failures. Files with unsupported operations (SPLIT, UNSPLIT, CAPRETURN) are skipped for the relevant calculator. Output is sorted with acquisitions before disposals on the same day for external calculator compatibility.
+`scripts/cross-validate.py` compares gains and losses with `cgtcalc` and `cgt-calc`. It requires successful execution and complete summaries. Unexpected calculator errors fail the run. Unsupported cases are explicit skips. By default, a run with no `cgtcalc` comparison fails. `CGT_REQUIRE_CGTCALC=0` permits comparison with `cgt-calc` alone, but still requires a completed comparison.
+
+The base tolerance is £1 per tax year. For `cgtcalc` whole-pound output, the tolerance adds £0.50 per disposal, capped at £5. Two documented corporate-action differences remain explicit known results.
+
+Set `CGT_TOOL_BIN` to select the binary under test. Otherwise, the script uses the newest local debug or release build, with Cargo as a fallback. It does not select an installed binary from `PATH`. Zero-quantity accumulation is omitted from external input because it has no effect.
 
 ### Schwab Test Fixtures
 
