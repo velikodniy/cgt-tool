@@ -90,3 +90,51 @@ fn dividend_corrections_preserve_signed_income() -> Result<(), Box<dyn std::erro
     }
     Ok(())
 }
+
+#[test]
+fn cancellation_keeps_the_corrected_fee() -> Result<(), Box<dyn std::error::Error>> {
+    let rows: Vec<_> = [
+        ("Sell", "1.00"),
+        ("Cancel Sell", "10.00"),
+        ("Sell", "10.00"),
+    ]
+    .into_iter()
+    .map(|(action, fees)| {
+        json!({
+            "Date":"07/15/2023", "Action":action, "Symbol":"FOO", "Quantity":"100",
+            "Price":"50.00", "Fees & Comm":fees
+        })
+    })
+    .collect();
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":rows}).to_string(),
+        awards_json: None,
+    })?;
+    assert_eq!(output.cgt_content.matches("SELL FOO").count(), 1);
+    assert!(output.cgt_content.contains("FEES 1.00 USD"));
+    Ok(())
+}
+
+#[test]
+fn cancellation_without_fees_rejects_distinct_candidates() {
+    let rows: Vec<_> = [
+        ("Sell", Some("1.00")),
+        ("Cancel Sell", None),
+        ("Sell", Some("10.00")),
+    ]
+    .into_iter()
+    .map(|(action, fees)| {
+        json!({
+            "Date":"07/15/2023", "Action":action, "Symbol":"FOO", "Quantity":"100",
+            "Price":"50.00", "Fees & Comm":fees
+        })
+    })
+    .collect();
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":rows}).to_string(),
+        awards_json: None,
+    });
+    assert!(
+        matches!(output, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Ambiguous Cancel Sell"))
+    );
+}

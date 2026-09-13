@@ -197,6 +197,7 @@ struct PendingCancellation {
     symbol: String,
     quantity: Decimal,
     price: Decimal,
+    expenses: Option<Decimal>,
 }
 
 /// Remove sells that were cancelled. Each cancellation matches a sell with
@@ -206,21 +207,41 @@ fn apply_cancellations(
     transactions: &mut Vec<CgtTransaction>,
     cancellations: Vec<PendingCancellation>,
     warnings: &mut Vec<String>,
-) {
+) -> Result<(), ConvertError> {
     for cancel in cancellations {
-        if let Some(pos) = transactions.iter().position(|txn| {
-            matches!(
-                txn,
-                CgtTransaction::Sell {
-                    date: d,
-                    symbol: s,
-                    quantity: q,
-                    price: p,
-                    ..
-                } if *d == cancel.date && s == &cancel.symbol
-                    && *q == cancel.quantity && *p == cancel.price
-            )
-        }) {
+        let candidates: Vec<_> = transactions
+            .iter()
+            .enumerate()
+            .filter_map(|(position, txn)| {
+                if let CgtTransaction::Sell {
+                    date,
+                    symbol,
+                    quantity,
+                    price,
+                    expenses,
+                } = txn
+                    && *date == cancel.date
+                    && symbol == &cancel.symbol
+                    && *quantity == cancel.quantity
+                    && *price == cancel.price
+                    && cancel.expenses.is_none_or(|fees| fees == *expenses)
+                {
+                    Some((position, *expenses))
+                } else {
+                    None
+                }
+            })
+            .collect();
+        if let Some(&(pos, expenses)) = candidates.first() {
+            if candidates
+                .iter()
+                .any(|(_, candidate_expenses)| *candidate_expenses != expenses)
+            {
+                return Err(ConvertError::InvalidTransaction(format!(
+                    "Ambiguous Cancel Sell for {} on {}: matching sales have different fees",
+                    cancel.symbol, cancel.date
+                )));
+            }
             transactions.remove(pos);
         } else {
             warnings.push(format!(
@@ -229,6 +250,7 @@ fn apply_cancellations(
             ));
         }
     }
+    Ok(())
 }
 
 /// Process Schwab transactions into CGT transactions
@@ -315,6 +337,7 @@ fn process_transactions(
                         symbol: trade.common.symbol,
                         quantity: trade.quantity,
                         price: trade.price,
+                        expenses: trade.fees_commissions,
                     });
                 }
                 SchwabTransaction::StockPlanActivity(activity) => {
@@ -404,7 +427,7 @@ fn process_transactions(
     // This must happen after all transactions are processed because Cancel Sell
     // entries can appear before their corresponding original Sell in the JSON.
     if !pending_cancellations.is_empty() {
-        apply_cancellations(&mut cgt_transactions, pending_cancellations, &mut warnings);
+        apply_cancellations(&mut cgt_transactions, pending_cancellations, &mut warnings)?;
     }
 
     for (date, symbol, mut remaining) in dividend_corrections {
