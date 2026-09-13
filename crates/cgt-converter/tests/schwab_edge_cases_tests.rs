@@ -916,7 +916,7 @@ fn test_fmv_price_precision_preserved() {
 // Additional edge cases
 
 #[test]
-fn test_dividend_negative_amount_handling() {
+fn test_unmatched_dividend_correction_is_rejected() {
     // Some brokers report dividends with negative amounts for adjustments
     let json = r#"{
         "BrokerageTransactions": [
@@ -939,9 +939,9 @@ fn test_dividend_negative_amount_handling() {
         awards_json: None,
     };
 
-    let result = converter.convert(&input).unwrap();
-    // Should handle negative amount (abs value)
-    assert!(result.cgt_content.contains("DIVIDEND FOO TOTAL 10.00 USD"));
+    // A debit cannot become positive income without a matching credit.
+    let result = converter.convert(&input);
+    assert!(matches!(result, Err(ConvertError::InvalidTransaction(_))));
 }
 
 #[test]

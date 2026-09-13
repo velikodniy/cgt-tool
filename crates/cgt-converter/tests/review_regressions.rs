@@ -50,3 +50,43 @@ fn ambiguous_vest_lookback_is_rejected() {
         matches!(result, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Ambiguous awards"))
     );
 }
+
+#[test]
+fn dividend_corrections_preserve_signed_income() -> Result<(), Box<dyn std::error::Error>> {
+    for amounts in [
+        vec!["100.00", "-10.00"],
+        vec!["-100.00", "100.00", "100.00"],
+    ] {
+        let expected: rust_decimal::Decimal = if amounts.len() == 2 {
+            90.into()
+        } else {
+            100.into()
+        };
+        let rows: Vec<_> = amounts
+            .into_iter()
+            .map(|amount| {
+                json!({
+                    "Date":"07/15/2023", "Action":"Cash Dividend", "Symbol":"FOO", "Amount":amount
+                })
+            })
+            .collect();
+        let output = SchwabConverter.convert(&SchwabInput {
+            transactions_json: json!({"BrokerageTransactions":rows}).to_string(),
+            awards_json: None,
+        })?;
+        let transactions = cgt::dsl::parse(&output.cgt_content)?;
+        let total: rust_decimal::Decimal = transactions
+            .iter()
+            .filter_map(|transaction| {
+                if let cgt::model::Operation::Dividend { total_value, .. } = &transaction.operation
+                {
+                    Some(total_value.amount)
+                } else {
+                    None
+                }
+            })
+            .sum();
+        assert_eq!(total, expected);
+    }
+    Ok(())
+}

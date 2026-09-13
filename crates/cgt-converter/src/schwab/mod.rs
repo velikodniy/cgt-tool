@@ -241,6 +241,7 @@ fn process_transactions(
     let mut skipped_count = 0;
     let mut dividend_taxes: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
     let mut pending_cancellations: Vec<PendingCancellation> = Vec::new();
+    let mut dividend_corrections = Vec::new();
 
     let has_stock_plan_activity = transactions.iter().any(|txn| {
         matches!(
@@ -346,7 +347,11 @@ fn process_transactions(
                 | SchwabTransaction::LongTermCapGain(dividend) => {
                     let SchwabDividend { common, amount } = dividend;
                     if let Some(amount) = amount {
-                        let amount_value = amount.abs();
+                        if amount.is_sign_negative() {
+                            dividend_corrections.push((common.date, common.symbol, amount.abs()));
+                            continue;
+                        }
+                        let amount_value = amount;
                         let key = (common.date, common.symbol.clone());
                         let tax = dividend_taxes.remove(&key).unwrap_or(Decimal::ZERO);
 
@@ -400,6 +405,29 @@ fn process_transactions(
     // entries can appear before their corresponding original Sell in the JSON.
     if !pending_cancellations.is_empty() {
         apply_cancellations(&mut cgt_transactions, pending_cancellations, &mut warnings);
+    }
+
+    for (date, symbol, mut remaining) in dividend_corrections {
+        for transaction in &mut cgt_transactions {
+            if let CgtTransaction::Dividend {
+                date: dividend_date,
+                symbol: dividend_symbol,
+                amount,
+                ..
+            } = transaction
+                && *dividend_date == date
+                && *dividend_symbol == symbol
+            {
+                let reduction = (*amount).min(remaining);
+                *amount -= reduction;
+                remaining -= reduction;
+            }
+        }
+        if !remaining.is_zero() {
+            return Err(ConvertError::InvalidTransaction(format!(
+                "Dividend correction for {symbol} on {date} exceeds the matching dividend income by {remaining} USD"
+            )));
+        }
     }
 
     Ok((cgt_transactions, warnings, skipped_count))
