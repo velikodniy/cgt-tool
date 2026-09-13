@@ -138,3 +138,66 @@ fn cancellation_without_fees_rejects_distinct_candidates() {
         matches!(output, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Ambiguous Cancel Sell"))
     );
 }
+
+#[test]
+fn dividends_require_a_string_amount() {
+    for amount in [json!(null), json!(100), json!(""), json!("--")] {
+        let output = SchwabConverter.convert(&SchwabInput {
+            transactions_json: json!({"BrokerageTransactions":[{
+                "Date":"07/15/2023", "Action":"Cash Dividend", "Symbol":"FOO", "Amount":amount
+            }]})
+            .to_string(),
+            awards_json: None,
+        });
+        assert!(matches!(
+            output,
+            Err(cgt_converter::ConvertError::InvalidTransaction(_))
+        ));
+    }
+}
+
+#[test]
+fn withholding_credits_reduce_tax_and_unmatched_rows_are_reported()
+-> Result<(), Box<dyn std::error::Error>> {
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":[
+            {"Date":"07/15/2023", "Action":"Cash Dividend", "Symbol":"FOO", "Amount":"100.00"},
+            {"Date":"07/15/2023", "Action":"NRA Withholding", "Symbol":"FOO", "Amount":"-15.00"},
+            {"Date":"07/15/2023", "Action":"NRA Tax Adj", "Symbol":"FOO", "Amount":"5.00"},
+            {"Date":"07/16/2023", "Action":"NRA Withholding", "Symbol":"FOO", "Amount":"-2.00"},
+            {"Date":"07/17/2023", "Action":"NRA Withholding", "Symbol":"", "Amount":"-3.00"}
+        ]})
+        .to_string(),
+        awards_json: None,
+    })?;
+    assert!(output.cgt_content.contains("TAX 10.00 USD"));
+    assert_eq!(output.warnings.len(), 2);
+    assert!(
+        output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("2023-07-16"))
+    );
+    assert!(
+        output
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("missing symbol"))
+    );
+    Ok(())
+}
+
+#[test]
+fn unmatched_tax_credit_is_rejected() {
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":[
+            {"Date":"07/15/2023", "Action":"Cash Dividend", "Symbol":"FOO", "Amount":"100.00"},
+            {"Date":"07/15/2023", "Action":"NRA Tax Adj", "Symbol":"FOO", "Amount":"5.00"}
+        ]})
+        .to_string(),
+        awards_json: None,
+    });
+    assert!(
+        matches!(output, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Tax credits exceed"))
+    );
+}

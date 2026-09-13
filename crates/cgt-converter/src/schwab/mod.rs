@@ -6,7 +6,7 @@ use crate::output;
 use crate::{BrokerConverter, ConvertOutput};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 pub use awards::{AwardLookup, AwardsData};
 
@@ -261,7 +261,7 @@ fn process_transactions(
     let mut cgt_transactions = Vec::new();
     let mut warnings = Vec::new();
     let mut skipped_count = 0;
-    let mut dividend_taxes: HashMap<(NaiveDate, String), Decimal> = HashMap::new();
+    let mut dividend_taxes: BTreeMap<(NaiveDate, String), Decimal> = BTreeMap::new();
     let mut pending_cancellations: Vec<PendingCancellation> = Vec::new();
     let mut dividend_corrections = Vec::new();
 
@@ -283,9 +283,20 @@ fn process_transactions(
         match txn {
             SchwabTransactionsItem::Known(SchwabTransaction::NraTaxAdj(tax))
             | SchwabTransactionsItem::Known(SchwabTransaction::NraWithholding(tax)) => {
-                if let (Some(symbol), Some(tax_amount)) = (tax.symbol.as_ref(), tax.amount) {
+                if let Some(symbol) = tax.symbol.as_ref() {
                     let key = (tax.date, symbol.clone());
-                    *dividend_taxes.entry(key).or_insert(Decimal::ZERO) += tax_amount.abs();
+                    let total = dividend_taxes.entry(key).or_insert(Decimal::ZERO);
+                    *total = total.checked_sub(tax.amount).ok_or_else(|| {
+                        ConvertError::InvalidTransaction(format!(
+                            "Tax adjustment total overflows for {symbol} on {}",
+                            tax.date
+                        ))
+                    })?;
+                } else {
+                    warnings.push(format!(
+                        "Unresolved tax adjustment on {}: missing symbol for {} USD",
+                        tax.date, tax.amount
+                    ));
                 }
             }
             _ => {}
@@ -369,22 +380,24 @@ fn process_transactions(
                 | SchwabTransaction::ShortTermCapGain(dividend)
                 | SchwabTransaction::LongTermCapGain(dividend) => {
                     let SchwabDividend { common, amount } = dividend;
-                    if let Some(amount) = amount {
-                        if amount.is_sign_negative() {
-                            dividend_corrections.push((common.date, common.symbol, amount.abs()));
-                            continue;
-                        }
-                        let amount_value = amount;
-                        let key = (common.date, common.symbol.clone());
-                        let tax = dividend_taxes.remove(&key).unwrap_or(Decimal::ZERO);
-
-                        cgt_transactions.push(CgtTransaction::Dividend {
-                            date: common.date,
-                            symbol: common.symbol,
-                            amount: amount_value,
-                            tax,
-                        });
+                    if amount.is_sign_negative() {
+                        dividend_corrections.push((common.date, common.symbol, amount.abs()));
+                        continue;
                     }
+                    let key = (common.date, common.symbol.clone());
+                    let tax = dividend_taxes.remove(&key).unwrap_or(Decimal::ZERO);
+                    if tax.is_sign_negative() {
+                        return Err(ConvertError::InvalidTransaction(format!(
+                            "Tax credits exceed matching withholding for {} on {}",
+                            common.symbol, common.date
+                        )));
+                    }
+                    cgt_transactions.push(CgtTransaction::Dividend {
+                        date: common.date,
+                        symbol: common.symbol,
+                        amount,
+                        tax,
+                    });
                 }
                 SchwabTransaction::StockSplit(split) => {
                     let SchwabStockSplit { common } = split;
@@ -450,6 +463,14 @@ fn process_transactions(
             return Err(ConvertError::InvalidTransaction(format!(
                 "Dividend correction for {symbol} on {date} exceeds the matching dividend income by {remaining} USD"
             )));
+        }
+    }
+
+    for ((date, symbol), amount) in dividend_taxes {
+        if !amount.is_zero() {
+            warnings.push(format!(
+                "Unresolved tax adjustment for {symbol} on {date}: {amount} USD has no matching dividend"
+            ));
         }
     }
 

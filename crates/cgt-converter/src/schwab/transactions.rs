@@ -71,7 +71,7 @@ pub(crate) struct SchwabStockPlanActivity {
 #[derive(Debug, Clone)]
 pub(crate) struct SchwabDividend {
     pub(crate) common: CommonFields,
-    pub(crate) amount: Option<Decimal>,
+    pub(crate) amount: Decimal,
 }
 
 #[derive(Debug, Clone)]
@@ -83,7 +83,7 @@ pub(crate) struct SchwabStockSplit {
 pub(crate) struct SchwabNraTax {
     pub(crate) date: NaiveDate,
     pub(crate) symbol: Option<String>,
-    pub(crate) amount: Option<Decimal>,
+    pub(crate) amount: Decimal,
 }
 
 #[derive(Debug, Clone)]
@@ -180,16 +180,18 @@ fn parse_known_transaction(
         SchwabAction::StockPlanActivity => Ok(SchwabTransaction::StockPlanActivity(
             parse_stock_plan_activity(value)?,
         )),
-        SchwabAction::CashDividend => Ok(SchwabTransaction::CashDividend(parse_dividend(value)?)),
-        SchwabAction::QualifiedDividend => {
-            Ok(SchwabTransaction::QualifiedDividend(parse_dividend(value)?))
-        }
-        SchwabAction::ShortTermCapGain => {
-            Ok(SchwabTransaction::ShortTermCapGain(parse_dividend(value)?))
-        }
-        SchwabAction::LongTermCapGain => {
-            Ok(SchwabTransaction::LongTermCapGain(parse_dividend(value)?))
-        }
+        SchwabAction::CashDividend => Ok(SchwabTransaction::CashDividend(parse_dividend(
+            action, value,
+        )?)),
+        SchwabAction::QualifiedDividend => Ok(SchwabTransaction::QualifiedDividend(
+            parse_dividend(action, value)?,
+        )),
+        SchwabAction::ShortTermCapGain => Ok(SchwabTransaction::ShortTermCapGain(parse_dividend(
+            action, value,
+        )?)),
+        SchwabAction::LongTermCapGain => Ok(SchwabTransaction::LongTermCapGain(parse_dividend(
+            action, value,
+        )?)),
         SchwabAction::StockSplit => Ok(SchwabTransaction::StockSplit(parse_stock_split(value)?)),
         SchwabAction::NraTaxAdj => Ok(SchwabTransaction::NraTaxAdj(parse_nra_tax(value)?)),
         SchwabAction::NraWithholding => {
@@ -232,9 +234,9 @@ fn parse_stock_plan_activity(value: &Value) -> Result<SchwabStockPlanActivity, C
     Ok(SchwabStockPlanActivity { common, quantity })
 }
 
-fn parse_dividend(value: &Value) -> Result<SchwabDividend, ConvertError> {
+fn parse_dividend(action: SchwabAction, value: &Value) -> Result<SchwabDividend, ConvertError> {
     let common = parse_common_fields(value)?;
-    let amount = parse_optional_decimal_field(value, KEY_AMOUNT)?;
+    let amount = parse_required_decimal_field(action, value, KEY_AMOUNT, "amount")?;
 
     Ok(SchwabDividend { common, amount })
 }
@@ -248,7 +250,8 @@ fn parse_nra_tax(value: &Value) -> Result<SchwabNraTax, ConvertError> {
     let date_raw = get_required_string(value, KEY_DATE, KEY_DATE)?;
     let date = parse_date(date_raw)?;
     let symbol = get_optional_string(value, KEY_SYMBOL).map(str::to_string);
-    let amount = parse_optional_decimal_field(value, KEY_AMOUNT)?;
+    let amount =
+        parse_required_decimal_field(SchwabAction::NraWithholding, value, KEY_AMOUNT, "amount")?;
 
     Ok(SchwabNraTax {
         date,
@@ -313,9 +316,12 @@ fn parse_optional_decimal_field(
     value: &Value,
     key: &'static str,
 ) -> Result<Option<Decimal>, ConvertError> {
-    match get_optional_string(value, key) {
-        Some(amount) => super::parse_dollar_amount(amount),
-        None => Ok(None),
+    match value.get(key) {
+        Some(Value::String(amount)) => super::parse_dollar_amount(amount),
+        Some(Value::Null) | None => Ok(None),
+        Some(_) => Err(ConvertError::InvalidTransaction(format!(
+            "{key} must be a string"
+        ))),
     }
 }
 
