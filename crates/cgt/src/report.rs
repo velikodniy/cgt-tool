@@ -3,7 +3,8 @@
 
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
-use serde::ser::{Serialize, SerializeSeq, SerializeStruct, Serializer};
+use serde::ser::SerializeStruct;
+use serde::{Serialize, Serializer};
 
 use crate::format::round_money;
 use crate::model::{TaxPeriod, Transaction};
@@ -11,16 +12,16 @@ use crate::model::{TaxPeriod, Transaction};
 /// Serialize a money [`Decimal`] as a 2dp string under the single rounding
 /// policy. Decimals render as JSON strings (matching the currency convention),
 /// so totals stay exact rather than passing through binary float.
-fn serialize_money<S>(value: Decimal, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_money<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_str(&round_money(value).to_string())
+    serializer.serialize_str(&round_money(*value).to_string())
 }
 
 /// Serialize a quantity [`Decimal`] as its exact string. Quantities are not
 /// rounded; share counts are exact.
-fn serialize_quantity<S>(value: Decimal, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_quantity<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -29,84 +30,35 @@ where
 
 /// HMRC share matching rule for a disposal leg. Public wire enum, kept separate
 /// from the engine's internal `value::LegRule` by design.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum MatchRule {
     SameDay,
     BedAndBreakfast,
     Section104,
 }
 
-impl MatchRule {
-    /// Wire name for this rule. The equivalence harness matches these exact
-    /// strings; load-bearing for output equivalence.
-    fn as_str(&self) -> &'static str {
-        match self {
-            MatchRule::SameDay => "SameDay",
-            MatchRule::BedAndBreakfast => "BedAndBreakfast",
-            MatchRule::Section104 => "Section104",
-        }
-    }
-}
-
-impl Serialize for MatchRule {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
 /// One matched leg of a disposal: a quantity matched under a single rule with
 /// its allowable cost and resulting gain or loss.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct MatchLeg {
     pub rule: MatchRule,
+    #[serde(serialize_with = "serialize_quantity")]
     pub quantity: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub allowable_cost: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub gain_or_loss: Decimal,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub acquisition_date: Option<NaiveDate>,
 }
 
-impl Serialize for MatchLeg {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let len = if self.acquisition_date.is_some() {
-            5
-        } else {
-            4
-        };
-        let mut leg = serializer.serialize_struct("MatchLeg", len)?;
-        leg.serialize_field("rule", &self.rule)?;
-        leg.serialize_field("quantity", &MoneyField(self.quantity, false))?;
-        leg.serialize_field("allowable_cost", &MoneyField(self.allowable_cost, true))?;
-        leg.serialize_field("gain_or_loss", &MoneyField(self.gain_or_loss, true))?;
-        if let Some(date) = self.acquisition_date {
-            leg.serialize_field("acquisition_date", &date)?;
-        }
-        leg.end()
-    }
-}
+#[derive(Serialize)]
+#[serde(transparent)]
+struct MoneyField(#[serde(serialize_with = "serialize_money")] Decimal);
 
-/// Serialize adapter for a single [`Decimal`] field. `round` selects the money
-/// policy (2dp away-from-zero) when true, or the exact quantity form when
-/// false.
-struct MoneyField(Decimal, bool);
-
-impl Serialize for MoneyField {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if self.1 {
-            serialize_money(self.0, serializer)
-        } else {
-            serialize_quantity(self.0, serializer)
-        }
-    }
-}
+#[derive(Serialize)]
+#[serde(transparent)]
+struct QuantityField(#[serde(serialize_with = "serialize_quantity")] Decimal);
 
 /// One disposal: all legs for a single merged sell event.
 #[derive(Debug, Clone, PartialEq)]
@@ -173,113 +125,65 @@ impl Serialize for Disposal {
         let mut disposal = serializer.serialize_struct("Disposal", fields)?;
         disposal.serialize_field("date", &self.date)?;
         disposal.serialize_field("ticker", &self.ticker)?;
-        disposal.serialize_field("quantity", &MoneyField(self.quantity, false))?;
-        disposal.serialize_field("gross_proceeds", &MoneyField(self.gross_proceeds, true))?;
-        disposal.serialize_field("proceeds", &MoneyField(self.proceeds, true))?;
+        disposal.serialize_field("quantity", &QuantityField(self.quantity))?;
+        disposal.serialize_field("gross_proceeds", &MoneyField(self.gross_proceeds))?;
+        disposal.serialize_field("proceeds", &MoneyField(self.proceeds))?;
         // The legs are emitted under `matches` (the equivalence harness reads
         // `matches` or `legs`; this matches the existing wire vocabulary).
-        disposal.serialize_field("matches", &Legs(&self.display_legs()))?;
+        disposal.serialize_field("matches", &self.display_legs())?;
         if !rounding_adjustment.is_zero() {
-            disposal.serialize_field(
-                "rounding_adjustment",
-                &MoneyField(rounding_adjustment, true),
-            )?;
+            disposal.serialize_field("rounding_adjustment", &MoneyField(rounding_adjustment))?;
         }
         disposal.end()
     }
 }
 
-/// Serialize adapter for a slice of [`MatchLeg`] as a JSON array.
-struct Legs<'a>(&'a [MatchLeg]);
-
-impl Serialize for Legs<'_> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-        for leg in self.0 {
-            seq.serialize_element(leg)?;
-        }
-        seq.end()
-    }
-}
-
 /// Final Section 104 pool state for a ticker after the whole replay.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Holding {
     pub ticker: String,
+    #[serde(serialize_with = "serialize_quantity")]
     pub quantity: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub total_cost: Decimal,
 }
 
-impl Serialize for Holding {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut holding = serializer.serialize_struct("Holding", 3)?;
-        holding.serialize_field("ticker", &self.ticker)?;
-        holding.serialize_field("quantity", &MoneyField(self.quantity, false))?;
-        holding.serialize_field("total_cost", &MoneyField(self.total_cost, true))?;
-        holding.end()
-    }
-}
-
 /// Per-tax-year summary of disposals and dividend income.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct TaxYearSummary {
     pub period: TaxPeriod,
     pub disposals: Vec<Disposal>,
     pub disposal_count: usize,
+    #[serde(serialize_with = "serialize_money")]
     pub total_gain: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub total_loss: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub net_gain: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub gross_proceeds: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub total_allowable_cost: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub exempt_amount: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub taxable_gain: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub dividend_income: Decimal,
+    #[serde(serialize_with = "serialize_money")]
     pub dividend_tax_paid: Decimal,
-}
-
-impl Serialize for TaxYearSummary {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut year = serializer.serialize_struct("TaxYearSummary", 12)?;
-        year.serialize_field("period", &self.period)?;
-        year.serialize_field("disposals", &self.disposals)?;
-        year.serialize_field("disposal_count", &self.disposal_count)?;
-        year.serialize_field("total_gain", &MoneyField(self.total_gain, true))?;
-        year.serialize_field("total_loss", &MoneyField(self.total_loss, true))?;
-        year.serialize_field("net_gain", &MoneyField(self.net_gain, true))?;
-        // Computed-once renderer fields; outside the harness year view.
-        year.serialize_field("gross_proceeds", &MoneyField(self.gross_proceeds, true))?;
-        year.serialize_field(
-            "total_allowable_cost",
-            &MoneyField(self.total_allowable_cost, true),
-        )?;
-        year.serialize_field("exempt_amount", &MoneyField(self.exempt_amount, true))?;
-        year.serialize_field("taxable_gain", &MoneyField(self.taxable_gain, true))?;
-        year.serialize_field("dividend_income", &MoneyField(self.dividend_income, true))?;
-        year.serialize_field(
-            "dividend_tax_paid",
-            &MoneyField(self.dividend_tax_paid, true),
-        )?;
-        year.end()
-    }
 }
 
 /// The complete CGT report: per-year summaries, final holdings, an optional
 /// echo of the input transactions, and any non-fatal warnings.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct TaxReport {
     pub tax_years: Vec<TaxYearSummary>,
     pub holdings: Vec<Holding>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub transactions: Option<Vec<Transaction>>,
     /// Non-fatal diagnostics (e.g. a tax year with no configured exemption).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<String>,
 }
 
@@ -294,28 +198,6 @@ impl TaxReport {
             .collect();
         active.sort_by(|a, b| a.ticker.cmp(&b.ticker));
         active
-    }
-}
-
-impl Serialize for TaxReport {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut len = if self.transactions.is_some() { 3 } else { 2 };
-        if !self.warnings.is_empty() {
-            len += 1;
-        }
-        let mut report = serializer.serialize_struct("TaxReport", len)?;
-        report.serialize_field("tax_years", &self.tax_years)?;
-        report.serialize_field("holdings", &self.holdings)?;
-        if let Some(transactions) = &self.transactions {
-            report.serialize_field("transactions", transactions)?;
-        }
-        if !self.warnings.is_empty() {
-            report.serialize_field("warnings", &self.warnings)?;
-        }
-        report.end()
     }
 }
 
