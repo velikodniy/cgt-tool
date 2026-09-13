@@ -42,8 +42,7 @@ pub fn format_trade(
 
 /// Format a DIVIDEND transaction line
 ///
-/// Schwab exports do not include share quantity for dividend rows, so quantity is emitted
-/// as `1` and the cash value is emitted via `TOTAL` to produce valid CGT DSL.
+/// Schwab exports omit share quantity for dividends, so the cash value uses `TOTAL`.
 pub fn format_dividend(
     date: &NaiveDate,
     symbol: &str,
@@ -81,7 +80,6 @@ pub fn generate_header(broker: &str, source_files: &[String], skipped_count: usi
     let mut lines = vec![
         format_comment(&format!("Converted from {} export", broker)),
         format_comment(&format!("Source files: {}", source_files.join(", "))),
-        format_comment(&format!("Converted: {}", chrono::Utc::now().to_rfc3339())),
     ];
 
     if skipped_count > 0 {

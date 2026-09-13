@@ -4,105 +4,89 @@ use rust_decimal::Decimal;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// Equity awards data parsed from Schwab exports
+/// Equity awards retain every candidate until the deposit is resolved.
 #[derive(Debug, Clone)]
 pub struct AwardsData {
-    /// Map of (symbol, date) -> Fair Market Value
-    fmv_map: HashMap<(String, NaiveDate), Decimal>,
-    deposits: HashMap<(String, NaiveDate), Vec<DepositAward>>,
+    by_symbol: HashMap<String, Vec<Award>>,
 }
 
-/// Result of looking up an award by date
+/// Fair market value and acquisition date from an award.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AwardLookup {
-    /// The Fair Market Value at vest
     pub fmv: Decimal,
-    /// The actual vest/lapse date (for CGT acquisition date)
     pub vest_date: NaiveDate,
 }
 
 #[derive(Debug, Clone)]
-struct DepositAward {
+struct Award {
+    value: AwardLookup,
+    deposit: Option<Deposit>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Deposit {
+    date: NaiveDate,
     quantity: Option<Decimal>,
-    award: AwardLookup,
 }
 
 impl AwardsData {
+    fn candidates(&self, symbol: &str) -> &[Award] {
+        self.by_symbol
+            .get(&symbol.to_uppercase())
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+    }
+
     pub(crate) fn get_fmv_for_deposit(
         &self,
         date: &NaiveDate,
         symbol: &str,
         quantity: Decimal,
     ) -> Result<AwardLookup, ConvertError> {
-        let symbol = symbol.to_uppercase();
-        let candidates: Vec<_> = if let Some(deposits) = self.deposits.get(&(symbol.clone(), *date))
-        {
-            deposits
-                .iter()
-                .filter(|deposit| deposit.quantity.is_none_or(|amount| amount == quantity))
-                .map(|deposit| deposit.award.clone())
-                .collect()
-        } else {
-            self.fmv_map
-                .iter()
-                .filter(|((candidate_symbol, candidate_date), _)| {
-                    candidate_symbol == &symbol
-                        && (0..=7).contains(&date.signed_duration_since(*candidate_date).num_days())
+        let awards = self.candidates(symbol);
+        let has_deposit = awards
+            .iter()
+            .any(|award| award.deposit.is_some_and(|deposit| deposit.date == *date));
+        let mut candidates = awards.iter().filter(|award| {
+            if has_deposit {
+                award.deposit.is_some_and(|deposit| {
+                    deposit.date == *date
+                        && deposit.quantity.is_none_or(|amount| amount == quantity)
                 })
-                .map(|((_, vest_date), fmv)| AwardLookup {
-                    fmv: *fmv,
-                    vest_date: *vest_date,
-                })
-                .collect()
-        };
-        let Some(first) = candidates.first() else {
-            return Err(ConvertError::MissingFairMarketValue {
+            } else {
+                (0..=7).contains(&date.signed_duration_since(award.value.vest_date).num_days())
+            }
+        });
+        let first = candidates
+            .next()
+            .ok_or_else(|| ConvertError::MissingFairMarketValue {
                 date: date.to_string(),
-                symbol,
-            });
-        };
-        if candidates.iter().any(|candidate| candidate != first) {
+                symbol: symbol.to_string(),
+            })?;
+        if candidates.any(|candidate| candidate.value != first.value) {
             return Err(ConvertError::InvalidTransaction(format!(
                 "Ambiguous awards for {symbol} deposit of {quantity} shares on {date}"
             )));
         }
-        Ok(first.clone())
+        Ok(first.value.clone())
     }
 
-    /// Get Fair Market Value and vest date for a specific symbol and date
-    /// Implements 7-day lookback for date matching
-    ///
-    /// Returns the FMV and the actual vest date found (which may differ from
-    /// the query date due to T+2 settlement). The vest date should be used
-    /// as the CGT acquisition date per HMRC guidance.
+    /// Get the closest vest within seven days of the supplied date.
+    /// When entries share a vest date, the last export entry wins.
+    /// Conversion uses deposit reconciliation instead of this legacy lookup.
     pub fn get_fmv(&self, date: &NaiveDate, symbol: &str) -> Result<AwardLookup, ConvertError> {
-        // Normalize symbol to uppercase for case-insensitive lookup
-        let symbol_upper = symbol.to_uppercase();
-
-        // Try exact match first
-        if let Some(fmv) = self.fmv_map.get(&(symbol_upper.clone(), *date)) {
-            return Ok(AwardLookup {
-                fmv: *fmv,
-                vest_date: *date,
-            });
-        }
-
-        // Try 7-day lookback (for awards that may have slightly different dates)
-        for days_back in 1..=7 {
-            if let Some(earlier_date) = date.checked_sub_signed(chrono::Duration::days(days_back))
-                && let Some(fmv) = self.fmv_map.get(&(symbol_upper.clone(), earlier_date))
-            {
-                return Ok(AwardLookup {
-                    fmv: *fmv,
-                    vest_date: earlier_date,
-                });
-            }
-        }
-
-        Err(ConvertError::MissingFairMarketValue {
-            date: date.to_string(),
-            symbol: symbol.to_string(),
-        })
+        self.candidates(symbol)
+            .iter()
+            .rev()
+            .filter(|award| {
+                (0..=7).contains(&date.signed_duration_since(award.value.vest_date).num_days())
+            })
+            .min_by_key(|award| date.signed_duration_since(award.value.vest_date).num_days())
+            .map(|award| award.value.clone())
+            .ok_or_else(|| ConvertError::MissingFairMarketValue {
+                date: date.to_string(),
+                symbol: symbol.to_string(),
+            })
     }
 }
 
@@ -196,8 +180,7 @@ fn extract_award_fmv(
 pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError> {
     let awards_json: AwardsJson = serde_json::from_str(json_content)?;
 
-    let mut fmv_map = HashMap::new();
-    let mut deposits: HashMap<_, Vec<_>> = HashMap::new();
+    let mut by_symbol: HashMap<String, Vec<Award>> = HashMap::new();
 
     for award in awards_json.transactions {
         let parent_date = parse_award_date(&award.date)?;
@@ -230,42 +213,35 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
             .map(super::parse_dollar_amount)
             .transpose()?
             .flatten();
-        let mut fallback: Option<(NaiveDate, Decimal)> = None;
-        let mut inserted = false;
-
+        let deposit = is_deposit.then_some(Deposit {
+            date: parent_date,
+            quantity,
+        });
+        let mut vest_values = Vec::new();
+        let mut fallback_values = Vec::new();
         for detail in &award.transaction_details {
             let (date, fmv, is_vest) = extract_award_fmv(&detail.details, parent_date)?;
-            if let (Some(date), Some(fmv)) = (date, fmv) {
-                if is_deposit {
-                    deposits
-                        .entry((symbol_upper.clone(), parent_date))
-                        .or_default()
-                        .push(DepositAward {
-                            quantity,
-                            award: AwardLookup {
-                                fmv,
-                                vest_date: date,
-                            },
-                        });
-                }
+            if let (Some(vest_date), Some(fmv)) = (date, fmv) {
+                let record = Award {
+                    value: AwardLookup { fmv, vest_date },
+                    deposit,
+                };
                 if is_vest {
-                    // Insert all vest FMVs found (multiple grants may vest on different dates)
-                    fmv_map.insert((symbol_upper.clone(), date), fmv);
-                    inserted = true;
-                }
-
-                if fallback.is_none() {
-                    fallback = Some((date, fmv));
+                    vest_values.push(record);
+                } else {
+                    fallback_values.push(record);
                 }
             }
         }
-
-        if !inserted && let Some((date, fmv)) = fallback {
-            fmv_map.insert((symbol_upper, date), fmv);
-        }
+        let values = if vest_values.is_empty() {
+            fallback_values
+        } else {
+            vest_values
+        };
+        by_symbol.entry(symbol_upper).or_default().extend(values);
     }
 
-    Ok(AwardsData { fmv_map, deposits })
+    Ok(AwardsData { by_symbol })
 }
 
 #[cfg(test)]

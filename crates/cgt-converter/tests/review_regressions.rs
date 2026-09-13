@@ -253,3 +253,35 @@ fn invalid_symbols_fail_during_conversion() {
         ));
     }
 }
+
+#[test]
+fn conflicting_award_values_remain_ambiguous_without_a_deposit() {
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json:json!({"BrokerageTransactions":[{
+            "Date":"01/17/2024", "Action":"Stock Plan Activity", "Symbol":"FOO", "Quantity":"100"
+        }]}).to_string(),
+        awards_json:Some(json!({"Transactions":[
+            {"Date":"01/15/2024", "Action":"Lapse", "Symbol":"FOO", "TransactionDetails":[{"Details":{"FairMarketValuePrice":"10"}}]},
+            {"Date":"01/15/2024", "Action":"Lapse", "Symbol":"FOO", "TransactionDetails":[{"Details":{"FairMarketValuePrice":"20"}}]}
+        ]}).to_string()),
+    });
+    assert!(
+        matches!(output, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Ambiguous awards"))
+    );
+}
+
+#[test]
+fn conversion_is_deterministic() -> Result<(), Box<dyn std::error::Error>> {
+    let input = SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":[{
+            "Date":"07/15/2023", "Action":"Buy", "Symbol":"FOO", "Quantity":"1", "Price":"100"
+        }]})
+        .to_string(),
+        awards_json: None,
+    };
+    let first = SchwabConverter.convert(&input)?;
+    let second = SchwabConverter.convert(&input)?;
+    assert_eq!(first, second);
+    assert!(!first.cgt_content.contains("# Converted:"));
+    Ok(())
+}
