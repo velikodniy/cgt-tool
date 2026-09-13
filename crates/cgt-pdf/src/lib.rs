@@ -13,8 +13,8 @@ use chrono::{Datelike, Local, NaiveDate};
 use rust_decimal::Decimal;
 use thiserror::Error;
 use typst::foundations::{Dict, IntoValue, Value};
-use typst::layout::PagedDocument;
 use typst_as_lib::TypstEngine;
+use typst_layout::PagedDocument;
 
 static TEMPLATE: &str = include_str!("templates/report.typ");
 
@@ -405,7 +405,7 @@ mod tests {
         let report = calculate(&transactions, None, None, &config)?;
         let document = compile(&report)?;
         let mut text = String::new();
-        for page in &document.pages {
+        for page in document.pages() {
             append_frame_text(&page.frame, &mut text);
         }
         Ok(text.split_whitespace().collect::<Vec<_>>().join(" "))

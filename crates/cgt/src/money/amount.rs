@@ -190,53 +190,26 @@ impl<'de> Deserialize<'de> for CurrencyAmount {
 }
 
 impl JsonSchema for CurrencyAmount {
-    fn schema_name() -> String {
-        "CurrencyAmount".to_owned()
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "CurrencyAmount".into()
     }
 
-    fn json_schema(generator: &mut schemars::r#gen::SchemaGenerator) -> schemars::schema::Schema {
-        use schemars::schema::{
-            InstanceType, Metadata, ObjectValidation, Schema, SchemaObject, SingleOrVec,
-        };
-
-        // CurrencyAmount can be either:
-        // 1. A plain string/decimal for GBP (e.g., "150" or "150.00")
-        // 2. An object with amount AND currency for foreign currencies
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
         let decimal_schema = generator.subschema_for::<Decimal>();
-
-        let obj_schema = SchemaObject {
-            instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::Object))),
-            object: Some(Box::new(ObjectValidation {
-                properties: [
-                    ("amount".to_string(), generator.subschema_for::<Decimal>()),
-                    ("currency".to_string(), generator.subschema_for::<String>()),
-                ]
-                .into_iter()
-                .collect(),
-                // Both amount AND currency are required when using object format
-                required: ["amount".to_string(), "currency".to_string()]
-                    .into_iter()
-                    .collect(),
-                ..Default::default()
-            })),
-            metadata: Some(Box::new(Metadata {
-                description: Some(
-                    "A monetary amount: plain string for GBP (e.g., \"150\"), \
-                     or object with amount AND currency for foreign currencies \
-                     (e.g., {\"amount\": \"150\", \"currency\": \"USD\"})"
-                        .to_owned(),
-                ),
-                ..Default::default()
-            })),
-            ..Default::default()
-        };
-
-        Schema::Object(SchemaObject {
-            subschemas: Some(Box::new(schemars::schema::SubschemaValidation {
-                any_of: Some(vec![decimal_schema, Schema::Object(obj_schema)]),
-                ..Default::default()
-            })),
-            ..Default::default()
+        let currency_schema = generator.subschema_for::<String>();
+        schemars::json_schema!({
+            "anyOf": [
+                decimal_schema,
+                {
+                    "type": "object",
+                    "properties": {
+                        "amount": decimal_schema,
+                        "currency": currency_schema
+                    },
+                    "required": ["amount", "currency"],
+                    "description": "A monetary amount: plain string for GBP (e.g., \"150\"), or object with amount AND currency for foreign currencies (e.g., {\"amount\": \"150\", \"currency\": \"USD\"})"
+                }
+            ]
         })
     }
 }

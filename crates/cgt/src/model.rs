@@ -162,16 +162,18 @@ impl<'de> Deserialize<'de> for TaxPeriod {
 }
 
 impl JsonSchema for TaxPeriod {
-    fn schema_name() -> String {
-        "TaxPeriod".to_owned()
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "TaxPeriod".into()
     }
 
-    fn json_schema(generator: &mut schemars::r#gen::SchemaGenerator) -> schemars::schema::Schema {
-        let mut schema = generator.subschema_for::<String>().into_object();
-        schema.metadata().description =
-            Some("UK tax year in 'YYYY/YY' format (e.g., '2023/24')".to_owned());
-        schema.string().pattern = Some(r"^\d{4}/\d{2}$".to_owned());
-        schema.into()
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let mut schema = generator.subschema_for::<String>();
+        schema.insert(
+            "description".into(),
+            "UK tax year in 'YYYY/YY' format (e.g., '2023/24')".into(),
+        );
+        schema.insert("pattern".into(), r"^\d{4}/\d{2}$".into());
+        schema
     }
 }
 

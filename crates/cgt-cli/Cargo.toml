@@ -11,15 +11,15 @@ path = "src/main.rs"
 cgt = { path = "../cgt" }
 cgt-pdf = { path = "../cgt-pdf" }
 cgt-converter = { path = "../cgt-converter" }
-clap = { version = "4.4", features = ["derive"] }
-anyhow = "1.0"
-serde_json = "1.0"
-schemars = "0.8"
-serde = { version = "1.0", features = ["derive"] }
+clap = { version = "4.6.6", features = ["derive"] }
+anyhow = "1.0.104"
+serde_json = "1.0.151"
+schemars = "1.2.2"
+serde = { version = "1.0.229", features = ["derive"] }
 
 [lints]
 workspace = true
 
 [dev-dependencies]
-assert_cmd = "2.0"
-predicates = "3.0"
+assert_cmd = "2.2.2"
+predicates = "3.1.4"

@@ -5,7 +5,7 @@ use cgt::money::FxRates;
 use clap::Parser;
 mod commands;
 use commands::{BrokerCommands, Commands, OutputFormat};
-use schemars::schema_for;
+use schemars::generate::SchemaSettings;
 use std::fs;
 
 #[derive(Parser)]
@@ -67,7 +67,9 @@ fn main() -> Result<()> {
     match &cli.command {
         Commands::Parse { files, schema } => {
             if *schema {
-                let schema = schema_for!(Vec<cgt::Transaction>);
+                let schema = SchemaSettings::draft07()
+                    .into_generator()
+                    .into_root_schema_for::<Vec<cgt::Transaction>>();
                 println!("{}", serde_json::to_string_pretty(&schema)?);
                 return Ok(());
             }
