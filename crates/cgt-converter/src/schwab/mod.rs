@@ -322,7 +322,7 @@ fn process_transactions(
                     // Per HMRC guidance (CG14250, ERSM20192), acquisition date is the vest date
                     // (when conditions are satisfied), not the settlement date from transactions
                     let award_lookup = if let Some(awards_data) = awards {
-                        awards_data.get_fmv(&common.date, &common.symbol)?
+                        awards_data.get_fmv_for_deposit(&common.date, &common.symbol, quantity)?
                     } else {
                         return Err(ConvertError::MissingFairMarketValue {
                             date: common.date.to_string(),

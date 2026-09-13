@@ -9,10 +9,11 @@ use std::collections::HashMap;
 pub struct AwardsData {
     /// Map of (symbol, date) -> Fair Market Value
     fmv_map: HashMap<(String, NaiveDate), Decimal>,
+    deposits: HashMap<(String, NaiveDate), Vec<DepositAward>>,
 }
 
 /// Result of looking up an award by date
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AwardLookup {
     /// The Fair Market Value at vest
     pub fmv: Decimal,
@@ -20,7 +21,54 @@ pub struct AwardLookup {
     pub vest_date: NaiveDate,
 }
 
+#[derive(Debug, Clone)]
+struct DepositAward {
+    quantity: Option<Decimal>,
+    award: AwardLookup,
+}
+
 impl AwardsData {
+    pub(crate) fn get_fmv_for_deposit(
+        &self,
+        date: &NaiveDate,
+        symbol: &str,
+        quantity: Decimal,
+    ) -> Result<AwardLookup, ConvertError> {
+        let symbol = symbol.to_uppercase();
+        let candidates: Vec<_> = if let Some(deposits) = self.deposits.get(&(symbol.clone(), *date))
+        {
+            deposits
+                .iter()
+                .filter(|deposit| deposit.quantity.is_none_or(|amount| amount == quantity))
+                .map(|deposit| deposit.award.clone())
+                .collect()
+        } else {
+            self.fmv_map
+                .iter()
+                .filter(|((candidate_symbol, candidate_date), _)| {
+                    candidate_symbol == &symbol
+                        && (0..=7).contains(&date.signed_duration_since(*candidate_date).num_days())
+                })
+                .map(|((_, vest_date), fmv)| AwardLookup {
+                    fmv: *fmv,
+                    vest_date: *vest_date,
+                })
+                .collect()
+        };
+        let Some(first) = candidates.first() else {
+            return Err(ConvertError::MissingFairMarketValue {
+                date: date.to_string(),
+                symbol,
+            });
+        };
+        if candidates.iter().any(|candidate| candidate != first) {
+            return Err(ConvertError::InvalidTransaction(format!(
+                "Ambiguous awards for {symbol} deposit of {quantity} shares on {date}"
+            )));
+        }
+        Ok(first.clone())
+    }
+
     /// Get Fair Market Value and vest date for a specific symbol and date
     /// Implements 7-day lookback for date matching
     ///
@@ -73,6 +121,8 @@ struct AwardTransaction {
     action: Option<String>,
     #[serde(rename = "Symbol")]
     symbol: String,
+    #[serde(rename = "Quantity")]
+    quantity: Option<String>,
     #[serde(rename = "TransactionDetails")]
     #[serde(default)]
     transaction_details: Vec<AwardTransactionDetails>,
@@ -147,6 +197,7 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
     let awards_json: AwardsJson = serde_json::from_str(json_content)?;
 
     let mut fmv_map = HashMap::new();
+    let mut deposits: HashMap<_, Vec<_>> = HashMap::new();
 
     for award in awards_json.transactions {
         let parent_date = parse_award_date(&award.date)?;
@@ -168,13 +219,35 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
                 award.symbol, award.date, action_label
             )));
         }
-        let symbol_upper = award.symbol.to_uppercase();
+        let symbol_upper = award.symbol.trim().to_uppercase();
+        let is_deposit = matches!(
+            award.action.as_deref().map(str::trim),
+            Some("Deposit") | None
+        );
+        let quantity = award
+            .quantity
+            .as_deref()
+            .map(super::parse_dollar_amount)
+            .transpose()?
+            .flatten();
         let mut fallback: Option<(NaiveDate, Decimal)> = None;
         let mut inserted = false;
 
         for detail in &award.transaction_details {
             let (date, fmv, is_vest) = extract_award_fmv(&detail.details, parent_date)?;
             if let (Some(date), Some(fmv)) = (date, fmv) {
+                if is_deposit {
+                    deposits
+                        .entry((symbol_upper.clone(), parent_date))
+                        .or_default()
+                        .push(DepositAward {
+                            quantity,
+                            award: AwardLookup {
+                                fmv,
+                                vest_date: date,
+                            },
+                        });
+                }
                 if is_vest {
                     // Insert all vest FMVs found (multiple grants may vest on different dates)
                     fmv_map.insert((symbol_upper.clone(), date), fmv);
@@ -192,7 +265,7 @@ pub fn parse_awards_json(json_content: &str) -> Result<AwardsData, ConvertError>
         }
     }
 
-    Ok(AwardsData { fmv_map })
+    Ok(AwardsData { fmv_map, deposits })
 }
 
 #[cfg(test)]
