@@ -184,7 +184,7 @@ Rates are provided by the [`hmrc-rates`](https://crates.io/crates/hmrc-rates) cr
 
 ### Precision
 
-Foreign exchange calculations retain the available decimal precision. Monetary output rounds to two decimal places, with midpoints away from zero. JSON, plain text, PDF, and browser output use this policy. Quantities and unit prices retain their available precision.
+Foreign exchange calculations retain the available decimal precision. Displayed monetary values and JSON disposal and annual totals round to two decimal places, with midpoints away from zero. JSON holding quantities and costs retain their full decimal precision. Renderers derive holding unit costs from those exact values before rounding for display.
 
 ### Dual Display
 
@@ -293,7 +293,7 @@ Schwab dates use `MM/DD/YYYY` or `as of` notation. For `02/25/2021 as of 02/21/2
 - **Tax years:** YYYY/YY (e.g., 2023/24).
 - **Foreign currency:** `£118.42 (150 USD)`.
 - **Unit prices:** Full precision, trailing zeros stripped (e.g., £4.6702).
-- **Rounding:** Midpoint-away-from-zero (£100.995 → £101.00); the same policy used for JSON output.
+- **Rounding:** Midpoint-away-from-zero (£100.995 → £101.00). JSON holding quantities and costs remain exact.
 - **Ordering:** Date ascending, then ticker ascending, using a shared canonical comparator.
 
 ### Report Sections
@@ -320,7 +320,7 @@ For each disposal:
 
 ### Holdings Display
 
-Lists remaining holdings with ticker, quantity, and average cost. Shows "NONE" if empty. Holding JSON includes `average_cost`, derived from the exact pool cost before `total_cost` rounds. The browser uses that value to preserve fractional-share cost precision.
+Lists remaining holdings with ticker, quantity, and average cost. Shows "NONE" if empty. Holding JSON retains the exact `quantity` and `total_cost`. Renderers divide the total cost by the quantity and round only for display. JSON does not include a separate average cost.
 
 ### PDF-Specific
 

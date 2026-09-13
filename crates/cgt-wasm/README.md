@@ -131,20 +131,22 @@ Calculate a complete tax report from transaction DSL.
 ```typescript
 {
   tax_years: Array<{
-    year: number,
+    period: string,
     total_gain: string,
     total_loss: string,
     net_gain: string,
-    tax_liability: string,
+    taxable_gain: string,
     // ... more fields
   }>,
   holdings: Array<{
     ticker: string,
     quantity: string,
-    cost_basis: string
+    total_cost: string
   }>
 }
 ```
+
+Holding quantities and total costs are exact decimal strings. Compute the average as `total_cost / quantity` and round it for display.
 
 ### `parse_transactions(dsl: string): string`
 

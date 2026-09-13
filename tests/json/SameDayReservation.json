@@ -58,8 +58,7 @@
     {
       "ticker": "SNAP",
       "quantity": "130",
-      "total_cost": "1300.00",
-      "average_cost": "10.00"
+      "total_cost": "1300.00"
     }
   ],
   "transactions": [

@@ -14,6 +14,7 @@ use rust_decimal::Decimal;
 use serde_json::Value;
 
 use crate::config::Config;
+use crate::format::round_money;
 use crate::money::FxRates;
 
 fn fx_rates() -> &'static FxRates {
@@ -249,7 +250,7 @@ fn with_asset_events_bb_prices_off_raw_buy() {
         .sum();
     assert_eq!(net, d("280.91"));
     assert_eq!(year_total(&report, "2019/20", "net_gain"), d("280.91"));
-    assert_holding(&report, "GB00B3TYHH97", "20", "3685.41");
+    assert_holding(&report, "GB00B3TYHH97", "20", "3685.405");
 }
 
 #[test]
@@ -274,7 +275,7 @@ fn with_asset_events_same_day_drops_retroactive_basis() {
     // Disposal net raw 200.305 renders 200.31 away from zero.
     assert_eq!(year_total(&report, "2019/20", "net_gain"), d("200.31"));
     assert_eq!(year_total(&report, "2019/20", "total_gain"), d("200.31"));
-    assert_holding(&report, "GB00B3TYHH97", "20", "3685.41");
+    assert_holding(&report, "GB00B3TYHH97", "20", "3685.405");
 }
 
 #[test]
@@ -299,7 +300,7 @@ fn synthetic_complex_same_day_legs_lose_leaked_offset() {
         assert_eq!(legs[0].1, d("2810.70"), "{date}: corrected unit cost");
     }
     assert_eq!(
-        money(holding(&report, "ACME"), "total_cost"),
+        round_money(money(holding(&report, "ACME"), "total_cost")),
         d("258579.93")
     );
 }

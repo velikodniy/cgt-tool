@@ -12,7 +12,7 @@ use rust_decimal::Decimal;
 
 use crate::format::{
     format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
-    format_tax_year, round_money,
+    format_tax_year, format_unit_cost, round_money,
 };
 use crate::model::Operation;
 use crate::report::{Disposal, MatchRule, TaxReport};
@@ -98,13 +98,13 @@ pub fn render(report: &TaxReport) -> String {
         let _ = writeln!(out, "NONE");
     } else {
         for h in active {
-            let cost_basis = h.total_cost / h.quantity;
+            let cost_basis = format_unit_cost(h.total_cost, h.quantity);
             let _ = writeln!(
                 out,
                 "{}: {} units at £{} avg cost",
                 h.ticker,
                 format_decimal_trimmed(h.quantity),
-                format_decimal_trimmed(round_money(cost_basis))
+                cost_basis.trim_end_matches('0').trim_end_matches('.')
             );
         }
     }
@@ -276,16 +276,12 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
                 }
             }
             MatchRule::Section104 => {
-                let cost_per_share = if m.quantity != Decimal::ZERO {
-                    m.allowable_cost / m.quantity
-                } else {
-                    Decimal::ZERO
-                };
+                let cost_per_share = format_unit_cost(m.allowable_cost, m.quantity);
                 let _ = writeln!(
                     out,
                     "   Section 104: {} shares @ £{}",
                     format_decimal_trimmed(m.quantity),
-                    format_decimal_trimmed(round_money(cost_per_share))
+                    cost_per_share.trim_end_matches('0').trim_end_matches('.')
                 );
             }
         }
@@ -328,4 +324,36 @@ fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
         let _ = writeln!(out, "   Rounding adjustment: {}", format_gbp(adjustment));
     }
     let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render;
+    use crate::{Config, calculate, dsl};
+
+    #[test]
+    fn unit_costs_round_once_for_holdings_and_section_104() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let transactions = dsl::parse(
+            "2024-01-01 BUY HOLD 200.00000000000000000000000001 @ 0.005\n\
+             2024-01-01 BUY SOLD 200.00000000000000000000000001 @ 0.005\n\
+             2024-06-01 SELL SOLD 200.00000000000000000000000001 @ 0.01\n\
+             2024-01-01 BUY FRACTION 0.1 @ 100.005\n",
+        )?;
+        let report = calculate(&transactions, None, None, &Config::embedded()?)?;
+        let text = render(&report);
+        assert!(
+            text.contains("HOLD: 200.00000000000000000000000001 units at £0 avg cost"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Section 104: 200.00000000000000000000000001 shares @ £0\n"),
+            "{text}"
+        );
+        assert!(
+            text.contains("FRACTION: 0.1 units at £100.01 avg cost"),
+            "{text}"
+        );
+        Ok(())
+    }
 }

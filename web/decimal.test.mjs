@@ -14,6 +14,8 @@ test("signed money sums stay exact through cancellation", () => {
 });
 
 test("unit costs divide exact fractional share counts", () => {
+  assert.equal(formatUnitCost("10.0005", "0.1"), "£100.01");
+  assert.equal(formatUnitCost("1", "200.00000000000000000000000001"), "£0.00");
   assert.equal(formatUnitCost("0.30", "0.015"), "£20.00");
   assert.equal(formatUnitCost("1.00", "0.0000001"), "£10,000,000.00");
   assert.equal(formatUnitCost("1.00", "0"), "£0.00");

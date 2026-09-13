@@ -1,5 +1,5 @@
-//! Public CGT report model. Every derived number is computed once, here or in
-//! the engine; serializers apply the single money rounding policy.
+//! Public CGT report model. Holdings retain exact quantities and costs.
+//! Disposal and annual summaries apply the shared money rounding policy.
 
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
@@ -19,7 +19,7 @@ where
     serializer.serialize_str(&round_money(*value).to_string())
 }
 
-/// Serialize an exact decimal string for quantities and unit values.
+/// Serialize an exact decimal string for quantities and holding costs.
 fn serialize_decimal<S>(value: &Decimal, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -138,34 +138,13 @@ impl Serialize for Disposal {
 }
 
 /// Final Section 104 pool state for a ticker after the whole replay.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Holding {
     pub ticker: String,
+    #[serde(serialize_with = "serialize_decimal")]
     pub quantity: Decimal,
+    #[serde(serialize_with = "serialize_decimal")]
     pub total_cost: Decimal,
-}
-
-impl Serialize for Holding {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let average_cost = if self.quantity.is_zero() {
-            Decimal::ZERO
-        } else {
-            self.total_cost.checked_div(self.quantity).ok_or_else(|| {
-                <S::Error as serde::ser::Error>::custom(
-                    "Holding average cost exceeds decimal range",
-                )
-            })?
-        };
-        let mut holding = serializer.serialize_struct("Holding", 4)?;
-        holding.serialize_field("ticker", &self.ticker)?;
-        holding.serialize_field("quantity", &ExactDecimal(self.quantity))?;
-        holding.serialize_field("total_cost", &MoneyField(self.total_cost))?;
-        holding.serialize_field("average_cost", &ExactDecimal(average_cost))?;
-        holding.end()
-    }
 }
 
 /// Per-tax-year summary of disposals and dividend income.
@@ -330,7 +309,7 @@ mod tests {
         for key in ["ticker", "quantity", "total_cost"] {
             assert!(holding.get(key).is_some(), "holding missing {key}");
         }
-        assert_eq!(holding["total_cost"], Value::from("1774.01"));
+        assert_eq!(holding["total_cost"], Value::from("1774.005"));
 
         // The input echo is skipped when absent.
         assert!(json.get("transactions").is_none());

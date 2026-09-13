@@ -80,26 +80,22 @@
     {
       "ticker": "BRK.B",
       "quantity": "1",
-      "total_cost": "10",
-      "average_cost": "10"
+      "total_cost": "10"
     },
     {
       "ticker": "BRK/B",
       "quantity": "1",
-      "total_cost": "10",
-      "average_cost": "10"
+      "total_cost": "10"
     },
     {
       "ticker": "FOO-B",
       "quantity": "1",
-      "total_cost": "10",
-      "average_cost": "10"
+      "total_cost": "10"
     },
     {
       "ticker": "FOO_B",
       "quantity": "1",
-      "total_cost": "10",
-      "average_cost": "10"
+      "total_cost": "10"
     }
   ],
   "transactions": [

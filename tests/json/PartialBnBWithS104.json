@@ -42,8 +42,7 @@
     {
       "ticker": "ACME",
       "quantity": "40",
-      "total_cost": "404.00",
-      "average_cost": "10.10"
+      "total_cost": "404.00"
     }
   ],
   "transactions": [

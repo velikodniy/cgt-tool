@@ -4,7 +4,9 @@
 //! installation. Depends only on the engine crate so non-PDF builds never pull
 //! in Typst.
 
-use cgt::format::{format_currency_amount, format_decimal_trimmed, format_gbp, format_price};
+use cgt::format::{
+    format_currency_amount, format_decimal_trimmed, format_gbp, format_gbp_unit_cost, format_price,
+};
 use cgt::model::{CurrencyAmount, Operation, Transaction};
 use cgt::report::{Disposal, MatchRule, TaxReport};
 use chrono::{Datelike, Local, NaiveDate};
@@ -49,11 +51,6 @@ fn unit_amount(total: Decimal, quantity: Decimal) -> Result<Decimal, PdfError> {
             .checked_div(quantity)
             .ok_or(PdfError::UnitValueOverflow)
     }
-}
-
-/// Per-share value `total / quantity`, rounded as money (0 when quantity is 0).
-fn unit_value(total: Decimal, quantity: Decimal) -> Result<Value, PdfError> {
-    money_to_value(unit_amount(total, quantity)?)
 }
 
 fn date_dict(date: NaiveDate) -> Dict {
@@ -188,7 +185,10 @@ fn build_holdings_rows(report: &TaxReport) -> Result<(bool, Vec<Value>), PdfErro
             row.insert("ticker".into(), h.ticker.clone().into_value());
             row.insert("quantity".into(), decimal_to_value(h.quantity)?);
             row.insert("total_cost".into(), money_to_value(h.total_cost)?);
-            row.insert("avg_cost".into(), unit_value(h.total_cost, h.quantity)?);
+            row.insert(
+                "avg_cost".into(),
+                format_gbp_unit_cost(h.total_cost, h.quantity).into_value(),
+            );
             Ok(row.into_value())
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
@@ -338,7 +338,7 @@ fn build_disposal_dict(disposal: &Disposal) -> Result<Dict, PdfError> {
             match_dict.insert("allowable_cost".into(), money_to_value(m.allowable_cost)?);
             match_dict.insert(
                 "unit_cost".into(),
-                unit_value(m.allowable_cost, m.quantity)?,
+                format_gbp_unit_cost(m.allowable_cost, m.quantity).into_value(),
             );
             match_dict.insert(
                 "acquisition_date".into(),
@@ -432,6 +432,27 @@ mod tests {
         assert!(text.contains("Rounding adjustment"), "{text}");
         assert!(text.contains("£0.01"), "{text}");
         assert!(text.contains("£0.02"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_unit_costs_round_once_for_holdings_and_section_104()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let text = rendered_text(
+            "2024-01-01 BUY HOLD 200.00000000000000000000000001 @ 0.005\n\
+             2024-01-01 BUY SOLD 200.00000000000000000000000001 @ 0.005\n\
+             2024-06-01 SELL SOLD 200.00000000000000000000000001 @ 0.01\n\
+             2024-01-01 BUY FRACTION 0.1 @ 100.005\n",
+        )?;
+        assert!(
+            text.contains("Section 104: 200.00000000000000000000000001 shares @ £0.00"),
+            "{text}"
+        );
+        assert!(
+            text.contains("HOLD 200.00000000000000000000000001 £0.00"),
+            "{text}"
+        );
+        assert!(text.contains("FRACTION 0.1 £100.01"), "{text}");
         Ok(())
     }
 

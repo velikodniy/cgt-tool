@@ -3,7 +3,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 #[test]
-fn holding_json_preserves_the_average_before_total_cost_rounding()
+fn holding_json_preserves_exact_cost_for_derived_unit_values()
 -> Result<(), Box<dyn std::error::Error>> {
     let input = include_str!("../../../tests/renderers/holding_precision.cgt");
     let transactions = dsl::parse(input)?;
@@ -13,23 +13,27 @@ fn holding_json_preserves_the_average_before_total_cost_rounding()
         "../../../tests/renderers/holding_precision.json"
     ))?;
     assert_eq!(json, expected);
-    assert_eq!(json["holdings"][0]["total_cost"], "10.00");
-    assert_eq!(json["holdings"][0]["average_cost"], "100.005");
+    assert_eq!(json["holdings"][0]["total_cost"], "10.0005");
+    assert!(json["holdings"][0].get("average_cost").is_none());
     assert!(plain::render(&report).contains("0.1 units at £100.01 avg cost"));
     Ok(())
 }
 
 #[test]
-fn holding_average_handles_zero_quantity_and_reports_overflow()
+fn holding_serialization_preserves_values_without_division()
 -> Result<(), Box<dyn std::error::Error>> {
     let mut holding = Holding {
         ticker: "LIMIT".into(),
         quantity: Decimal::ZERO,
         total_cost: Decimal::MAX,
     };
-    assert_eq!(serde_json::to_value(&holding)?["average_cost"], "0");
-    holding.quantity = dec!(0.1);
-    assert!(serde_json::to_value(&holding).is_err());
+    for quantity in [Decimal::ZERO, dec!(0.1)] {
+        holding.quantity = quantity;
+        let json = serde_json::to_value(&holding)?;
+        assert_eq!(json["quantity"], quantity.to_string());
+        assert_eq!(json["total_cost"], Decimal::MAX.to_string());
+        assert!(json.get("average_cost").is_none());
+    }
     Ok(())
 }
 

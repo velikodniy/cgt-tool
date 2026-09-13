@@ -65,8 +65,7 @@
     {
       "ticker": "FOOBAR",
       "quantity": "5",
-      "total_cost": "436",
-      "average_cost": "87.20"
+      "total_cost": "436"
     }
   ],
   "transactions": [

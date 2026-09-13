@@ -50,14 +50,12 @@
     {
       "ticker": "AAPL",
       "quantity": "10",
-      "total_cost": "500",
-      "average_cost": "50"
+      "total_cost": "500"
     },
     {
       "ticker": "MSFT",
       "quantity": "10",
-      "total_cost": "500",
-      "average_cost": "50"
+      "total_cost": "500"
     }
   ],
   "transactions": [

@@ -308,7 +308,7 @@ const ReportBuilder = {
                     <td><strong>${escapeHtml(h.ticker)}</strong></td>
                     <td class="number">${escapeHtml(h.quantity)}</td>
                     <td class="number">${formatCurrency(h.total_cost)}</td>
-                    <td class="number">${h.average_cost === undefined ? formatUnitCost(h.total_cost, h.quantity) : formatCurrency(h.average_cost)}</td>
+                    <td class="number">${formatUnitCost(h.total_cost, h.quantity)}</td>
                 </tr>
             `;
       })

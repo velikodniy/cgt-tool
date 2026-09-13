@@ -98,16 +98,14 @@ test("report cards preserve large pennies and fractional unit costs", async () =
   assert.ok(html.includes("0.015 shares @ £20.00"));
 });
 
-test("holding cards use the exact average from report JSON", async () => {
+test("holding cards derive averages from exact report costs", async () => {
   const { context } = await loadApp();
   const report = JSON.parse(await readFile(new URL("../tests/renderers/holding_precision.json", import.meta.url), "utf8"));
   context.holdings = report.holdings;
+  assert.equal(context.holdings[0].total_cost, "10.0005");
+  assert.equal(Object.hasOwn(context.holdings[0], "average_cost"), false);
   const html = vm.runInContext("ReportBuilder.holdings(holdings)", context);
   assert.ok(html.includes("£10.00"));
   assert.ok(html.includes("£100.01"));
   assert.ok(!html.includes("£100.00"));
-
-  delete context.holdings[0].average_cost;
-  const oldReportHtml = vm.runInContext("ReportBuilder.holdings(holdings)", context);
-  assert.ok(oldReportHtml.includes("£100.00"));
 });

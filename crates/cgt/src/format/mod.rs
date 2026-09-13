@@ -7,6 +7,8 @@
 pub mod plain;
 
 use chrono::NaiveDate;
+use num_bigint::BigInt;
+use num_traits::{Signed, Zero};
 use rust_decimal::{Decimal, RoundingStrategy};
 
 use crate::model::TaxPeriod;
@@ -41,10 +43,51 @@ pub fn format_gbp(value: Decimal) -> String {
     format_with_symbol_and_precision(value, '£', 2)
 }
 
+/// Format `total / quantity` with two decimal places, rounding once from the
+/// exact ratio. A zero quantity produces `0.00`.
+pub fn format_unit_cost(total: Decimal, quantity: Decimal) -> String {
+    if quantity.is_zero() {
+        return "0.00".into();
+    }
+    let numerator =
+        BigInt::from(total.mantissa()) * BigInt::from(10_u8).pow(quantity.scale()) * 100_u8;
+    let denominator = BigInt::from(quantity.mantissa()) * BigInt::from(10_u8).pow(total.scale());
+    let negative = numerator.is_negative() != denominator.is_negative();
+    let numerator = numerator.abs();
+    let denominator = denominator.abs();
+    let mut pennies = &numerator / &denominator;
+    if (&numerator % &denominator) * 2_u8 >= denominator {
+        pennies += 1_u8;
+    }
+    let sign = if negative && !pennies.is_zero() {
+        "-"
+    } else {
+        ""
+    };
+    let whole = &pennies / 100_u8;
+    let fraction = (&pennies % 100_u8).to_string();
+    format!("{sign}{whole}.{fraction:0>2}")
+}
+
+/// Format the exact per-share ratio as GBP with thousands separators.
+pub fn format_gbp_unit_cost(total: Decimal, quantity: Decimal) -> String {
+    let value = format_unit_cost(total, quantity);
+    let absolute = value.strip_prefix('-').unwrap_or(&value);
+    format_money_string(absolute, value.starts_with('-'), '£')
+}
+
 fn format_with_symbol_and_precision(value: Decimal, symbol: char, minor_units: u32) -> String {
     let rounded = value.round_dp_with_strategy(minor_units, RoundingStrategy::MidpointAwayFromZero);
     let abs_str = format_decimal_with_precision(rounded.abs(), minor_units);
-    let mut parts = abs_str.split('.');
+    format_money_string(
+        &abs_str,
+        rounded.is_sign_negative() && !rounded.is_zero(),
+        symbol,
+    )
+}
+
+fn format_money_string(absolute: &str, negative: bool, symbol: char) -> String {
+    let mut parts = absolute.split('.');
     let integer_part = parts.next().unwrap_or("0");
     let fractional_part = parts.next();
     let formatted_int = add_thousands_separators(integer_part);
@@ -55,7 +98,7 @@ fn format_with_symbol_and_precision(value: Decimal, symbol: char, minor_units: u
         formatted_int
     };
 
-    if rounded.is_sign_negative() && !rounded.is_zero() {
+    if negative {
         format!("-{symbol}{formatted}")
     } else {
         format!("{symbol}{formatted}")
@@ -136,6 +179,33 @@ mod tests {
         // .xx5 rounds away from zero, not to even.
         assert_eq!(format_gbp(dec!(0.125)), "£0.13");
         assert_eq!(format_gbp(dec!(-0.125)), "-£0.13");
+    }
+
+    #[test]
+    fn unit_cost_rounds_the_exact_ratio_once() {
+        assert_eq!(
+            format_unit_cost(dec!(1), dec!(200.00000000000000000000000001)),
+            "0.00"
+        );
+        assert_eq!(format_unit_cost(dec!(10.0005), dec!(0.1)), "100.01");
+        assert_eq!(format_unit_cost(dec!(0.01), dec!(2)), "0.01");
+        assert_eq!(format_unit_cost(dec!(-0.01), dec!(2)), "-0.01");
+        assert_eq!(format_unit_cost(dec!(0.01), dec!(-2)), "-0.01");
+        assert_eq!(format_unit_cost(dec!(-0.001), dec!(1)), "0.00");
+        assert_eq!(format_unit_cost(Decimal::MAX, Decimal::ZERO), "0.00");
+    }
+
+    #[test]
+    fn unit_cost_preserves_large_amounts_and_currency_formatting() {
+        assert_eq!(
+            format_unit_cost(Decimal::MAX, dec!(0.1)),
+            "792281625142643375935439503350.00"
+        );
+        assert_eq!(
+            format_gbp_unit_cost(dec!(9007199254740992.99), dec!(1)),
+            "£9,007,199,254,740,992.99"
+        );
+        assert_eq!(format_gbp_unit_cost(dec!(-1000.005), dec!(1)), "-£1,000.01");
     }
 
     #[test]

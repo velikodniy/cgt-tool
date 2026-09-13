@@ -63,8 +63,7 @@
     {
       "ticker": "FUND",
       "quantity": "0",
-      "total_cost": "0",
-      "average_cost": "0"
+      "total_cost": "0"
     }
   ],
   "transactions": [

@@ -4,8 +4,7 @@
     {
       "ticker": "FRACTION",
       "quantity": "0.1",
-      "total_cost": "10.00",
-      "average_cost": "100.005"
+      "total_cost": "10.0005"
     }
   ],
   "transactions": [
