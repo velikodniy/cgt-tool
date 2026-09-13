@@ -58,8 +58,8 @@ pub fn render(report: &TaxReport) -> String {
         );
         let _ = writeln!(out, "{}", row_line.trim_end());
 
-        if year.dividend_income > Decimal::ZERO {
-            if year.dividend_tax_paid > Decimal::ZERO {
+        if !year.dividend_income.is_zero() || !year.dividend_tax_paid.is_zero() {
+            if !year.dividend_tax_paid.is_zero() {
                 let _ = writeln!(
                     out,
                     "Dividend income: {} (tax paid: {})",

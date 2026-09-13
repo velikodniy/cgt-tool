@@ -7,6 +7,20 @@ fn report(input: &str, year: Option<i32>) -> Result<TaxReport, Box<dyn std::erro
 }
 
 #[test]
+fn plain_summary_includes_tax_without_dividend_income() -> Result<(), Box<dyn std::error::Error>> {
+    let report = report("2024-06-01 DIVIDEND A TOTAL 0 TAX 1\n", None)?;
+    let year = report.tax_years.first().ok_or("Missing income year")?;
+    assert_eq!(year.dividend_income, dec!(0));
+    assert_eq!(year.dividend_tax_paid, dec!(1));
+    let text = cgt::format::plain::render(&report);
+    assert!(
+        text.contains("Dividend income: £0.00 (tax paid: £1.00)"),
+        "{text}"
+    );
+    Ok(())
+}
+
+#[test]
 fn income_only_years_follow_the_april_six_boundary() -> Result<(), Box<dyn std::error::Error>> {
     let report = report(
         "2024-04-05 DIVIDEND CASH TOTAL 20 TAX 2\n\

@@ -142,12 +142,12 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
             money_to_value(year.dividend_tax_paid)?,
         );
         row.insert(
-            "has_dividend_income".into(),
-            (year.dividend_income > Decimal::ZERO).into_value(),
+            "has_dividend_totals".into(),
+            (!year.dividend_income.is_zero() || !year.dividend_tax_paid.is_zero()).into_value(),
         );
         row.insert(
             "has_dividend_tax".into(),
-            (year.dividend_tax_paid > Decimal::ZERO).into_value(),
+            (!year.dividend_tax_paid.is_zero()).into_value(),
         );
         rows.push(row.into_value());
     }
@@ -456,6 +456,15 @@ mod tests {
         )?;
         assert!(text.contains("Dividend income 2024/25: £100.00"), "{text}");
         assert!(text.contains("tax paid: £15.00"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_summary_includes_tax_without_dividend_income()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let text = rendered_text("2024-06-01 DIVIDEND A TOTAL 0 TAX 1\n")?;
+        assert!(text.contains("Dividend income 2024/25: £0.00"), "{text}");
+        assert!(text.contains("tax paid: £1.00"), "{text}");
         Ok(())
     }
 
