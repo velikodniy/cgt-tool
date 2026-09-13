@@ -50,10 +50,15 @@ function showToast(message, type = "info") {
     info: "ℹ",
   };
 
-  toast.innerHTML = `
-        <span class="toast-icon" aria-hidden="true">${icons[type] || icons.info}</span>
-        <span class="toast-message">${message}</span>
-    `;
+  const icon = document.createElement("span");
+  icon.className = "toast-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = icons[type] || icons.info;
+
+  const text = document.createElement("span");
+  text.className = "toast-message";
+  text.textContent = message;
+  toast.append(icon, text);
 
   container.appendChild(toast);
 

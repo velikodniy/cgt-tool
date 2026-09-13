@@ -34,6 +34,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
         run: cargo test --all
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Test web interface
+        run: node --test web/*.test.mjs
   # Test WebAssembly target
   test-wasm:
     name: Test WASM
