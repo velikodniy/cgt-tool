@@ -42,7 +42,7 @@
       "total_allowable_cost": "1030.0",
       "exempt_amount": "6000",
       "taxable_gain": "0",
-      "dividend_income": "0",
+      "dividend_income": "25",
       "dividend_tax_paid": "0"
     }
   ],

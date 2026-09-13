@@ -3,6 +3,7 @@
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
 2019/20     1           £280.91               £280.91               £0.00       £7,768.80   £12,000.00  £0.00
+Dividend income: £261.17
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions

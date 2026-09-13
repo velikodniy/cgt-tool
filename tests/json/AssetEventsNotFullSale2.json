@@ -27,7 +27,7 @@
       "total_allowable_cost": "500",
       "exempt_amount": "12000",
       "taxable_gain": "0",
-      "dividend_income": "0",
+      "dividend_income": "30",
       "dividend_tax_paid": "0"
     },
     {
@@ -57,7 +57,7 @@
       "total_allowable_cost": "1744",
       "exempt_amount": "12300",
       "taxable_gain": "0",
-      "dividend_income": "0",
+      "dividend_income": "10",
       "dividend_tax_paid": "0"
     }
   ],

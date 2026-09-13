@@ -1,0 +1,9 @@
+# Cash and retained income appear in years without a disposal.
+# HS284 section 6 treats taxable accumulation distributions as income and added cost.
+# A zero-quantity accumulation has no effect on cost or income.
+2022-04-06 BUY FUND 10 @ 10
+2023-04-05 DIVIDEND CASH TOTAL 20 TAX 2
+2023-04-06 ACCUMULATION FUND 10 TOTAL 30 TAX 3
+2024-04-05 DIVIDEND FUND TOTAL 40 TAX 4
+2024-04-06 SELL FUND 10 @ 15
+2025-04-06 ACCUMULATION FUND 0 TOTAL 0 TAX 0

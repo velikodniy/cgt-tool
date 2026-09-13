@@ -64,6 +64,20 @@ test("parser errors remain text in toast messages", async () => {
   assert.equal(toast.children[1].textContent, message);
 });
 
+test("income-only year cards show income and tax paid", async () => {
+  const { context } = await loadApp();
+  context.incomeYear = {
+    period: "2024/25", disposals: [], gross_proceeds: "0", total_allowable_cost: "0",
+    total_gain: "0", total_loss: "0", net_gain: "0", exempt_amount: "3000",
+    taxable_gain: "0", dividend_income: "42.50", dividend_tax_paid: "6.75",
+  };
+  const html = vm.runInContext("ReportBuilder.taxYear(incomeYear)", context);
+  assert.ok(html.includes("Dividend Income"));
+  assert.ok(html.includes("£42.50"));
+  assert.ok(html.includes("Dividend Tax Paid"));
+  assert.ok(html.includes("£6.75"));
+});
+
 test("report cards preserve large pennies and fractional unit costs", async () => {
   const { context } = await loadApp();
   context.disposal = {

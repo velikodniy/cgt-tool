@@ -1,0 +1,47 @@
+# SUMMARY
+
+Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
+=========================================================================================================================
+2022/23     0           £0.00                 £0.00                 £0.00       £0.00       £12,300.00  £0.00
+Dividend income: £20.00 (tax paid: £2.00)
+2023/24     0           £0.00                 £0.00                 £0.00       £0.00       £6,000.00   £0.00
+Dividend income: £70.00 (tax paid: £7.00)
+2024/25     1           £20.00                £20.00                £0.00       £150.00     £3,000.00   £0.00
+
+Notes:
+- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
+- Gains/Losses are net per disposal after matching rules (CG51560)
+- Proceeds = SA108 Box 21 (gross, before sale fees)
+
+# TAX YEAR DETAILS
+
+## 2022/23
+
+
+## 2023/24
+
+
+## 2024/25
+
+1) SELL 10 FUND on 06/04/2024 - GAIN £20.00
+   Section 104: 10 shares @ £13
+   Gross Proceeds: 10 × £15 = £150.00
+   Cost: £130.00
+   Result: £20.00
+
+
+# HOLDINGS
+
+NONE
+
+# TRANSACTIONS
+
+06/04/2022 BUY 10 FUND @ £10 (£0 fees)
+06/04/2024 SELL 10 FUND @ £15 (£0 fees)
+
+# ASSET EVENTS
+
+05/04/2023 DIVIDEND CASH £20.00
+06/04/2023 ACCUMULATION FUND 10 £30.00
+05/04/2024 DIVIDEND FUND £40.00
+06/04/2025 ACCUMULATION FUND 0 £0.00

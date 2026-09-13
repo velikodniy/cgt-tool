@@ -108,7 +108,7 @@ Same-date value events on one ticker apply in a fixed canonical order — CAPRET
 
 ### Accumulation Dividends (ACCUMULATION)
 
-Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN. A non-zero accumulation to a fully-disposed or never-held holding fails (no basis to credit).
+Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN. Its value and tax paid also contribute to annual income totals. A nonzero accumulation to a fully-disposed or never-held holding fails because there is no holding to credit. See [HMRC HS284](https://www.gov.uk/government/publications/shares-and-capital-gains-tax-hs284-self-assessment-helpsheet/hs284-shares-and-capital-gains-tax-2025#accumulation-units).
 
 A zero-quantity ACCUMULATION has no effect on cost, income, or tax paid. It needs no holding or exchange rate. DSL and JSON inputs accept this no-op consistently.
 
@@ -137,7 +137,7 @@ When such an event follows a date carrying both a BUY and a SELL for the same ti
 UK tax year runs 6 April to 5 April. A disposal on 5 April 2024 belongs to 2023/24; 6 April 2024 starts 2024/25. Valid year range: 1900–2100.
 
 - Calculate for a specific year: return only that year's disposals.
-- Calculate for all years: return all years with disposals, sorted chronologically.
+- Calculate for all years: return each year with disposals or income, sorted chronologically.
 
 ### Disposal Count
 

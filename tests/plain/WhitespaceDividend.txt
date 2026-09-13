@@ -3,6 +3,7 @@
 Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      Proceeds    Exemption   Taxable gain
 =========================================================================================================================
 2023/24     1           £140.00               £140.00               £0.00       £1,200.00   £6,000.00   £0.00
+Dividend income: £50.00
 
 Notes:
 - Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions

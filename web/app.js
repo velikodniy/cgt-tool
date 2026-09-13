@@ -280,6 +280,14 @@ const ReportBuilder = {
                             <span class="summary-label">Taxable Gain</span>
                             <span class="summary-value">${formatCurrency(ty.taxable_gain)}</span>
                         </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Dividend Income</span>
+                            <span class="summary-value">${formatCurrency(ty.dividend_income)}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Dividend Tax Paid</span>
+                            <span class="summary-value">${formatCurrency(ty.dividend_tax_paid)}</span>
+                        </div>
                     </div>
                 </div>
             </div>

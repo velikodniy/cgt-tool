@@ -21,8 +21,8 @@ use crate::report::{Disposal, Holding, MatchLeg, MatchRule, TaxReport, TaxYearSu
 /// dividend events, and the config exemptions.
 ///
 /// `tax_year_start` filters to a single tax year when `Some`; when `None`,
-/// disposals group by their own tax year. The exemption lookup is fallible
-/// and propagates through `?`.
+/// disposals and income group by their own tax year. The exemption lookup is
+/// fallible and propagates through `?`.
 pub(crate) fn build(
     stream: &EventStream,
     valued: &ValuedReport,
@@ -164,35 +164,41 @@ struct DividendTotals {
     tax_paid: Decimal,
 }
 
-/// Aggregate DIVIDEND events by tax year. Values are already GBP-converted.
+/// Aggregate cash and accumulation income by tax year. Values are already in GBP.
 fn aggregate_dividends(stream: &EventStream) -> Result<BTreeMap<u16, DividendTotals>, CgtError> {
     let mut totals: BTreeMap<u16, DividendTotals> = BTreeMap::new();
     for event in stream.events() {
-        if let EventKind::Dividend {
-            total_value,
-            tax_paid,
-        } = &event.kind
-        {
-            let period = TaxPeriod::from_date(event.date)?;
-            let entry = totals.entry(period.start_year()).or_insert(DividendTotals {
-                income: Decimal::ZERO,
-                tax_paid: Decimal::ZERO,
-            });
-            entry.income = checked(
-                entry.income.checked_add(*total_value),
-                format!(
-                    "dividend income for {period} at {} on {}",
-                    event.ticker, event.date
-                ),
-            )?;
-            entry.tax_paid = checked(
-                entry.tax_paid.checked_add(*tax_paid),
-                format!(
-                    "dividend tax for {period} at {} on {}",
-                    event.ticker, event.date
-                ),
-            )?;
-        }
+        let (total_value, tax_paid) = match &event.kind {
+            EventKind::Dividend {
+                total_value,
+                tax_paid,
+            } => (total_value, tax_paid),
+            EventKind::Accumulation {
+                quantity,
+                total_value,
+                tax_paid,
+            } if *quantity > Decimal::ZERO => (total_value, tax_paid),
+            _ => continue,
+        };
+        let period = TaxPeriod::from_date(event.date)?;
+        let entry = totals.entry(period.start_year()).or_insert(DividendTotals {
+            income: Decimal::ZERO,
+            tax_paid: Decimal::ZERO,
+        });
+        entry.income = checked(
+            entry.income.checked_add(*total_value),
+            format!(
+                "dividend income for {period} at {} on {}",
+                event.ticker, event.date
+            ),
+        )?;
+        entry.tax_paid = checked(
+            entry.tax_paid.checked_add(*tax_paid),
+            format!(
+                "dividend tax for {period} at {} on {}",
+                event.ticker, event.date
+            ),
+        )?;
     }
     Ok(totals)
 }
@@ -219,8 +225,7 @@ fn build_single_year(
     Ok(vec![summary])
 }
 
-/// Group disposals by their own tax year, sorted by start year. Years with
-/// dividends but no disposals are not emitted.
+/// Group disposals and income by tax year, sorted by start year.
 fn build_all_years(
     disposals: Vec<Disposal>,
     dividends: &BTreeMap<u16, DividendTotals>,
@@ -234,6 +239,9 @@ fn build_all_years(
             .entry(period.start_year())
             .or_default()
             .push(disposal);
+    }
+    for year in dividends.keys() {
+        grouped.entry(*year).or_default();
     }
     let mut summaries = Vec::with_capacity(grouped.len());
     for (start_year, year_disposals) in grouped {
@@ -416,9 +424,9 @@ mod tests {
     }
 
     #[test]
-    fn dividend_only_year_is_dropped() {
-        // The dividend year (2023/24) has no disposal, so no summary is emitted
-        // for it; the disposal year carries its own dividend total only.
+    fn dividend_only_year_is_reported() {
+        // All-years reports now include income-only years. The old disposal-only
+        // grouping omitted income that the report summary promises to show.
         let report = report(
             "2023-06-01 DIVIDEND ABC TOTAL 50.00 GBP TAX 5.00 GBP\n\
              2024-06-01 BUY ABC 10 @ 10.00 GBP\n\
@@ -430,9 +438,11 @@ mod tests {
             .iter()
             .map(|year| year.period.start_year())
             .collect();
-        // 2023 (dividend-only) is absent; only 2024 (the disposal year) shows.
-        assert_eq!(years, vec![2024]);
-        assert_eq!(report.tax_years[0].dividend_income, dec!(0));
+        assert_eq!(years, vec![2023, 2024]);
+        assert_eq!(report.tax_years[0].dividend_income, dec!(50));
+        assert_eq!(report.tax_years[0].dividend_tax_paid, dec!(5));
+        assert_eq!(report.tax_years[0].disposal_count, 0);
+        assert_eq!(report.tax_years[1].dividend_income, dec!(0));
     }
 
     #[test]
@@ -447,6 +457,27 @@ mod tests {
         let year = &report.tax_years[0];
         assert_eq!(year.dividend_income, dec!(50));
         assert_eq!(year.dividend_tax_paid, dec!(5));
+    }
+
+    #[test]
+    fn income_totals_use_each_currency_conversion() -> Result<(), Box<dyn std::error::Error>> {
+        use crate::money::{Currency, FxRates};
+
+        let transactions = crate::dsl::parse(
+            "2023-01-01 BUY FUND 10 @ 10\n\
+             2023-04-06 ACCUMULATION FUND 10 TOTAL 30 USD TAX 4 EUR\n\
+             2023-04-06 DIVIDEND CASH TOTAL 20 EUR TAX 2 USD\n",
+        )?;
+        let rates = FxRates::fixed([
+            (Currency::USD, 2023, 4, dec!(2)),
+            (Currency::EUR, 2023, 4, dec!(4)),
+        ]);
+        let report = crate::calculate(&transactions, None, Some(&rates), &Config::embedded()?)?;
+        let year = report.tax_years.first().ok_or("Missing income year")?;
+        assert_eq!(year.dividend_income, dec!(20));
+        assert_eq!(year.dividend_tax_paid, dec!(2));
+        assert_eq!(report.holdings[0].total_cost, dec!(115));
+        Ok(())
     }
 
     #[test]
