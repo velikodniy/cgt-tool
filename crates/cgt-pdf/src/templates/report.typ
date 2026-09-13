@@ -142,6 +142,11 @@
     .flatten()
 )
 #v(0.2em)
+#for row in data.summary_rows.filter(row => row.has_dividend_income) [
+  Dividend income #fmt-tax-year(row.start_year): #row.dividend_income
+  #if row.has_dividend_tax [(tax paid: #row.dividend_tax_paid)]
+  #parbreak()
+]
 #block[
   #set text(size: 6pt, fill: text-muted)
   *Notes:*

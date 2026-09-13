@@ -133,6 +133,22 @@ fn build_summary_rows(report: &TaxReport) -> Result<Vec<Value>, PdfError> {
         );
         row.insert("exemption".into(), money_to_value(year.exempt_amount)?);
         row.insert("taxable".into(), money_to_value(year.taxable_gain)?);
+        row.insert(
+            "dividend_income".into(),
+            money_to_value(year.dividend_income)?,
+        );
+        row.insert(
+            "dividend_tax_paid".into(),
+            money_to_value(year.dividend_tax_paid)?,
+        );
+        row.insert(
+            "has_dividend_income".into(),
+            (year.dividend_income > Decimal::ZERO).into_value(),
+        );
+        row.insert(
+            "has_dividend_tax".into(),
+            (year.dividend_tax_paid > Decimal::ZERO).into_value(),
+        );
         rows.push(row.into_value());
     }
     Ok(rows)
@@ -427,6 +443,19 @@ mod tests {
         assert!(text.contains("£9,007,199,254,740,992.99"), "{text}");
         assert!(text.contains("£0.98"), "{text}");
         assert!(text.contains("£1.01"), "{text}");
+        Ok(())
+    }
+
+    #[test]
+    fn rendered_summary_includes_dividend_income_and_tax() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let text = rendered_text(
+            "2024-01-01 BUY FUND 1 @ 1\n\
+             2024-06-01 SELL FUND 1 @ 2\n\
+             2024-06-01 DIVIDEND FUND TOTAL 100 TAX 15\n",
+        )?;
+        assert!(text.contains("Dividend income 2024/25: £100.00"), "{text}");
+        assert!(text.contains("tax paid: £15.00"), "{text}");
         Ok(())
     }
 
