@@ -43,3 +43,4 @@ Then open http://localhost:8000 in your browser.
 
 - ES6 module support
 - WebAssembly support
+- BigInt support

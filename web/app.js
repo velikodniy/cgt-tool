@@ -1,6 +1,7 @@
 /* CGT Calculator WASM Demo - Application Logic */
 
 import init, { calculate_tax, parse_transactions, validate_dsl } from "./pkg/cgt_wasm.js";
+import { formatCurrency, formatPence, sumPence, formatUnitCost, isPositive } from "./decimal.mjs";
 
 const state = {
   wasmReady: false,
@@ -102,12 +103,6 @@ function toggleYearInput() {
   }
 }
 
-function formatCurrency(amount) {
-  const num = parseFloat(amount);
-  if (!Number.isFinite(num)) return "£0.00";
-  return "£" + num.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
@@ -170,28 +165,21 @@ const ReportBuilder = {
         : match.rule === "BedAndBreakfast"
           ? "bed-breakfast"
           : "section-104";
-    const legQuantity = parseFloat(match.quantity);
-    const costPerShare = legQuantity !== 0 ? parseFloat(match.allowable_cost) / legQuantity : 0;
-
     return `
             <div class="match-item">
                 <span class="badge ${badgeClass}">${ruleName}</span>
-                <span style="color: #374151;">${escapeHtml(match.quantity)} shares @ ${formatCurrency(costPerShare)}</span>
+                <span style="color: #374151;">${escapeHtml(match.quantity)} shares @ ${formatUnitCost(match.allowable_cost, match.quantity)}</span>
                 <span style="margin-left: auto; font-weight: 600; color: var(--color-text-dark);">${formatCurrency(match.allowable_cost)}</span>
             </div>
         `;
   },
 
   disposalCard: (disp, index) => {
-    const gainLoss = disp.matches
-      ? disp.matches.reduce((sum, m) => sum + parseFloat(m.gain_or_loss || 0), 0)
-      : 0;
-    const gainLossClass = gainLoss >= 0 ? "positive" : "negative";
-    const gainLossLabel = gainLoss >= 0 ? "GAIN" : "LOSS";
-    const resultBadgeClass = gainLoss >= 0 ? "gain" : "loss";
-    const totalCost = disp.matches
-      ? disp.matches.reduce((sum, m) => sum + parseFloat(m.allowable_cost || 0), 0)
-      : 0;
+    const gainLoss = sumPence((disp.matches || []).map((m) => m.gain_or_loss));
+    const gainLossClass = gainLoss >= 0n ? "positive" : "negative";
+    const gainLossLabel = gainLoss >= 0n ? "GAIN" : "LOSS";
+    const resultBadgeClass = gainLoss >= 0n ? "gain" : "loss";
+    const totalCost = sumPence((disp.matches || []).map((m) => m.allowable_cost));
 
     const matchesHtml =
       disp.matches && disp.matches.length > 0
@@ -211,7 +199,7 @@ const ReportBuilder = {
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">Allowable Cost</span>
-                    <span class="metric-value">${formatCurrency(totalCost)}</span>
+                    <span class="metric-value">${formatPence(totalCost)}</span>
                 </div>
                 ${disp.rounding_adjustment ? `<div class="metric-item">
                     <span class="metric-label">Rounding adjustment</span>
@@ -219,7 +207,7 @@ const ReportBuilder = {
                 </div>` : ""}
                 <div class="metric-item">
                     <span class="metric-label">Gain/Loss</span>
-                    <span class="metric-value ${gainLossClass}">${formatCurrency(gainLoss)}</span>
+                    <span class="metric-value ${gainLossClass}">${formatPence(gainLoss)}</span>
                 </div>
             </div>
         `
@@ -237,7 +225,7 @@ const ReportBuilder = {
                     </div>
                     <div class="disposal-result">
                         <span class="badge ${resultBadgeClass}">${gainLossLabel}</span>
-                        <span class="${gainLossClass}">${formatCurrency(Math.abs(gainLoss))}</span>
+                        <span class="${gainLossClass}">${formatPence(gainLoss < 0n ? -gainLoss : gainLoss)}</span>
                     </div>
                 </div>
                 <div class="disposal-body">
@@ -301,21 +289,18 @@ const ReportBuilder = {
   holdings: (holdings) => {
     // Mirror the Rust renderers: only active (quantity > 0) holdings, by ticker.
     const active = (holdings || [])
-      .filter((h) => parseFloat(h.quantity) > 0)
+      .filter((h) => isPositive(h.quantity))
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     if (active.length === 0) return "";
 
     const rows = active
       .map((h) => {
-        const totalCost = parseFloat(h.total_cost);
-        const quantity = parseFloat(h.quantity);
-        const avgCost = quantity !== 0 ? totalCost / quantity : 0;
         return `
                 <tr>
                     <td><strong>${escapeHtml(h.ticker)}</strong></td>
                     <td class="number">${escapeHtml(h.quantity)}</td>
-                    <td class="number">${formatCurrency(totalCost)}</td>
-                    <td class="number">${formatCurrency(avgCost)}</td>
+                    <td class="number">${formatCurrency(h.total_cost)}</td>
+                    <td class="number">${formatUnitCost(h.total_cost, h.quantity)}</td>
                 </tr>
             `;
       })

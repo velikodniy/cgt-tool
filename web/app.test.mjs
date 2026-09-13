@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
+import * as decimal from "./decimal.mjs";
 
 function element() {
   return {
@@ -14,6 +15,9 @@ function element() {
     },
     appendChild(child) {
       this.children.push(child);
+    },
+    get innerHTML() {
+      return (this.textContent || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     },
     set innerHTML(_value) {
       assert.fail("Toast content must not use innerHTML");
@@ -40,6 +44,7 @@ async function loadApp() {
     calculate_tax() {},
     parse_transactions() {},
     validate_dsl() {},
+    ...decimal,
   });
   vm.runInContext(source.replace(/^import .*;$/gm, ""), context);
   await Promise.resolve();
@@ -57,4 +62,24 @@ test("parser errors remain text in toast messages", async () => {
   assert.equal(toast.children.length, 2);
   assert.equal(toast.children[0].textContent, "✕");
   assert.equal(toast.children[1].textContent, message);
+});
+
+test("report cards preserve large pennies and fractional unit costs", async () => {
+  const { context } = await loadApp();
+  context.disposal = {
+    ticker: "TEST",
+    date: "2024-06-01",
+    quantity: "0.015",
+    gross_proceeds: "9007199254740993.29",
+    proceeds: "9007199254740993.29",
+    matches: [{
+      rule: "Section104",
+      quantity: "0.015",
+      allowable_cost: "0.30",
+      gain_or_loss: "9007199254740992.99",
+    }],
+  };
+  const html = vm.runInContext("ReportBuilder.disposalCard(disposal, 0)", context);
+  assert.ok(html.includes("£9,007,199,254,740,992.99"));
+  assert.ok(html.includes("0.015 shares @ £20.00"));
 });
