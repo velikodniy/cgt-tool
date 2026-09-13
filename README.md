@@ -96,6 +96,8 @@ Run `cgt-tool --help` or `cgt-tool <subcommand> --help` for all options.
 
 One transaction per line. Keywords are uppercase, placeholders are `<angle brackets>`, optional parts are `[square brackets]`.
 
+Tickers start with an ASCII letter or digit. Later characters can also include `.`, `/`, `-`, and `_`. Tickers become uppercase, but punctuation remains significant. For example, `BRK/B` and `BRK.B` identify separate assets.
+
 ```text
 # Comment
 2025-04-01 BUY AAPL 100 @ 150.00 FEES 5.00

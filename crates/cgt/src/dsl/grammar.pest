@@ -43,7 +43,7 @@ money = { decimal ~ currency_code? }
 
 // Atomic tokens
 date = @{ ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
-ticker = @{ ASCII_ALPHANUMERIC+ }
+ticker = @{ ASCII_ALPHANUMERIC ~ (ASCII_ALPHANUMERIC | "." | "/" | "-" | "_")* }
 quantity = @{ decimal }
 ratio = @{ decimal }
 decimal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }

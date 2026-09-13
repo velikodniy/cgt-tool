@@ -179,8 +179,14 @@ impl BrokerConverter for SchwabConverter {
             }
         }
 
+        let cgt_content = output_lines.join("\n");
+        cgt::dsl::parse(&cgt_content).map_err(|error| {
+            ConvertError::InvalidTransaction(format!(
+                "Converted output is not valid CGT DSL: {error}"
+            ))
+        })?;
         Ok(ConvertOutput {
-            cgt_content: output_lines.join("\n"),
+            cgt_content,
             warnings,
             skipped_count,
         })

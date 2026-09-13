@@ -10,6 +10,19 @@ use crate::error::CgtError;
 // Re-export Currency and CurrencyAmount from the money module
 pub use crate::money::{Currency, CurrencyAmount};
 
+/// Return whether a ticker uses the shared DSL symbol syntax.
+/// The first character is an ASCII letter or digit. Later characters can
+/// also contain `.`, `/`, `-`, and `_`.
+pub fn is_valid_ticker(ticker: &str) -> bool {
+    let mut characters = ticker.chars();
+    characters
+        .next()
+        .is_some_and(|character| character.is_ascii_alphanumeric())
+        && characters.all(|character| {
+            character.is_ascii_alphanumeric() || matches!(character, '.' | '/' | '-' | '_')
+        })
+}
+
 /// Deserialize Operation with case-insensitive action names.
 fn deserialize_operation_value(
     mut value: serde_json::Value,

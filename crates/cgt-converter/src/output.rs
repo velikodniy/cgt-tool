@@ -70,7 +70,10 @@ pub fn format_dividend(
 
 /// Format a comment line
 pub fn format_comment(text: &str) -> String {
-    format!("# {}", text)
+    text.split(['\r', '\n'])
+        .map(|line| format!("# {line}"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Generate header comments for a converted file

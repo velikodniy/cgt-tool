@@ -1,0 +1,9 @@
+# Symbols preserve punctuation and remain separate holdings.
+2024-01-01 BUY BRK/B 2 @ 10
+2024-01-01 BUY BRK.B 2 @ 10
+2024-01-01 BUY FOO-B 2 @ 10
+2024-01-01 BUY FOO_B 2 @ 10
+2024-01-02 SELL BRK/B 1 @ 15
+2024-01-02 SELL BRK.B 1 @ 15
+2024-01-02 SELL FOO-B 1 @ 15
+2024-01-02 SELL FOO_B 1 @ 15

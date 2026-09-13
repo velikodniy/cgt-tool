@@ -217,6 +217,8 @@ Lines starting with `#` are ignored. Inline `# comments` after data are stripped
 
 Ticker symbols are normalized to uppercase (`aapl` → `AAPL`).
 
+The first character must be an ASCII letter or digit. Later characters can also include `.`, `/`, `-`, and `_`. Punctuation remains significant, so `BRK/B` and `BRK.B` identify separate assets. The converter and core use this same symbol rule. Every successful conversion produces parseable DSL, and each physical comment line starts with `#`.
+
 ### Error Messages
 
 Parse failures report line number, problematic value, and expected format.

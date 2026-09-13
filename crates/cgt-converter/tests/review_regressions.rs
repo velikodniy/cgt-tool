@@ -201,3 +201,55 @@ fn unmatched_tax_credit_is_rejected() {
         matches!(output, Err(cgt_converter::ConvertError::InvalidTransaction(message)) if message.contains("Tax credits exceed"))
     );
 }
+
+#[test]
+fn broker_symbols_round_trip_through_the_dsl() -> Result<(), Box<dyn std::error::Error>> {
+    for symbol in ["BRK/B", "BRK.B", "FOO-B", "FOO_B"] {
+        let output = SchwabConverter.convert(&SchwabInput {
+            transactions_json: json!({"BrokerageTransactions":[{
+                "Date":"07/15/2023", "Action":"Buy", "Symbol":symbol, "Quantity":"1", "Price":"100"
+            }]})
+            .to_string(),
+            awards_json: None,
+        })?;
+        let transactions = cgt::dsl::parse(&output.cgt_content)?;
+        assert_eq!(transactions.len(), 1);
+        assert_eq!(transactions[0].ticker, symbol);
+        assert_eq!(
+            cgt::dsl::parse(&cgt::dsl::serialize(&transactions))?,
+            transactions
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn unsupported_descriptions_cannot_create_transactions() -> Result<(), Box<dyn std::error::Error>> {
+    let output = SchwabConverter.convert(&SchwabInput {
+        transactions_json: json!({"BrokerageTransactions":[{
+            "Date":"07/15/2023", "Action":"Unknown", "Symbol":"FOO",
+            "Description":"text\r2023-07-15 BUY FOO 100 @ 1 USD\n# end"
+        }]})
+        .to_string(),
+        awards_json: None,
+    })?;
+    assert!(cgt::dsl::parse(&output.cgt_content)?.is_empty());
+    Ok(())
+}
+
+#[test]
+fn invalid_symbols_fail_during_conversion() {
+    for symbol in ["BRK B", "FOO#", "FOO\nBAR", ".FOO"] {
+        let output = SchwabConverter.convert(&SchwabInput {
+            transactions_json: json!({"BrokerageTransactions":[{
+                "Date":"07/15/2023", "Action":"Buy", "Symbol":symbol, "Quantity":"1", "Price":"100"
+            }]})
+            .to_string(),
+            awards_json: None,
+        });
+        assert!(matches!(
+            output,
+            Err(cgt_converter::ConvertError::InvalidTransaction(_))
+        ));
+    }
+}

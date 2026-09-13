@@ -263,6 +263,11 @@ fn parse_nra_tax(value: &Value) -> Result<SchwabNraTax, ConvertError> {
 fn parse_common_fields(value: &Value) -> Result<CommonFields, ConvertError> {
     let date_raw = get_required_string(value, KEY_DATE, KEY_DATE)?;
     let symbol = get_required_string(value, KEY_SYMBOL, KEY_SYMBOL)?.to_string();
+    if !cgt::model::is_valid_ticker(&symbol) {
+        return Err(ConvertError::InvalidTransaction(format!(
+            "Invalid ticker symbol: {symbol}"
+        )));
+    }
     let date = parse_date(date_raw)?;
 
     Ok(CommonFields { date, symbol })

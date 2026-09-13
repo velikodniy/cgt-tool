@@ -30,6 +30,9 @@ impl CgtParser {
     }
 
     fn ticker(input: Node) -> ParseResult<String> {
+        if !crate::model::is_valid_ticker(input.as_str()) {
+            return Err(input.error("Invalid ticker symbol"));
+        }
         Ok(input.as_str().to_uppercase())
     }
 
