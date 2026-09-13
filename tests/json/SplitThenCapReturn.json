@@ -13,18 +13,18 @@
             {
               "rule": "Section104",
               "quantity": "80",
-              "allowable_cost": "362.00",
-              "gain_or_loss": "196.00"
+              "allowable_cost": "362",
+              "gain_or_loss": "196"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "196.00",
+      "total_gain": "196",
       "total_loss": "0",
-      "net_gain": "196.00",
+      "net_gain": "196",
       "gross_proceeds": "560",
-      "total_allowable_cost": "362.00",
+      "total_allowable_cost": "362",
       "exempt_amount": "6000",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -35,7 +35,7 @@
     {
       "ticker": "SPL",
       "quantity": "120",
-      "total_cost": "543.00"
+      "total_cost": "543"
     }
   ],
   "transactions": [

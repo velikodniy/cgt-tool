@@ -1,0 +1,40 @@
+{
+  "tax_years": [],
+  "holdings": [
+    {
+      "ticker": "ABC",
+      "quantity": "3",
+      "total_cost": "0.00"
+    }
+  ],
+  "transactions": [
+    {
+      "date": "2024-01-01",
+      "ticker": "ABC",
+      "action": "BUY",
+      "amount": "3",
+      "price": {
+        "amount": "10",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0.01",
+        "currency": "GBP"
+      }
+    },
+    {
+      "date": "2024-03-01",
+      "ticker": "ABC",
+      "action": "CAPRETURN",
+      "amount": "3",
+      "total_value": {
+        "amount": "30.01",
+        "currency": "GBP"
+      },
+      "fees": {
+        "amount": "0",
+        "currency": "GBP"
+      }
+    }
+  ]
+}

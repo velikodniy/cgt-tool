@@ -260,7 +260,7 @@
             {
               "rule": "Section104",
               "quantity": "50",
-              "allowable_cost": "630.00",
+              "allowable_cost": "630",
               "gain_or_loss": "15.00"
             }
           ]

@@ -8,30 +8,30 @@
           "ticker": "PARTBNB",
           "quantity": "100",
           "gross_proceeds": "1500",
-          "proceeds": "1490.00",
+          "proceeds": "1490",
           "matches": [
             {
               "rule": "BedAndBreakfast",
               "quantity": "30",
-              "allowable_cost": "365.00",
-              "gain_or_loss": "82.00",
+              "allowable_cost": "365",
+              "gain_or_loss": "82",
               "acquisition_date": "2023-06-25"
             },
             {
               "rule": "Section104",
               "quantity": "70",
-              "allowable_cost": "707.00",
-              "gain_or_loss": "336.00"
+              "allowable_cost": "707",
+              "gain_or_loss": "336"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "418.00",
+      "total_gain": "418",
       "total_loss": "0",
-      "net_gain": "418.00",
+      "net_gain": "418",
       "gross_proceeds": "1500",
-      "total_allowable_cost": "1072.00",
+      "total_allowable_cost": "1072",
       "exempt_amount": "6000",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -42,7 +42,7 @@
     {
       "ticker": "PARTBNB",
       "quantity": "30",
-      "total_cost": "303.00"
+      "total_cost": "303"
     }
   ],
   "transactions": [

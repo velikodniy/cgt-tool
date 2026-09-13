@@ -30,8 +30,8 @@ impl EventId {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Trade {
     pub(crate) quantity: Decimal,
-    /// Weighted-average unit price in GBP.
-    pub(crate) price: Decimal,
+    /// Exact gross trade total in GBP.
+    pub(crate) gross: Decimal,
     /// Total fees in GBP.
     pub(crate) fees: Decimal,
 }
@@ -98,7 +98,8 @@ impl EventStream {
         self.events.get(id.0 + 1..).unwrap_or_default()
     }
 
-    /// Event by id.
+    /// Event by id for invariant assertions.
+    #[cfg(test)]
     pub(crate) fn get(&self, id: EventId) -> Option<&Event> {
         self.events.get(id.0)
     }
@@ -154,7 +155,7 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Buy(Trade {
             quantity: *amount,
-            price: amount_to_gbp(price, date, fx_rates)?,
+            gross: *amount * amount_to_gbp(price, date, fx_rates)?,
             fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Sell {
@@ -163,7 +164,7 @@ fn kind_to_gbp(
             fees,
         } => Ok(EventKind::Sell(Trade {
             quantity: *amount,
-            price: amount_to_gbp(price, date, fx_rates)?,
+            gross: *amount * amount_to_gbp(price, date, fx_rates)?,
             fees: amount_to_gbp(fees, date, fx_rates)?,
         })),
         Operation::Dividend {
@@ -280,16 +281,10 @@ fn merge_into(side: &mut Vec<(String, Trade)>, ticker: &str, trade: &Trade) {
     }
 }
 
-/// Pairwise fold, re-deriving the weighted-average price at each step.
-/// The operation order is load-bearing for output equivalence: rust_decimal
-/// is path-dependent, so do not replace this with sum-of-products followed
-/// by a single division.
+/// Aggregate exact monetary totals without an intermediate unit price.
 fn merge_trades(current: &mut Trade, next: &Trade) {
-    let total = (current.quantity * current.price) + (next.quantity * next.price);
+    current.gross += next.gross;
     current.quantity += next.quantity;
-    if current.quantity != Decimal::ZERO {
-        current.price = total / current.quantity;
-    }
     current.fees += next.fees;
 }
 
@@ -347,19 +342,19 @@ mod tests {
             panic!("first event must be the merged buy, got {:?}", events[0]);
         };
         assert_eq!(buy.quantity, dec!(30));
-        assert_eq!(buy.price, dec!(340) / dec!(30));
+        assert_eq!(buy.gross, dec!(340));
         assert_eq!(buy.fees, dec!(3));
         let EventKind::Sell(sell) = &events[1].kind else {
             panic!("second event must be the merged sell, got {:?}", events[1]);
         };
         assert_eq!(sell.quantity, dec!(5));
-        assert_eq!(sell.price, dec!(11));
+        assert_eq!(sell.gross, dec!(55));
         assert_eq!(sell.fees, Decimal::ZERO);
     }
 
     #[test]
-    fn three_way_merge_folds_pairwise() {
-        // Three buys merge pairwise, not via a single sum-then-divide.
+    fn three_way_merge_preserves_exact_totals() {
+        // The gross total is the sum of all three acquisition amounts.
         let stream = stream(
             "2018-08-28 BUY GB00B41YBW71 10 @ 8 FEES 2\n\
              2018-10-28 SELL GB00B41YBW71 10 @ 7 FEES 12.5\n\
@@ -373,16 +368,14 @@ mod tests {
         let EventKind::Buy(buy) = &events[0].kind else {
             panic!("expected merged buy first, got {:?}", events[0]);
         };
-        let price_after_two = (dec!(80) + dec!(100)) / dec!(20);
-        let expected_price = ((dec!(20) * price_after_two) + dec!(50)) / dec!(30);
         assert_eq!(buy.quantity, dec!(30));
-        assert_eq!(buy.price, expected_price);
+        assert_eq!(buy.gross, dec!(230));
         assert_eq!(buy.fees, dec!(16.5));
         let EventKind::Sell(sell) = &events[1].kind else {
             panic!("expected merged sell second, got {:?}", events[1]);
         };
         assert_eq!(sell.quantity, dec!(20));
-        assert_eq!(sell.price, dec!(8));
+        assert_eq!(sell.gross, dec!(160));
         assert_eq!(sell.fees, dec!(14.5));
     }
 
@@ -479,7 +472,7 @@ mod tests {
             panic!("expected buy event");
         };
         assert_eq!(buy.quantity, dec!(10));
-        assert_eq!(buy.price, dec!(120));
+        assert_eq!(buy.gross, dec!(1200));
         assert_eq!(buy.fees, dec!(4));
     }
 

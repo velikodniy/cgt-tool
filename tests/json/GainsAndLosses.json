@@ -13,8 +13,8 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "1010.00",
-              "gain_or_loss": "980.00",
+              "allowable_cost": "1010",
+              "gain_or_loss": "980",
               "acquisition_date": "2018-08-28"
             }
           ]
@@ -29,19 +29,19 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "5010.00",
-              "gain_or_loss": "-1020.00",
+              "allowable_cost": "5010",
+              "gain_or_loss": "-1020",
               "acquisition_date": "2018-10-28"
             }
           ]
         }
       ],
       "disposal_count": 2,
-      "total_gain": "980.00",
-      "total_loss": "1020.00",
-      "net_gain": "-40.00",
+      "total_gain": "980",
+      "total_loss": "1020",
+      "net_gain": "-40",
       "gross_proceeds": "6000",
-      "total_allowable_cost": "6020.00",
+      "total_allowable_cost": "6020",
       "exempt_amount": "11700",
       "taxable_gain": "0",
       "dividend_income": "0",

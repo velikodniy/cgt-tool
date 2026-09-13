@@ -7,8 +7,8 @@
           "date": "2024-02-01",
           "ticker": "ABC",
           "quantity": "2",
-          "gross_proceeds": "24.00",
-          "proceeds": "24.00",
+          "gross_proceeds": "24",
+          "proceeds": "24",
           "matches": [
             {
               "rule": "BedAndBreakfast",
@@ -30,7 +30,7 @@
       "total_gain": "2.67",
       "total_loss": "0",
       "net_gain": "2.67",
-      "gross_proceeds": "24.00",
+      "gross_proceeds": "24",
       "total_allowable_cost": "21.33",
       "exempt_amount": "6000",
       "taxable_gain": "0",

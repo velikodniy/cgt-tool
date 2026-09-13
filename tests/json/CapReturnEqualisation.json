@@ -13,18 +13,18 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "1910.00",
-              "gain_or_loss": "580.00"
+              "allowable_cost": "1910",
+              "gain_or_loss": "580"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "580.00",
+      "total_gain": "580",
       "total_loss": "0",
-      "net_gain": "580.00",
+      "net_gain": "580",
       "gross_proceeds": "2500",
-      "total_allowable_cost": "1910.00",
+      "total_allowable_cost": "1910",
       "exempt_amount": "6000",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -35,7 +35,7 @@
     {
       "ticker": "EQFUND",
       "quantity": "0",
-      "total_cost": "0.00"
+      "total_cost": "0"
     }
   ],
   "transactions": [

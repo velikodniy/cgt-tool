@@ -46,6 +46,10 @@ Disposals are matched with acquisitions within 30 calendar days after the sale d
 
 Shares not matched by Same Day or B&B are matched against a pooled holding at average cost.
 
+Normalized trades retain their exact gross totals and fees. Each acquisition and pool retains its unallocated quantity and cost. Partial matches receive a proportional cost, and the final match receives the complete remainder. Disposal proceeds and fees use the same allocation rule. Unit prices are derived for output.
+
+`ExactCapitalReturn.cgt` reduces a £30.01 purchase basis to zero. `ExactMergedCost.cgt` retains a £7.005 combined purchase cost, which rounds to £7.01.
+
 - Separate pools per ticker.
 - Purchases add to the pool; sales reduce proportionally.
 - If a SELL cannot be fully matched after all three rules, calculation fails with an error indicating the disposal exceeds holdings.

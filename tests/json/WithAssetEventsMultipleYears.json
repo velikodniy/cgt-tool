@@ -13,18 +13,18 @@
             {
               "rule": "Section104",
               "quantity": "40",
-              "allowable_cost": "420.00",
-              "gain_or_loss": "60.00"
+              "allowable_cost": "420",
+              "gain_or_loss": "60"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "60.00",
+      "total_gain": "60",
       "total_loss": "0",
-      "net_gain": "60.00",
+      "net_gain": "60",
       "gross_proceeds": "480",
-      "total_allowable_cost": "420.00",
+      "total_allowable_cost": "420",
       "exempt_amount": "12000",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -43,18 +43,18 @@
             {
               "rule": "Section104",
               "quantity": "100",
-              "allowable_cost": "1960.00",
-              "gain_or_loss": "540.00"
+              "allowable_cost": "1960",
+              "gain_or_loss": "540"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "540.00",
+      "total_gain": "540",
       "total_loss": "0",
-      "net_gain": "540.00",
+      "net_gain": "540",
       "gross_proceeds": "2500",
-      "total_allowable_cost": "1960.00",
+      "total_allowable_cost": "1960",
       "exempt_amount": "12300",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -65,7 +65,7 @@
     {
       "ticker": "GB00B3TYHH97",
       "quantity": "0",
-      "total_cost": "0.00"
+      "total_cost": "0"
     }
   ],
   "transactions": [

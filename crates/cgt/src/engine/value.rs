@@ -67,6 +67,20 @@ struct Pool {
     cost: Decimal,
 }
 
+impl Pool {
+    /// Partial allocations retain the exact unallocated monetary remainder.
+    fn take(&mut self, quantity: &Quantity) -> Result<Decimal, CgtError> {
+        let cost = if *quantity == self.quantity {
+            self.cost
+        } else {
+            quantity.proportion_of(&self.quantity, self.cost)?
+        };
+        self.quantity.subtract(quantity);
+        self.cost -= cost;
+        Ok(cost)
+    }
+}
+
 /// Run the chronological replay, pricing every disposal in the plan.
 pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedReport, CgtError> {
     // Disposals indexed by their sell event for O(1) lookup during the walk.
@@ -76,6 +90,23 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
     }
 
     let mut pools: HashMap<String, Pool> = HashMap::new();
+    let mut buy_costs: HashMap<EventId, Pool> = stream
+        .events()
+        .iter()
+        .filter_map(|event| {
+            if let EventKind::Buy(trade) = &event.kind {
+                Some((
+                    event.id,
+                    Pool {
+                        quantity: Quantity::from(trade.quantity),
+                        cost: trade.gross + trade.fees,
+                    },
+                ))
+            } else {
+                None
+            }
+        })
+        .collect();
     // First-seen ticker order is irrelevant: holdings are sorted by ticker on
     // output, and every ticker that ever pooled is reported (including drained
     // pools at quantity zero).
@@ -84,7 +115,7 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
     for day in stream.events().chunk_by(|a, b| a.date == b.date) {
         // The canonical order already groups value events first, then buys,
         // then sells, then splits. Walking the slice in order honours it.
-        let mut day_buys: HashMap<&str, &Trade> = HashMap::new();
+        let mut day_buys: HashMap<&str, EventId> = HashMap::new();
         for event in day {
             match &event.kind {
                 EventKind::Accumulation { quantity, .. } if quantity.is_zero() => {}
@@ -126,13 +157,19 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                         pool.cost -= net; // TCGA92/S122(2)
                     }
                 }
-                EventKind::Buy(trade) => {
-                    day_buys.insert(event.ticker.as_str(), trade);
+                EventKind::Buy(_) => {
+                    day_buys.insert(event.ticker.as_str(), event.id);
                 }
                 EventKind::Sell(trade) => {
                     if let Some(plan) = plan_by_sell.get(&event.id) {
-                        let priced =
-                            price_disposal(event, trade, plan, stream, &mut pools, &day_buys)?;
+                        let priced = price_disposal(
+                            event,
+                            trade,
+                            plan,
+                            &mut pools,
+                            &mut buy_costs,
+                            &day_buys,
+                        )?;
                         disposals.push(priced);
                     }
                 }
@@ -156,45 +193,16 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
             }
         }
 
-        // Quantity each ticker's same-day disposals consume on this day, summed
-        // in stream order from the day's disposal legs. Computed once per day so
-        // the residue loop below is a lookup rather than a full-stream rescan.
-        let mut same_day_consumed: HashMap<&str, Quantity> = HashMap::new();
+        // Every matched part already debited its acquisition balance. Pool the
+        // exact monetary remainder after the day's disposals.
         for event in day {
-            if let Some(disposal) = plan_by_sell.get(&event.id)
-                && let Some(leg) = &disposal.same_day
+            if matches!(event.kind, EventKind::Buy(_))
+                && let Some(residue) = buy_costs.remove(&event.id)
+                && residue.quantity.is_positive()
             {
-                same_day_consumed
-                    .entry(event.ticker.as_str())
-                    .or_default()
-                    .add(&leg.quantity);
-            }
-        }
-
-        // Residue of each day's buys (not consumed by same-day or reserved by
-        // B&B) enters the pool after the day's sells are priced.
-        for event in day {
-            if let EventKind::Buy(trade) = &event.kind {
-                let reserved = plan
-                    .bnb_reservations
-                    .get(&event.id)
-                    .cloned()
-                    .unwrap_or_default();
-                let consumed = same_day_consumed
-                    .get(event.ticker.as_str())
-                    .cloned()
-                    .unwrap_or_default();
-                let mut residue = Quantity::from(trade.quantity);
-                residue.subtract(&reserved);
-                residue.subtract(&consumed);
-                if residue.is_positive() {
-                    // Residue cost mirrors the day buy's unit cost (path-
-                    // dependent; divide-then-multiply preserved).
-                    let unit = day_buy_unit_cost(trade);
-                    let pool = pools.entry(event.ticker.clone()).or_default();
-                    pool.quantity.add(&residue);
-                    pool.cost += residue.decimal()? * unit;
-                }
+                let pool = pools.entry(event.ticker.clone()).or_default();
+                pool.quantity.add(&residue.quantity);
+                pool.cost += residue.cost;
             }
         }
     }
@@ -217,34 +225,14 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
     })
 }
 
-/// Unit cost of a merged day buy: `(qty*price + fees)/qty`. Divide-then-
-/// multiply is load-bearing for output equivalence; rust_decimal is path-
-/// dependent.
-fn day_buy_unit_cost(trade: &Trade) -> Decimal {
-    let total = trade.quantity * trade.price + trade.fees;
-    if trade.quantity != Decimal::ZERO {
-        total / trade.quantity
-    } else {
-        Decimal::ZERO
-    }
-}
-
-/// Proportional disposal proceeds for a matched quantity. The fee proportion
-/// `matched/sell_qty` and the order of operations are load-bearing for output
-/// equivalence; rust_decimal is path-dependent.
+/// Allocate exact gross proceeds and fees, preserving each final remainder.
 fn proceeds(
-    matched: Decimal,
-    sell_qty: Decimal,
-    sell_price: Decimal,
-    sell_fees: Decimal,
-) -> (Decimal, Decimal) {
-    if sell_qty == Decimal::ZERO {
-        return (Decimal::ZERO, Decimal::ZERO);
-    }
-    let proportion = matched / sell_qty;
-    let gross = matched * sell_price;
-    let fees = sell_fees * proportion;
-    (gross, gross - fees)
+    quantity: &Quantity,
+    gross: &mut Pool,
+    fees: &mut Pool,
+) -> Result<(Decimal, Decimal), CgtError> {
+    let gross = gross.take(quantity)?;
+    Ok((gross, gross - fees.take(quantity)?))
 }
 
 /// Price every leg of one disposal. The plan's leg quantities drive pricing;
@@ -254,17 +242,22 @@ fn price_disposal(
     sell: &Event,
     trade: &Trade,
     plan: &DisposalPlan,
-    stream: &EventStream,
     pools: &mut HashMap<String, Pool>,
-    day_buys: &HashMap<&str, &Trade>,
+    buy_costs: &mut HashMap<EventId, Pool>,
+    day_buys: &HashMap<&str, EventId>,
 ) -> Result<PricedDisposal, CgtError> {
     let sell_qty = trade.quantity;
-    let sell_price = trade.price;
-    let sell_fees = trade.fees;
+    let mut gross_remaining = Pool {
+        quantity: Quantity::from(sell_qty),
+        cost: trade.gross,
+    };
+    let mut fees_remaining = Pool {
+        quantity: Quantity::from(sell_qty),
+        cost: trade.fees,
+    };
     let mut legs: Vec<PricedLeg> = Vec::new();
 
-    // 1. Same Day (TCGA92/S105(1)): cost off the merged same-day buy's unit
-    //    cost. matched * (day_buy_total/day_buy_qty); divide-then-multiply.
+    // 1. Same Day (TCGA92/S105(1)): allocate the merged acquisition cost.
     if let Some(leg) = &plan.same_day {
         let buy =
             day_buys
@@ -274,10 +267,16 @@ fn price_disposal(
                     date: sell.date,
                     attempted: sell_qty,
                 })?;
-        let unit = day_buy_unit_cost(buy);
+        let balance = buy_costs
+            .get_mut(buy)
+            .ok_or_else(|| CgtError::NoPriorAcquisitions {
+                ticker: sell.ticker.clone(),
+                date: sell.date,
+                attempted: sell_qty,
+            })?;
         let quantity = leg.quantity.decimal()?;
-        let cost = quantity * unit;
-        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
+        let cost = balance.take(&leg.quantity)?;
+        let (gross, net) = proceeds(&leg.quantity, &mut gross_remaining, &mut fees_remaining)?;
         legs.push(PricedLeg {
             rule: LegRule::SameDay,
             quantity,
@@ -293,24 +292,20 @@ fn price_disposal(
     //    A B&B-consumed share is never held at a later corporate action, so no
     //    cost offset applies here.
     for bnb in &plan.bed_and_breakfast {
-        let buy_event = stream
-            .get(bnb.buy)
+        let balance = buy_costs
+            .get_mut(&bnb.buy)
             .ok_or_else(|| CgtError::NoPriorAcquisitions {
                 ticker: sell.ticker.clone(),
                 date: sell.date,
                 attempted: sell_qty,
             })?;
-        let EventKind::Buy(buy) = &buy_event.kind else {
-            return Err(CgtError::NoPriorAcquisitions {
-                ticker: sell.ticker.clone(),
-                date: sell.date,
-                attempted: sell_qty,
-            });
-        };
-        let unit = day_buy_unit_cost(buy);
-        let cost = bnb.quantity_at_buy_scale.decimal()? * unit;
+        let cost = balance.take(&bnb.quantity_at_buy_scale)?;
         let quantity = bnb.quantity_at_sell_scale.decimal()?;
-        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
+        let (gross, net) = proceeds(
+            &bnb.quantity_at_sell_scale,
+            &mut gross_remaining,
+            &mut fees_remaining,
+        )?;
         legs.push(PricedLeg {
             rule: LegRule::BedAndBreakfast,
             quantity,
@@ -322,8 +317,7 @@ fn price_disposal(
         });
     }
 
-    // 3. Section 104: cost off the pool average at this moment.
-    //    matched * (pool_cost/pool_qty); divide-then-multiply, then drain.
+    // 3. Section 104: allocate the pool cost at this date.
     if let Some(leg) = &plan.section_104 {
         let pool =
             pools
@@ -333,16 +327,9 @@ fn price_disposal(
                     date: sell.date,
                     attempted: sell_qty,
                 })?;
-        let unit = if !pool.quantity.is_zero() {
-            pool.cost / pool.quantity.decimal()?
-        } else {
-            Decimal::ZERO
-        };
         let quantity = leg.quantity.decimal()?;
-        let cost = quantity * unit;
-        pool.quantity.subtract(&leg.quantity);
-        pool.cost -= cost;
-        let (gross, net) = proceeds(quantity, sell_qty, sell_price, sell_fees);
+        let cost = pool.take(&leg.quantity)?;
+        let (gross, net) = proceeds(&leg.quantity, &mut gross_remaining, &mut fees_remaining)?;
         legs.push(PricedLeg {
             rule: LegRule::Section104,
             quantity,
@@ -688,5 +675,23 @@ mod tests {
         let pool = holding(&report, "GHI");
         assert_eq!(pool.quantity, dec!(90));
         assert_eq!(pool.total_cost, dec!(930));
+    }
+    #[test]
+    fn multiple_disposals_preserve_the_complete_acquisition_cost() {
+        let report = valued(
+            "2024-01-01 BUY ABC 10 @ 10\n\
+             2024-02-01 SELL ABC 1 @ 12\n\
+             2024-02-02 SELL ABC 1 @ 12\n\
+             2024-02-03 SELL ABC 1 @ 12\n\
+             2024-02-10 BUY ABC 3 @ 10 FEES 0.01\n",
+        );
+        let allocated: rust_decimal::Decimal = report
+            .disposals
+            .iter()
+            .flat_map(|disposal| disposal.legs.iter())
+            .map(|leg| leg.allowable_cost)
+            .sum();
+        assert_eq!(allocated, dec!(30.01));
+        assert_eq!(holding(&report, "ABC").total_cost, dec!(100));
     }
 }

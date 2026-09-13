@@ -43,18 +43,18 @@
             {
               "rule": "Section104",
               "quantity": "20",
-              "allowable_cost": "1744.00",
-              "gain_or_loss": "256.00"
+              "allowable_cost": "1744",
+              "gain_or_loss": "256"
             }
           ]
         }
       ],
       "disposal_count": 1,
-      "total_gain": "256.00",
+      "total_gain": "256",
       "total_loss": "0",
-      "net_gain": "256.00",
+      "net_gain": "256",
       "gross_proceeds": "2000",
-      "total_allowable_cost": "1744.00",
+      "total_allowable_cost": "1744",
       "exempt_amount": "12300",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -65,7 +65,7 @@
     {
       "ticker": "FOOBAR",
       "quantity": "5",
-      "total_cost": "436.00"
+      "total_cost": "436"
     }
   ],
   "transactions": [

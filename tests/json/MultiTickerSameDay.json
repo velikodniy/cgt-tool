@@ -29,8 +29,8 @@
             {
               "rule": "SameDay",
               "quantity": "10",
-              "allowable_cost": "505.00",
-              "gain_or_loss": "-60.00",
+              "allowable_cost": "505",
+              "gain_or_loss": "-60",
               "acquisition_date": "2023-07-15"
             }
           ]
@@ -38,10 +38,10 @@
       ],
       "disposal_count": 2,
       "total_gain": "40",
-      "total_loss": "60.00",
-      "net_gain": "-20.00",
+      "total_loss": "60",
+      "net_gain": "-20",
       "gross_proceeds": "1000",
-      "total_allowable_cost": "1010.00",
+      "total_allowable_cost": "1010",
       "exempt_amount": "6000",
       "taxable_gain": "0",
       "dividend_income": "0",
@@ -57,7 +57,7 @@
     {
       "ticker": "MSFT",
       "quantity": "10",
-      "total_cost": "505.00"
+      "total_cost": "505"
     }
   ],
   "transactions": [

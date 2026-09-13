@@ -64,6 +64,16 @@ impl Quantity {
         }
     }
 
+    /// Allocate a monetary total in this exact share proportion.
+    pub(crate) fn proportion_of(&self, total: &Self, amount: Decimal) -> Result<Decimal, CgtError> {
+        let share = self
+            .divided(total)
+            .ok_or_else(|| CgtError::ArithmeticOverflow {
+                operation: "allocation with zero quantity".into(),
+            })?;
+        share.multiplied(&Self::from(amount)).decimal()
+    }
+
     /// Convert only at a decimal API boundary, using midpoint-away-from-zero.
     pub(crate) fn decimal(&self) -> Result<Decimal, CgtError> {
         let negative = self.0.is_negative();

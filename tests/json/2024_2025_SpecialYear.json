@@ -13,8 +13,8 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "10010.00",
-              "gain_or_loss": "-1020.00",
+              "allowable_cost": "10010",
+              "gain_or_loss": "-1020",
               "acquisition_date": "2024-08-29"
             }
           ]
@@ -29,8 +29,8 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "5010.00",
-              "gain_or_loss": "4980.00",
+              "allowable_cost": "5010",
+              "gain_or_loss": "4980",
               "acquisition_date": "2024-10-29"
             }
           ]
@@ -45,8 +45,8 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "5010.00",
-              "gain_or_loss": "2980.00",
+              "allowable_cost": "5010",
+              "gain_or_loss": "2980",
               "acquisition_date": "2024-10-30"
             }
           ]
@@ -61,21 +61,21 @@
             {
               "rule": "SameDay",
               "quantity": "1000",
-              "allowable_cost": "10010.00",
-              "gain_or_loss": "-1020.00",
+              "allowable_cost": "10010",
+              "gain_or_loss": "-1020",
               "acquisition_date": "2024-12-30"
             }
           ]
         }
       ],
       "disposal_count": 4,
-      "total_gain": "7960.00",
-      "total_loss": "2040.00",
-      "net_gain": "5920.00",
+      "total_gain": "7960",
+      "total_loss": "2040",
+      "net_gain": "5920",
       "gross_proceeds": "36000",
-      "total_allowable_cost": "30040.00",
+      "total_allowable_cost": "30040",
       "exempt_amount": "3000",
-      "taxable_gain": "2920.00",
+      "taxable_gain": "2920",
       "dividend_income": "0",
       "dividend_tax_paid": "0"
     }
