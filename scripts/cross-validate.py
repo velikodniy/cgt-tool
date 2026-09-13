@@ -218,9 +218,11 @@ def convert(cgt_file: Path, converter: str) -> str:
 
 
 def first_decimal(text: str, pattern: str) -> Decimal:
-    """First regex capture in `text` as a Decimal (commas stripped); 0 if none."""
+    """Read a required amount from a calculator summary."""
     match = re.search(pattern, text)
-    return Decimal(match.group(1).replace(",", "")) if match else Decimal("0")
+    if match is None:
+        raise ValueError("cgt-calc output does not contain a gain/loss summary")
+    return Decimal(match.group(1).replace(",", ""))
 
 
 def find_cgtcalc() -> Path | None:
@@ -281,6 +283,10 @@ def run_cgt_calc_year(raw_file: Path, year: int) -> TaxYearResult:
             "--no-balance-check",
         ]
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"cgt-calc exited {result.returncode}: {result.stderr.strip()}"
+        )
     output = result.stdout + result.stderr
     return TaxYearResult(
         period=f"{year}/{(year + 1) % 100:02d}",
@@ -305,7 +311,9 @@ def run_cgt_calc(cgt_file: Path) -> CalculatorResult:
     except ConversionFailed as exc:
         return CalculatorResult("cgt-calc", [], error=f"Conversion failed: {exc}")
     except ConversionEmpty:
-        return CalculatorResult("cgt-calc", [], error="No transactions to convert")
+        return CalculatorResult(
+            "cgt-calc", [], error="No transactions to convert", skipped=True
+        )
     except FileNotFoundError:
         return CalculatorResult(
             "cgt-calc", [], error="uvx not found - install with: pip install uv"
@@ -360,17 +368,15 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
 
         output = result.stdout + result.stderr
 
-        # cgtcalc aborts on inputs it cannot model (e.g. multi-currency, or a
-        # CAPRETURN whose amount fails its internal validation). Surface that as
-        # an explicit limitation instead of parsing zero tax years and reporting
-        # a spurious match.
+        # An applicability skip happens before execution. A failed execution is
+        # an error, even if the calculator rejects otherwise valid input.
         if result.returncode != 0 or "Error calculating CGT" in output:
             reason = next(
                 (line.strip() for line in output.splitlines() if "Error" in line),
                 f"cgtcalc exited {result.returncode}",
             )
             return CalculatorResult(
-                "cgtcalc", [], error=f"cgtcalc cannot process: {reason}", skipped=True
+                "cgtcalc", [], error=f"cgtcalc cannot process: {reason}"
             )
 
         # A code-0 run whose summary the regex cannot parse must not be counted
@@ -378,11 +384,11 @@ def run_cgtcalc(cgt_file: Path) -> CalculatorResult:
         # cgtcalc years and report OK. The "Disposals" marker means cgtcalc DID
         # compute disposals, so an empty parse is a parse gap, not an empty run.
         parsed = parse_cgtcalc_summary(output)
-        if not parsed and "Disposals" in output:
+        if not parsed and ("Disposals" in output or "# SUMMARY" not in output):
             return CalculatorResult(
                 "cgtcalc",
                 [],
-                error="cgtcalc summary present but unparsed (year-set unverifiable)",
+                error="cgtcalc summary is missing or cannot be parsed",
             )
         return CalculatorResult("cgtcalc", parsed)
     except ConversionFailed as exc:
@@ -469,8 +475,9 @@ def check_calculator(
     """Compare one external calculator against cgt-tool and report the outcome."""
     name = other_result.name
     if other_result.error:
-        print(f"  SKIP ({name}): {other_result.error}")
-        return Status.SKIP if other_result.skipped else Status.ERROR
+        status = Status.SKIP if other_result.skipped else Status.ERROR
+        print(f"  {status.value.upper()} ({name}): {other_result.error}")
+        return status
 
     discrepancies = compare_results(cgt_result, other_result)
     if not discrepancies:
@@ -515,7 +522,14 @@ def validate_file(cgt_file: Path) -> tuple[bool, Status, Status, bool]:
         cgt_result, cgtcalc_result, fixture=cgt_file, allow_known=True
     )
 
-    all_passed = Status.DIFF not in (calc_status, cgtcalc_status)
+    all_passed = (
+        Status.ERROR not in (calc_status, cgtcalc_status)
+        and cgtcalc_status != Status.DIFF
+        and (
+            calc_status != Status.DIFF
+            or cgtcalc_status in (Status.OK, Status.KNOWN)
+        )
+    )
     return all_passed, calc_status, cgtcalc_status, cgtcalc_result.oracle_missing
 
 
@@ -538,7 +552,6 @@ def main() -> int:
     args = parser.parse_args()
 
     all_passed = True
-    oracle_missing = False
     summary: dict[str, dict[Status, int]] = {
         "cgt-calc": {status: 0 for status in Status},
         "cgtcalc": {status: 0 for status in Status},
@@ -549,29 +562,29 @@ def main() -> int:
             print(f"Error: File not found: {cgt_file}")
             all_passed = False
             continue
-        passed, calc_status, cgtcalc_status, cgtcalc_oracle_missing = validate_file(
+        passed, calc_status, cgtcalc_status, _oracle_missing = validate_file(
             cgt_file
         )
         all_passed = all_passed and passed
-        oracle_missing = oracle_missing or cgtcalc_oracle_missing
         summary["cgt-calc"][calc_status] += 1
         summary["cgtcalc"][cgtcalc_status] += 1
 
-    # The authoritative cross-check is absent of verification, not success: if
-    # cgtcalc never produced a comparable result because the binary was unbuilt,
-    # a green run is meaningless. Fail unless explicitly opted out for offline dev.
+    # Require a completed comparison, including when every fixture was skipped.
     cgtcalc_compared = (
         summary["cgtcalc"][Status.OK]
         + summary["cgtcalc"][Status.DIFF]
         + summary["cgtcalc"][Status.KNOWN]
     )
     require_cgtcalc = os.environ.get("CGT_REQUIRE_CGTCALC", "1") != "0"
-    if require_cgtcalc and oracle_missing and cgtcalc_compared == 0:
+    calc_compared = summary["cgt-calc"][Status.OK] + summary["cgt-calc"][Status.DIFF]
+    if (require_cgtcalc and cgtcalc_compared == 0) or not (
+        cgtcalc_compared + calc_compared
+    ):
         print("\n" + "=" * 60)
         print(
-            "RESULT: cgtcalc oracle not built — nothing was cross-validated.\n"
-            "Build it (swift build -c release in a cgtcalc clone) or set "
-            "CGT_REQUIRE_CGTCALC=0 to allow offline runs."
+            "RESULT: No required calculator completed a comparison.\n"
+            "Build cgtcalc and use inputs that it supports. Set "
+            "CGT_REQUIRE_CGTCALC=0 to permit comparisons with cgt-calc alone."
         )
         print("=" * 60)
         print_summary(summary)
@@ -581,16 +594,7 @@ def main() -> int:
     if all_passed:
         print("RESULT: All validations passed")
     else:
-        # cgtcalc (mattjgalloway) is authoritative. cgt-calc (KapJI) cannot
-        # model every operation, so its discrepancies alone do not fail the run.
-        cgtcalc_failed = (
-            summary["cgtcalc"][Status.DIFF] > 0 or summary["cgtcalc"][Status.ERROR] > 0
-        )
-        if not cgtcalc_failed and summary["cgt-calc"][Status.DIFF] > 0:
-            print("RESULT: Passed (cgtcalc matches, ignoring cgt-calc discrepancies)")
-            all_passed = True
-        else:
-            print("RESULT: Some validations failed or had discrepancies")
+        print("RESULT: Some validations failed or had discrepancies")
 
     print("=" * 60)
     print_summary(summary)

@@ -39,6 +39,11 @@ jobs:
           node-version: '22'
       - name: Test web interface
         run: node --test web/*.test.mjs
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Test comparison scripts
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
   # Test WebAssembly target
   test-wasm:
     name: Test WASM

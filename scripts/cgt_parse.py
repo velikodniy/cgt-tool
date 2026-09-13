@@ -1,25 +1,28 @@
 """
 Shared helper for running `cgt-tool parse` and returning structured JSON.
 
-Locates the cgt-tool binary using the same strategy as cross-validate.py:
-  1. Local release build (target/release/cgt-tool)
-  2. PATH lookup
-  3. Fallback to `cargo run`
+CGT_TOOL_BIN selects an explicit binary. Otherwise, use the newest local build
+or use cargo with this repository's manifest.
 """
 
 import json
+import os
 import subprocess
 from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
 
 
 def find_cgt_tool() -> list[str]:
     """Return command tokens for invoking cgt-tool."""
-    release_bin = Path.cwd() / "target" / "release" / "cgt-tool"
-    if release_bin.exists():
-        return [str(release_bin)]
-    if subprocess.run(["which", "cgt-tool"], capture_output=True).returncode == 0:
-        return ["cgt-tool"]
-    return ["cargo", "run", "--quiet", "--"]
+    if binary := os.environ.get("CGT_TOOL_BIN"):
+        return [binary]
+    name = "cgt-tool.exe" if os.name == "nt" else "cgt-tool"
+    candidates = [REPO / "target" / profile / name for profile in ("debug", "release")]
+    builds = [path for path in candidates if path.is_file()]
+    if builds:
+        return [str(max(builds, key=lambda path: path.stat().st_mtime_ns))]
+    return ["cargo", "run", "--quiet", "--manifest-path", str(REPO / "Cargo.toml"), "--"]
 
 
 def run_parse(path: Path) -> list[dict]:

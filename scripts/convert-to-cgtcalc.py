@@ -12,6 +12,7 @@ Usage: python convert-to-cgtcalc.py input.cgt > output.txt
 
 import sys
 from datetime import datetime
+from decimal import Decimal
 from pathlib import Path
 
 from cgt_parse import run_parse
@@ -36,6 +37,8 @@ def convert_to_cgtcalc(input_path: Path) -> list[str]:
         if action in ("BUY", "SELL"):
             line = f"{action} {date} {ticker} {tx['amount']} {tx['price']['amount']} {tx['fees']['amount']}"
         elif action == "ACCUMULATION":
+            if Decimal(tx["amount"]) == 0:
+                continue
             # Maps to cgtcalc DIVIDEND (accumulation fund cost basis adjustment)
             line = f"DIVIDEND {date} {ticker} {tx['amount']} {tx['total_value']['amount']}"
         elif action == "CAPRETURN":
