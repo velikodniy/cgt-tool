@@ -45,6 +45,16 @@ pub enum CgtError {
         pool: Decimal,
     },
 
+    #[error(
+        "SELL {ticker} on {date}: disposal of {attempted} shares exceeds the actual holding of {held}. Short sales are not supported."
+    )]
+    UncoveredDisposal {
+        ticker: String,
+        date: NaiveDate,
+        attempted: Decimal,
+        held: Decimal,
+    },
+
     #[error("SELL {ticker} on {date} has no prior acquisitions (attempted to dispose {attempted})")]
     NoPriorAcquisitions {
         ticker: String,
@@ -89,7 +99,7 @@ pub enum CgtError {
 
     #[error(
         "UNSPLIT {ticker} on {date}: holding of {holding} is not divisible by ratio {ratio} \
-         (a consolidation must leave whole shares; CG51746)"
+         (consolidations that leave fractional shares are not supported)"
     )]
     UnsplitIndivisibleHolding {
         ticker: String,

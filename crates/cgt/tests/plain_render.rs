@@ -52,5 +52,5 @@ fn plain_render_matches_goldens() {
         assert_eq!(rendered, golden, "plain render diverged for {name}");
     }
 
-    assert_eq!(entries.len(), 56, "fixture count is 56");
+    assert_eq!(entries.len(), 57, "fixture count is 57");
 }

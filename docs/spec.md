@@ -28,7 +28,7 @@ Disposals are matched with acquisitions within 30 calendar days after the sale d
 - Day D+30 is within the window; D+31 is not.
 - Before allowing earlier disposals to B&B-consume a future acquisition, the system reserves shares needed for Same Day matching on that acquisition date.
 - Reservation is tracked at the date+ticker level across all same-day lots.
-- B&B determines cost basis for a valid disposal — it does not enable disposing of shares the taxpayer does not hold (CG51590 Example 1).
+- B&B determines the cost basis of a disposal. The tool rejects sales that exceed the actual holding. This restriction excludes short sales.
 - When a B&B lookahead spans an intervening SPLIT or UNSPLIT, the matcher applies the split ratio when calculating matched quantities.
 
 **Scenarios:**
@@ -56,7 +56,7 @@ Normalized trades retain their exact gross totals and fees. Each acquisition and
 
 ### Holding Verification
 
-Before the matching cascade, the system verifies the seller holds enough shares to cover the disposal. The holding is the sum of same-day acquisitions not yet matched plus the S104 pool quantity for that ticker. If the sell quantity exceeds the holding, the system returns an error.
+The planner tracks actual shares separately from the Section 104 tax pool. Same-day acquisitions increase the actual holding before that day's disposals. Every disposal reduces the actual holding, including shares matched to a future acquisition. A future acquisition replenishes the actual holding only on its acquisition date. If a sale exceeds the actual holding, calculation returns an error.
 
 **Golden files:**
 
@@ -68,7 +68,7 @@ Before the matching cascade, the system verifies the seller holds enough shares 
 Errors are reported in a fixed order, reflecting the engine's plan-then-value pipeline:
 
 1. **Input validation** — malformed or ambiguous input is rejected first (e.g. a same-date SPLIT/UNSPLIT and trade of the same ticker).
-2. **Quantity / holding errors** (planning phase) — e.g. a disposal that exceeds the available holding (CG51590).
+2. **Quantity / holding errors** (planning phase), such as a disposal that exceeds the actual holding.
 3. **Valuation / basis errors** (valuation phase) — e.g. a capital return that exceeds remaining allowable basis (TCGA92/S122(2); CG57847).
 
 A quantity error is surfaced before any valuation error, because share quantities are planned before any leg is priced.
@@ -84,7 +84,7 @@ When a disposal has zero total sell amount, no match result is returned and the 
 ### Stock Split / Unsplit
 
 - **SPLIT**: Multiply share quantity by the ratio; total cost basis unchanged.
-- **UNSPLIT**: Reverse of SPLIT. The ratio must be a positive integer and the holding must divide evenly by it; an indivisible consolidation fails (a consolidation must leave whole shares; CG51746).
+- **UNSPLIT**: Reverse of SPLIT. The ratio must be a positive integer, and the actual holding must divide evenly by it. The tool does not model fractional entitlements or their disposal. This product restriction does not require the tax pool to contain whole shares.
 
 A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisition, so it never enters same-day matching.
 

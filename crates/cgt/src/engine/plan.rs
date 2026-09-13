@@ -97,6 +97,8 @@ pub(crate) fn plan(stream: &EventStream) -> Result<MatchPlan, CgtError> {
 
 struct Planner<'s> {
     stream: &'s EventStream,
+    /// Shares actually held, independent of future tax matches.
+    holdings: HashMap<String, Quantity>,
     /// Per-ticker Section 104 pool quantity.
     pools: HashMap<String, Quantity>,
     /// Day ledger for the day in progress: per ticker, merged buy quantity
@@ -111,6 +113,7 @@ impl<'s> Planner<'s> {
     fn new(stream: &'s EventStream) -> Self {
         Self {
             stream,
+            holdings: HashMap::new(),
             pools: HashMap::new(),
             day_available: HashMap::new(),
             bnb_reservations: HashMap::new(),
@@ -126,6 +129,10 @@ impl<'s> Planner<'s> {
 
         for event in day {
             if let EventKind::Buy(trade) = &event.kind {
+                self.holdings
+                    .entry(event.ticker.clone())
+                    .or_default()
+                    .add(&Quantity::from(trade.quantity));
                 let reserved = self
                     .bnb_reservations
                     .get(&event.id)
@@ -168,29 +175,37 @@ impl<'s> Planner<'s> {
         for event in day {
             match &event.kind {
                 EventKind::Split { ratio } => {
+                    if let Some(held) = self.holdings.get_mut(&event.ticker) {
+                        *held = held.multiplied(&Quantity::from(*ratio));
+                    }
                     if let Some(pool) = self.pools.get_mut(&event.ticker) {
                         *pool = pool.multiplied(&Quantity::from(*ratio));
                     }
                 }
-                EventKind::Unsplit { ratio } => {
-                    if let Some(pool) = self.pools.get_mut(&event.ticker)
-                        && *ratio != Decimal::ZERO
-                    {
-                        // A consolidation must leave whole shares (CG51746).
-                        let consolidated = pool.divided(&Quantity::from(*ratio)).ok_or(
+                EventKind::Unsplit { ratio } if *ratio != Decimal::ZERO => {
+                    let ratio_quantity = Quantity::from(*ratio);
+                    if let Some(held) = self.holdings.get_mut(&event.ticker) {
+                        let consolidated = held.divided(&ratio_quantity).ok_or_else(|| {
                             CgtError::ArithmeticOverflow {
                                 operation: "share consolidation".into(),
-                            },
-                        )?;
+                            }
+                        })?;
                         if !consolidated.is_integer() {
                             return Err(CgtError::UnsplitIndivisibleHolding {
                                 ticker: event.ticker.clone(),
                                 date: event.date,
-                                holding: pool.decimal()?,
+                                holding: held.decimal()?,
                                 ratio: *ratio,
                             });
                         }
-                        *pool = consolidated;
+                        *held = consolidated;
+                    }
+                    if let Some(pool) = self.pools.get_mut(&event.ticker) {
+                        *pool = pool.divided(&ratio_quantity).ok_or_else(|| {
+                            CgtError::ArithmeticOverflow {
+                                operation: "tax pool consolidation".into(),
+                            }
+                        })?;
                     }
                 }
                 _ => {}
@@ -231,6 +246,17 @@ impl<'s> Planner<'s> {
                 pool: pool_held.decimal()?,
             });
         }
+
+        let held = self.holdings.entry(sell.ticker.clone()).or_default();
+        if *held < trade.quantity {
+            return Err(CgtError::UncoveredDisposal {
+                ticker: sell.ticker.clone(),
+                date: sell.date,
+                attempted: trade.quantity,
+                held: held.decimal()?,
+            });
+        }
+        held.subtract(&Quantity::from(trade.quantity));
 
         let mut remaining = Quantity::from(trade.quantity);
         let mut disposal = DisposalPlan {
