@@ -1,21 +1,8 @@
-# Rust
-target/
-debug/
-release/
-*.rs.bk
-*.rlib
-*.prof*
-.idea/
-*.log
-.env*
+# macOS
+.DS_Store
 
-# Private data
-/examples/
-exchange_rates.csv
+# Rust
+/target/
 
 # Python
 __pycache__/
-*.pyc
-
-# macOS
-.DS_Store
