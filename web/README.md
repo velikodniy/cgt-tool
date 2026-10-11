@@ -50,3 +50,20 @@ Then open http://localhost:8000 in your browser.
 Generate Report uses the WASM `calculate_display` function.
 Rust prepares amounts, unit costs, relevant sections, and notes before the browser arranges the HTML.
 Calculate JSON uses `calculate_tax` and retains the calculation report with exact holding costs.
+
+## Tests
+
+From the repository root, run the browser unit tests:
+
+```bash
+node --test web/*.test.mjs
+```
+
+For the WASM integration test, build a Node.js package and supply its absolute path:
+
+```bash
+wasm-pack build crates/cgt-wasm --target nodejs --dev --out-dir /tmp/cgt-display-wasm
+CGT_WASM_TEST_PKG=/tmp/cgt-display-wasm node --test web/*.test.mjs
+```
+
+The WASM test job also runs this integration test.

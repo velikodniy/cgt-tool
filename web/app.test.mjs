@@ -2,8 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
+import { createRequire } from "node:module";
 
-function element() {
+const wasm = process.env.CGT_WASM_TEST_PKG
+  ? createRequire(import.meta.url)(process.env.CGT_WASM_TEST_PKG)
+  : null;
+
+function element(acceptHtml = false) {
   return {
     children: [],
     classList: { add() {}, remove() {} },
@@ -16,20 +21,22 @@ function element() {
       this.children.push(child);
     },
     get innerHTML() {
+      if (acceptHtml && this.html !== undefined) return this.html;
       return (this.textContent || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     },
-    set innerHTML(_value) {
+    set innerHTML(value) {
+      if (acceptHtml) { this.html = value; return; }
       assert.fail("Toast content must not use innerHTML");
     },
   };
 }
 
-async function loadApp() {
+async function loadApp(bindings = {}) {
   const elements = new Map();
   const document = {
-    createElement: element,
+    createElement: () => element(),
     getElementById(id) {
-      if (!elements.has(id)) elements.set(id, element());
+      if (!elements.has(id)) elements.set(id, element(id === "output"));
       return elements.get(id);
     },
   };
@@ -44,6 +51,7 @@ async function loadApp() {
     calculate_display() {},
     parse_transactions() {},
     validate_dsl() {},
+    ...bindings,
   });
   vm.runInContext(source.replace(/^import .*;$/gm, ""), context);
   await Promise.resolve();
@@ -115,6 +123,36 @@ test("holding cards render prepared averages while calculation costs stay exact"
   assert.ok(html.includes("£10.00"));
   assert.ok(html.includes("£100.01"));
   assert.ok(!html.includes("£100.00"));
+});
+
+
+test("report action consumes WASM display data and JSON action retains exact data", {
+  skip: wasm ? false : "Set CGT_WASM_TEST_PKG to a wasm-pack Node.js build",
+}, async () => {
+  const { context, document } = await loadApp(wasm);
+  const input = await readFile(new URL("../tests/renderers/holding_precision.cgt", import.meta.url), "utf8") + `
+2024-01-01 BUY UNIT 100 @ 1.001
+2024-06-01 SELL UNIT 100 @ 1.005
+2024-06-01 DIVIDEND UNIT TOTAL 42.5 TAX 6.75
+`;
+  document.getElementById("input").value = input;
+  document.getElementById("taxYear").value = "2024";
+  document.getElementById("yearCheckbox").checked = true;
+  context.generateReport();
+  const html = document.getElementById("output").innerHTML;
+  assert.ok(html.includes("£100.01"), html);
+  assert.ok(html.includes("£100.50"), html);
+  assert.ok(html.includes("£42.50"), html);
+  const display = JSON.parse(wasm.calculate_display(input, 2024));
+  for (const note of display.notes) assert.ok(html.includes(note.text), note.text);
+  assert.equal(display.tax_years[0].disposals[0].sale_unit_price, "£1.005");
+  assert.ok(!html.includes("SA108 Box"));
+  context.calculateTax();
+  const calculation = JSON.parse(document.getElementById("output").textContent);
+  const holding = calculation.holdings.find((row) => row.ticker === "FRACTION");
+  assert.equal(holding.total_cost, "10.0005");
+  assert.equal(Object.hasOwn(holding, "unit_cost"), false);
+  assert.equal(Object.hasOwn(calculation, "notes"), false);
 });
 
 test("prepared report text remains escaped at the HTML boundary", async () => {
