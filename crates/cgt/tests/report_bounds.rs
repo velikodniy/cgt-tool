@@ -34,7 +34,7 @@ fn a_maximum_loss_needs_no_subtraction_of_the_exemption() -> Result<(), Box<dyn 
     let year = report.tax_years.first().ok_or("missing tax year")?;
     assert_eq!(year.total_loss, Decimal::MAX);
     assert_eq!(year.taxable_gain, Decimal::ZERO);
-    assert!(!cgt::plain::render(&report).is_empty());
+    assert!(!cgt::plain::render(&cgt::report_display::prepare(&report)?).is_empty());
     serde_json::to_value(&report)?;
     Ok(())
 }

@@ -16,18 +16,18 @@ fn repo_tests_dir() -> PathBuf {
         .join("tests")
 }
 
-fn render_fixture(input: &Path) -> String {
+fn render_fixture(input: &Path) -> Result<String, Box<dyn std::error::Error>> {
     let content = std::fs::read_to_string(input).expect("fixture readable");
     let transactions = cgt::dsl::parse(&content).expect("fixture parses");
     let fx = cgt::money::FxRates::bundled();
     let config = Config::embedded().expect("embedded config loads");
     let report =
         calculate(&transactions, None, Some(&fx), &config).expect("report builds for fixture");
-    plain::render(&report)
+    Ok(plain::render(&cgt::report_display::prepare(&report)?))
 }
 
 #[test]
-fn plain_render_matches_goldens() {
+fn plain_render_matches_goldens() -> Result<(), Box<dyn std::error::Error>> {
     let tests_dir = repo_tests_dir();
     let inputs_dir = tests_dir.join("inputs");
     let plain_dir = tests_dir.join("plain");
@@ -48,9 +48,10 @@ fn plain_render_matches_goldens() {
         let golden = std::fs::read_to_string(&golden_path)
             .unwrap_or_else(|_| panic!("golden missing for {name}"));
 
-        let rendered = render_fixture(input);
+        let rendered = render_fixture(input)?;
         assert_eq!(rendered, golden, "plain render diverged for {name}");
     }
 
     assert_eq!(entries.len(), 58, "fixture count is 58");
+    Ok(())
 }

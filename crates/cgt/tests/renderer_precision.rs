@@ -15,7 +15,10 @@ fn holding_json_preserves_exact_cost_for_derived_unit_values()
     assert_eq!(json, expected);
     assert_eq!(json["holdings"][0]["total_cost"], "10.0005");
     assert!(json["holdings"][0].get("average_cost").is_none());
-    assert!(plain::render(&report).contains("0.1 units at £100.01 avg cost"));
+    assert!(
+        plain::render(&cgt::report_display::prepare(&report)?)
+            .contains("0.1 units at £100.01 avg cost")
+    );
     Ok(())
 }
 
@@ -44,7 +47,7 @@ fn plain_sale_fees_reconcile_displayed_proceeds() -> Result<(), Box<dyn std::err
          2024-06-01 SELL FEE 1 @ 1.004 FEES 0.005\n",
     )?;
     let report = calculate(&transactions, None, None, &Config::embedded()?)?;
-    let text = plain::render(&report);
+    let text = plain::render(&cgt::report_display::prepare(&report)?);
     assert!(
         text.contains("Net Proceeds: £1.00 - £0.00 fees = £1.00"),
         "{text}"

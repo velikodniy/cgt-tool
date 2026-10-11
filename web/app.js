@@ -1,7 +1,6 @@
 /* CGT Calculator WASM Demo - Application Logic */
 
-import init, { calculate_tax, parse_transactions, validate_dsl } from "./pkg/cgt_wasm.js";
-import { formatCurrency, formatPence, sumPence, formatUnitCost, isPositive } from "./decimal.mjs";
+import init, { calculate_tax, calculate_display, parse_transactions, validate_dsl } from "./pkg/cgt_wasm.js";
 
 const state = {
   wasmReady: false,
@@ -17,6 +16,7 @@ async function initWasm() {
     await init();
 
     window.wasmCalculateTax = calculate_tax;
+    window.wasmCalculateDisplay = calculate_display;
     window.wasmParseTransactions = parse_transactions;
     window.wasmValidateDSL = validate_dsl;
 
@@ -122,10 +122,10 @@ const ReportBuilder = {
         (ty) => `
             <tr>
                 <td>${escapeHtml(ty.period || "Unknown")}</td>
-                <td class="number">${formatCurrency(ty.net_gain)}</td>
-                <td class="number">${formatCurrency(ty.gross_proceeds)}</td>
-                <td class="number">${formatCurrency(ty.exempt_amount)}</td>
-                <td class="number">${formatCurrency(ty.taxable_gain)}</td>
+                <td class="number">${escapeHtml(ty.net_gain)}</td>
+                <td class="number">${escapeHtml(ty.gross_proceeds)}</td>
+                <td class="number">${escapeHtml(ty.exempt_amount)}</td>
+                <td class="number">${escapeHtml(ty.taxable_gain)}</td>
             </tr>
         `,
       )
@@ -145,20 +145,12 @@ const ReportBuilder = {
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
-            <div class="note info">💡 <strong>Note:</strong> Proceeds = SA108 Box 21 (gross, before sale fees). Taxable gain is before losses brought forward and other reliefs.</div>
             <h3 style="margin: 30px 0 10px 0; color: var(--color-text);">Tax Year Details</h3>
         `;
   },
 
   matchItem: (match) => {
-    const ruleName =
-      match.rule === "SameDay"
-        ? "Same Day"
-        : match.rule === "BedAndBreakfast"
-          ? "Bed & Breakfast"
-          : match.rule === "Section104"
-            ? "Section 104"
-            : escapeHtml(match.rule);
+    const ruleName = escapeHtml(match.rule_label);
     const badgeClass =
       match.rule === "SameDay"
         ? "same-day"
@@ -168,18 +160,17 @@ const ReportBuilder = {
     return `
             <div class="match-item">
                 <span class="badge ${badgeClass}">${ruleName}</span>
-                <span style="color: #374151;">${escapeHtml(match.quantity)} shares @ ${formatUnitCost(match.allowable_cost, match.quantity)}</span>
-                <span style="margin-left: auto; font-weight: 600; color: var(--color-text-dark);">${formatCurrency(match.allowable_cost)}</span>
+                <span style="color: #374151;">${escapeHtml(match.quantity)} shares @ ${escapeHtml(match.unit_cost.money)}</span>
+                <span style="margin-left: auto; font-weight: 600; color: var(--color-text-dark);">${escapeHtml(match.allowable_cost)}</span>
             </div>
         `;
   },
 
   disposalCard: (disp, index) => {
-    const gainLoss = sumPence((disp.matches || []).map((m) => m.gain_or_loss));
-    const gainLossClass = gainLoss >= 0n ? "positive" : "negative";
-    const gainLossLabel = gainLoss >= 0n ? "GAIN" : "LOSS";
-    const resultBadgeClass = gainLoss >= 0n ? "gain" : "loss";
-    const totalCost = sumPence((disp.matches || []).map((m) => m.allowable_cost));
+    const isGain = disp.result.kind === "Gain";
+    const gainLossClass = isGain ? "positive" : "negative";
+    const gainLossLabel = isGain ? "GAIN" : "LOSS";
+    const resultBadgeClass = isGain ? "gain" : "loss";
 
     const matchesHtml =
       disp.matches && disp.matches.length > 0
@@ -191,23 +182,23 @@ const ReportBuilder = {
             <div class="disposal-metrics">
                 <div class="metric-item">
                     <span class="metric-label">Gross Proceeds</span>
-                    <span class="metric-value">${formatCurrency(disp.gross_proceeds)}</span>
+                    <span class="metric-value">${escapeHtml(disp.gross_proceeds)}</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">Net Proceeds</span>
-                    <span class="metric-value">${formatCurrency(disp.proceeds)}</span>
+                    <span class="metric-value">${escapeHtml(disp.proceeds)}</span>
                 </div>
                 <div class="metric-item">
                     <span class="metric-label">Allowable Cost</span>
-                    <span class="metric-value">${formatPence(totalCost)}</span>
+                    <span class="metric-value">${escapeHtml(disp.allowable_cost)}</span>
                 </div>
                 ${disp.rounding_adjustment ? `<div class="metric-item">
                     <span class="metric-label">Rounding adjustment</span>
-                    <span class="metric-value">${formatCurrency(disp.rounding_adjustment)}</span>
+                    <span class="metric-value">${escapeHtml(disp.rounding_adjustment)}</span>
                 </div>` : ""}
                 <div class="metric-item">
                     <span class="metric-label">Gain/Loss</span>
-                    <span class="metric-value ${gainLossClass}">${formatPence(gainLoss)}</span>
+                    <span class="metric-value ${gainLossClass}">${escapeHtml(disp.result.signed)}</span>
                 </div>
             </div>
         `
@@ -220,12 +211,12 @@ const ReportBuilder = {
                         <div class="disposal-number">${index + 1}</div>
                         <div>
                             <div class="disposal-action">SELL ${escapeHtml(disp.quantity)} <span class="disposal-ticker">${escapeHtml(disp.ticker)}</span></div>
-                            <div class="disposal-date">${escapeHtml(disp.date)}</div>
+                            <div class="disposal-date">${escapeHtml(disp.date.iso)}</div>
                         </div>
                     </div>
                     <div class="disposal-result">
                         <span class="badge ${resultBadgeClass}">${gainLossLabel}</span>
-                        <span class="${gainLossClass}">${formatPence(gainLoss < 0n ? -gainLoss : gainLoss)}</span>
+                        <span class="${gainLossClass}">${escapeHtml(disp.result.magnitude)}</span>
                     </div>
                 </div>
                 <div class="disposal-body">
@@ -254,61 +245,64 @@ const ReportBuilder = {
                     <div class="summary-grid">
                         <div class="summary-item">
                             <span class="summary-label">Total Proceeds</span>
-                            <span class="summary-value">${formatCurrency(ty.gross_proceeds)}</span>
+                            <span class="summary-value">${escapeHtml(ty.gross_proceeds)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Allowable Costs</span>
-                            <span class="summary-value">${formatCurrency(ty.total_allowable_cost)}</span>
+                            <span class="summary-value">${escapeHtml(ty.total_allowable_cost)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Total Gains</span>
-                            <span class="summary-value positive">${formatCurrency(ty.total_gain)}</span>
+                            <span class="summary-value positive">${escapeHtml(ty.total_gain)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Total Losses</span>
-                            <span class="summary-value negative">${formatCurrency(ty.total_loss)}</span>
+                            <span class="summary-value negative">${escapeHtml(ty.total_loss)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Net Gain/Loss</span>
-                            <span class="summary-value">${formatCurrency(ty.net_gain)}</span>
+                            <span class="summary-value">${escapeHtml(ty.net_gain)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Annual Exemption</span>
-                            <span class="summary-value">${formatCurrency(ty.exempt_amount)}</span>
+                            <span class="summary-value">${escapeHtml(ty.exempt_amount)}</span>
                         </div>
                         <div class="summary-item">
                             <span class="summary-label">Taxable Gain</span>
-                            <span class="summary-value">${formatCurrency(ty.taxable_gain)}</span>
+                            <span class="summary-value">${escapeHtml(ty.taxable_gain)}</span>
                         </div>
-                        <div class="summary-item">
+                        ${ty.dividend ? `<div class="summary-item">
                             <span class="summary-label">Dividend Income</span>
-                            <span class="summary-value">${formatCurrency(ty.dividend_income)}</span>
+                            <span class="summary-value">${escapeHtml(ty.dividend.income)}</span>
                         </div>
-                        <div class="summary-item">
+                        ${ty.dividend.tax_paid ? `<div class="summary-item">
                             <span class="summary-label">Dividend Tax Paid</span>
-                            <span class="summary-value">${formatCurrency(ty.dividend_tax_paid)}</span>
-                        </div>
+                            <span class="summary-value">${escapeHtml(ty.dividend.tax_paid)}</span>
+                        </div>` : ""}` : ""}
                     </div>
                 </div>
             </div>
         `;
   },
 
-  holdings: (holdings) => {
-    // Mirror the Rust renderers: only active (quantity > 0) holdings, by ticker.
-    const active = (holdings || [])
-      .filter((h) => isPositive(h.quantity))
-      .sort((a, b) => a.ticker.localeCompare(b.ticker));
-    if (active.length === 0) return "";
+  notes: (notes) => notes?.length ? `
+        <div class="note info">
+            <strong>Notes:</strong>
+            <ul>${notes.map((note) => `<li>${escapeHtml(note.text)}</li>`).join("")}</ul>
+        </div>
+    ` : "",
 
-    const rows = active
+  holdings: (holdings) => {
+    if (!holdings?.length) return "";
+
+    const rows = holdings
       .map((h) => {
         return `
                 <tr>
                     <td><strong>${escapeHtml(h.ticker)}</strong></td>
                     <td class="number">${escapeHtml(h.quantity)}</td>
-                    <td class="number">${formatCurrency(h.total_cost)}</td>
-                    <td class="number">${formatUnitCost(h.total_cost, h.quantity)}</td>
+                    <td class="number">${escapeHtml(h.total_cost)}</td>
+                    <td class="number">${escapeHtml(h.unit_cost.money)}</td>
                 </tr>
             `;
       })
@@ -363,13 +357,14 @@ function generateReport() {
 
     const parsedYear = parseInt(taxYear, 10);
     const year = yearCheckbox.checked && Number.isInteger(parsedYear) ? parsedYear : null;
-    const result = window.wasmCalculateTax(input, year);
+    const result = window.wasmCalculateDisplay(input, year);
     const data = JSON.parse(result);
 
     const parts = [
       ReportBuilder.header(),
       data.tax_years?.length > 1 ? ReportBuilder.summaryTable(data.tax_years) : "",
       ...(data.tax_years?.map((ty) => ReportBuilder.taxYear(ty)) || []),
+      ReportBuilder.notes(data.notes),
       ReportBuilder.holdings(data.holdings),
     ];
 

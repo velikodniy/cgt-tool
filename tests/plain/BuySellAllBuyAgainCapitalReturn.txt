@@ -7,10 +7,10 @@ Tax year    Disposals   Gains (after losses)  Gains (before losses) Losses      
 Dividend income: £150.24
 
 Notes:
-- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions
-- Gains/Losses are net per disposal after matching rules (CG51560)
-- Proceeds = SA108 Box 21 (gross, before sale fees)
-- Taxable gain is before losses brought forward and other reliefs
+- Disposal count groups same-day disposals into a single transaction (CG51560). The count can differ from raw SELL transactions.
+- Gains/Losses are net per disposal after matching rules (CG51560).
+- Proceeds are gross amounts before sale fees.
+- Taxable gain is before losses brought forward and other reliefs.
 
 # TAX YEAR DETAILS
 

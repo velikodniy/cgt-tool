@@ -40,7 +40,10 @@ fn disposal_rounding_preserves_exact_legs_and_reconciles_displayed_totals()
         money(&output["proceeds"])? - cost + money(&output["rounding_adjustment"])?,
         gain
     );
-    assert!(cgt::plain::render(&report).contains("Rounding adjustment: £0.01"));
+    assert!(
+        cgt::plain::render(&cgt::report_display::prepare(&report)?)
+            .contains("Rounding adjustment: £0.01")
+    );
     Ok(())
 }
 

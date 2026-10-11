@@ -229,6 +229,29 @@ GBP calculations appear in the disposal and annual fields.
 The tool does not classify assets into SA108 categories or produce a complete tax return.
 In particular, `total_allowable_cost` excludes sale expenses required in the [SA108 cost total](tax-rules.md#sa108-reporting).
 
+### Prepared display document
+
+The [`report_display::prepare`](../crates/cgt/src/report_display.rs) function converts a calculation report into an immutable `ReportDisplay`.
+Plain text and PDF renderers accept this prepared document.
+The WASM `calculate_display` function returns its serialized form for the browser.
+The existing `calculate_tax` function continues to return calculation JSON.
+
+The display document contains formatted annual summaries, disposals, positive holdings, sorted trade echoes, asset events, selected notes, and warnings.
+Money fields contain GBP text with grouping and two decimal places.
+Quantities remain exact decimal text without trailing zeros.
+Dates contain `iso` and `uk` text.
+Unit costs contain `money` text and ungrouped `compact` text for plain output.
+Disposal results contain `kind`, `signed`, and `magnitude` fields.
+Optional fees, rounding adjustments, dividend sections, and tax values resolve their relevance during preparation.
+Note identifiers remain stable while each output chooses its layout and numbering.
+
+Preparation leaves the calculation report unchanged and reuses its cumulative match rounding.
+It derives sale unit prices from precise gross proceeds, before calculation JSON rounds those proceeds.
+It derives holding averages from exact costs and quantities.
+Zero disposal results use the gain classification.
+Preparation returns an arithmetic error instead of a partial document when a directly constructed report exceeds supported arithmetic.
+A zero disposal quantity retains the existing zero unit-price convention.
+
 ### Plain text and PDF
 
 Both formats contain a summary, disposal details, holdings, and transactions.
@@ -246,7 +269,12 @@ An empty holding list shows `NONE` in plain text and `No remaining holdings.` in
 
 Annual summaries show grouped disposal counts, gains before and after losses, losses, gross proceeds, exemptions, and taxable gains.
 They also show dividend income and tax paid when applicable.
-Use the SA108 form for the relevant asset category and tax year.
+Report notes explain grouped disposals, net gains and losses, gross proceeds, and the limits of taxable gain.
+The same relevant notes appear in plain text, PDF, and the browser, including single-year browser reports.
+Disposal notes appear only when the selected report contains disposals.
+The taxable gain note appears when the report contains annual summaries.
+Notes explain report amounts without fixed SA108 box references.
+Use the form for the relevant asset category and tax year.
 
 Disposal details show `quantity × unit_price = gross_proceeds`.
 When fees exist, a second line subtracts fees from gross proceeds to show net proceeds.

@@ -146,7 +146,33 @@ Calculate a complete tax report from transaction DSL.
 }
 ```
 
-Holding quantities and total costs are exact decimal strings. Compute the average as `total_cost / quantity` and round it for display.
+Holding quantities and total costs are exact decimal strings.
+Use `calculate_display` to obtain prepared report text and exact-ratio unit costs.
+
+### `calculate_display(dsl: string, tax_year?: number | null): string`
+
+Calculate a prepared display document for a report renderer.
+Its arguments match `calculate_tax`.
+The JSON contains ready text for amounts, unit costs, dates, summaries, holdings, and transaction echoes.
+It also contains selected sections, result classifications, and shared notes.
+The calculation JSON remains separate.
+
+```javascript
+import init, { calculate_display } from './pkg/cgt_wasm.js';
+
+await init();
+const display = JSON.parse(calculate_display(dsl, 2024));
+console.log(display.tax_years[0].net_gain); // "£1,234.00"
+console.log(display.holdings[0].unit_cost.money); // "£100.01"
+console.log(display.notes.map(note => note.text));
+```
+
+Render prepared strings as text, or escape them before inserting HTML.
+Do not parse formatted money to derive other amounts.
+Dates contain `iso` and `uk` representations.
+Unit costs contain `money` and `compact` representations.
+Disposal results contain `kind`, `signed`, and `magnitude` fields.
+Optional `fees`, `rounding_adjustment`, and `dividend` fields resolve section selection in Rust.
 
 ### `parse_transactions(dsl: string): string`
 

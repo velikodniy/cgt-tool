@@ -103,7 +103,8 @@ fn main() -> Result<()> {
 
             match format {
                 OutputFormat::Plain => {
-                    let content = cgt::format::plain::render(&report);
+                    let display = cgt::report_display::prepare(&report)?;
+                    let content = cgt::format::plain::render(&display);
                     if let Some(path) = output {
                         fs::write(path, content)?;
                     } else {
@@ -119,7 +120,8 @@ fn main() -> Result<()> {
                     }
                 }
                 OutputFormat::Pdf => {
-                    let pdf_bytes = cgt_pdf::render(&report)?;
+                    let display = cgt::report_display::prepare(&report)?;
+                    let pdf_bytes = cgt_pdf::render(&display)?;
                     let (output_path, is_default) = match output {
                         Some(p) => (p.clone(), false),
                         None => {

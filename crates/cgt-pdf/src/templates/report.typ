@@ -1,6 +1,8 @@
 // Capital Gains Tax Report Template
 #let data = (
-  generation_date: (year: 0, month: 0, day: 0),
+  generation_date: "",
+  notes: (),
+  note_numbers: (:),
   summary_rows: (),
   tax_years: (),
   has_holdings: false,
@@ -50,17 +52,9 @@
   v(0.2em)
 }
 
-// Formatting helpers
-#let pad2(n) = if n < 10 { "0" + str(n) } else { str(n) }
-
-#let fmt-date(d) = {
-  pad2(d.day) + "/" + pad2(d.month) + "/" + str(d.year)
-}
-
-#let fmt-tax-year(start-year) = {
-  let end-year = start-year + 1
-  let end-short = calc.rem(end-year, 100)
-  str(start-year) + "/" + pad2(end-short)
+#let note-marker(kind) = {
+  let number = data.note_numbers.at(kind, default: none)
+  if number != none { super(number) }
 }
 
 #let gain-label(is-gain) = if is-gain { "GAIN" } else { "LOSS" }
@@ -72,7 +66,7 @@
     "Same Day: " + qty + " shares"
   } else if item.rule == "BED_AND_BREAKFAST" {
     if item.acquisition_date != none {
-      "B&B: " + qty + " shares from " + fmt-date(item.acquisition_date)
+      "B&B: " + qty + " shares from " + item.acquisition_date
     } else {
       "B&B: " + qty + " shares"
     }
@@ -96,7 +90,7 @@
     #text(size: 15pt, weight: "bold", fill: text-dark)[Capital Gains Tax Report]
   ],
   [
-    #text(size: 8pt, fill: text-muted)[Generated: #fmt-date(data.generation_date)]
+    #text(size: 8pt, fill: text-muted)[Generated: #data.generation_date]
   ]
 )
 #v(0.4em)
@@ -112,25 +106,25 @@
   fill: (_, row) => if row == 0 { header-bg } else if calc.odd(row) { alt-row } else { none },
   table.header(
     text(size: 8pt)[*Tax Year*],
-    text(size: 8pt)[*Disposals*#super("1")],
+    text(size: 8pt)[*Disposals*#note-marker("disposal_count")],
     stack(
       spacing: 1pt,
-      text(size: 8pt)[*Gains*#super("2")],
+      text(size: 8pt)[*Gains*#note-marker("gains")],
       text(size: 7pt)[*(after losses)*],
     ),
     stack(
       spacing: 1pt,
-      text(size: 8pt)[*Gains*#super("2")],
+      text(size: 8pt)[*Gains*#note-marker("gains")],
       text(size: 7pt)[*(before losses)*],
     ),
-    text(size: 8pt)[*Losses*#super("2")],
-    text(size: 8pt)[*Proceeds*#super("3")],
+    text(size: 8pt)[*Losses*#note-marker("gains")],
+    text(size: 8pt)[*Proceeds*#note-marker("proceeds")],
     text(size: 8pt)[*Exemption*],
-    text(size: 8pt)[*Taxable gain*#super("4")],
+    text(size: 8pt)[*Taxable gain*#note-marker("taxable_gain")],
   ),
   ..data.summary_rows
     .map(row => (
-      fmt-tax-year(row.start_year),
+      row.period,
       str(row.disposal_count),
       row.net_gain,
       row.total_gain,
@@ -143,26 +137,23 @@
 )
 #v(0.2em)
 #for row in data.summary_rows.filter(row => row.has_dividend_totals) [
-  Dividend income #fmt-tax-year(row.start_year): #row.dividend_income
+  Dividend income #row.period: #row.dividend_income
   #if row.has_dividend_tax [(tax paid: #row.dividend_tax_paid)]
   #parbreak()
 ]
-#block[
-  #set text(size: 6pt, fill: text-muted)
-  *Notes:*
-  #enum(numbering: "1.",
-    [Disposals groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions],
-    [Gains and losses are net per disposal after matching rules (CG51560) and align with SA108 Boxes 23 and 24],
-    [Proceeds = SA108 Box 21 (gross, before sale fees)],
-    [Taxable gain is before losses brought forward and other reliefs],
-  )
+#if data.notes.len() > 0 [
+  #block[
+    #set text(size: 6pt, fill: text-muted)
+    *Notes:*
+    #enum(numbering: "1.", ..data.notes)
+  ]
 ]
 
 // Disposal Details Section
 = Disposal Details
 
 #for year in data.tax_years [
-  #tax-year-header("Tax Year " + fmt-tax-year(year.start_year))
+  #tax-year-header("Tax Year " + year.period)
 
   #if year.disposals.len() == 0 [
     #pad(left: 0.5em)[_No disposals recorded for this period._]
@@ -185,7 +176,7 @@
             #h(0.6em)
             #text(fill: text-muted)[#disposal.quantity shares]
             #h(1em)
-            #text(fill: text-muted)[Sold #fmt-date(disposal.date)]
+            #text(fill: text-muted)[Sold #disposal.date]
           ],
           [
             #text(weight: "bold", fill: result-color)[#gain-text #disposal.gain_magnitude]
@@ -287,7 +278,7 @@
     ),
     ..data.transaction_rows
       .map(row => (
-        fmt-date(row.date),
+        row.date,
         row.type,
         row.ticker,
         row.quantity,
@@ -313,7 +304,7 @@
     ),
     ..data.asset_event_rows
       .map(row => (
-        fmt-date(row.date),
+        row.date,
         row.type,
         row.ticker,
         if row.amount == none { "-" } else { row.amount },

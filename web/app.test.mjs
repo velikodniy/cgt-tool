@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
-import * as decimal from "./decimal.mjs";
 
 function element() {
   return {
@@ -42,9 +41,9 @@ async function loadApp() {
     setTimeout() {},
     init: async () => {},
     calculate_tax() {},
+    calculate_display() {},
     parse_transactions() {},
     validate_dsl() {},
-    ...decimal,
   });
   vm.runInContext(source.replace(/^import .*;$/gm, ""), context);
   await Promise.resolve();
@@ -67,9 +66,9 @@ test("parser errors remain text in toast messages", async () => {
 test("income-only year cards show income and tax paid", async () => {
   const { context } = await loadApp();
   context.incomeYear = {
-    period: "2024/25", disposals: [], gross_proceeds: "0", total_allowable_cost: "0",
-    total_gain: "0", total_loss: "0", net_gain: "0", exempt_amount: "3000",
-    taxable_gain: "0", dividend_income: "42.50", dividend_tax_paid: "6.75",
+    period: "2024/25", disposals: [], gross_proceeds: "£0.00", total_allowable_cost: "£0.00",
+    total_gain: "£0.00", total_loss: "£0.00", net_gain: "£0.00", exempt_amount: "£3,000.00",
+    taxable_gain: "£0.00", dividend: { income: "£42.50", tax_paid: "£6.75" },
   };
   const html = vm.runInContext("ReportBuilder.taxYear(incomeYear)", context);
   assert.ok(html.includes("Dividend Income"));
@@ -82,15 +81,19 @@ test("report cards preserve large pennies and fractional unit costs", async () =
   const { context } = await loadApp();
   context.disposal = {
     ticker: "TEST",
-    date: "2024-06-01",
+    date: { iso: "2024-06-01", uk: "01/06/2024" },
     quantity: "0.015",
-    gross_proceeds: "9007199254740993.29",
-    proceeds: "9007199254740993.29",
+    gross_proceeds: "£9,007,199,254,740,993.29",
+    proceeds: "£9,007,199,254,740,993.29",
+    allowable_cost: "£0.30",
+    result: { kind: "Gain", signed: "£9,007,199,254,740,992.99", magnitude: "£9,007,199,254,740,992.99" },
     matches: [{
       rule: "Section104",
+      rule_label: "Section 104",
+      unit_cost: { money: "£20.00", compact: "£20" },
       quantity: "0.015",
-      allowable_cost: "0.30",
-      gain_or_loss: "9007199254740992.99",
+      allowable_cost: "£0.30",
+      gain_or_loss: "£9,007,199,254,740,992.99",
     }],
   };
   const html = vm.runInContext("ReportBuilder.disposalCard(disposal, 0)", context);
@@ -98,14 +101,26 @@ test("report cards preserve large pennies and fractional unit costs", async () =
   assert.ok(html.includes("0.015 shares @ £20.00"));
 });
 
-test("holding cards derive averages from exact report costs", async () => {
+test("holding cards render prepared averages while calculation costs stay exact", async () => {
   const { context } = await loadApp();
   const report = JSON.parse(await readFile(new URL("../tests/renderers/holding_precision.json", import.meta.url), "utf8"));
   context.holdings = report.holdings;
   assert.equal(context.holdings[0].total_cost, "10.0005");
   assert.equal(Object.hasOwn(context.holdings[0], "average_cost"), false);
+  context.holdings = [{
+    ticker: report.holdings[0].ticker, quantity: report.holdings[0].quantity,
+    total_cost: "£10.00", unit_cost: { money: "£100.01", compact: "£100.01" },
+  }];
   const html = vm.runInContext("ReportBuilder.holdings(holdings)", context);
   assert.ok(html.includes("£10.00"));
   assert.ok(html.includes("£100.01"));
   assert.ok(!html.includes("£100.00"));
+});
+
+test("prepared report text remains escaped at the HTML boundary", async () => {
+  const { context } = await loadApp();
+  context.notes = [{ text: '<img src=x onerror="alert(1)"> & text' }];
+  const html = vm.runInContext("ReportBuilder.notes(notes)", context);
+  assert.ok(html.includes('&lt;img src=x onerror="alert(1)"&gt; &amp; text'));
+  assert.ok(!html.includes("<img"));
 });

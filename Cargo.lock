@@ -373,7 +373,6 @@ version = "0.17.1"
 dependencies = [
  "cgt",
  "chrono",
- "rust_decimal",
  "thiserror",
  "typst",
  "typst-as-lib",

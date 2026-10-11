@@ -7,6 +7,7 @@ pub mod format;
 pub mod model;
 pub mod money;
 pub mod report;
+pub mod report_display;
 pub mod validate;
 
 mod engine;

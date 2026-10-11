@@ -1,27 +1,14 @@
-//! Plain-text projection of a [`TaxReport`].
-//!
-//! The layout is a fixed-width report: a SUMMARY table, per-year disposal
-//! detail, remaining HOLDINGS, the input TRANSACTIONS echo, and ASSET EVENTS.
-//! Money renders 2dp midpoint-away-from-zero; unit prices and quantities render
-//! at full precision (trailing zeros trimmed). Whitespace and column widths are
-//! load-bearing for output equivalence.
+//! Fixed-width plain-text layout of a prepared report.
 
 use std::fmt::Write;
 
-use rust_decimal::Decimal;
+use crate::report::MatchRule;
+use crate::report_display::{DisplayedDisposal, ReportDisplay, ResultKind};
 
-use crate::format::{
-    format_currency_amount, format_date, format_decimal_trimmed, format_gbp, format_price,
-    format_tax_year, format_unit_cost, round_money,
-};
-use crate::model::Operation;
-use crate::report::{Disposal, MatchRule, TaxReport};
-
-/// Render a tax report as plain text.
-pub fn render(report: &TaxReport) -> String {
+/// Render a prepared tax report as plain text.
+pub fn render(report: &ReportDisplay) -> String {
+    let report = report.data();
     let mut out = String::new();
-
-    // SUMMARY
     let _ = writeln!(out, "# SUMMARY\n");
     let header_line = format!(
         "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
@@ -39,291 +26,131 @@ pub fn render(report: &TaxReport) -> String {
         out,
         "========================================================================================================================="
     );
-
     for year in &report.tax_years {
-        let exemption = year.exempt_amount;
-        let gross_proceeds = year.gross_proceeds;
-        let taxable = year.taxable_gain;
-
         let row_line = format!(
             "{:<12}{:<12}{:<22}{:<22}{:<12}{:<12}{:<12}{:<14}",
-            format_tax_year(year.period.start_year()),
+            year.period,
             year.disposal_count,
-            format_gbp(year.net_gain),
-            format_gbp(year.total_gain),
-            format_gbp(year.total_loss),
-            format_gbp(gross_proceeds),
-            format_gbp(exemption),
-            format_gbp(taxable)
+            year.net_gain,
+            year.total_gain,
+            year.total_loss,
+            year.gross_proceeds,
+            year.exempt_amount,
+            year.taxable_gain
         );
         let _ = writeln!(out, "{}", row_line.trim_end());
-
-        if !year.dividend_income.is_zero() || !year.dividend_tax_paid.is_zero() {
-            if !year.dividend_tax_paid.is_zero() {
+        if let Some(dividend) = &year.dividend {
+            if let Some(tax) = &dividend.tax_paid {
                 let _ = writeln!(
                     out,
                     "Dividend income: {} (tax paid: {})",
-                    format_gbp(year.dividend_income),
-                    format_gbp(year.dividend_tax_paid)
+                    dividend.income, tax
                 );
             } else {
-                let _ = writeln!(out, "Dividend income: {}", format_gbp(year.dividend_income));
+                let _ = writeln!(out, "Dividend income: {}", dividend.income);
             }
         }
     }
-
-    // SA108 note (CG51560): shown only when at least one disposal exists.
-    if report.tax_years.iter().any(|y| !y.disposals.is_empty()) {
-        let _ = writeln!(
-            out,
-            "\nNotes:\n- Disposal count groups same-day disposals into a single transaction (CG51560) and may differ from raw SELL transactions\n- Gains/Losses are net per disposal after matching rules (CG51560)\n- Proceeds = SA108 Box 21 (gross, before sale fees)\n- Taxable gain is before losses brought forward and other reliefs"
-        );
+    if !report.notes.is_empty() {
+        let _ = writeln!(out, "\nNotes:");
+        for note in &report.notes {
+            let _ = writeln!(out, "- {}", note.text);
+        }
     }
-
-    // TAX YEAR DETAILS
     let _ = writeln!(out, "\n# TAX YEAR DETAILS");
-
     for year in &report.tax_years {
-        let _ = writeln!(out, "\n## {}\n", format_tax_year(year.period.start_year()));
-
+        let _ = writeln!(out, "\n## {}\n", year.period);
         for (i, disposal) in year.disposals.iter().enumerate() {
             format_disposal(&mut out, i + 1, disposal);
         }
     }
-
-    // HOLDINGS: only pools with a positive quantity, sorted by ticker.
     let _ = writeln!(out, "\n# HOLDINGS\n");
-    let active = report.active_holdings();
-    if active.is_empty() {
+    if report.holdings.is_empty() {
         let _ = writeln!(out, "NONE");
     } else {
-        for h in active {
-            let cost_basis = format_unit_cost(h.total_cost, h.quantity);
+        for holding in &report.holdings {
             let _ = writeln!(
                 out,
-                "{}: {} units at £{} avg cost",
-                h.ticker,
-                format_decimal_trimmed(h.quantity),
-                cost_basis.trim_end_matches('0').trim_end_matches('.')
+                "{}: {} units at {} avg cost",
+                holding.ticker, holding.quantity, holding.unit_cost.compact
             );
         }
     }
-
-    // TRANSACTIONS: the input echo, BUY/SELL only, sorted by date then ticker.
     let _ = writeln!(out, "\n# TRANSACTIONS\n");
-    let echo = report.transactions.as_deref().unwrap_or(&[]);
-    let mut txns: Vec<_> = echo
-        .iter()
-        .filter(|t| matches!(t.operation, Operation::Buy { .. } | Operation::Sell { .. }))
-        .collect();
-    txns.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
-
-    for t in txns {
-        match &t.operation {
-            Operation::Buy {
-                amount,
-                price,
-                fees,
-            } => {
-                let _ = writeln!(
-                    out,
-                    "{} BUY {} {} @ {} ({} fees)",
-                    format_date(t.date),
-                    format_decimal_trimmed(*amount),
-                    t.ticker,
-                    format_price(price),
-                    format_price(fees)
-                );
-            }
-            Operation::Sell {
-                amount,
-                price,
-                fees,
-            } => {
-                let _ = writeln!(
-                    out,
-                    "{} SELL {} {} @ {} ({} fees)",
-                    format_date(t.date),
-                    format_decimal_trimmed(*amount),
-                    t.ticker,
-                    format_price(price),
-                    format_price(fees)
-                );
-            }
-            _ => {}
-        }
+    for trade in &report.trades {
+        let _ = writeln!(
+            out,
+            "{} {} {} {} @ {} ({} fees)",
+            trade.date.uk, trade.action, trade.quantity, trade.ticker, trade.price, trade.fees
+        );
     }
-
-    // ASSET EVENTS: corporate actions and dividends, sorted by date then ticker.
-    let mut events: Vec<_> = echo
-        .iter()
-        .filter(|t| {
-            matches!(
-                t.operation,
-                Operation::Dividend { .. }
-                    | Operation::Accumulation { .. }
-                    | Operation::CapReturn { .. }
-                    | Operation::Split { .. }
-                    | Operation::Unsplit { .. }
-            )
-        })
-        .collect();
-    events.sort_by(|a, b| a.date.cmp(&b.date).then_with(|| a.ticker.cmp(&b.ticker)));
-
-    if !events.is_empty() {
+    if !report.asset_events.is_empty() {
         let _ = writeln!(out, "\n# ASSET EVENTS\n");
-        for t in events {
-            match &t.operation {
-                Operation::Dividend { total_value, .. } => {
-                    let _ = writeln!(
-                        out,
-                        "{} DIVIDEND {} {}",
-                        format_date(t.date),
-                        t.ticker,
-                        format_currency_amount(total_value)
-                    );
-                }
-                Operation::Accumulation {
-                    amount,
-                    total_value,
-                    ..
-                } => {
-                    let _ = writeln!(
-                        out,
-                        "{} ACCUMULATION {} {} {}",
-                        format_date(t.date),
-                        t.ticker,
-                        format_decimal_trimmed(*amount),
-                        format_currency_amount(total_value)
-                    );
-                }
-                Operation::CapReturn {
-                    amount,
-                    total_value,
-                    ..
-                } => {
-                    let _ = writeln!(
-                        out,
-                        "{} CAPRETURN {} {} {}",
-                        format_date(t.date),
-                        t.ticker,
-                        format_decimal_trimmed(*amount),
-                        format_currency_amount(total_value)
-                    );
-                }
-                Operation::Split { ratio } => {
-                    let _ = writeln!(
-                        out,
-                        "{} SPLIT {} {}",
-                        format_date(t.date),
-                        t.ticker,
-                        format_decimal_trimmed(*ratio)
-                    );
-                }
-                Operation::Unsplit { ratio } => {
-                    let _ = writeln!(
-                        out,
-                        "{} UNSPLIT {} {}",
-                        format_date(t.date),
-                        t.ticker,
-                        format_decimal_trimmed(*ratio)
-                    );
-                }
-                _ => {}
+        for event in &report.asset_events {
+            let _ = write!(out, "{} {} {}", event.date.uk, event.action, event.ticker);
+            if let Some(amount) = &event.amount {
+                let _ = write!(out, " {amount}");
             }
+            if let Some(value) = &event.value {
+                let _ = write!(out, " {value}");
+            }
+            let _ = writeln!(out);
         }
     }
-
     out.trim_end().to_string() + "\n"
 }
 
-fn format_disposal(out: &mut String, index: usize, disposal: &Disposal) {
-    let total_gain = disposal.total_gain();
-    let gain_type = if total_gain >= Decimal::ZERO {
-        "GAIN"
-    } else {
-        "LOSS"
+fn format_disposal(out: &mut String, index: usize, disposal: &DisplayedDisposal) {
+    let gain_type = match disposal.result.kind {
+        ResultKind::Gain => "GAIN",
+        ResultKind::Loss => "LOSS",
     };
-
     let _ = writeln!(
         out,
         "{}) SELL {} {} on {} - {} {}",
         index,
-        format_decimal_trimmed(disposal.quantity),
+        disposal.quantity,
         disposal.ticker,
-        format_date(disposal.date),
+        disposal.date.uk,
         gain_type,
-        format_gbp(total_gain.abs())
+        disposal.result.magnitude
     );
-
-    for m in disposal.display_legs() {
-        match m.rule {
+    for leg in &disposal.matches {
+        match leg.rule {
             MatchRule::SameDay => {
-                let _ = writeln!(
-                    out,
-                    "   Same Day: {} shares",
-                    format_decimal_trimmed(m.quantity)
-                );
+                let _ = writeln!(out, "   Same Day: {} shares", leg.quantity);
             }
             MatchRule::BedAndBreakfast => {
-                if let Some(date) = m.acquisition_date {
-                    let _ = writeln!(
-                        out,
-                        "   B&B: {} shares from {}",
-                        format_decimal_trimmed(m.quantity),
-                        format_date(date)
-                    );
+                if let Some(date) = &leg.acquisition_date {
+                    let _ = writeln!(out, "   B&B: {} shares from {}", leg.quantity, date.uk);
                 }
             }
             MatchRule::Section104 => {
-                let cost_per_share = format_unit_cost(m.allowable_cost, m.quantity);
                 let _ = writeln!(
                     out,
-                    "   Section 104: {} shares @ £{}",
-                    format_decimal_trimmed(m.quantity),
-                    cost_per_share.trim_end_matches('0').trim_end_matches('.')
+                    "   Section 104: {} shares @ {}",
+                    leg.quantity, leg.unit_cost.compact
                 );
             }
         }
     }
-
-    // Unit price from gross proceeds handles same-day merges correctly; the raw
-    // (unrounded) gross proceeds is load-bearing for the displayed unit price.
-    let unit_price = if disposal.quantity != Decimal::ZERO {
-        disposal.gross_proceeds / disposal.quantity
-    } else {
-        Decimal::ZERO
-    };
-
-    let sell_fees = disposal.gross_proceeds - disposal.proceeds;
-
     let _ = writeln!(
         out,
-        "   Gross Proceeds: {} × £{} = {}",
-        format_decimal_trimmed(disposal.quantity),
-        format_decimal_trimmed(unit_price),
-        format_gbp(disposal.gross_proceeds)
+        "   Gross Proceeds: {} × {} = {}",
+        disposal.quantity, disposal.sale_unit_price, disposal.gross_proceeds
     );
-
-    if sell_fees > Decimal::ZERO {
-        // Allocate display pennies so gross proceeds minus fees equals net proceeds.
-        let displayed_fees = round_money(disposal.gross_proceeds) - round_money(disposal.proceeds);
+    if let Some(fees) = &disposal.fees {
         let _ = writeln!(
             out,
             "   Net Proceeds: {} - {} fees = {}",
-            format_gbp(disposal.gross_proceeds),
-            format_gbp(displayed_fees),
-            format_gbp(disposal.proceeds)
+            disposal.gross_proceeds, fees, disposal.proceeds
         );
     }
-
-    let total_cost = disposal.total_allowable_cost();
-    let _ = writeln!(out, "   Cost: {}", format_gbp(total_cost));
-    let adjustment = disposal.rounding_adjustment();
-    if !adjustment.is_zero() {
-        let _ = writeln!(out, "   Rounding adjustment: {}", format_gbp(adjustment));
+    let _ = writeln!(out, "   Cost: {}", disposal.allowable_cost);
+    if let Some(adjustment) = &disposal.rounding_adjustment {
+        let _ = writeln!(out, "   Rounding adjustment: {adjustment}");
     }
-    let _ = writeln!(out, "   Result: {}\n", format_gbp(total_gain));
+    let _ = writeln!(out, "   Result: {}\n", disposal.result.signed);
 }
 
 #[cfg(test)]
@@ -341,7 +168,7 @@ mod tests {
              2024-01-01 BUY FRACTION 0.1 @ 100.005\n",
         )?;
         let report = calculate(&transactions, None, None, &Config::embedded()?)?;
-        let text = render(&report);
+        let text = render(&crate::report_display::prepare(&report)?);
         assert!(
             text.contains("HOLD: 200.00000000000000000000000001 units at £0 avg cost"),
             "{text}"

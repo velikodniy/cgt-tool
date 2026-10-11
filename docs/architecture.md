@@ -18,13 +18,13 @@ graph TD
     cgt-wasm --> cgt
 ```
 
-| Crate                                                 | Responsibility                                                                                                                |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| [`cgt`](../crates/cgt/src/lib.rs)                     | Money, foreign exchange, transaction parsing and serialization, validation, matching, the report model, and plain-text output |
-| [`cgt-cli`](../crates/cgt-cli/src/main.rs)            | File IO, configuration discovery, command handling, and output selection for `cgt-tool`                                       |
-| [`cgt-converter`](../crates/cgt-converter/src/lib.rs) | Schwab exports to transaction text, with strings as input and output                                                          |
-| [`cgt-pdf`](../crates/cgt-pdf/src/lib.rs)             | PDF output through embedded Typst and bundled fonts                                                                           |
-| [`cgt-wasm`](../crates/cgt-wasm/src/lib.rs)           | Browser and Node.js bindings for the engine                                                                                   |
+| Crate                                                 | Responsibility                                                                                                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`cgt`](../crates/cgt/src/lib.rs)                     | Money, foreign exchange, transaction parsing and serialization, validation, matching, the report model, shared display preparation, and plain-text output |
+| [`cgt-cli`](../crates/cgt-cli/src/main.rs)            | File IO, configuration discovery, command handling, and output selection for `cgt-tool`                                                                   |
+| [`cgt-converter`](../crates/cgt-converter/src/lib.rs) | Schwab exports to transaction text, with strings as input and output                                                                                      |
+| [`cgt-pdf`](../crates/cgt-pdf/src/lib.rs)             | PDF output through embedded Typst and bundled fonts                                                                                                       |
+| [`cgt-wasm`](../crates/cgt-wasm/src/lib.rs)           | Browser and Node.js bindings for the engine                                                                                                               |
 
 Foreign exchange rates come from `hmrc-rates` at build time.
 Library callers supply transaction data and configuration directly.
@@ -76,8 +76,26 @@ Calculation JSON serializes [`TaxReport`](../crates/cgt/src/report.rs).
 The model retains precise match values, and each disposal rounds its complete cost and gain once.
 Serializers distinguish monetary totals from exact quantities and holding costs.
 
-All outputs use the calculation report and its shared rounding rules.
+The [display module](../crates/cgt/src/report_display.rs) prepares one immutable document for plain text, PDF, and the browser.
+It reuses disposal rounding and exact-ratio formatting to resolve amounts, unit costs, fees, dates, ordering, relevant sections, and notes.
+Preparation returns an arithmetic error for unsupported values in reports that callers construct directly.
+Native renderers accept the prepared document and arrange their layouts.
+The WASM `calculate_display` function serializes that document for the browser report action.
+The separate `calculate_tax` function retains calculation JSON for the JSON view.
 The specification defines the [public fields and rounding rules](spec.md#reports).
+
+Library callers prepare the display once before choosing a renderer:
+
+```rust
+fn render_outputs(
+    report: &cgt::TaxReport,
+) -> Result<(String, Vec<u8>), Box<dyn std::error::Error>> {
+    let display = cgt::report_display::prepare(report)?;
+    let text = cgt::plain::render(&display);
+    let pdf = cgt_pdf::render(&display)?;
+    Ok((text, pdf))
+}
+```
 
 ## Testing and cross-validation
 

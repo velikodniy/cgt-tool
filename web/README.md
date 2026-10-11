@@ -44,3 +44,9 @@ Then open http://localhost:8000 in your browser.
 - ES6 module support
 - WebAssembly support
 - BigInt support
+
+## Report data
+
+Generate Report uses the WASM `calculate_display` function.
+Rust prepares amounts, unit costs, relevant sections, and notes before the browser arranges the HTML.
+Calculate JSON uses `calculate_tax` and retains the calculation report with exact holding costs.

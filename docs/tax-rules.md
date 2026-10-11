@@ -301,6 +301,7 @@ For ordinary listed shares and securities, these mappings apply to the [2024/25 
 
 Other categories and relief claims can require different sections.
 Box numbers alone are not a universal mapping for every report year.
+Report notes explain the amounts without fixed box references.
 Use the form's box labels when transferring report amounts.
 The [SA108 publication page](https://www.gov.uk/government/publications/self-assessment-capital-gains-summary-sa108) provides forms and notes by year.
 

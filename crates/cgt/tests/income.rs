@@ -12,7 +12,7 @@ fn plain_summary_includes_tax_without_dividend_income() -> Result<(), Box<dyn st
     let year = report.tax_years.first().ok_or("Missing income year")?;
     assert_eq!(year.dividend_income, dec!(0));
     assert_eq!(year.dividend_tax_paid, dec!(1));
-    let text = cgt::format::plain::render(&report);
+    let text = cgt::format::plain::render(&cgt::report_display::prepare(&report)?);
     assert!(
         text.contains("Dividend income: £0.00 (tax paid: £1.00)"),
         "{text}"

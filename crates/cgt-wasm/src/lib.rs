@@ -65,11 +65,25 @@ pub fn parse_transactions(dsl: &str) -> Result<String, JsValue> {
 /// ```
 #[wasm_bindgen]
 pub fn calculate_tax(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue> {
+    let report = calculate_report(dsl, tax_year)?;
+    serde_json::to_string_pretty(&report).map_err(map_error)
+}
+
+/// Calculate a prepared display document for report renderers.
+/// Money, unit costs, dates, section selection, and notes are resolved in Rust.
+/// Use [`calculate_tax`] for calculation JSON with exact financial values.
+#[wasm_bindgen]
+pub fn calculate_display(dsl: &str, tax_year: Option<i32>) -> Result<String, JsValue> {
+    let report = calculate_report(dsl, tax_year)?;
+    let display = cgt::report_display::prepare(&report).map_err(map_error)?;
+    serde_json::to_string_pretty(&display).map_err(map_error)
+}
+
+fn calculate_report(dsl: &str, tax_year: Option<i32>) -> Result<cgt::TaxReport, JsValue> {
     let transactions = cgt::dsl::parse(dsl).map_err(map_error)?;
     let fx = FxRates::bundled();
     let config = Config::embedded().map_err(map_error)?;
-    let report = cgt::calculate(&transactions, tax_year, Some(&fx), &config).map_err(map_error)?;
-    serde_json::to_string_pretty(&report).map_err(map_error)
+    cgt::calculate(&transactions, tax_year, Some(&fx), &config).map_err(map_error)
 }
 
 /// Validate transaction DSL and return validation result as JSON.
