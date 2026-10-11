@@ -1,6 +1,7 @@
 //! Prepared values and relevant notes shared by every report renderer.
 
 use chrono::NaiveDate;
+use num_bigint::BigInt;
 use rust_decimal::Decimal;
 use serde::Serialize;
 use thiserror::Error;
@@ -179,9 +180,24 @@ pub struct ReportNote {
 }
 
 #[derive(Debug, Error)]
-#[error("Report display failed: arithmetic exceeds the supported range for {context}")]
+#[error("Report display failed: arithmetic exceeds the supported range or precision for {context}")]
 pub struct DisplayError {
     context: String,
+}
+
+// Checked decimal addition can reduce its scale and discard fractional digits.
+// Compare the result at a common scale before accepting it as an exact sum.
+fn exact_add(left: Decimal, right: Decimal) -> Option<Decimal> {
+    let sum = left.checked_add(right)?;
+    let scale = left.scale().max(right.scale()).max(sum.scale());
+    let scaled = |value: Decimal| {
+        BigInt::from(value.mantissa()) * BigInt::from(10_u8).pow(scale - value.scale())
+    };
+    (scaled(sum) == scaled(left) + scaled(right)).then_some(sum)
+}
+
+fn exact_sub(left: Decimal, right: Decimal) -> Option<Decimal> {
+    exact_add(left, -right)
 }
 
 fn arithmetic(
@@ -195,28 +211,28 @@ fn arithmetic(
 }
 
 // Public reports can be constructed without the engine's arithmetic preflight.
-// Establish the bounds before using the report's shared rounding operations.
+// Establish the range and precision before using the shared rounding operations.
 fn preflight(disposal: &Disposal) -> Result<(), DisplayError> {
     let mut cost = Decimal::ZERO;
     let mut gain = Decimal::ZERO;
     for leg in &disposal.legs {
         let next_cost = arithmetic(
-            cost.checked_add(leg.allowable_cost),
+            exact_add(cost, leg.allowable_cost),
             disposal,
             "matched cost",
         )?;
         let next_gain = arithmetic(
-            gain.checked_add(leg.gain_or_loss),
+            exact_add(gain, leg.gain_or_loss),
             disposal,
             "matched result",
         )?;
         arithmetic(
-            round_money(next_cost).checked_sub(round_money(cost)),
+            exact_sub(round_money(next_cost), round_money(cost)),
             disposal,
             "displayed match cost",
         )?;
         arithmetic(
-            round_money(next_gain).checked_sub(round_money(gain)),
+            exact_sub(round_money(next_gain), round_money(gain)),
             disposal,
             "displayed match result",
         )?;
@@ -224,12 +240,12 @@ fn preflight(disposal: &Disposal) -> Result<(), DisplayError> {
         gain = next_gain;
     }
     let independent = arithmetic(
-        round_money(disposal.proceeds).checked_sub(round_money(cost)),
+        exact_sub(round_money(disposal.proceeds), round_money(cost)),
         disposal,
         "net proceeds less cost",
     )?;
     arithmetic(
-        round_money(gain).checked_sub(independent),
+        exact_sub(round_money(gain), independent),
         disposal,
         "rounding adjustment",
     )?;
@@ -248,13 +264,16 @@ fn prepare_disposal(disposal: &Disposal) -> Result<DisplayedDisposal, DisplayErr
         )?
     };
     let precise_fees = arithmetic(
-        disposal.gross_proceeds.checked_sub(disposal.proceeds),
+        exact_sub(disposal.gross_proceeds, disposal.proceeds),
         disposal,
         "sale fees",
     )?;
     let fees = if precise_fees > Decimal::ZERO {
         Some(format_gbp(arithmetic(
-            round_money(disposal.gross_proceeds).checked_sub(round_money(disposal.proceeds)),
+            exact_sub(
+                round_money(disposal.gross_proceeds),
+                round_money(disposal.proceeds),
+            ),
             disposal,
             "displayed sale fees",
         )?))
@@ -355,7 +374,8 @@ fn notes(report: &TaxReport) -> Vec<ReportNote> {
 /// The source report retains its exact financial values.
 ///
 /// # Errors
-/// Returns [`DisplayError`] if display arithmetic exceeds the decimal range.
+/// Returns [`DisplayError`] if display arithmetic exceeds the decimal range
+/// or loses precision in a sum or difference.
 pub fn prepare(report: &TaxReport) -> Result<ReportDisplay, DisplayError> {
     let tax_years = report
         .tax_years

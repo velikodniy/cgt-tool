@@ -250,6 +250,7 @@ It derives sale unit prices from precise gross proceeds, before calculation JSON
 It derives holding averages from exact costs and quantities.
 Zero disposal results use the gain classification.
 Preparation returns an arithmetic error instead of a partial document when a directly constructed report exceeds supported arithmetic.
+This includes sums and differences that decimal arithmetic accepts after silently discarding fractional digits.
 A zero disposal quantity retains the existing zero unit-price convention.
 
 ### Plain text and PDF

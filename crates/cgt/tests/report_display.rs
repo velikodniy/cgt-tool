@@ -211,3 +211,67 @@ fn direct_reports_return_arithmetic_errors_without_partial_display()
     );
     Ok(())
 }
+
+#[test]
+fn direct_reports_reject_precision_loss_in_match_totals() -> Result<(), Box<dyn std::error::Error>>
+{
+    let original = report("2024-01-01 BUY A 1 @ 1\n2024-06-01 SELL A 1 @ 2\n", None)?;
+    for field in ["matched cost", "matched result"] {
+        let mut report = original.clone();
+        let disposal = &mut report.tax_years[0].disposals[0];
+        let mut extra = disposal.legs[0].clone();
+        if field == "matched cost" {
+            disposal.legs[0].allowable_cost = dec!(0.49);
+            extra.allowable_cost = Decimal::MAX;
+        } else {
+            disposal.legs[0].gain_or_loss = dec!(0.49);
+            extra.gain_or_loss = Decimal::MAX;
+        }
+        disposal.legs.push(extra);
+        let error = prepare(&report).err().ok_or("expected precision error")?;
+        assert!(
+            error
+                .to_string()
+                .contains(&format!("{field} of A on 2024-06-01"))
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn direct_reports_reject_precision_loss_in_sale_fees() -> Result<(), Box<dyn std::error::Error>> {
+    let original = report("2024-01-01 BUY A 1 @ 1\n2024-06-01 SELL A 1 @ 2\n", None)?;
+    for proceeds in [dec!(-0.49), dec!(0.49)] {
+        let mut report = original.clone();
+        let disposal = &mut report.tax_years[0].disposals[0];
+        disposal.gross_proceeds = Decimal::MAX;
+        disposal.proceeds = proceeds;
+        disposal.legs[0].allowable_cost = Decimal::ZERO;
+        disposal.legs[0].gain_or_loss = proceeds;
+        let error = prepare(&report).err().ok_or("expected precision error")?;
+        assert!(error.to_string().contains("sale fees of A on 2024-06-01"));
+    }
+    Ok(())
+}
+
+#[test]
+fn direct_reports_preserve_representable_totals_at_decimal_limit()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut report = report("2024-01-01 BUY A 1 @ 1\n2024-06-01 SELL A 1 @ 2\n", None)?;
+    let disposal = &mut report.tax_years[0].disposals[0];
+    disposal.gross_proceeds = Decimal::MAX;
+    disposal.proceeds = Decimal::MAX;
+    disposal.legs[0].allowable_cost = Decimal::MAX;
+    disposal.legs[0].gain_or_loss = Decimal::ZERO;
+    let mut extra = disposal.legs[0].clone();
+    extra.allowable_cost = dec!(0.00);
+    disposal.legs.push(extra);
+    let display = prepare(&report)?;
+    let disposal = &display.data().tax_years[0].disposals[0];
+    assert_eq!(disposal.matches[0].allowable_cost, disposal.allowable_cost);
+    assert_eq!(disposal.matches[1].allowable_cost, "£0.00");
+    assert_eq!(disposal.result.signed, "£0.00");
+    assert_eq!(disposal.rounding_adjustment, None);
+    assert_eq!(disposal.fees, None);
+    Ok(())
+}

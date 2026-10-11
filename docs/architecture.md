@@ -79,6 +79,7 @@ Serializers distinguish monetary totals from exact quantities and holding costs.
 The [display module](../crates/cgt/src/report_display.rs) prepares one immutable document for plain text, PDF, and the browser.
 It reuses disposal rounding and exact-ratio formatting to resolve amounts, unit costs, fees, dates, ordering, relevant sections, and notes.
 Preparation returns an arithmetic error for unsupported values in reports that callers construct directly.
+Exact sum and difference comparisons reject decimal operations that silently discard fractional digits.
 Native renderers accept the prepared document and arrange their layouts.
 The WASM `calculate_display` function serializes that document for the browser report action.
 The separate `calculate_tax` function retains calculation JSON for the JSON view.
