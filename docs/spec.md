@@ -1,372 +1,335 @@
-# CGT Tool — Behavioral Specification
-
-Consolidated reference for cgt-tool behavioral rules and acceptance criteria.
-Covers UK Capital Gains Tax calculation per HMRC guidance CG51500–CG51600.
-
----
-
-## Matching Rules
-
-The system calculates UK CGT using three matching rules applied in strict order:
-**Same Day → Bed & Breakfast (30 days) → Section 104 Pool**.
-
-### Same Day Rule
-
-Disposals are matched with same-day acquisitions first (TCGA92/S105(1)).
-
-- Multiple same-day purchases are aggregated if needed.
-- If same-day disposals exceed acquisition quantity, the reservation is capped at the acquisition quantity; excess shares proceed to B&B or S104.
-- When multiple buys for the same ticker on the same date are split by unrelated transactions (other tickers), Same Day reservation applies across the aggregate date+ticker quantity, not per-lot.
-
-**Golden file:** `tests/inputs/SameDayReservation.cgt` → `tests/json/SameDayReservation.json`
-
-### Bed & Breakfast Rule
-
-Disposals are matched with acquisitions within 30 calendar days after the sale date (TCGA92/S106A), subject to Same Day reservation priority.
-
-- Match chronologically (earliest purchase first).
-- Day D+30 is within the window; D+31 is not.
-- Before allowing earlier disposals to B&B-consume a future acquisition, the system reserves shares needed for Same Day matching on that acquisition date.
-- Reservation is tracked at the date+ticker level across all same-day lots.
-- B&B determines the cost basis of a disposal. The tool rejects sales that exceed the actual holding. This restriction excludes short sales.
-- When a B&B lookahead spans an intervening SPLIT or UNSPLIT, the matcher applies the split ratio when calculating matched quantities.
-
-**Scenarios:**
-
-- Given disposal D1 on Day 1, disposal D2 on Day 2, and acquisition A2 on Day 2 where A2 < D1+D2: D2's Same Day claim is satisfied first; D1's B&B uses only remaining shares.
-- Given a disposal with 0 shares held and an acquisition within 30 days: processing fails with an error (B&B does not rescue zero-holding disposals).
-- Given a disposal with sufficient S104 holding and a B&B-eligible acquisition: the disposal matches via B&B using the later acquisition's cost, and the S104 pool is not reduced.
-
-**Golden files:**
-
-- `tests/inputs/single_pass_bnb_split.cgt` → `tests/json/single_pass_bnb_split.json`
-- `tests/inputs/single_pass_future_consumption.cgt` → `tests/json/single_pass_future_consumption.json`
-
-### Section 104 Pool
-
-Shares not matched by Same Day or B&B are matched against a pooled holding at average cost.
-
-Normalized trades retain their exact gross totals and fees. Each acquisition and pool retains its unallocated quantity and cost. Partial matches receive a proportional cost, and the final match receives the complete remainder. Disposal proceeds and fees use the same allocation rule. Unit prices are derived for output.
-
-`ExactCapitalReturn.cgt` reduces a £30.01 purchase basis to zero. `ExactMergedCost.cgt` retains a £7.005 combined purchase cost, which rounds to £7.01.
-
-- Separate pools per ticker.
-- Purchases add to the pool; sales reduce proportionally.
-- If a SELL cannot be fully matched after all three rules, calculation fails with an error indicating the disposal exceeds holdings.
-
-### Holding Verification
-
-The planner tracks actual shares separately from the Section 104 tax pool. Same-day acquisitions increase the actual holding before that day's disposals. Every disposal reduces the actual holding, including shares matched to a future acquisition. A future acquisition replenishes the actual holding only on its acquisition date. If a sale exceeds the actual holding, calculation returns an error.
-
-**Golden files:**
-
-- `tests/inputs/single_pass_ordering.cgt` → `tests/json/single_pass_ordering.json`
-- `tests/inputs/single_pass_fx.cgt` → `tests/json/single_pass_fx.json`
-
-### Error Precedence
-
-Errors are reported in a fixed order, reflecting the engine's plan-then-value pipeline:
-
-1. **Input validation** — malformed or ambiguous input is rejected first (e.g. a same-date SPLIT/UNSPLIT and trade of the same ticker).
-2. **Quantity / holding errors** (planning phase), such as a disposal that exceeds the actual holding.
-3. **Valuation / basis errors** (valuation phase) — e.g. a capital return that exceeds remaining allowable basis (TCGA92/S122(2); CG57847).
-
-A quantity error is surfaced before any valuation error, because share quantities are planned before any leg is priced.
-
-### Zero Sell Amount
-
-When a disposal has zero total sell amount, no match result is returned and the system proceeds to the next matching rule without division errors.
-
----
-
-## Corporate Actions
-
-### Stock Split / Unsplit
-
-- **SPLIT**: Multiply share quantity by the ratio; total cost basis unchanged.
-- **UNSPLIT**: Reverse of SPLIT. The ratio must be a positive integer, and the actual holding must divide evenly by it. The tool does not model fractional entitlements or their disposal. This product restriction does not require the tax pool to contain whole shares.
-
-A SPLIT or UNSPLIT is a reorganisation (TCGA92/S127), not a disposal or acquisition, so it never enters same-day matching.
-
-The planner stores quantities as exact fractions until it produces public decimal values. Splits preserve exact quantities across the 30-day matching window. The acquisition or disposal that limits a match retains its exact quantity. Repeating fractions cannot consume a same-day reservation or create a false fractional holding.
-
-`SplitThirds.cgt` retains 26 shares. `UnsplitThirds.cgt` retains two shares after its final consolidation.
-
-### Same-Date Split + Holding Change (Rejected)
-
-A SPLIT or UNSPLIT on the **same date** as a BUY or SELL of the **same ticker** is rejected as ambiguous input. A reorganisation is not a trade, and HMRC defines no intra-day order between a split and a same-date trade that changes the holding; the two readings (the trade applied before vs. after the split) give a materially different holding. ACCUMULATION, CAPRETURN, and DIVIDEND only adjust cost or income (not the share count), so they commute with a split and are not flagged. The user must date the trade explicitly before or after the split.
-
-### Capital Return (CAPRETURN)
-
-Reduces pool cost basis by the return amount.
-
-- Cost reduction is apportioned across all holding lots proportionally: each lot receives `adjustment × (lot_shares / total_holdings)`.
-- Lots acquired after the event date are unaffected.
-- If the return exceeds remaining allowable basis, calculation fails with an error referencing TCGA92/S122(2) and CG57847 (part-disposal under S122(1) or election under S122(4) is not currently supported). A return against a fully-disposed or never-held holding (basis zero) fails the same way rather than being silently dropped.
-
-Same-date value events on one ticker apply in a fixed canonical order — CAPRETURN, then ACCUMULATION, then DIVIDEND — so the result never depends on input row order.
-
-### Accumulation Dividends (ACCUMULATION)
-
-Increases pool cost basis by the dividend amount, apportioned across lots in the same proportional manner as CAPRETURN. Its value and tax paid also contribute to annual income totals. A nonzero accumulation to a fully-disposed or never-held holding fails because there is no holding to credit. See [HMRC HS284](https://www.gov.uk/government/publications/shares-and-capital-gains-tax-hs284-self-assessment-helpsheet/hs284-shares-and-capital-gains-tax-2025#accumulation-units).
-
-A zero-quantity ACCUMULATION has no effect on cost, income, or tax paid. It needs no holding or exchange rate. DSL and JSON inputs accept this no-op consistently.
-
-### Cash Dividends (DIVIDEND)
-
-Records ordinary cash dividend income. Does not affect Section 104 cost basis. Dividend income and tax paid are aggregated per tax year and reported in the summary.
-
-### Asset Events After a Matched Disposal
-
-A CAPRETURN or ACCUMULATION dated **after** a disposal that was matched by the Same Day or Bed & Breakfast rule adjusts the **carried-forward Section 104 holding**, not the already-disposed leg. Matched shares have left the pool (CG51560), so a later capital distribution can only reduce the cost of shares still held (TCGA92/S110(8)(d); CG57844). Because each disposal is priced from the pool as it stood on its own date, the later event never leaks back into the earlier disposal.
-
-When such an event follows a date carrying both a BUY and a SELL for the same ticker, the shares still held are determined by the matching cascade (CG51560): same-day first (TCGA92/S105(1)), then B&B (TCGA92/S106A), then S104. Only that remaining held quantity receives the adjustment.
-
-**Golden files:**
-
-- `tests/inputs/single_pass_corp_action.cgt` → `tests/json/single_pass_corp_action.json`
-- `tests/inputs/WithAssetEventsSameDay.cgt` → `tests/json/WithAssetEventsSameDay.json`
-- `tests/inputs/WithAssetEventsBB.cgt` → `tests/json/WithAssetEventsBB.json`
-
----
-
-## Tax Year & Aggregation
-
-### Year Boundaries
-
-UK tax year runs 6 April to 5 April. A disposal on 5 April 2024 belongs to 2023/24; 6 April 2024 starts 2024/25. Valid year range: 1900–2100.
-
-- Calculate for a specific year: return only that year's disposals.
-- Calculate for all years: return each year with disposals or income, sorted chronologically.
-
-### Disposal Count
-
-Derived from the number of grouped disposals after same-day aggregation (CG51560), not stored separately. JSON output includes `disposal_count` with the same value.
-
-**Golden files:**
-
-- `tests/inputs/RealisticMultiYear.cgt` → `tests/json/RealisticMultiYear.json`
-- `tests/inputs/MultiCurrencySameDay.cgt` → `tests/json/MultiCurrencySameDay.json`
-- `tests/inputs/SameDayMerge.cgt` → `tests/json/SameDayMerge.json`
-
-### Gain/Loss Aggregation
-
-Per TCGA92/S38 (CG15150, CG15250):
-
-- Each disposal's net result (proceeds − allowable cost) contributes to either `total_gain` (net ≥ 0) or `total_loss` (net < 0).
-- `net_gain = total_gain − total_loss`.
-- A disposal with match legs summing to zero contributes to neither total.
-- Multi-currency disposals aggregate from GBP-converted amounts.
-
-**Golden file:** `tests/inputs/NetDisposalTotalsMixed.cgt` → `tests/json/NetDisposalTotalsMixed.json`
-
-### Gain/Loss Calculation
-
-`gain_or_loss = net_proceeds − allowable_cost`, where `net_proceeds = gross_proceeds − sale_expenses`.
-
-Match values stay precise in the Rust report model. Each disposal rounds its total cost and gain once, after all matches are added. Annual totals sum those rounded disposal totals.
-
-Arithmetic outside the supported decimal range returns an error that names the calculation and its transaction when applicable. This includes trade totals, pool adjustments, foreign exchange, report totals, and derived unit values. A nonzero share quantity that rounds to decimal zero also returns an error. Tax years must fall within 1900 through 2100, and exemptions must be nonnegative. The missing-exemption flag does not suppress an invalid exemption.
-
-Displayed match values use differences between consecutive rounded totals, so their sums equal the disposal totals. Independently rounded proceeds, costs, and gains can differ by one penny. A nonzero `rounding_adjustment` explains that display difference in JSON, plain text, and PDF, without changing the calculated gain.
-
----
-
-## FX Conversion
-
-### HMRC Monthly Rates
-
-Foreign currency amounts are converted to GBP using HMRC monthly exchange rates for the transaction month.
-
-### Bundled Rates
-
-Rates are provided by the [`hmrc-rates`](https://crates.io/crates/hmrc-rates) crate (HMRC monthly series, February 2014 onward), compiled in at build time. No configuration required. Lookups are strict: a month with no published rate for the currency is a `MissingFxRate` error, never a silent fallback.
-
-### Precision
-
-Foreign exchange calculations retain the available decimal precision. Displayed monetary values and JSON disposal and annual totals round to two decimal places, with midpoints away from zero. JSON holding quantities and costs retain their full decimal precision. Renderers derive holding unit costs from those exact values before rounding for display.
-
-### Dual Display
-
-Foreign currency transactions display as `£118.42 (150 USD)` in text output. JSON includes both GBP and original currency.
-
-### GBP Default
-
-Amounts without a currency code are treated as GBP. No conversion is performed.
-
-### Missing Rate Errors
-
-When a currency/month rate is unavailable, strict `FxRates` lookup fails with a `MissingFxRate` error identifying the currency and month. Install a `cgt-tool` release containing a newer `hmrc-rates` version when the required month has been published.
-
----
-
-## DSL Syntax
-
-### Transaction Types
-
-| Type          | Format                                                                                   |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| BUY/SELL      | `YYYY-MM-DD BUY\|SELL TICKER QUANTITY @ PRICE [CURRENCY] [FEES AMOUNT [CURRENCY]]`       |
-| DIVIDEND      | `YYYY-MM-DD DIVIDEND TICKER TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]`              |
-| ACCUMULATION  | `YYYY-MM-DD ACCUMULATION TICKER QUANTITY TOTAL VALUE [CURRENCY] [TAX AMOUNT [CURRENCY]]` |
-| CAPRETURN     | `YYYY-MM-DD CAPRETURN TICKER QUANTITY TOTAL VALUE [CURRENCY] [FEES AMOUNT [CURRENCY]]`   |
-| SPLIT/UNSPLIT | `YYYY-MM-DD SPLIT\|UNSPLIT TICKER RATIO <ratio>`                                         |
-
-- FEES, TAX default to 0 when omitted.
-- Currency codes are optional ISO 4217; default is GBP.
-
-### Comments
-
-Lines starting with `#` are ignored. Inline `# comments` after data are stripped.
-
-### Ticker Normalization
-
-Ticker symbols are normalized to uppercase (`aapl` → `AAPL`).
-
-The first character must be an ASCII letter or digit. Later characters can also include `.`, `/`, `-`, and `_`. Punctuation remains significant, so `BRK/B` and `BRK.B` identify separate assets. The converter and core use this same symbol rule. Every successful conversion produces parseable DSL, and each physical comment line starts with `#`.
-
-### Error Messages
-
-Parse failures report line number, problematic value, and expected format. Parsing checks syntax. A shared validator checks transaction fields for JSON input, direct Rust input, and calculation. It retains source locations and applies cross-record conflict rules before calculation.
-
----
-
-## Broker Conversion
-
-### Converter Trait
-
-Broker modules implement a converter that accepts file contents as strings (no filesystem IO) and returns CGT DSL. WASM-compatible.
-
-### Schwab Converter
-
-Parses Charles Schwab JSON exports (`BrokerageTransactions` array).
-
-**Supported actions:** Buy, Sell, Stock Plan Activity (RSU), Cash Dividend, NRA Withholding.
-
-- Transactions are output in chronological order (oldest first), regardless of input order.
-- Unknown actions are captured as comments in the output, not as errors.
-- Wire Sent, Wire Received, Credit Interest, and similar cash movements are skipped.
-- Skipped transaction count is included in a header comment.
-- Output is deterministic and contains no conversion timestamp.
-- Resolved records use core transaction types and the core DSL serializer.
-
-### Schwab Awards Parser
-
-Parses Schwab Equity Awards JSON to obtain Fair Market Value and vest dates for RSU events.
-
-- Reads `VestFairMarketValue` with `VestDate`; falls back to `FairMarketValuePrice` and parent `Date`.
-- Symbol lookup is case-insensitive.
-- Non-vesting actions (Wire Transfer, Tax Withholding, Tax Reversal, Forced Disbursement) with empty details are accepted without error.
-- Unknown actions with empty details are skipped.
-- Vesting actions need valid award details.
-
-### RSU Vest Dates (CG14250, ERSM20192)
-
-The RSU vest date (from the awards file) is the CGT acquisition date, not the settlement date from transactions.
-
-- Same Day rule matches sales on vest date with vest-date acquisitions.
-- B&B window is calculated from vest date, not settlement date.
-- Conversion first matches the parent deposit date, symbol, and available quantity.
-- Without a linked deposit, conversion searches vest dates within the previous seven days.
-- Different matching vest dates or values produce an ambiguity error. Original candidates remain available, including entries with conflicting values on one date.
-
-### Dividend + Withholding Merging
-
-Dividend and withholding records need a valid string amount. Reconciliation preserves signs and groups records by effective date and symbol. Negative dividend corrections reduce positive credits, and unresolved corrections return an error. Positive withholding adjustments reduce withheld tax. Unmatched or symbol-less withholding produces a warning.
-
-Resolved income uses `DIVIDEND <ticker> TOTAL <value> [<currency>] TAX <amount> [<currency>]`, without a quantity.
-
-Sale cancellations match the date, symbol, quantity, price, and available fees. If missing fees leave different candidate sales, conversion returns an ambiguity error. A cancellation removes only one matching sale.
-
-### Date Format Handling
-
-Schwab dates use `MM/DD/YYYY` or `as of` notation. For `02/25/2021 as of 02/21/2021`, the "as of" date is used.
-
----
-
-## Output Formats
-
-### Shared Formatting Rules
-
-- **Currency:** £ symbol, 2 decimal places, comma thousands separators (e.g., £1,234.00). Negative: -£100.00.
-- **Dates:** DD/MM/YYYY.
-- **Tax years:** YYYY/YY (e.g., 2023/24).
-- **Foreign currency:** `£118.42 (150 USD)`.
-- **Unit prices:** Full precision, trailing zeros stripped (e.g., £4.6702).
-- **Rounding:** Midpoint-away-from-zero (£100.995 → £101.00). JSON holding quantities and costs remain exact.
-- **Ordering:** Date ascending, then ticker ascending, using a shared canonical comparator.
-
-### Report Sections
-
-Both plain text and PDF output include: **Summary**, **Tax Year Details**, **Holdings**, **Transactions**.
-
-### Summary Table
-
-Per tax year: disposal count (grouped per CG51560), net gain, total gains (before losses), total losses, gross proceeds (SA108 Box 21), annual exemption, taxable gain.
-
-- Disposals footnote: grouped per CG51560.
-- Proceeds footnote: corresponds to SA108 Box 21 "Disposal proceeds".
-- Gains/Losses footnote: net allowable per SA108 after matching rules.
-- Taxable gain footnote: after same-year losses and the exemption, before losses brought forward and other reliefs.
-
-### Proceeds Breakdown
-
-For each disposal:
-
-- With fees: `<qty> × £<unit_price> = £<gross>` then `£<gross> - £<fees> fees = £<net>`.
-- Without fees: `<qty> × £<unit_price> = £<gross>` (fees line omitted).
-- Displayed fees equal rounded gross proceeds minus rounded net proceeds, so the displayed equation reconciles.
-- Same-day merge: weighted average unit price = total_gross_proceeds / total_quantity.
-
-### Holdings Display
-
-Lists remaining holdings with ticker, quantity, and average cost. Shows "NONE" if empty. Holding JSON retains the exact `quantity` and `total_cost`. Renderers divide the total cost by the quantity and round only for display. JSON does not include a separate average cost.
-
-### PDF-Specific
-
-- Generated using embedded Typst engine with bundled fonts (no external tools).
-- Output to `--output` path or default to input filename with `.pdf` extension.
-- Superscript footnote markers in summary table headers.
-- PDF generation errors are owned by the PDF formatter crate, not core.
-
----
-
-## Testing Strategy
-
-### Golden-File Pattern
-
-`.cgt` input → `.json` expected output (and `.txt` for plain text).
-
-Tests are the source of truth. Never remove or modify tests without proving incorrectness.
-
-### Key Edge Cases
-
-| Case                                             | Expected Behavior                                                      |
-| ------------------------------------------------ | ---------------------------------------------------------------------- |
-| Multi-currency same-day                          | Same-day matching applies; both transactions converted to GBP          |
-| B&B boundary D+30                                | Matches (within 30 days)                                               |
-| B&B boundary D+31                                | Does not match; falls back to S104                                     |
-| Partial B&B + S104 fallback                      | Sell 100, buy back 40 within 30 days → 40 B&B + 60 S104                |
-| Same-day buy-sell-buy                            | All same-day transactions aggregated; net position determines matching |
-| Capital return exceeds basis                     | Fails with error referencing TCGA92/S122 and CG57847                   |
-| Sell exceeds holdings                            | Fails with validation error; no partial output                         |
-| Interleaved same-day reservation                 | Aggregate date+ticker reservation; B&B uses post-reservation remainder |
-| Same-date SPLIT/UNSPLIT + BUY/SELL (same ticker) | Rejected as ambiguous input (TCGA92/S127; no defined intra-day order)  |
-| Tax year boundary (5 Apr / 6 Apr)                | Gains attributed to correct year                                       |
-
-### Comprehensive Fixtures
-
-- **`SyntheticComplex.cgt`**: 5 tax years (2020/21–2024/25), 3+ tickers (ACME USD, BETA USD, GAMA GBP), all matching rules, corporate actions, multi-currency, boundary dates. Golden files: `tests/json/SyntheticComplex.json`, `tests/plain/SyntheticComplex.txt`.
-- **`RealisticMultiYear.cgt`**: 2–3 tax years, multiple tickers, same-day/B&B/S104 matches, corporate actions.
-
-### Cross-Validation
-
-`scripts/cross-validate.py` compares gains and losses with `cgtcalc` and `cgt-calc`. It requires successful execution and complete summaries. Unexpected calculator errors fail the run. Unsupported cases are explicit skips. By default, a run with no `cgtcalc` comparison fails. `CGT_REQUIRE_CGTCALC=0` permits comparison with `cgt-calc` alone, but still requires a completed comparison.
-
-The base tolerance is £1 per tax year. For `cgtcalc` whole-pound output, the tolerance adds £0.50 per disposal, capped at £5. Two documented corporate-action differences remain explicit known results.
-
-Set `CGT_TOOL_BIN` to select the binary under test. Otherwise, the script uses the newest local debug or release build, with Cargo as a fallback. It does not select an installed binary from `PATH`. Zero-quantity accumulation is omitted from external input because it has no effect.
-
-### Schwab Test Fixtures
-
-Synthetic Schwab JSON fixtures (`tests/schwab/synthetic-awards.json`, `tests/schwab/synthetic-transactions.json`) exercise RSU vesting patterns: multi-award same-day vesting, sell-to-cover, FMV vs sale price differences.
+# Behavioral specification
+
+This document defines accepted inputs, calculation behavior, and report fields.
+It describes the current implementation, including product restrictions.
+The [tax rules](tax-rules.md#scope-and-assumptions) define the supported tax context and required transaction history.
+
+For usage, see the [README](../README.md).
+For internal design and testing methods, see [architecture](architecture.md).
+
+## Transaction input
+
+The DSL is a line-based format for transactions.
+Each line contains one transaction or a comment.
+The CLI combines multiple input files before calculation, so overlapping exports duplicate transactions.
+
+In the formats below, angle brackets mark values and square brackets mark optional clauses:
+
+| Type          | Format                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| BUY/SELL      | `<date> BUY\|SELL <ticker> <quantity> @ <price> [<currency>] [FEES <amount> [<currency>]]`       |
+| DIVIDEND      | `<date> DIVIDEND <ticker> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]`                |
+| ACCUMULATION  | `<date> ACCUMULATION <ticker> <quantity> TOTAL <value> [<currency>] [TAX <amount> [<currency>]]` |
+| CAPRETURN     | `<date> CAPRETURN <ticker> <quantity> TOTAL <value> [<currency>] [FEES <amount> [<currency>]]`   |
+| SPLIT/UNSPLIT | `<date> SPLIT\|UNSPLIT <ticker> RATIO <ratio>`                                                   |
+
+Dates use `YYYY-MM-DD`.
+Keywords accept either case.
+An amount without an ISO 4217 currency code uses GBP.
+Each price, fee, or tax amount has its own optional currency code.
+Omitted `FEES` and `TAX` clauses default to zero GBP.
+A `#` starts a comment, including after transaction data.
+
+Tickers start with an ASCII letter or digit.
+Later characters can also include `.`, `/`, `-`, and `_`.
+The parser converts letters to uppercase and preserves punctuation, so `BRK/B` and `BRK.B` identify separate assets.
+The converter uses the same symbol rules.
+
+`cgt-tool parse --schema` returns the JSON schema for input transactions.
+This schema describes transactions, not the report JSON.
+The CLI and WebAssembly functions read DSL text.
+Rust callers can supply typed transactions or deserialize transaction JSON before calculation.
+
+## Validation and errors
+
+Parsing errors identify the input line and the syntax or value problem.
+Shared validation applies to DSL records, JSON deserialization, and calculation with direct Rust input.
+Rules that involve multiple records apply before calculation.
+
+| Field or combination                                    | Accepted behavior                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------- |
+| BUY/SELL quantity                                       | Must be positive                                              |
+| Prices, fees, distribution values, and tax paid         | Must be nonnegative                                           |
+| SELL at zero price                                      | Uses normal matching and reports the resulting gain or loss   |
+| ACCUMULATION quantity                                   | Can be zero, which has no effect on cost, income, or tax paid |
+| CAPRETURN quantity                                      | Must be positive                                              |
+| SPLIT ratio                                             | Must be positive                                              |
+| UNSPLIT ratio                                           | Must be a positive integer and leave whole actual shares      |
+| SPLIT/UNSPLIT with BUY/SELL on the same date and ticker | Fails as ambiguous input                                      |
+| Tax-year start                                          | Must be within 1900 through 2100                              |
+| Annual exemption                                        | Must be nonnegative                                           |
+
+The same-date split restriction reflects the input format, which cannot express an order within a day.
+Applying a trade before or after the split can change the holding.
+Keep the actual transaction dates and calculate unsupported cases separately.
+`CAPRETURN`, `ACCUMULATION`, and `DIVIDEND` do not change share counts, so this restriction does not apply to them.
+
+For parsed transactions and a loaded configuration, calculation follows this error order:
+
+1. Input validation rejects invalid fields or conflicting records.
+2. Normalization reports missing exchange rates or unsupported trade arithmetic.
+3. Quantity planning reports insufficient holdings or invalid consolidation quantities.
+4. Valuation reports invalid cost adjustments or unsupported monetary arithmetic.
+5. Report assembly reports invalid tax years, exemption errors, or unsupported report totals.
+
+The first failed stage stops calculation without a partial report.
+Arithmetic errors name the calculation and its transaction when applicable.
+A nonzero share quantity that becomes zero at the public decimal boundary also returns an error.
+
+## Calculation
+
+### Matching and holdings
+
+The matching order is Same Day, then Bed & Breakfast within 30 days, then the Section 104 Pool.
+A match leg is a portion of a disposal assigned to one rule.
+Each ticker has a separate pool.
+
+Same Day matching combines all purchases and all sales for each date and ticker.
+Unrelated transactions between those rows do not split the groups.
+The matched quantity is the smaller group total, and excess sales continue to the next rule.
+
+Bed & Breakfast matches later purchases chronologically.
+Day D+30 is inside the window, and D+31 is outside it.
+A future purchase first reserves the shares required by sales on its own date.
+Earlier sales can use only the remainder, even when the input contains several lots for that date and ticker.
+
+Section 104 matches the remaining disposal quantity against the pool at average cost.
+Only purchases not allocated to Same Day or Bed & Breakfast matches enter the pool.
+Only Section 104 matches reduce it.
+For example, a sale of 100 shares with a later matching purchase of 40 uses 40 Bed & Breakfast shares and 60 pooled shares.
+
+The tool tracks actual shares separately from the tax pool.
+Same-day purchases increase actual holdings before sales, and every sale reduces them.
+A later purchase restores actual shares only on its acquisition date.
+Sales that exceed actual holdings fail, even if a future purchase supplies enough shares for tax matching.
+This product restriction excludes short sales.
+
+### Corporate actions and income
+
+`SPLIT` multiplies share quantities by its ratio without changing total cost.
+`UNSPLIT` divides quantities by its ratio without changing total cost.
+These reorganizations do not count as acquisitions or disposals for matching.
+Split ratios also apply across the 30-day window, with exact quantities preserved until conversion to public decimals.
+The whole-share restriction for `UNSPLIT` applies to actual holdings, not the tax pool.
+
+`CAPRETURN` reduces the existing pool cost by `TOTAL − FEES`, after currency conversion.
+The tool assumes that this distribution qualifies for cost reduction under the [documented tax limits](tax-rules.md#capital-returns).
+If the net return exceeds the remaining basis, calculation fails with an error referencing TCGA92/S122 and CG57847.
+A positive net return against a fully disposed or never-held pool also fails.
+The tool does not implement part-disposal treatment under S122(1) or elections under S122(4).
+
+`ACCUMULATION` adds its `TOTAL` value to the existing pool cost.
+Its distribution and tax paid also contribute to annual income totals.
+A positive distribution without a pool holding fails.
+A zero-quantity record has no effect and requires neither a holding nor an exchange rate.
+Input fields must still satisfy the nonnegative-value rules.
+
+`DIVIDEND` adds cash income and tax paid to annual totals without changing pool cost.
+For each date, value events apply before trades in this order: `CAPRETURN`, `ACCUMULATION`, then `DIVIDEND`.
+Later capital returns and accumulation dividends adjust the carried-forward pool without changing earlier disposal costs.
+This also applies after a day containing both purchases and sales.
+
+### Foreign exchange and precision
+
+Foreign amounts use HMRC monthly exchange rates for the transaction month.
+The [`hmrc-rates`](https://crates.io/crates/hmrc-rates) dependency bundles the monthly series from February 2014 onward at build time.
+GBP amounts need no conversion.
+A missing currency/month pair produces `MissingFxRate`, with no fallback to another month.
+If the required month is published, install a release that includes its rates.
+
+Trades retain their gross totals and fees at the available decimal precision.
+Partial matches receive proportional costs, proceeds, and fees.
+The final allocation receives the complete remainder.
+Unit prices are derived for output and do not determine allocation precision.
+
+Each disposal rounds its complete cost and gain once, after summing its precise legs.
+Annual totals sum the rounded disposal totals.
+Money rounds to two decimal places with midpoints away from zero, so £100.995 becomes £101.00.
+Holding quantities and costs retain full decimal precision in JSON.
+
+Displayed legs receive differences between consecutive rounded totals, so their sums equal the disposal totals.
+Independently rounded proceeds, costs, and gains can differ by one penny.
+A nonzero `rounding_adjustment` explains this difference in JSON, plain text, and PDF without changing the calculated gain.
+
+### Tax years and exemptions
+
+Tax years run from 6 April through 5 April.
+A disposal on 5 April 2024 belongs to 2023/24, and 6 April 2024 starts 2024/25.
+Without a year filter, reports include years with disposals or income in chronological order.
+`--year 2024` returns a 2024/25 summary, including when that year has no activity.
+All input transactions still participate in matching and final holdings.
+
+Each disposal contributes one net gain or loss, regardless of its match count.
+A zero net result contributes to neither gains nor losses.
+The calculation uses these relationships:
+
+```text
+net_proceeds = gross_proceeds − sale_expenses
+gain_or_loss = net_proceeds − matched_acquisition_cost
+total_gain = sum of positive disposal gains
+total_loss = sum of absolute disposal losses
+net_gain = total_gain − total_loss
+taxable_gain = max(net_gain − exempt_amount, 0)
+```
+
+The report excludes losses brought forward and other reliefs.
+It does not calculate tax payable.
+See [tax rules](tax-rules.md#losses-and-tax-years) for the distinction.
+
+The CLI loads exemptions in this order, with later entries overriding earlier entries:
+
+1. [Embedded defaults](../crates/cgt/data/config.toml).
+2. `./config.toml` in the working directory.
+3. `~/.config/cgt-tool/config.toml`, when `HOME` is available.
+
+Each file uses an `[exemptions]` table with quoted tax-year start years and GBP amounts.
+For example, this entry applies to 2024/25:
+
+```toml
+[exemptions]
+"2024" = 3000
+```
+
+The CLI skips an unreadable or invalid override file with a warning.
+The library rejects invalid overrides without changing the existing configuration.
+A missing exemption stops report generation unless `--allow-missing-exemption` requests zero allowance with a warning.
+This flag does not permit an invalid exemption value.
+
+## Reports
+
+### JSON fields
+
+Report calculations use GBP.
+Money and quantities are decimal strings, and `disposal_count` is an integer.
+Money rounds to two decimal places but does not require trailing zeros.
+Dates use `YYYY-MM-DD`, and tax periods use `YYYY/YY`.
+The [report model](../crates/cgt/src/report.rs) defines serialization.
+
+| Object           | Fields and meaning                                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Report           | `tax_years` contains annual summaries. `holdings` contains final pools. Optional `transactions` retains the input records. Nonempty `warnings` contains report warnings. |
+| Annual summary   | `period`, `disposals`, and `disposal_count` identify the tax year and grouped disposals.                                                                                 |
+| Annual gains     | `total_gain`, `total_loss`, and `net_gain` follow the formulas above.                                                                                                    |
+| Annual amounts   | `gross_proceeds` precedes sale fees. `total_allowable_cost` sums matched acquisition costs, including purchase fees but excluding sale fees.                             |
+| Annual exemption | `exempt_amount` is the configured allowance. `taxable_gain` precedes losses brought forward and other reliefs.                                                           |
+| Annual income    | `dividend_income` and `dividend_tax_paid` include cash dividends and nonzero-quantity accumulation records.                                                              |
+| Disposal         | `date`, `ticker`, `quantity`, `gross_proceeds`, `proceeds`, and `matches` describe one grouped sale. `proceeds` is net of sale fees.                                     |
+| Match            | `rule`, `quantity`, `allowable_cost`, and `gain_or_loss` describe one displayed leg. `rule` is `SameDay`, `BedAndBreakfast`, or `Section104`.                            |
+| Match date       | `acquisition_date` appears for Same Day and Bed & Breakfast matches and is absent for Section 104.                                                                       |
+| Rounding         | A disposal includes `rounding_adjustment` only when the display difference is nonzero.                                                                                   |
+| Holding          | `ticker`, `quantity`, and `total_cost` describe a final Section 104 pool. Quantities and costs retain full precision.                                                    |
+
+`holdings` reflects all supplied transactions, including those outside `--year`.
+It is not a snapshot at the selected tax-year end.
+JSON can include fully depleted pools with zero quantity.
+It does not store a separate average cost.
+
+The transaction records retain original currency amounts and input order.
+GBP calculations appear in the disposal and annual fields.
+The tool does not classify assets into SA108 categories or produce a complete tax return.
+In particular, `total_allowable_cost` excludes sale expenses required in the [SA108 cost total](tax-rules.md#sa108-reporting).
+
+### Plain text and PDF
+
+Both formats contain a summary, disposal details, holdings, and transactions.
+The disposal section is titled Tax Year Details in plain text and Disposal Details in PDF.
+Asset Events appears when the input contains dividends or corporate actions.
+Transactions and asset events preserve original currencies and sort by date, then ticker.
+Disposal calculations use GBP.
+
+Monetary totals use the £ symbol, comma thousands separators, and two decimal places, such as £1,234.00 or -£100.00.
+Dates use `DD/MM/YYYY`.
+Trade unit prices retain decimal precision without trailing zeros.
+Holding unit costs derive from exact pool totals and round to two decimal places for display.
+Only positive holdings appear.
+An empty holding list shows `NONE` in plain text and `No remaining holdings.` in PDF.
+
+Annual summaries show grouped disposal counts, gains before and after losses, losses, gross proceeds, exemptions, and taxable gains.
+They also show dividend income and tax paid when applicable.
+Use the SA108 form for the relevant asset category and tax year.
+
+Disposal details show `quantity × unit_price = gross_proceeds`.
+When fees exist, a second line subtracts fees from gross proceeds to show net proceeds.
+Displayed fees equal rounded gross proceeds minus rounded net proceeds.
+A positive precise fee retains its line even when its displayed amount equals £0.00.
+Same-day merged disposals derive their unit price from total gross proceeds divided by total quantity.
+
+Plain text and JSON default to standard output, with `--output` selecting a file.
+PDF uses embedded Typst and bundled fonts, without external rendering tools.
+Its summary headers use superscript footnote markers.
+For one input file, the default PDF path replaces its extension with `.pdf`.
+For multiple input files, the default is `report.pdf` in the working directory.
+The CLI refuses to overwrite an existing default PDF path, while explicit `--output` paths permit replacement.
+
+## Broker conversion
+
+### Schwab records
+
+The converter reads the `BrokerageTransactions` array from Schwab JSON exports.
+It produces chronological DSL records and a header with the skipped-record count.
+Every physical comment line starts with `#`, and output contains no conversion timestamp.
+See the [README](../README.md#charles-schwab) for export and conversion commands.
+
+| Record                                                                     | Treatment                                                  |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Buy and Sell                                                               | Become BUY and SELL records                                |
+| Stock Plan Activity                                                        | Uses the awards export for acquisition dates and values    |
+| Cash Dividend, Qualified Dividend, Short Term Cap Gain, Long Term Cap Gain | Become DIVIDEND records after correction reconciliation    |
+| NRA Withholding and NRA Tax Adj                                            | Adjust dividend tax paid after reconciliation              |
+| Cancel Sell                                                                | Removes one matching sale                                  |
+| Stock Split                                                                | Produces a comment for manual ratio entry                  |
+| Recognized non-CGT cash movements, including Credit Interest and Wire Sent | Are skipped                                                |
+| Unknown actions                                                            | Produce warnings and comments instead of conversion errors |
+
+Schwab dates use `MM/DD/YYYY` or `as of` notation.
+For `02/25/2021 as of 02/21/2021`, conversion uses 21 February 2021.
+Successful conversion produces parseable DSL, but missing history or unresolved manual actions can still prevent a correct report.
+
+### Awards and acquisition dates
+
+Fair market value (FMV) is the share value at acquisition.
+For supported RSU awards, the converter uses the vest date and FMV from the awards file.
+This assumes that the award delivers shares on vesting, as described in the [tax rules](tax-rules.md#rsu-acquisitions).
+
+The awards parser reads `VestFairMarketValue` and `VestDate`, with `FairMarketValuePrice` and parent `Date` as fallbacks.
+Symbol lookup ignores letter case.
+Wire Transfer, Tax Withholding, Tax Reversal, Forced Disbursement, and unknown non-vesting actions can have empty details.
+Vesting actions require valid award details.
+
+Conversion first matches the parent deposit date, symbol, and available quantity.
+Without a linked deposit, it searches vest dates within the preceding seven days.
+Conflicting matching dates or values return an ambiguity error, including conflicting values on one date.
+The resulting acquisition date controls Same Day matching and eligibility within 30 days after a sale.
+
+### Corrections and cancellations
+
+Dividend and withholding records require valid string amounts.
+Reconciliation preserves signs and groups records by effective date and symbol.
+Negative dividend corrections reduce positive credits, and unresolved corrections return an error.
+Positive withholding adjustments reduce withheld tax.
+Unmatched or symbol-less withholding produces a warning.
+
+Sale cancellations match date, symbol, quantity, price, and available fees.
+If missing fees leave different candidate sales, conversion returns an ambiguity error.
+A cancellation removes only one matching sale.
+
+## Test references
+
+These inputs cover representative behavior.
+Each `.cgt` file has a same-named expected JSON file in [`tests/json/`](../tests/json/) and plain-text file in [`tests/plain/`](../tests/plain/).
+The [testing policy](architecture.md#testing-and-cross-validation) covers independent numerical evidence and external comparisons.
+
+| Behavior                                | Representative inputs or tests                                                                                                                                                                           |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same-day grouping and reservations      | [SameDayReservation](../tests/inputs/SameDayReservation.cgt), [SameDayMerge](../tests/inputs/SameDayMerge.cgt), [SameDayMergeInterleaved](../tests/inputs/SameDayMergeInterleaved.cgt)                   |
+| Thirty-day boundary and partial matches | [BnBBoundary30Days](../tests/inputs/BnBBoundary30Days.cgt), [PartialBnBWithS104](../tests/inputs/PartialBnBWithS104.cgt)                                                                                 |
+| Split ratios across future matches      | [single_pass_bnb_split](../tests/inputs/single_pass_bnb_split.cgt), [single_pass_future_consumption](../tests/inputs/single_pass_future_consumption.cgt)                                                 |
+| Actual holdings and chronological order | [physical_holdings.rs](../crates/cgt/tests/physical_holdings.rs), [single_pass_ordering](../tests/inputs/single_pass_ordering.cgt)                                                                       |
+| Split precision                         | [SplitThirds](../tests/inputs/SplitThirds.cgt) retains 26 shares. [UnsplitThirds](../tests/inputs/UnsplitThirds.cgt) retains two.                                                                        |
+| Cost precision                          | [ExactCapitalReturn](../tests/inputs/ExactCapitalReturn.cgt) reduces £30.01 to zero. [ExactMergedCost](../tests/inputs/ExactMergedCost.cgt) retains £7.005, displayed as £7.01.                          |
+| Later corporate actions                 | [single_pass_corp_action](../tests/inputs/single_pass_corp_action.cgt), [WithAssetEventsSameDay](../tests/inputs/WithAssetEventsSameDay.cgt), [WithAssetEventsBB](../tests/inputs/WithAssetEventsBB.cgt) |
+| Foreign exchange and mixed currencies   | [single_pass_fx](../tests/inputs/single_pass_fx.cgt), [MultiCurrencySameDay](../tests/inputs/MultiCurrencySameDay.cgt)                                                                                   |
+| Gain aggregation and display rounding   | [NetDisposalTotalsMixed](../tests/inputs/NetDisposalTotalsMixed.cgt), [DisposalRounding](../tests/inputs/DisposalRounding.cgt)                                                                           |
+| Multiple years and corporate actions    | [SyntheticComplex](../tests/inputs/SyntheticComplex.cgt), [RealisticMultiYear](../tests/inputs/RealisticMultiYear.cgt)                                                                                   |
+| Input errors and exemption behavior     | [validation.rs](../crates/cgt/tests/validation.rs), [semantic_validation.rs](../crates/cgt/tests/semantic_validation.rs), [exemptions.rs](../crates/cgt/tests/exemptions.rs)                             |
+| Multiple awards and sale prices         | [Synthetic awards](../tests/schwab/synthetic-awards.json), [synthetic transactions](../tests/schwab/synthetic-transactions.json)                                                                         |
