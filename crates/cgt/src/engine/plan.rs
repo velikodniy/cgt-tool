@@ -17,9 +17,10 @@ use crate::error::CgtError;
 /// B&B window: acquisitions 1..=30 days after the disposal (CG51560).
 const BNB_WINDOW_DAYS: i64 = 30;
 
-/// Same-day matched quantity for one disposal.
+/// Same-day matched quantity for one disposal, tied to its buy event.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct SameDayLeg {
+    pub(crate) buy: EventId,
     pub(crate) quantity: Quantity,
 }
 
@@ -95,15 +96,20 @@ pub(crate) fn plan(stream: &EventStream) -> Result<MatchPlan, CgtError> {
     })
 }
 
+struct DayBuy {
+    buy: EventId,
+    available: Quantity,
+}
+
 struct Planner<'s> {
     stream: &'s EventStream,
     /// Shares actually held, independent of future tax matches.
     holdings: HashMap<String, Quantity>,
     /// Per-ticker Section 104 pool quantity.
     pools: HashMap<String, Quantity>,
-    /// Day ledger for the day in progress: per ticker, merged buy quantity
-    /// still available after B&B reservations and same-day consumption.
-    day_available: HashMap<String, Quantity>,
+    /// Day ledger for the day in progress: per ticker, merged buy identity
+    /// and quantity still available after B&B reservations and same-day consumption.
+    day_available: HashMap<String, DayBuy>,
     /// B&B reservations against future merged buys (buy share scale).
     bnb_reservations: HashMap<EventId, Quantity>,
     disposals: Vec<DisposalPlan>,
@@ -147,7 +153,13 @@ impl<'s> Planner<'s> {
                 }
                 let mut available = Quantity::from(trade.quantity);
                 available.subtract(&reserved);
-                self.day_available.insert(event.ticker.clone(), available);
+                self.day_available.insert(
+                    event.ticker.clone(),
+                    DayBuy {
+                        buy: event.id,
+                        available,
+                    },
+                );
             }
         }
 
@@ -161,7 +173,8 @@ impl<'s> Planner<'s> {
             if let EventKind::Buy(_) = &event.kind {
                 let leftover = self
                     .day_available
-                    .insert(event.ticker.clone(), Quantity::default())
+                    .remove(event.ticker.as_str())
+                    .map(|buy| buy.available)
                     .unwrap_or_default();
                 if leftover.is_positive() {
                     self.pools
@@ -227,7 +240,7 @@ impl<'s> Planner<'s> {
         let ledger_held = self
             .day_available
             .get(sell.ticker.as_str())
-            .cloned()
+            .map(|buy| buy.available.clone())
             .unwrap_or_default();
         let pool_held = self
             .pools
@@ -267,13 +280,16 @@ impl<'s> Planner<'s> {
         };
 
         // 1. Same Day (TCGA92/S105(1)).
-        if ledger_held.is_positive() {
-            let matched = remaining.clone().min(ledger_held.clone());
-            let mut available = ledger_held;
-            available.subtract(&matched);
-            self.day_available.insert(sell.ticker.clone(), available);
+        if let Some(buy) = self.day_available.get_mut(sell.ticker.as_str())
+            && buy.available.is_positive()
+        {
+            let matched = remaining.clone().min(buy.available.clone());
+            buy.available.subtract(&matched);
             remaining.subtract(&matched);
-            disposal.same_day = Some(SameDayLeg { quantity: matched });
+            disposal.same_day = Some(SameDayLeg {
+                buy: buy.buy,
+                quantity: matched,
+            });
         }
 
         // 2. Bed & Breakfast (TCGA92/S106A).
@@ -524,6 +540,52 @@ mod tests {
             Some(Quantity::from(dec!(5)))
         );
         assert!(disposal.section_104.is_none());
+    }
+
+    #[test]
+    fn same_day_legs_reference_merged_buys_for_each_ticker() {
+        let (stream, match_plan) = stream_and_plan(
+            "2024-01-01 BUY ABC 100 @ 10.00 GBP\n\
+             2024-01-01 BUY XYZ 100 @ 20.00 GBP\n\
+             2024-03-01 SELL XYZ 7 @ 23.00 GBP\n\
+             2024-03-01 BUY ABC 3 @ 11.00 GBP\n\
+             2024-03-01 BUY XYZ 4 @ 21.00 GBP\n\
+             2024-03-01 SELL ABC 12 @ 13.00 GBP\n\
+             2024-03-01 BUY ABC 7 @ 12.00 GBP\n\
+             2024-03-01 BUY XYZ 6 @ 22.00 GBP\n",
+        );
+        let associations: Vec<_> = match_plan
+            .disposals
+            .iter()
+            .map(|disposal| {
+                (
+                    disposal.sell,
+                    disposal
+                        .same_day
+                        .as_ref()
+                        .map(|leg| (leg.buy, leg.quantity.clone())),
+                )
+            })
+            .collect();
+        assert_eq!(
+            associations,
+            vec![
+                (
+                    sell_id(&stream, "2024-03-01", "XYZ"),
+                    Some((
+                        buy_id(&stream, "2024-03-01", "XYZ"),
+                        Quantity::from(dec!(7))
+                    )),
+                ),
+                (
+                    sell_id(&stream, "2024-03-01", "ABC"),
+                    Some((
+                        buy_id(&stream, "2024-03-01", "ABC"),
+                        Quantity::from(dec!(10))
+                    )),
+                ),
+            ]
+        );
     }
 
     #[test]

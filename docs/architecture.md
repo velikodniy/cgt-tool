@@ -45,6 +45,7 @@ Each stage completes before the next stage starts:
 
 The planner scans events chronologically and looks ahead for acquisitions within 30 days.
 It reserves quantities for Same Day matches before allocating shares to earlier disposals.
+The plan identifies the normalized acquisition for each Same Day and Bed & Breakfast leg.
 Indexes by ticker and by sale date support these lookups, with storage proportional to the event count.
 
 The planner uses exact fractions for quantities and split ratios.
@@ -53,7 +54,7 @@ Every sale reduces actual shares, including a sale whose tax cost comes from a l
 Conversion to public decimal values returns an error for unsupported magnitudes or share precision.
 
 Valuation replays events chronologically.
-Same Day and Bed & Breakfast legs use their matched acquisition costs.
+Same Day and Bed & Breakfast legs use the acquisition identifiers from the plan to allocate their costs.
 Section 104 legs use the pool cost at the disposal date.
 Later capital returns and accumulation dividends adjust the carried-forward pool without changing earlier disposal costs.
 

@@ -122,7 +122,6 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
     for day in stream.events().chunk_by(|a, b| a.date == b.date) {
         // The canonical order already groups value events first, then buys,
         // then sells, then splits. Walking the slice in order honours it.
-        let mut day_buys: HashMap<&str, EventId> = HashMap::new();
         for event in day {
             match &event.kind {
                 EventKind::Accumulation { quantity, .. } if quantity.is_zero() => {}
@@ -170,20 +169,11 @@ pub(crate) fn value(stream: &EventStream, plan: &MatchPlan) -> Result<ValuedRepo
                             .map_err(|error| error.at_transaction(&event.ticker, event.date))?; // TCGA92/S122(2)
                     }
                 }
-                EventKind::Buy(_) => {
-                    day_buys.insert(event.ticker.as_str(), event.id);
-                }
+                EventKind::Buy(_) => {}
                 EventKind::Sell(trade) => {
                     if let Some(plan) = plan_by_sell.get(&event.id) {
-                        let priced = price_disposal(
-                            event,
-                            trade,
-                            plan,
-                            &mut pools,
-                            &mut buy_costs,
-                            &day_buys,
-                        )
-                        .map_err(|error| error.at_transaction(&event.ticker, event.date))?;
+                        let priced = price_disposal(event, trade, plan, &mut pools, &mut buy_costs)
+                            .map_err(|error| error.at_transaction(&event.ticker, event.date))?;
                         disposals.push(priced);
                     }
                 }
@@ -268,7 +258,6 @@ fn price_disposal(
     plan: &DisposalPlan,
     pools: &mut HashMap<String, Pool>,
     buy_costs: &mut HashMap<EventId, Pool>,
-    day_buys: &HashMap<&str, EventId>,
 ) -> Result<PricedDisposal, CgtError> {
     let sell_qty = trade.quantity;
     let mut gross_remaining = Pool {
@@ -283,16 +272,8 @@ fn price_disposal(
 
     // 1. Same Day (TCGA92/S105(1)): allocate the merged acquisition cost.
     if let Some(leg) = &plan.same_day {
-        let buy =
-            day_buys
-                .get(sell.ticker.as_str())
-                .ok_or_else(|| CgtError::NoPriorAcquisitions {
-                    ticker: sell.ticker.clone(),
-                    date: sell.date,
-                    attempted: sell_qty,
-                })?;
         let balance = buy_costs
-            .get_mut(buy)
+            .get_mut(&leg.buy)
             .ok_or_else(|| CgtError::NoPriorAcquisitions {
                 ticker: sell.ticker.clone(),
                 date: sell.date,
